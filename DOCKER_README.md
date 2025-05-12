@@ -46,3 +46,21 @@ complex, is the Insane Development Docker environment, which is documented at
 There is also a development docker that is built nightly from the current development codebase with tags `dev`
 and `next` that is less flexible than the `flex` series and is mainly used for testing, and can be found on
 [dockerhub](https://hub.docker.com/r/openemr/openemr/).
+
+### BuildPack Dockers
+
+Another way to build containers is with [Buildpacks](https://buildpacks.io/docs/for-app-developers/concepts/buildpack/). Buildpacks are a promising way to remove complexity from the build process. Instead of a prescriptive Dockerfile, the buildpack analyzes the source to determine what to build based on the standards of the ecosystem in question. In this case, we can run
+
+```
+pack build --platform linux/amd64 \
+           --builder paketobuildpacks/builder-jammy-full \
+           --buildpack paketo-buildpacks/nodejs \
+           --buildpack paketo-buildpacks/php \
+           openemr
+```
+
+(If you don't have the `pack` command on macOS, run `brew install buildpacks/tap/pack`.)
+
+The [php buildpack](https://paketo.io/docs/howto/php) understands the composer.json and composer.lock, and the [nodejs buildpack]() the package.json and package-lock.json. Together, they build a result that's smaller and more secure without the overhead of large, complex Dockerfiles.
+
+Buildpacks are widely supported by Kubernetes and cloud vendors, including Google Cloud, Heroku, Azure and others.  The results are, at least in theory, more secure than a Dockerfile based on a vanilla official image.
