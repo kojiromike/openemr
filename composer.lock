@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "33812b0a6d13ae6dff14817d141c500d",
+    "content-hash": "9fd6fa112db2233f14b1de2a3637ce6c",
     "packages": [
         {
             "name": "academe/authorizenet-objects",
@@ -13455,6 +13455,7 @@
         "ext-openssl": "*",
         "ext-soap": "*",
         "ext-sodium": "*",
+        "ext-xdebug": "*",
         "ext-zip": "*",
         "ext-zlib": "*"
     },
