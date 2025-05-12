@@ -2,21 +2,15 @@ services:
   mysql:
     restart: unless-stopped
     image: mariadb
-    command:
-    - mariadbd
-    - --character-set-server=utf8mb4
-    - --ssl-ca=/etc/ssl/ca.pem
-    - --ssl_cert=/etc/ssl/server-cert.pem
-    - --ssl_key=/etc/ssl/server-key.pem
     ports:
     - 8320:3306
     volumes:
-    - ../library/sql-ssl-certs-keys/easy/ca.pem:/etc/ssl/ca.pem:ro
-    - ../library/sql-ssl-certs-keys/easy/server-cert.pem:/etc/ssl/server-cert.pem:ro
-    - ../library/sql-ssl-certs-keys/easy/server-key.pem:/etc/ssl/server-key.pem:ro
     - databasevolume:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MARIADB_DATABASE: openemr
+      MARIADB_PASSWORD: openemr
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_USER: openemr
 
   openemr:
     restart: unless-stopped
@@ -24,6 +18,8 @@ services:
     ports:
     - 8300:80
     - 9300:443
+    volumes:
+    - ./sites/default/sqlconf.php:/workspace/sites/default/sqlconf.php
     environment:
       COLORTERM: truecolor
       DEBUG_COLORS: "true"
@@ -50,6 +46,7 @@ services:
       TERM: xterm-256color
       # setting xdebug client host for cases where xdebug.discover_client_host fails
       XDEBUG_CLIENT_HOST: host.docker.internal
+      XDEBUG_MODE: debug
       XDEBUG_ON: 1
       XDEBUG_PROFILER_ON: 1
     depends_on:
@@ -62,6 +59,8 @@ services:
     - 8310:80
     environment:
       PMA_HOSTS: mysql
+    depends_on:
+    - mysql
 
 volumes:
   databasevolume: {}
