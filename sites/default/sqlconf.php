@@ -16,12 +16,12 @@ $sqlconfDefaults = [
 ];
 
 $sqlconf = [
-    "host" => getenv("OPENEMR_MYSQL_HOST") ?? _SQLCONF_SENTINEL,
-    "port" => getenv("OPENEMR_MYSQL_PORT") ?? _SQLCONF_SENTINEL,
-    "login" => getenv("OPENEMR_MYSQL_USER") ?? _SQLCONF_SENTINEL,
-    "pass" => getenv("OPENEMR_MYSQL_PASS") ?? _SQLCONF_SENTINEL,
-    "dbase" => getenv("OPENEMR_MYSQL_DBNAME") ?? _SQLCONF_SENTINEL,
-    "db_encoding" => getenv("OPENEMR_MYSQL_ENCODING") ?? _SQLCONF_SENTINEL
+    "host" => getenv("OPENEMR_MYSQL_HOST") ?: _SQLCONF_SENTINEL,
+    "port" => getenv("OPENEMR_MYSQL_PORT") ?: _SQLCONF_SENTINEL,
+    "login" => getenv("OPENEMR_MYSQL_USER") ?: _SQLCONF_SENTINEL,
+    "pass" => getenv("OPENEMR_MYSQL_PASS") ?: _SQLCONF_SENTINEL,
+    "dbase" => getenv("OPENEMR_MYSQL_DBNAME") ?: _SQLCONF_SENTINEL,
+    "db_encoding" => getenv("OPENEMR_MYSQL_ENCODING") ?: _SQLCONF_SENTINEL
 ];
 
 // If all the values in $sqlconf are _SQLCONF_SENTINEL, then set $config = 0 to trigger setup.php.
@@ -42,6 +42,10 @@ foreach ($sqlconf as $key => $value) {
         $missingRequired[] = $key;
     }
 }
+
+// Extract values as individual variables
+// FIXME: we shouldn't need to do this -- providing the global array should be enough.
+extract($sqlconf);
 
 if ($config === 0 || empty($missingRequired)) {
     // Either all required values are set
