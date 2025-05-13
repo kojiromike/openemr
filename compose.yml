@@ -20,6 +20,8 @@ services:
     - 9300:443
     volumes:
     - ./sites/default/sqlconf.php:/workspace/sites/default/sqlconf.php
+    - ./src:/workspace/src
+    - ./xdebug.log:/var/log/xdebug.log:rw
     environment:
       COLORTERM: truecolor
       DEBUG_COLORS: "true"
@@ -44,6 +46,7 @@ services:
       OPENEMR_SETTING_rest_system_scopes_api: 1
       OPENEMR_SETTING_site_addr_oath: 'https://localhost:9300'
       TERM: xterm-256color
+      XDEBUG_CONFIG: client_host=host.docker.internal discover_client_host=true idekey=XDEBUG_TRIGGER
       # setting xdebug client host for cases where xdebug.discover_client_host fails
       XDEBUG_CLIENT_HOST: host.docker.internal
       XDEBUG_MODE: debug
