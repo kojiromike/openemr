@@ -24,6 +24,8 @@
         "ext-mbstring": "*",
         "ext-mysqli": "*",
         "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
         "ext-soap": "*",
         "ext-sodium": "*",
         "ext-xdebug": "*",
