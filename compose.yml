@@ -17,6 +17,29 @@ services:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_USER: openemr
 
+  # create an openemr init service that runs /cnb/lifecycle/launcher php oce_installer.php with our configuration parameters.
+  # it should run before openemr comes up, but should be idempotent and should not need to be restarted.
+  openemr-init:
+    image: openemr
+    command:
+    # The default entrypoint for the openemr image is /cnb/lifecycle/web.
+    # It is a symlink to /cnb/lifecycle/launcher; however, it changes
+    # its behavior based on its own name, so we need to use launcher directly.
+    - /cnb/lifecycle/launcher
+    - php
+    - oce_installer.php
+    restart: "no"
+    volumes:
+      - ./sites:/workspace/sites
+      - ./src:/workspace/src
+    environment:
+      OPENEMR_MYSQL_HOST: mysql
+      OPENEMR_MYSQL_DBNAME: openemr
+      OPENEMR_MYSQL_USER: openemr
+      OPENEMR_MYSQL_PASS: openemr
+    depends_on:
+      - mysql
+
   openemr:
     restart: unless-stopped
     image: openemr
@@ -27,6 +50,9 @@ services:
     - ./sites/default/sqlconf.php:/workspace/sites/default/sqlconf.php
     - ./src:/workspace/src
     - ./xdebug.log:/var/log/xdebug.log:rw
+    depends_on:
+    - openemr-init
+    - mysql
     environment:
       COLORTERM: truecolor
       DEBUG_COLORS: "true"
@@ -57,8 +83,6 @@ services:
       XDEBUG_MODE: debug
       XDEBUG_ON: 1
       XDEBUG_PROFILER_ON: 1
-    depends_on:
-    - mysql
 
   phpmyadmin:
     restart: unless-stopped
