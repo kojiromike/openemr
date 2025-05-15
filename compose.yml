@@ -6,6 +6,11 @@ services:
     - 8320:3306
     volumes:
     - databasevolume:/var/lib/mysql
+    # Use numeric prefixes to ensure sql load order.
+    - ./sql/database.sql:/docker-entrypoint-initdb.d/000_database.sql:ro
+    - ./sql/cvx_codes.sql:/docker-entrypoint-initdb.d/010_cvx_codes.sql:ro
+    - ./sql/icd9-codes-insert.sql:/docker-entrypoint-initdb.d/020_icd.sql:ro
+    - ./contrib/util/language_translations/currentLanguage_utf8.sql:/docker-entrypoint-initdb.d/030_currentLanguage_utf8.sql:ro
     environment:
       MARIADB_DATABASE: openemr
       MARIADB_PASSWORD: openemr
