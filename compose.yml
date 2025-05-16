@@ -16,29 +16,58 @@ services:
       MARIADB_PASSWORD: openemr
       MARIADB_ROOT_PASSWORD: root
       MARIADB_USER: openemr
+    healthcheck:
+      test:
+      - CMD
+      - /usr/local/bin/healthcheck.sh
+      - --su-mysql
+      - --connect
+      - --innodb_initialized
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
 
-  # create an openemr init service that runs /cnb/lifecycle/launcher php oce_installer.php with our configuration parameters.
+  # create an openemr init service that runs /cnb/lifecycle/launcher php /opencore_installer.php with our configuration parameters.
   # it should run before openemr comes up, but should be idempotent and should not need to be restarted.
   openemr-init:
     image: openemr
-    command:
+    entrypoint:
     # The default entrypoint for the openemr image is /cnb/lifecycle/web.
     # It is a symlink to /cnb/lifecycle/launcher; however, it changes
     # its behavior based on its own name, so we need to use launcher directly.
     - /cnb/lifecycle/launcher
+    command:
     - php
-    - oce_installer.php
+    - contrib/util/installScripts/opencore_installer.php
+    # iuser
+    - admin
+    # iuserpass
+    - admin
+    # iuname
+    - Administrator
+    # iufname
+    - Default Facility
+    # igroup
+    - ''
+    # loginhost
+    - localhost
+    environment:
+      OPENEMR_MYSQL_DBNAME: openemr
+      OPENEMR_MYSQL_ENCODING: utf8mb4
+      OPENEMR_MYSQL_HOST: mysql
+      OPENEMR_MYSQL_PASS: openemr
+      OPENEMR_MYSQL_PORT: '3306'
+      OPENEMR_MYSQL_USER: openemr
     restart: "no"
     volumes:
       - ./sites:/workspace/sites
       - ./src:/workspace/src
-    environment:
-      OPENEMR_MYSQL_HOST: mysql
-      OPENEMR_MYSQL_DBNAME: openemr
-      OPENEMR_MYSQL_USER: openemr
-      OPENEMR_MYSQL_PASS: openemr
+      - ./contrib/util/installScripts/opencore_installer.php:/workspace/contrib/util/installScripts/opencore_installer.php:ro
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   openemr:
     restart: unless-stopped
@@ -51,8 +80,10 @@ services:
     - ./src:/workspace/src
     - ./xdebug.log:/var/log/xdebug.log:rw
     depends_on:
-    - openemr-init
-    - mysql
+      mysql:
+        condition: service_healthy
+      openemr-init:
+        condition: service_completed_successfully
     environment:
       COLORTERM: truecolor
       DEBUG_COLORS: "true"
@@ -92,7 +123,8 @@ services:
     environment:
       PMA_HOSTS: mysql
     depends_on:
-    - mysql
+      mysql:
+        condition: service_healthy
 
 volumes:
   databasevolume: {}

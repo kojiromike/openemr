@@ -23,9 +23,11 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once(dirname(__FILE__) . '/vendor/autoload.php');
+const WORKDIR = __DIR__ . '/../../..';
+const SITEDIR = WORKDIR . '/sites/default';
+require_once(WORKDIR . '/vendor/autoload.php');
+require_once(WORKDIR . '/library/classes/Installer.class.php');
 
-use OpenEMR\Common\Installer\Installer;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -98,10 +100,10 @@ class InstallCommand extends Command
      * Restructure the CLI arguments into what the Installer class expects.
      */
     protected function collectInstallParameters() {
+        require_once(WORKDIR . '/sites/default/sqlconf.php');
         $this->io->text('Collecting installation parameters...');
         // $arguments key is the argument name, value is the InputArgument object
         $arguments = $this->input->getArguments();
-        require_once(dirname(__FILE__) . '/sites/default/sqlconf.php');
         $installParams = [
             'server' => $sqlconf['host'],
             'port' => $sqlconf['port'],
@@ -137,7 +139,6 @@ class InstallCommand extends Command
 
         $this->io->title('OpenEMR Installer');
         $this->io->text('Starting installation process at ' . date('Y-m-d H:i:s'));
-        $this->io->note($input->isInteractive() ? "Running in interactive mode" : "Running in non-interactive mode");
 
         // Display installation parameters (mask passwords)
         $installParams = $this->collectInstallParameters();
@@ -191,9 +192,8 @@ class InstallCommand extends Command
         $this->io->text('Validating installation');
 
         // Check if sites directory exists and has expected contents
-        $sitesDir = dirname(__FILE__) . '/sites/default';
-        if (is_dir($sitesDir)) {
-            $this->io->text('Sites directory found: ' . $sitesDir);
+        if (is_dir(SITEDIR)) {
+            $this->io->text('Sites directory found: ' . SITEDIR);
         } else {
             $this->io->warning('Sites directory not found at expected location');
         }
