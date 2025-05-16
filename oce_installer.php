@@ -1,44 +1,38 @@
 #!/usr/bin/env php
 <?php
 /**
- * Collects the settings required to run the OpenEMR Installer, either from the environment or from CLI arguments.
- * Then runs the `quick_install` method. Environment variable names are all-caps and start with `OPENEMR_`.
+ * An installer for OpenCoreEMR's process. This installer skips several setup steps that would be done by the
+ * upstream Installer class (because they should not be done with application-level permissions).
+ * Also, it does not support multiple sites.
  *
- * Here are all the possible settings:
- * iuser ?: ''                      // initial user (admin)
- * iuserpass ?: '';                 // initial user password
- * iuname ?: '';                    // initial user display name
- * iufname ?: '';                   // initial user facility name
- * igroup ?: '';                    // initial user group
- * i2faenable ?: '';                // 2FA enable
- * i2fasecret ?: '';                // 2FA TOTP
- * loginhost ?: '';                 // httpd host
- * server ?: '';                    // mysql host
- * port ?: '';                      // mysql port
- * root ?: '';                      // mysql root user
- * rootpass ?: '';                  // mysql root password
- * login ?: '';                     // mysql user
- * pass ?: '';                      // mysql user password
- * dbname ?: '';                    // mysql database name
- * collate ?: '';                   // mysql database collation
- * site ?: 'default';               // initial openemr site
- * source_site_id ?: '';            // source site id for cloning
- * clone_database ?: '';            // clone database
- * no_root_db_access ?: '';         // disable root access to database. user/privileges pre-configured
- * development_translations ?: '';  // use online translations
- * new_theme ?: '';                 // set a new theme for cloned sites
+ * Before you run this:
+ *
+ * 1. Initialize the database by loading at least sql/database.sql and create a non-root user with access to it.
+ * 2. Ensure that sites/default/sqlconf.php accepts environment variables to connect to the database and that
+ *    those environment variables are in the environment when you run this installer.
+ * 3. Provide these positional arguments:
+ *    iuser                            // initial user (admin)
+ *    iuserpass                        // initial user password
+ *    iuname                           // initial user display name
+ *    iufname                          // initial user facility name
+ *    igroup                           // initial user group
+ *    loginhost                        // host from which the database connection is made
+ *
+ * @package OpenEMR
+ * @link    https://www.opencoreemr.com/
+ * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
+use OpenEMR\Common\Installer\Installer;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
  * OpenEMR Installer Command
@@ -47,132 +41,175 @@ class InstallCommand extends Command
 {
     protected function configure()
     {
+        $helpText = <<<EOT
+        This command allows you to install OpenEMR. It does not support multiple sites.
+        It expects the the MySQL database to be running and accessible
+        via the connection specified in the environment variables used in sqlconf.php.
+        EOT;
         $this
             ->setName('install')
             ->setDescription('Install OpenEMR')
-            ->setHelp('This command allows you to install OpenEMR')
-            ->addOption('non_interactive', null, InputOption::VALUE_NONE, 'Run without asking for confirmation [env: OPENEMR_NON_INTERACTIVE]')
-            ->addOption('iuser', null, InputOption::VALUE_OPTIONAL, 'Initial user (admin) [env: OPENEMR_IUSER]')
-            ->addOption('iuserpass', null, InputOption::VALUE_OPTIONAL, 'Initial user password [env: OPENEMR_IUSERPASS]')
-            ->addOption('iuname', null, InputOption::VALUE_OPTIONAL, 'Initial user display name [env: OPENEMR_IUNAME]')
-            ->addOption('iufname', null, InputOption::VALUE_OPTIONAL, 'Initial user facility name [env: OPENEMR_IUFNAME]')
-            ->addOption('igroup', null, InputOption::VALUE_OPTIONAL, 'Initial user group [env: OPENEMR_IGROUP]')
-            ->addOption('i2faenable', null, InputOption::VALUE_OPTIONAL, '2FA enable [env: OPENEMR_I2FAENABLE]')
-            ->addOption('i2fasecret', null, InputOption::VALUE_OPTIONAL, '2FA TOTP [env: OPENEMR_I2FASECRET]')
-            ->addOption('loginhost', null, InputOption::VALUE_OPTIONAL, 'HTTP/Apache server (usually localhost) [env: OPENEMR_LOGINHOST]')
-            ->addOption('server', null, InputOption::VALUE_OPTIONAL, 'MySQL server (usually localhost) [env: OPENEMR_SERVER]')
-            ->addOption('port', null, InputOption::VALUE_OPTIONAL, 'MySQL port [env: OPENEMR_PORT]')
-            ->addOption('root', null, InputOption::VALUE_OPTIONAL, 'MySQL root user [env: OPENEMR_ROOT]')
-            ->addOption('rootpass', null, InputOption::VALUE_OPTIONAL, 'MySQL root password [env: OPENEMR_ROOTPASS]')
-            ->addOption('login', null, InputOption::VALUE_OPTIONAL, 'MySQL user [env: OPENEMR_LOGIN]')
-            ->addOption('pass', null, InputOption::VALUE_OPTIONAL, 'MySQL user password [env: OPENEMR_PASS]')
-            ->addOption('dbname', null, InputOption::VALUE_OPTIONAL, 'MySQL database name [env: OPENEMR_DBNAME]')
-            ->addOption('collate', null, InputOption::VALUE_OPTIONAL, 'MySQL database collation [env: OPENEMR_COLLATE]')
-            ->addOption('site', null, InputOption::VALUE_OPTIONAL, 'Initial OpenEMR site [env: OPENEMR_SITE]', 'default')
-            ->addOption('source_site_id', null, InputOption::VALUE_OPTIONAL, 'Source site id for cloning [env: OPENEMR_SOURCE_SITE_ID]')
-            ->addOption('clone_database', null, InputOption::VALUE_OPTIONAL, 'Clone database [env: OPENEMR_CLONE_DATABASE]')
-            ->addOption('no_root_db_access', null, InputOption::VALUE_OPTIONAL, 'Disable root access to database [env: OPENEMR_NO_ROOT_DB_ACCESS]')
-            ->addOption('development_translations', null, InputOption::VALUE_OPTIONAL, 'Use online translations [env: OPENEMR_DEVELOPMENT_TRANSLATIONS]')
-            ->addOption('new_theme', null, InputOption::VALUE_OPTIONAL, 'Set theme for cloned sites [env: OPENEMR_NEW_THEME]');
+            ->setHelp($helpText)
+            ->addArgument('iuser', InputArgument::REQUIRED, 'Initial user (admin)')
+            ->addArgument('iuserpass', InputArgument::REQUIRED, 'Initial user password')
+            ->addArgument('iuname', InputArgument::REQUIRED, 'Initial user display name')
+            ->addArgument('iufname', InputArgument::REQUIRED, 'Initial user facility name')
+            ->addArgument('igroup', InputArgument::REQUIRED, 'Initial user group')
+            ->addArgument('loginhost', InputArgument::REQUIRED, 'HTTP/Apache server (usually localhost)');
     }
 
     /**
-     * Get value from environment or input options
+     * Run the simplified OpenCoreEMR installation process.
+     *
+     * This method is modeled after the Installer class's quick_install method, but does less.
      */
-    private function getOption(InputInterface $input, string $name, string $default = '')
+    public function doInstall()
     {
-        $envName = 'OPENEMR_' . strtoupper($name);
-        // Check for command line option first
-        if ($input->getOption($name) !== null) return $input->getOption($name);
-        // Check environment variable next
-        if (isset($_ENV[$envName])) return $_ENV[$envName];
-        // Fall back to default
-        return $default;
+        # The sequence of Installer functions to call.
+        # These are all thunks that return a boolean.
+        $install_dag = [
+            'login_is_valid',
+            'iuser_is_valid',
+            'user_password_is_valid',
+            'user_database_connection',
+            'add_version_info',
+            'insert_globals',
+            'add_initial_user',
+            'install_gacl',
+            'install_additional_users',
+            'on_care_coordination',
+        ];
+        foreach ($install_dag as $step) {
+            if (!$this->installer->$step()) return false;
+        }
+        return true;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function printPhpDeets()
     {
-        $io = new SymfonyStyle($input, $output);
-        $io->title('OpenEMR Installer');
+        $this->io->text("PHP Version: " . PHP_VERSION);
+        $this->io->text("PHP SAPI: " . php_sapi_name());
+        $this->io->text("PHP OS: " . PHP_OS);
+        $this->io->text("PHP Memory Limit: " . ini_get('memory_limit'));
+        $this->io->text("PHP Max Execution Time: " . ini_get('max_execution_time'));
+    }
 
-        if ($this->getOption($input, 'non_interactive')) $input->setInteractive(false);
-
-        // Get all option names except 'non_interactive'
-        $optionNames = array_keys(array_filter(
-            $input->getOptions(),
-            function ($key) {
-                return $key !== 'non_interactive';
-            },
-            ARRAY_FILTER_USE_KEY
-        ));
-
-        // Create installation parameters array
-        $installParams = array_combine(
-            $optionNames,
-            array_map(function($option) use ($input) {
-                // Special case for 'site' with default value 'default'
-                return $option === 'site' ?
-                    $this->getOption($input, $option, 'default') :
-                    $this->getOption($input, $option);
-            }, $optionNames)
+    /**
+     * Restructure the CLI arguments into what the Installer class expects.
+     */
+    protected function collectInstallParameters() {
+        $this->io->text('Collecting installation parameters...');
+        // $arguments key is the argument name, value is the InputArgument object
+        $arguments = $this->input->getArguments();
+        require_once(dirname(__FILE__) . '/sites/default/sqlconf.php');
+        $installParams = [
+            'server' => $sqlconf['host'],
+            'port' => $sqlconf['port'],
+            'login' => $sqlconf['login'],
+            'pass' => $sqlconf['pass'],
+            'dbname' => $sqlconf['dbase'],
+        ] + array_combine(
+            array_keys($arguments),
+            array_map([$this->input, 'getArgument'], array_keys($arguments))
         );
+        return $installParams;
+    }
 
-        // Display installation parameters (mask passwords)
-        $io->section('Installation Parameters');
-
+    /**
+     * Create a display representation of the install parameters, masking sensitive values.
+     */
+    protected function maskSensitiveParameters(array $installParams)
+    {
         $displayParams = [];
         foreach ($installParams as $key => $value) {
             if (str_ends_with($key, 'pass') || str_ends_with($key, 'secret')) $value = '********';
             $value = $value ?: '(not set)';
-            // Mask password values
-            $displayParams[] = [
-                $key,
-                (str_ends_with($key, 'pass') || str_ends_with($key, 'secret')) ?
-                    '********' :
-                    ($value ?: '(not set)')
-            ];
+            $displayParams[] = [$key, $value];
         }
+        return $displayParams;
+    }
 
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $this->input = $input;
+        $this->output = $output;
+        $this->io = new SymfonyStyle($input, $output);
+
+        $this->io->title('OpenEMR Installer');
+        $this->io->text('Starting installation process at ' . date('Y-m-d H:i:s'));
+        $this->io->note($input->isInteractive() ? "Running in interactive mode" : "Running in non-interactive mode");
+
+        // Display installation parameters (mask passwords)
+        $installParams = $this->collectInstallParameters();
+
+        $this->io->section('Installation Parameters');
+        $displayParams = $this->maskSensitiveParameters($installParams);
         $table = new Table($output);
         $table->setHeaders(['Parameter', 'Value']);
         $table->setRows($displayParams);
         $table->render();
 
-        // Confirm installation
-        if ($input->isInteractive()) {
-            $helper = $this->getHelper('question');
-            $question = new ConfirmationQuestion('Continue with installation? [y/N] ', false);
-
-            if (!$helper->ask($input, $output, $question)) {
-                $io->warning('Installation canceled.');
-                return Command::FAILURE;
-            }
-        }
+        $this->io->section('Installing OpenEMR');
+        $this->io->text('Installation started at ' . date('Y-m-d H:i:s'));
+        $this->io->progressStart(3);
 
         try {
-            $io->section('Installing OpenEMR');
-            $io->progressStart(3);
-
             // Create installer
-            $installer = new Installer($installParams);
-            $io->progressAdvance();
+            $this->io->text('Step 1: Creating installer instance...');
+            $startTime = microtime(true);
+
+            $this->installer = new Installer($installParams);
+
+            $endTime = microtime(true);
+            $this->io->text(sprintf('Installer created in %.2f seconds', $endTime - $startTime));
+            $this->io->progressAdvance();
 
             // Run the installation
-            $io->progressAdvance();
-            $success = $installer->quick_install();
-            $io->progressFinish();
+            $this->io->text('Step 2: Running installer...');
+            $startTime = microtime(true);
+            $this->io->progressAdvance();
+            $success = $this->doInstall();
 
-            if ($success) {
-                $io->success('OpenEMR installation completed successfully.');
-                return Command::SUCCESS;
-            } else {
-                $io->error('Installation failed: ' . $installer->error_message);
-                return Command::FAILURE;
-            }
+            $endTime = microtime(true);
+            $this->io->text(sprintf('Installation process took %.2f seconds', $endTime - $startTime));
+            $this->io->progressFinish();
+
+            return ($success) ? $this->handleSuccess() : $this->handleFailure();
         } catch (\Exception $e) {
-            $io->error('Installation failed with exception: ' . $e->getMessage());
+            $this->io->error('Installation failed with exception: ' . $e->getMessage());
+            $this->io->text('Exception details: ' . get_class($e));
+            $this->io->text('Stack trace:');
+            $this->io->text($e->getTraceAsString());
             return Command::FAILURE;
         }
+    }
+
+    protected function handleSuccess()
+    {
+        $this->io->success('OpenEMR installation completed successfully at ' . date('Y-m-d H:i:s'));
+        $this->io->text('Installation directory: ' . getcwd());
+        $this->io->text('Validating installation');
+
+        // Check if sites directory exists and has expected contents
+        $sitesDir = dirname(__FILE__) . '/sites/default';
+        if (is_dir($sitesDir)) {
+            $this->io->text('Sites directory found: ' . $sitesDir);
+        } else {
+            $this->io->warning('Sites directory not found at expected location');
+        }
+        return Command::SUCCESS;
+    }
+
+    protected function handleFailure()
+    {
+        $this->io->error('Installation failed: ' . $this->installer->error_message);
+        if (isset($this->installer->debug_info)) {
+            $this->io->section('Debug Information');
+            foreach ($this->installer->debug_info as $key => $value) {
+                $this->io->text("$key: " . print_r($value, true));
+            }
+        }
+        return Command::FAILURE;
     }
 }
 
@@ -180,4 +217,5 @@ class InstallCommand extends Command
 $application = new Application('OpenEMR Installer', '1.0.0');
 $application->add(new InstallCommand());
 $application->setDefaultCommand('install', true);
+
 $application->run();
