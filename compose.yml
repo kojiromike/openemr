@@ -1,0 +1,117 @@
+services:
+  mysql:
+    restart: unless-stopped
+    image: mariadb
+    ports:
+    - 8320:3306
+    volumes:
+    - databasevolume:/var/lib/mysql
+    # Use numeric prefixes to ensure sql load order.
+    - ./sql/database.sql:/docker-entrypoint-initdb.d/000_database.sql:ro
+    - ./sql/cvx_codes.sql:/docker-entrypoint-initdb.d/010_cvx_codes.sql:ro
+    - ./contrib/util/language_translations/currentLanguage_utf8.sql:/docker-entrypoint-initdb.d/030_currentLanguage_utf8.sql:ro
+    environment:
+      MARIADB_DATABASE: openemr
+      MARIADB_PASSWORD: openemr
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_USER: openemr
+    healthcheck:
+      test:
+      - CMD
+      - /usr/local/bin/healthcheck.sh
+      - --su-mysql
+      - --connect
+      - --innodb_initialized
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+  # create an openemr init service that runs opencore_installer.php with our configuration parameters.
+  # it should run before openemr comes up, but should be idempotent and should not need to be restarted.
+  openemr-init:
+    build: .
+    entrypoint:
+    - contrib/util/installScripts/opencore_installer.php
+    command:
+    # iuser
+    - admin
+    # iuserpass
+    - admin
+    # iuname
+    - Administrator
+    # iufname
+    - Default Facility
+    # igroup
+    - ''
+    # loginhost
+    - localhost
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      OPENEMR_MYSQL_DBNAME: openemr
+      OPENEMR_MYSQL_ENCODING: utf8mb4
+      OPENEMR_MYSQL_HOST: mysql
+      OPENEMR_MYSQL_PASS: openemr
+      OPENEMR_MYSQL_PORT: '3306'
+      OPENEMR_MYSQL_USER: openemr
+    restart: "no"
+
+  openemr:
+    restart: unless-stopped
+    build: .
+    ports:
+    - 8300:80
+    - 9300:443
+    depends_on:
+      mysql:
+        condition: service_healthy
+      openemr-init:
+        condition: service_completed_successfully
+    environment:
+      COLORTERM: truecolor
+      DEBUG_COLORS: "true"
+      DEVELOPER_TOOLS: "yes"
+      EASY_DEV_MODE: "yes"
+      EASY_DEV_MODE_NEW: "yes"
+      GITHUB_COMPOSER_TOKEN: c313de1ed5a00eb6ff9309559ec9ad01fcc553f0
+      GITHUB_COMPOSER_TOKEN_ENCODED: ZWU5YWIwZWNiM2ZlN2I4YThlNGQ0ZWZiNjMyNDQ5MjFkZTJhMTY2OQo=
+      OE_PASS: pass
+      OE_USER: admin
+      OPENEMR_DOCKER_ENV_TAG: easy-dev-docker
+      OPENEMR_MYSQL_DBNAME: openemr
+      OPENEMR_MYSQL_HOST: mysql
+      OPENEMR_MYSQL_PASS: openemr
+      OPENEMR_MYSQL_USER: openemr
+      OPENEMR_SETTING_ccda_alt_service_enable: 3
+      OPENEMR_SETTING_oauth_password_grant: 3
+      OPENEMR_SETTING_portal_onsite_two_enable: 1
+      OPENEMR_SETTING_rest_api: 1
+      OPENEMR_SETTING_rest_fhir_api: 1
+      OPENEMR_SETTING_rest_portal_api: 1
+      OPENEMR_SETTING_rest_system_scopes_api: 1
+      OPENEMR_SETTING_site_addr_oath: 'https://localhost:9300'
+      TERM: xterm-256color
+
+  phpmyadmin:
+    restart: unless-stopped
+    image: phpmyadmin
+    ports:
+    - 8310:80
+    environment:
+      PMA_HOSTS: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  databasevolume: {}
+  assetvolume: {}
+  themevolume: {}
+  sitesvolume: {}
+  nodemodules: {}
+  vendordir: {}
+  ccdanodemodules: {}
+  logvolume: {}
