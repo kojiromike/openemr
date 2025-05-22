@@ -32,10 +32,14 @@ COPY --from=build-php /build/vendor /dist/vendor
 
 FROM php:8.4.7-apache AS runtime
 # Enable extensions
-# TODO: missing pdo_mysql/mysqli maybe
-COPY ./.php.ini.d/ $PHP_INI_DIR/conf.d/
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-
+# Most extensions we need are already installed, but not all…
+RUN --mount=type=bind,from=mlocati/php-extension-installer,source=/usr/bin/install-php-extensions,target=/usr/local/bin/install-php-extensions \
+    install-php-extensions gd \
+                           mysqli \
+                           pdo_mysql \
+                           soap \
+                           zip
 COPY . .
 COPY --from=dist /dist/public/assets ./public/assets
 COPY --from=dist /dist/vendor ./vendor

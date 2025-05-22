@@ -60,6 +60,109 @@ class InstallCommand extends Command
             ->addArgument('loginhost', InputArgument::REQUIRED, 'HTTP/Apache server (usually localhost)');
     }
 
+    function add_initial_user()
+    {
+        $hash = password_hash($this->installer->iuserpass, PASSWORD_DEFAULT);
+        if (empty($hash)) {
+            // Something is seriously wrong
+            error_log('OpenEMR Error : OpenEMR is not working because unable to create a hash.');
+            die("OpenEMR Error : OpenEMR is not working because unable to create a hash.");
+        }
+
+        $query = "SELECT 1 FROM groups WHERE id = 1 LIMIT 1";
+        $result = $this->installer->dbh->query($query);
+        if ($result === false) {
+            $this->installer->error_message = "ERROR. Unable to check for initial group\n" .
+            "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+            return false;
+        }
+        if ($result->num_rows === 0) {
+            $queryAddGroup = $this->installer->dbh->prepare('INSERT INTO groups (id, name, user) VALUES (1, ?, ?)');
+            $queryAddGroup->bind_param('ss', $this->installer->igroup, $this->installer->iuser);
+            if ($queryAddGroup->execute() === false) {
+                $this->installer->error_message = "ERROR. Unable to addb initial user group\n" .
+                "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+                return false;
+            }
+        }
+
+        $query = "SELECT 1 FROM users WHERE id = 1 LIMIT 1";
+        $result = $this->installer->dbh->query($query);
+        if ($result === false) {
+            $this->installer->error_message = "ERROR. Unable to check for initial user\n" .
+            "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+            return false;
+        }
+
+        // Only insert if the user doesn't exist
+        if ($result->num_rows == 0) {
+            $queryAddUser = $this->installer->dbh->prepare('INSERT INTO users (id, username, password, authorized, lname, fname, facility_id, calendar, cal_ui) VALUES (1, ?, ?, 1, ?, ?, 3, 1, 3)');
+            $queryAddUser->bind_param('sssss', $this->installer->iuser, $this->installer->iuserpass, $this->installer->iuname, $this->installer->iufname);
+            if ($queryAddUser->execute() === false) {
+                $this->installer->error_message = "ERROR. Unable to add initial user\n" .
+                "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+                return false;
+            }
+        }
+
+        $query = "SELECT 1 FROM users_secure WHERE id = 1 LIMIT 1";
+        $result = $this->installer->dbh->query($query);
+        if ($result === false) {
+            $this->installer->error_message = "ERROR. Unable to check for initial user login credentials\n" .
+            "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+            return false;
+        }
+
+        // Only insert if the credentials don't exist
+        if ($result->num_rows == 0) {
+            $queryAddCredentials = $this->installer->dbh->prepare('INSERT INTO users_secure (id, username, password, last_update_password) VALUES (1, ?, ?, NOW())');
+            $queryAddCredentials->bind_param('ss', $this->installer->iuser, $hash);
+            if ($queryAddCredentials->execute() === false) {
+                $this->installer->error_message = "ERROR. Unable to add initial user login credentials\n" .
+                "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+                return false;
+            }
+        }
+
+        // Create new 2fa if enabled
+        if (!$this->installer->i2faEnable) return true;
+        if (empty($this->installer->i2faSecret)) {
+            $this->installer->error_message = "ERROR. 2FA is enabled, but totp secret is empty\n";
+            return false;
+        }
+        if (!class_exists('Totp')) {
+            $this->installer->error_message = "ERROR. 2FA is enabled, but totp class is not found\n";
+            return false;
+        }
+        if (!class_exists('OpenEMR\Common\Crypto\CryptoGen')) {
+            $this->installer->error_message = "ERROR. 2FA is enabled, but CryptoGen class is not found\n";
+            return false;
+        }
+        $query = "SELECT 1 FROM login_mfa_registrations WHERE user_id = 1 LIMIT 1";
+        $result = $this->installer->dbh->query($query);
+        if ($result === false) {
+            $this->installer->error_message = "ERROR. 2FA is enabled, but unable to check for initial user's 2FA credentials\n" .
+                "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+            return false;
+        }
+
+        // Only insert if the MFA registration doesn't exist
+        if ($result->num_rows == 0) {
+            // Encrypt the new secret with the hashed password
+            $cryptoGen = new OpenEMR\Common\Crypto\CryptoGen();
+            $secret = $cryptoGen->encryptStandard($this->installer->i2faSecret, $hash);
+            $queryAdd2fa = $this->installer->dbh->prepare('INSERT INTO login_mfa_registrations (user_id, name, method, var1, var2) VALUES (1, ?, ?, ?, ?)');
+            $queryAdd2fa->bind_param('ssss', $this->installer->i2faName, $this->installer->i2faMethod, $secret, $this->installer->i2faVar2);
+            if ($queryAdd2fa->execute() === false) {
+                $this->installer->error_message = "ERROR. Unable to add initial user's 2FA credentials\n" .
+                    "<p>" . $this->installer->dbh->error . " (#" . $this->installer->dbh->errno . ")\n";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Run the simplified OpenCoreEMR installation process.
      *
@@ -76,12 +179,17 @@ class InstallCommand extends Command
             'user_database_connection',
             'add_version_info',
             'insert_globals',
-            'add_initial_user',
+        ];
+        foreach ($install_dag as $step) {
+            if (!$this->installer->$step()) return false;
+        }
+        $this->add_initial_user();
+        $continue_dag = [
             'install_gacl',
             'install_additional_users',
             'on_care_coordination',
         ];
-        foreach ($install_dag as $step) {
+        foreach ($continue_dag as $step) {
             if (!$this->installer->$step()) return false;
         }
         return true;

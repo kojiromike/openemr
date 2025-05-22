@@ -34,6 +34,8 @@ services:
     build: .
     entrypoint:
     - contrib/util/installScripts/opencore_installer.php
+    volumes:
+    - ./contrib/util/installScripts:/var/www/html/contrib/util/installScripts
     command:
     # iuser
     - admin
