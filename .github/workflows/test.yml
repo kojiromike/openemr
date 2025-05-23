@@ -22,24 +22,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db:
-        # Below 10.0 it's MySQL
-        - '5.7'
-        - '8.0'
-        - '8.4'
-        # Above 10.0 it's MariaDB
-        - '10.5'
-        - '10.6'
-        - '10.11'
-        - '11.4'
-        - '11.6'
         node_version:
         - '20'
-        php:
-        - '8.2'
-        - '8.3'
-        - '8.4'
-        - '8.5'
         testsuite:
         - 'api'
         - 'common'
@@ -49,62 +33,90 @@ jobs:
         - 'services'
         - 'unit'
         - 'validators'
-        webserver:
-        - 'apache'
-        - 'nginx'
-        # Use `include` to limit the combinations to valid configurations
         include:
-        - webserver: apache
-          php: 8.2
-          db: 11.4
-        - webserver: apache
-          php: 8.3
-        - webserver: nginx
-          db: 11.4
+        - db: '11.4'
+          php: '8.2'
+          webserver: apache
+        - db: '10.11'
+          php: '8.3'
+          webserver: apache
+        - db: '10.5'
+          php: '8.3'
+          webserver: apache
+        - db: '10.6'
+          php: '8.3'
+          webserver: apache
+        - db: '11.4'
+          php: '8.3'
+          webserver: apache
+        - db: '11.6'
+          php: '8.3'
+          webserver: apache
+        - db: '5.7'
+          php: '8.3'
+          webserver: apache
+        - db: '8.0'
+          php: '8.3'
+          webserver: apache
+        - db: '8.4'
+          php: '8.3'
+          webserver: apache
+        - db: '11.4'
+          php: '8.2'
+          webserver: nginx
+        - db: '11.4'
+          php: '8.3'
+          webserver: nginx
+        - db: '11.4'
+          php: '8.4'
+          webserver: nginx
+        - db: '11.4'
+          php: '8.5'
+          webserver: nginx
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Install PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
 
-      - name: Report PHP Version
-        run: php -v
+    - name: Report PHP Version
+      run: php -v
 
-      - name: Install npm package
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node_version }}
+    - name: Install npm package
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node_version }}
 
-      - name: Main build
-        run: |
-          . ci/ciLibrary.source
-          composer_github_auth
-          main_build
+    - name: Main build
+      run: |
+        . ci/ciLibrary.source
+        composer_github_auth
+        main_build
 
-      - name: CCDA build
-        run: |
-          . ci/ciLibrary.source
-          ccda_build
+    - name: CCDA build
+      run: |
+        . ci/ciLibrary.source
+        ccda_build
 
-      - name: Dockers environment start
-        run: |
-          . ci/ciLibrary.source
-          dockers_env_start
+    - name: Dockers environment start
+      run: |
+        . ci/ciLibrary.source
+        dockers_env_start
 
-      - name: Wait for MySQL to initialize
-        if: ${{ env.DATABASE == 'mysql' }}
-        run: |
-          echo "Waiting 60 seconds for MySQL to initialize..."
-          sleep 60
+    - name: Wait for MySQL to initialize
+      if: ${{ env.DATABASE == 'mysql' }}
+      run: |
+        echo "Waiting 60 seconds for MySQL to initialize..."
+        sleep 60
 
-      - name: Install and configure
-        run: |
-          . ci/ciLibrary.source
-          install_configure
+    - name: Install and configure
+      run: |
+        . ci/ciLibrary.source
+        install_configure
 
-      - name: Run tests
-        run: |
-          . ci/ciLibrary.source
-          build_test_${{ matrix.testsuite }}
+    - name: Run tests
+      run: |
+        . ci/ciLibrary.source
+        build_test_${{ matrix.testsuite }}
