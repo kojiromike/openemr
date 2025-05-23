@@ -53,7 +53,7 @@ dexec() {
     # Shame docker compose exec doesn't support --env-file
     local -a args=()
     local -a env_args=()
-    while [[ "$1" ]]; do
+    while (( $# > 0 )); do
       case "$1" in
         --env=*) env_args+=(--env "${1#*=}")
                  shift
