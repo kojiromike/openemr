@@ -16,6 +16,7 @@ jobs:
     name: PHP ${{ matrix.php }} - ${{ matrix.webserver }} - ${{ matrix.db }} ${{ matrix.db-version }}${{ matrix.db-description }}
     env:
       DATABASE: ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }}
+      DOCKER_DIR: ${{ matrix.webserver }}_${{ matrix.php }}_${{ matrix.db }}
       OPENEMR_DIR: /var/www/localhost/htdocs/openemr
     runs-on: ubuntu-22.04
     strategy:
@@ -51,8 +52,25 @@ jobs:
         webserver:
         - 'apache'
         - 'nginx'
+        # Use `include` to limit the combinations to valid configurations
+        include:
+        - webserver: apache
+          php: 8.2
+          db: 11.4
+        - webserver: apache
+          php: 8.3
+        - webserver: nginx
+          db: 11.4
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Report PHP Version
+        run: php -v
 
       - name: Install npm package
         uses: actions/setup-node@v4
