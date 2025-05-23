@@ -17,7 +17,7 @@ jobs:
     env:
       DATABASE: ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }}
       DOCKER_DIR: ${{ matrix.webserver }}_${{ matrix.php }}_${{ matrix.db }}
-      OPENEMR_DIR: /var/www/localhost/htdocs/openemr
+      OPENEMR_DIR: ${{ (matrix.webserver == 'apache') && '/var/www/localhost/htdocs/openemr' || '/usr/share/nginx/html/openemr' }}
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
