@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: PHP ${{ matrix.php }} - ${{ matrix.webserver }} - ${{ matrix.db }} ${{ matrix.db-version }}${{ matrix.db-description }}
+    name: PHP ${{ matrix.php }} - ${{ matrix.webserver }} - ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }} ${{ matrix.db }} - ${{ matrix.testsuite }}
     env:
       DATABASE: ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }}
       DOCKER_DIR: ${{ matrix.webserver }}_${{ matrix.php }}_${{ matrix.db }}

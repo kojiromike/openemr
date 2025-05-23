@@ -94,6 +94,7 @@ install_configure() {
     dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_system_scopes_api"' openemr
 }
 
+declare -A PANTHER_CHROME_DRIVER_BINARY_MAP
 PANTHER_CHROME_DRIVER_BINARY_MAP=(
     [apache]=/usr/lib/chromium/chromedriver
     [nginx]=/usr/bin/chromedriver
