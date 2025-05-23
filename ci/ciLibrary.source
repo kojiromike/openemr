@@ -33,7 +33,16 @@ composer_github_auth() {
 }
 
 compose() {
-    docker compose --project-directory "ci/${DOCKER_DIR//.}" "$@"
+    local docker_dir="${DOCKER_DIR?}"
+    docker_dir="${docker_dir//.}"
+    case "$docker_dir" in
+      apache*) :;;
+      nginx*) docker_dir="${docker_dir%_*}";;
+      *) echo "Invalid docker dir: $docker_dir"
+         return 1
+         ;;
+    esac
+    docker compose --project-directory "ci/${docker_dir}" "$@"
 }
 
 dockers_env_start() {
