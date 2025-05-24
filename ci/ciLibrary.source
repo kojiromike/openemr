@@ -90,17 +90,21 @@ ccda_build() (
     npm ci
 )
 
+dmysql() {
+    dexec mysql --user openemr --password openemr --host mysql --database openemr "$@"
+}
+
 install_configure() {
     sudo chmod 666 sites/default/sqlconf.php
     sudo chmod -R 777 sites/default/documents
     sed -e 's@^exit;@ @' < contrib/util/installScripts/InstallerAuto.php > contrib/util/installScripts/InstallerAutoTemp.php
     dexec php -f ./contrib/util/installScripts/InstallerAutoTemp.php rootpass=root server=mysql loginhost=%
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'INSERT INTO product_registration (opt_out) VALUES (1)' openemr
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_api"' openemr
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_fhir_api"' openemr
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_portal_api"'openemr
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 3 WHERE gl_name = "oauth_password_grant"' openemr
-    dexec mysql -u openemr --password="openemr" -h mysql -e 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_system_scopes_api"' openemr
+    dmysql --execute 'INSERT INTO product_registration (opt_out) VALUES (1)'
+    dmysql --execute 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_api"'
+    dmysql --execute 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_fhir_api"'
+    dmysql --execute 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_portal_api"'
+    dmysql --execute 'UPDATE globals SET gl_value = 3 WHERE gl_name = "oauth_password_grant"'
+    dmysql --execute 'UPDATE globals SET gl_value = 1 WHERE gl_name = "rest_system_scopes_api"'
 }
 
 declare -A PANTHER_CHROME_DRIVER_BINARY_MAP
