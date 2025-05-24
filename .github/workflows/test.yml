@@ -12,18 +12,29 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: PHP ${{ matrix.php }} - ${{ matrix.webserver }} - ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }} ${{ matrix.db }} - ${{ matrix.testsuite }}
-    env:
-      DATABASE: ${{ (matrix.db == '5.7' || matrix.db == '8.0' || matrix.db == '8.4') && 'mysql' || 'mariadb' }}
-      DOCKER_DIR: ${{ matrix.webserver }}_${{ matrix.php }}_${{ matrix.db }}
-      OPENEMR_DIR: ${{ (matrix.webserver == 'apache') && '/var/www/localhost/htdocs/openemr' || '/usr/share/nginx/html/openemr' }}
+  setup:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Collect Docker Dirs
+      id: docker-dirs
+      run: |
+        shopt -s nullglob
+        dirs=( ci/*/docker-compose.yml )
+        dirs=( "${dirs[@]%/docker-compose.yml}" )
+        dirs=( "${dirs[@]#ci/}" )
+        {
+          printf 'docker_dirs='
+          printf '%s\n' "${dirs[@]}" | jq -R . | jq -sc .
+        } >> "$GITHUB_OUTPUT"
+    outputs:
+        docker-dirs: ${{ steps.docker-dirs.outputs.docker_dirs }}
+  parse:
+    needs: setup
     runs-on: ubuntu-22.04
     strategy:
-      fail-fast: false
       matrix:
-        node_version:
-        - '20'
+        docker_dir: ${{ fromJson(needs.setup.outputs.docker-dirs) }}
         testsuite:
         - 'api'
         - 'common'
@@ -33,90 +44,86 @@ jobs:
         - 'services'
         - 'unit'
         - 'validators'
-        include:
-        - db: '11.4'
-          php: '8.2'
-          webserver: apache
-        - db: '10.11'
-          php: '8.3'
-          webserver: apache
-        - db: '10.5'
-          php: '8.3'
-          webserver: apache
-        - db: '10.6'
-          php: '8.3'
-          webserver: apache
-        - db: '11.4'
-          php: '8.3'
-          webserver: apache
-        - db: '11.6'
-          php: '8.3'
-          webserver: apache
-        - db: '5.7'
-          php: '8.3'
-          webserver: apache
-        - db: '8.0'
-          php: '8.3'
-          webserver: apache
-        - db: '8.4'
-          php: '8.3'
-          webserver: apache
-        - db: '11.4'
-          php: '8.2'
-          webserver: nginx
-        - db: '11.4'
-          php: '8.3'
-          webserver: nginx
-        - db: '11.4'
-          php: '8.4'
-          webserver: nginx
-        - db: '11.4'
-          php: '8.5'
-          webserver: nginx
     steps:
     - uses: actions/checkout@v4
-
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php }}
-
-    - name: Report PHP Version
-      run: php -v
-
-    - name: Install npm package
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node_version }}
-
-    - name: Main build
+    - name: Parse Docker Dir
+      id: parse-docker-dir
       run: |
-        . ci/ciLibrary.source
-        composer_github_auth
-        main_build
-
-    - name: CCDA build
+        IFS=: read -r database db < <(yq '.services.mysql.image' "ci/${{ matrix.docker_dir }}/docker-compose.yml")
+        IFS=_ read -r webserver php _ <<< "${{ matrix.docker_dir }}"
+        printf -v php '%d.%d' "${php[0]}" "${php[1]}"
+        {
+          echo "database=$database"
+          echo "db=$db"
+          echo "php=$php"
+          echo "webserver=$webserver"
+        } >> "$GITHUB_OUTPUT"
+    outputs:
+        database: ${{ steps.parse-docker-dir.outputs.database }}
+        db: ${{ steps.parse-docker-dir.outputs.db }}
+        docker-dir: ${{ matrix.docker_dir }}
+        php: ${{ steps.parse-docker-dir.outputs.php }}
+        testsuite: ${{ matrix.testsuite }}
+        webserver: ${{ steps.parse-docker-dir.outputs.webserver }}
+  build:
+    name: PHP ${{ needs.parse.outputs.php }} - ${{ needs.parse.outputs.webserver }} - ${{ needs.parse.outputs.database }} ${{ needs.parse.outputs.db }} - ${{ needs.parse.outputs.testsuite }}
+    runs-on: ubuntu-22.04
+    needs: parse
+    env:
+      DATABASE: ${{ needs.parse.outputs.database }}
+      DOCKER_DIR: ${{ needs.parse.outputs.docker-dir }}
+      OPENEMR_DIR: ${{ (needs.parse.outputs.webserver == 'apache') && '/var/www/localhost/htdocs/openemr' || '/usr/share/nginx/html/openemr' }}
+    steps:
+    - name: test
       run: |
-        . ci/ciLibrary.source
-        ccda_build
+        echo "database=${{ needs.parse.outputs.database }}"
+        echo "db=${{ needs.parse.outputs.db }}"
+        echo "docker_dir=${{ needs.parse.outputs.docker-dir }}"
+        echo "php=${{ needs.parse.outputs.php }}"
+        echo "testsuite=${{ needs.parse.outputs.testsuite }}"
+        echo "webserver=${{ needs.parse.outputs.webserver }}"
+    # - uses: actions/checkout@v4
+    # - name: Install PHP
+    #   uses: shivammathur/setup-php@v2
+    #   with:
+    #     php-version: ${{ needs.parse.outputs.php }}
 
-    - name: Dockers environment start
-      run: |
-        . ci/ciLibrary.source
-        dockers_env_start
+    # - name: Report PHP Version
+    #   run: php -v
 
-    - name: Wait for MySQL to initialize
-      if: ${{ env.DATABASE == 'mysql' }}
-      run: |
-        echo "Waiting 60 seconds for MySQL to initialize..."
-        sleep 60
+    # - name: Install npm package
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: '20'
 
-    - name: Install and configure
-      run: |
-        . ci/ciLibrary.source
-        install_configure
+    # - name: Main build
+    #   run: |
+    #     . ci/ciLibrary.source
+    #     composer_github_auth
+    #     main_build
 
-    - name: Run tests
-      run: |
-        . ci/ciLibrary.source
-        build_test_${{ matrix.testsuite }}
+    # - name: CCDA build
+    #   run: |
+    #     . ci/ciLibrary.source
+    #     ccda_build
+
+    # - name: Dockers environment start
+    #   run: |
+    #     . ci/ciLibrary.source
+    #     dockers_env_start
+
+    # - name: Wait for MySQL to initialize
+    #   if: ${{ needs.parse.outputs.database == 'mysql' }}
+    #   run: |
+    #     echo "Waiting 60 seconds for MySQL to initialize..."
+    #     sleep 60
+
+    # - name: Install and configure
+    #   run: |
+    #     . ci/ciLibrary.source
+    #     install_configure
+
+    # - name: Run tests
+    #   run: |
+    #     . ci/ciLibrary.source
+    #     build_test_${{ needs.parse.outputs.testsuite }}
