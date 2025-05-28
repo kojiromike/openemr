@@ -38,6 +38,7 @@ jobs:
     needs: collect
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         docker_dir: ${{ fromJson(needs.collect.outputs.docker-dirs) }}
         testsuite:
