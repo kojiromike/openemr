@@ -48,6 +48,8 @@ jobs:
         - 'services'
         - 'unit'
         - 'validators'
+    env:
+      DOCKER_DIR: ${{ matrix.docker_dir }}
     steps:
     - uses: actions/checkout@v4
     - name: Parse Docker Dir
@@ -56,9 +58,15 @@ jobs:
         IFS=: read -r database db < <(yq '.services.mysql.image' "ci/${{ matrix.docker_dir }}/docker-compose.yml")
         IFS=_ read -r webserver php _ <<< "${{ matrix.docker_dir }}"
         printf -v php '%d.%d' "${php::1}" "${php:1}"
+        case "$webserver" in
+          apache) openemr_dir=/var/www/localhost/htdocs/openemr;;
+          nginx) openemr_dir=/usr/share/nginx/html/openemr;;
+          *) echo "Unknown webserver: $webserver" >&2; exit 1 ;;
+        esac
         {
           echo "database=$database"
           echo "db=$db"
+          echo "openemr_dir=$openemr_dir"
           echo "php=$php"
           echo "webserver=$webserver"
         } >> "$GITHUB_OUTPUT"
@@ -108,11 +116,15 @@ jobs:
         sleep 60
 
     - name: Install and configure
+      env:
+        OPENEMR_DIR: ${{ steps.parse.outputs.openemr_dir }}
       run: |
         . ci/ciLibrary.source
         install_configure
 
     - name: Run tests
+      env:
+        OPENEMR_DIR: ${{ steps.parse.outputs.openemr_dir }}
       run: |
         . ci/ciLibrary.source
         build_test_${{ needs.parse.outputs.testsuite }}
