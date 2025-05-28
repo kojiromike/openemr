@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: collect
     strategy:
+      fail-fast: false
       matrix:
         docker_dir: ${{ fromJson(needs.collect.outputs.docker-dirs) }}
         testsuite:
