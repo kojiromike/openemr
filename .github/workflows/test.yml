@@ -12,12 +12,16 @@ permissions:
   contents: read
 
 jobs:
-  setup:
+  collect:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
     - name: Collect Docker Dirs
       id: docker-dirs
+      ##
+      # Create a JSON array of the ci subdirectories that contain
+      # docker-compose.yml files. We'll use that output as a test matrix
+      # in github actions.
       run: |
         shopt -s nullglob
         dirs=( ci/*/docker-compose.yml )
@@ -28,13 +32,13 @@ jobs:
           printf '%s\n' "${dirs[@]}" | jq -R . | jq -sc .
         } >> "$GITHUB_OUTPUT"
     outputs:
-        docker-dirs: ${{ steps.docker-dirs.outputs.docker_dirs }}
-  parse:
-    needs: setup
+      docker-dirs: ${{ steps.docker-dirs.outputs.docker_dirs }}
+  build:
     runs-on: ubuntu-22.04
+    needs: collect
     strategy:
       matrix:
-        docker_dir: ${{ fromJson(needs.setup.outputs.docker-dirs) }}
+        docker_dir: ${{ fromJson(needs.collect.outputs.docker-dirs) }}
         testsuite:
         - 'api'
         - 'common'
@@ -47,46 +51,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Parse Docker Dir
-      id: parse-docker-dir
+      id: parse
       run: |
         IFS=: read -r database db < <(yq '.services.mysql.image' "ci/${{ matrix.docker_dir }}/docker-compose.yml")
         IFS=_ read -r webserver php _ <<< "${{ matrix.docker_dir }}"
-        printf -v php '%d.%d' "${php[0]}" "${php[1]}"
+        printf -v php '%d.%d' "${php::1}" "${php:1}"
         {
           echo "database=$database"
           echo "db=$db"
           echo "php=$php"
           echo "webserver=$webserver"
         } >> "$GITHUB_OUTPUT"
-    outputs:
-        database: ${{ steps.parse-docker-dir.outputs.database }}
-        db: ${{ steps.parse-docker-dir.outputs.db }}
-        docker-dir: ${{ matrix.docker_dir }}
-        php: ${{ steps.parse-docker-dir.outputs.php }}
-        testsuite: ${{ matrix.testsuite }}
-        webserver: ${{ steps.parse-docker-dir.outputs.webserver }}
-  build:
-    name: PHP ${{ needs.parse.outputs.php }} - ${{ needs.parse.outputs.webserver }} - ${{ needs.parse.outputs.database }} ${{ needs.parse.outputs.db }} - ${{ needs.parse.outputs.testsuite }}
-    runs-on: ubuntu-22.04
-    needs: parse
-    env:
-      DATABASE: ${{ needs.parse.outputs.database }}
-      DOCKER_DIR: ${{ needs.parse.outputs.docker-dir }}
-      OPENEMR_DIR: ${{ (needs.parse.outputs.webserver == 'apache') && '/var/www/localhost/htdocs/openemr' || '/usr/share/nginx/html/openemr' }}
-    steps:
     - name: test
       run: |
-        echo "database=${{ needs.parse.outputs.database }}"
-        echo "db=${{ needs.parse.outputs.db }}"
-        echo "docker_dir=${{ needs.parse.outputs.docker-dir }}"
-        echo "php=${{ needs.parse.outputs.php }}"
-        echo "testsuite=${{ needs.parse.outputs.testsuite }}"
-        echo "webserver=${{ needs.parse.outputs.webserver }}"
+        echo "database=${{ steps.parse.outputs.database }}"
+        echo "db=${{ steps.parse.outputs.db }}"
+        echo "docker_dir=${{ matrix.docker_dir }}"
+        echo "php=${{ steps.parse.outputs.php }}"
+        echo "testsuite=${{ matrix.testsuite }}"
+        echo "webserver=${{ steps.parse.outputs.webserver }}"
     # - uses: actions/checkout@v4
     # - name: Install PHP
     #   uses: shivammathur/setup-php@v2
     #   with:
-    #     php-version: ${{ needs.parse.outputs.php }}
+    #     php-version: ${{ steps.parse.outputs.php }}
 
     # - name: Report PHP Version
     #   run: php -v
