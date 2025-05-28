@@ -62,56 +62,57 @@ jobs:
           echo "php=$php"
           echo "webserver=$webserver"
         } >> "$GITHUB_OUTPUT"
-    - name: test
+    # - name: test
+    #   run: |
+    #     echo "database=${{ steps.parse.outputs.database }}"
+    #     echo "db=${{ steps.parse.outputs.db }}"
+    #     echo "docker_dir=${{ matrix.docker_dir }}"
+    #     echo "php=${{ steps.parse.outputs.php }}"
+    #     echo "testsuite=${{ matrix.testsuite }}"
+    #     echo "webserver=${{ steps.parse.outputs.webserver }}"
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ steps.parse.outputs.php }}
+
+    - name: Report PHP Version
+      run: php -v
+
+    - name: Install npm package
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Main build
       run: |
-        echo "database=${{ steps.parse.outputs.database }}"
-        echo "db=${{ steps.parse.outputs.db }}"
-        echo "docker_dir=${{ matrix.docker_dir }}"
-        echo "php=${{ steps.parse.outputs.php }}"
-        echo "testsuite=${{ matrix.testsuite }}"
-        echo "webserver=${{ steps.parse.outputs.webserver }}"
-    # - uses: actions/checkout@v4
-    # - name: Install PHP
-    #   uses: shivammathur/setup-php@v2
-    #   with:
-    #     php-version: ${{ steps.parse.outputs.php }}
+        . ci/ciLibrary.source
+        composer_github_auth
+        main_build
 
-    # - name: Report PHP Version
-    #   run: php -v
+    - name: CCDA build
+      run: |
+        . ci/ciLibrary.source
+        ccda_build
 
-    # - name: Install npm package
-    #   uses: actions/setup-node@v4
-    #   with:
-    #     node-version: '20'
+    - name: Dockers environment start
+      run: |
+        . ci/ciLibrary.source
+        dockers_env_start
 
-    # - name: Main build
-    #   run: |
-    #     . ci/ciLibrary.source
-    #     composer_github_auth
-    #     main_build
+    - name: Wait for MySQL to initialize
+      # If the database is MySQL, we don't have a healthcheck
+      # so we need to sleep to give it time to start.
+      if: ${{ steps.parse.outputs.database == 'mysql' }}
+      run: |
+        echo "Waiting 60 seconds for MySQL to initialize..."
+        sleep 60
 
-    # - name: CCDA build
-    #   run: |
-    #     . ci/ciLibrary.source
-    #     ccda_build
+    - name: Install and configure
+      run: |
+        . ci/ciLibrary.source
+        install_configure
 
-    # - name: Dockers environment start
-    #   run: |
-    #     . ci/ciLibrary.source
-    #     dockers_env_start
-
-    # - name: Wait for MySQL to initialize
-    #   if: ${{ needs.parse.outputs.database == 'mysql' }}
-    #   run: |
-    #     echo "Waiting 60 seconds for MySQL to initialize..."
-    #     sleep 60
-
-    # - name: Install and configure
-    #   run: |
-    #     . ci/ciLibrary.source
-    #     install_configure
-
-    # - name: Run tests
-    #   run: |
-    #     . ci/ciLibrary.source
-    #     build_test_${{ needs.parse.outputs.testsuite }}
+    - name: Run tests
+      run: |
+        . ci/ciLibrary.source
+        build_test_${{ needs.parse.outputs.testsuite }}
