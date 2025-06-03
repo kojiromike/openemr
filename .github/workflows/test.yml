@@ -121,8 +121,17 @@ jobs:
       run: |
         . ci/ciLibrary.source
         build_test unit
+    ##
+    # To skip E2E tests for specific docker directories,
+    # set the repository variable `SKIP_E2E_DOCKER_DIRS`
+    # to a JSON array of docker directories to skip.
+    # For example, to skip tests for `apache_83_116` and `nginx_83`:
+    # ["apache_83_116","nginx_83"]
+    - name: Debug SKIP_E2E_DOCKER_DIRS
+      run: |
+        printf 'SKIP_E2E_DOCKER_DIRS: "%s"\n' "${{ vars.SKIP_E2E_DOCKER_DIRS }}"
     - name: E2e testing
-      if: ${{ success() || failure() }}
+      if: ${{ (success() || failure()) && (vars.SKIP_E2E_DOCKER_DIRS == '' || !contains(fromJson(vars.SKIP_E2E_DOCKER_DIRS), matrix.configurations.docker_dir)) }}
       run: |
         . ci/ciLibrary.source
         build_test e2e
