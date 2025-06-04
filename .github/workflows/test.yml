@@ -130,6 +130,7 @@ jobs:
     - name: Debug SKIP_E2E_DOCKER_DIRS
       run: |
         printf 'SKIP_E2E_DOCKER_DIRS: "%s"\n' "${{ vars.SKIP_E2E_DOCKER_DIRS }}"
+        printf 'matrix.configurations.docker_dir: "%s"\n' "${{ matrix.configurations.docker_dir }}"
     - name: E2e testing
       if: ${{ (success() || failure()) && (vars.SKIP_E2E_DOCKER_DIRS == '' || !contains(fromJson(vars.SKIP_E2E_DOCKER_DIRS), matrix.configurations.docker_dir)) }}
       run: |
