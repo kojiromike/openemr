@@ -82,6 +82,8 @@ initialize_openemr() {
 }
 
 main() {
+    # Compose Bake will either be ignored or it will make builds faster.
+    export COMPOSE_BAKE=1
     # BuildKit accepts platform arguments.
     # The classic Docker builder does not.
     # We need platform arguments.
