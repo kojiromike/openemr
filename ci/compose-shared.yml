@@ -2,7 +2,9 @@ services:
   mysql:
     restart: always
     image: mariadb:10.6
-    command: ['mysqld','--character-set-server=utf8mb4']
+    command:
+    - mariadbd
+    - --character-set-server=utf8mb4
     environment:
       MYSQL_ROOT_PASSWORD: root
     healthcheck:
@@ -24,7 +26,7 @@ services:
     - 80:80
     - 443:443
     volumes:
-    - ../../:/var/www/localhost/htdocs/openemr
+    - ../:/var/www/localhost/htdocs/openemr
     environment:
       FORCE_NO_BUILD_MODE: "yes"
       EMPTY: "yes"
