@@ -16,9 +16,21 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
+    - name: Composer Cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/composer-cache
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
     - uses: php-actions/composer@v6
       with:
         php_extensions: gd soap zip
+    - name: Gather PHP Paths
+      id: gather-php-paths
+      run: |
+        dirs_with_php=$(git ls-files '*.php' | awk -v ORS=' ' -F / '$2 && !s[$1]++ { print $1 }')
+        # Use `*.php` unquoted to only get the php files in the root directory
+        root_php=$(git ls-files -z *.php | xargs -0)
+        printf 'paths=%s\n' "$dirs_with_php $root_php" >> "$GITHUB_OUTPUT"
     - uses: php-actions/phpstan@v3
       with:
-        path: .
+        path: ${{ steps.gather-php-paths.outputs.paths }}
