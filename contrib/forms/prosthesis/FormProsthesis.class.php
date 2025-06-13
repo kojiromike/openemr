@@ -43,6 +43,7 @@ class FormProsthesis extends ORDataObject
     var $purpose_array  = array("pain_reduction" => "Pain Reduction", "offload_involved_area" => "Offload invloved Area", "immobilize" => "Immobilize",
                         "limit_motion" => "Limit Motion", "accomodation" => "Accomodation", "reduce_edema" => "Reduce Edema",
                         "facilitate_healing" => "Facilitate Healing", "other" => "Other");
+    var $purpose_other;
     var $notes;
     var $goals_discussed;
     var $use_reviewed;
@@ -57,6 +58,7 @@ class FormProsthesis extends ORDataObject
     var $received_product_date;
     var $given_instructions;
     var $patient_understands;
+    var $received_product;
 
     var $cpt_array = array( "L0500" => "L0500 LS corset",           "L3010" => "L3010 Molded FO",           "L3020" => "L3020 Molded FO + Met pad",
                             "L3221" => "L3221 Men's depth shoes",   "L3216" => "L3216 Women's depth shoes", "L3332" => "L3332 In-shoe .5\" heel lift",
