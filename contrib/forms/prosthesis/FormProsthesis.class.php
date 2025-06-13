@@ -1,22 +1,19 @@
 <?php
 
-use OpenEMR\ORDataObject\ORDataObject;
+use OpenEMR\Common\ORDataObject\ORDataObject;
 
 /**
  * class Prosthesis
- *
  */
 class FormProsthesis extends ORDataObject
 {
     /**
-     *
      * @access public
      */
 
 
 
     /**
-     *
      * @access private
      */
 
