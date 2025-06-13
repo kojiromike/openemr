@@ -72,14 +72,8 @@ class FormSnellen extends ORDataObject
 
     function __toString()
     {
-        $string .= "\n"
-            . "ID: " . $this->id . "\n";
-
-        if ($html) {
-            return nl2br($string);
-        } else {
-            return $string;
-        }
+        $string = "\n" . "ID: " . $this->id . "\n";
+        return $string;
     }
     function set_id($id)
     {
