@@ -6234,7 +6234,7 @@ RestConfig::$ROUTE_MAP = array(
                 'validationErrors' => [ 'uuid' => ['Invalid UUID format']]
             ];
             RestConfig::apiLog($errorReturn);
-            return RestControllerHelper::responseHandler($errorReturn, null, 400);
+            return OpenEMR\RestControllers\RestControllerHelper::responseHandler($errorReturn, null, 400);
         }
 
         $searchParams = $request->getQueryParams();
