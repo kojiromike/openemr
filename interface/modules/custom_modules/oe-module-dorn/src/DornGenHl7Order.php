@@ -82,7 +82,7 @@ class DornGenHl7Order extends GenHl7OrderBase
                 if (!empty($payer_address->get_line2())) {
                     $full_address .= "," . $payer_address->get_line2();
                 }
-                $setid = $setid + 1;
+                $setid += 1;
                 $out .= $this->createIn1(
                     $setid,
                     $payer['company']['cms_id'],  // this is a guess
@@ -357,7 +357,7 @@ class DornGenHl7Order extends GenHl7OrderBase
                 $payer_object = $payer['object'];
                 $payer_address = $payer_object->get_address();
                 $full_address = $payer_address->get_line1();
-                $setid = $setid + 1;
+                $setid += 1;
                 if (!empty($payer_address->get_line2())) {
                     $full_address .= "," . $payer_address->get_line2();
                 }
