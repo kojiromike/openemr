@@ -2794,7 +2794,7 @@ function generate_display_field($frow, $currvalue)
         $s .= parse_static_text($frow);
     } elseif ($data_type == 34) {
         $arr = explode("|*|*|*|", $currvalue);
-        for ($i = 0; $i < sizeof($arr); $i++) {
+        for ($i = 0; $i < count($arr); $i++) {
             $s .= $arr[$i];
         }
     } elseif ($data_type == 35) { // facility
@@ -4333,7 +4333,7 @@ function get_layout_form_value($frow, $prefix = 'form_')
         } elseif ($data_type == 36 || $data_type == 44 || $data_type == 45 || $data_type == 33) {
             $value_array = $_POST["form_$field_id"];
             $i = 0;
-            foreach ($value_array as $key => $valueofkey) {
+            foreach ($value_array as $valueofkey) {
                 if ($i == 0) {
                     $value = $valueofkey;
                 } else {
@@ -4353,7 +4353,7 @@ function get_layout_form_value($frow, $prefix = 'form_')
         } elseif ($data_type == 52) {
             $value_array = $_POST["form_$field_id"];
             $i = 0;
-            foreach ($value_array as $key => $valueofkey) {
+            foreach ($value_array as $valueofkey) {
                 if ($i == 0) {
                     $value = $valueofkey;
                 } else {
@@ -4526,7 +4526,7 @@ function dropdown_facility(
     $id = $name;
 
     if ($multiple) {
-        $name = $name . "[]";
+        $name .= "[]";
     }
     echo "   <select class='form-control$class";
     if ($multiple) {
