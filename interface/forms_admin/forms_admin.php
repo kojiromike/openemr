@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
@@ -9,8 +11,8 @@
 
 
 //INCLUDES, DO ANY ACTIONS, THEN GET OUR DATA
-require_once("../globals.php");
-require_once("$srcdir/registry.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/registry.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Acl\AclExtended;
@@ -39,7 +41,7 @@ if (!empty($_GET['method']) && ($_GET['method'] == "enable")) {
         CsrfUtils::csrfNotVerified();
     }
     $dir = getRegistryEntry($_GET['id'], "directory");
-    if (installSQL("$srcdir/../interface/forms/{$dir['directory']}")) {
+    if (installSQL(sprintf('%s/../interface/forms/%s', $srcdir, $dir['directory']))) {
         updateRegistered($_GET['id'], "sql_run=1");
     } else {
         $err = xl('ERROR: could not open table.sql, broken form?');
@@ -78,7 +80,7 @@ $bigdata = getRegistered("%") or $bigdata = false;
         <div class="row">
            <div class="col-12 mt-3">
            <?php
-            if (!empty($_POST)) {
+            if ($_POST !== []) {
                 if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
                     CsrfUtils::csrfNotVerified();
                 }
@@ -124,36 +126,36 @@ $bigdata = getRegistered("%") or $bigdata = false;
                       </thead>
                         <?php
                         if ($bigdata != false) {
-                            foreach ($bigdata as $registry) {
+                            foreach ($bigdata as $bigdatum) {
                                 $priority_category = sqlQuery(
                                     "select priority, category, nickname, aco_spec from registry where id = ?",
-                                    array($registry['id'])
+                                    array($bigdatum['id'])
                                 );
-                                $patientPortalCompliant = file_exists($GLOBALS['srcdir'] . "/../interface/forms/" . $registry['directory'] . "/patient_portal.php");
+                                $patientPortalCompliant = file_exists($GLOBALS['srcdir'] . "/../interface/forms/" . $bigdatum['directory'] . "/patient_portal.php");
                                 ?>
                             <tr>
                                 <td>
-                                    <span class='text'><?php echo text($registry['id']); ?></span>
+                                    <span class='text'><?php echo text($bigdatum['id']); ?></span>
                                 </td>
                                 <td>
                                     <?php
-                                    echo text(xl_form_title($registry['name']));
+                                    echo text(xl_form_title($bigdatum['name']));
                                     echo ($patientPortalCompliant) ? ' <i class="fas fa-cloud-arrow-up" title="' . xla('Patient Portal Compliant') . '"></i>' : '';
                                     ?>
                                 </td>
                                 <?php
-                                if ($registry['sql_run'] == 0) {
+                                if ($bigdatum['sql_run'] == 0) {
                                     echo "<td><span class='text'>" . xlt('registered') . "</span>";
-                                } elseif ($registry['state'] == "0") {
-                                    echo "<td><a class='link_submit text-danger' href='./forms_admin.php?id=" . attr_url($registry['id']) . "&method=enable&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('disabled') . "</a>";
+                                } elseif ($bigdatum['state'] == "0") {
+                                    echo "<td><a class='link_submit text-danger' href='./forms_admin.php?id=" . attr_url($bigdatum['id']) . "&method=enable&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('disabled') . "</a>";
                                 } else {
-                                    echo "<td><a class='link_submit text-success' href='./forms_admin.php?id=" . attr_url($registry['id']) . "&method=disable&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('enabled') . "</a>";
+                                    echo "<td><a class='link_submit text-success' href='./forms_admin.php?id=" . attr_url($bigdatum['id']) . "&method=disable&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('enabled') . "</a>";
                                 }
                                 ?>
                                 </td>
                                 <td>
                                     <span class='text'><?php
-                                    if ($registry['unpackaged']) {
+                                    if ($bigdatum['unpackaged']) {
                                         echo xlt('PHP extracted');
                                     } else {
                                         echo xlt('PHP compressed');
@@ -163,19 +165,19 @@ $bigdata = getRegistered("%") or $bigdata = false;
                                 </td>
                                 <td>
                                     <?php
-                                    if ($registry['sql_run']) {
+                                    if ($bigdatum['sql_run']) {
                                         echo "<span class='text'>" . xlt('DB installed') . "</span>";
                                     } else {
-                                        echo "<a class='link_submit' href='./forms_admin.php?id=" . attr_url($registry['id']) . "&method=install_db&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('install DB') . "</a>";
+                                        echo "<a class='link_submit' href='./forms_admin.php?id=" . attr_url($bigdatum['id']) . "&method=install_db&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "'>" . xlt('install DB') . "</a>";
                                     }
                                     ?>
                                 </td>
                                 <?php
-                                echo "<td><input type='text' class='form-control form-control-sm' size='4'  name='priority_" . attr($registry['id']) . "' value='" . attr($priority_category['priority']) . "'></td>";
-                                echo "<td><input type='text' class='form-control form-control-sm' size='10' name='category_" . attr($registry['id']) . "' value='" . attr($priority_category['category']) . "'></td>";
-                                echo "<td><input type='text' class='form-control form-control-sm' size='10' name='nickname_" . attr($registry['id']) . "' value='" . attr($priority_category['nickname']) . "'></td>";
+                                echo "<td><input type='text' class='form-control form-control-sm' size='4'  name='priority_" . attr($bigdatum['id']) . "' value='" . attr($priority_category['priority']) . "'></td>";
+                                echo "<td><input type='text' class='form-control form-control-sm' size='10' name='category_" . attr($bigdatum['id']) . "' value='" . attr($priority_category['category']) . "'></td>";
+                                echo "<td><input type='text' class='form-control form-control-sm' size='10' name='nickname_" . attr($bigdatum['id']) . "' value='" . attr($priority_category['nickname']) . "'></td>";
                                 echo "<td>";
-                                echo "<select name='aco_spec_" . attr($registry['id']) . "' class='form-control form-control-sm'>";
+                                echo "<select name='aco_spec_" . attr($bigdatum['id']) . "' class='form-control form-control-sm'>";
                                 echo "<option value=''></option>";
                                 echo AclExtended::genAcoHtmlOptions($priority_category['aco_spec']);
                                 echo "</select>";
@@ -195,12 +197,12 @@ $bigdata = getRegistered("%") or $bigdata = false;
                 <div class="table-responsive mt-3">
                     <table class="table table-striped table-sm">
                         <?php
-                        $dpath = "$srcdir/../interface/forms/";
+                        $dpath = $srcdir . '/../interface/forms/';
                         $dp = opendir($dpath);
 
-                        for ($i = 0; false != ($fname = readdir($dp)); $i++) {
+                        for ($i = 0; false != ($fname = readdir($dp)); ++$i) {
                             if (
-                                $fname != "." && $fname != ".." && $fname != "CVS" && $fname != "LBF" &&
+                                $fname !== "." && $fname !== ".." && $fname !== "CVS" && $fname !== "LBF" &&
                                 (is_dir($dpath . $fname) || stristr($fname, ".tar.gz") ||
                                 stristr($fname, ".tar") || stristr($fname, ".zip") ||
                                 stristr($fname, ".gz"))
@@ -211,8 +213,8 @@ $bigdata = getRegistered("%") or $bigdata = false;
 
                         // ballards 11/05/2005 fixed bug in removing registered form from the list
                         if ($bigdata != false) {
-                            foreach ($bigdata as $registry) {
-                                $key = array_search($registry['directory'], $inDir) ;  /* returns integer or FALSE */
+                            foreach ($bigdata as $bigdatum) {
+                                $key = array_search($bigdatum['directory'], $inDir, true) ;  /* returns integer or FALSE */
                                 unset($inDir[$key]);
                             }
                         }
@@ -227,12 +229,8 @@ $bigdata = getRegistered("%") or $bigdata = false;
                             <tr>
                                 <td colspan="2">
                                     <?php
-                                    $form_title_file = @file($GLOBALS['srcdir'] . "/../interface/forms/$fname/info.txt");
-                                    if ($form_title_file) {
-                                            $form_title = $form_title_file[0];
-                                    } else {
-                                        $form_title = $fname;
-                                    }
+                                    $form_title_file = @file($GLOBALS['srcdir'] . sprintf('/../interface/forms/%s/info.txt', $fname));
+                                    $form_title = $form_title_file ? $form_title_file[0] : $fname;
                                     $patientPortalCompliant = file_exists($GLOBALS['srcdir'] . "/../interface/forms/" . $fname . "/patient_portal.php");
                                     ?>
                                     <?php
@@ -242,7 +240,7 @@ $bigdata = getRegistered("%") or $bigdata = false;
                                 </td>
                                 <td>
                                     <?php
-                                    if ($phpState == "PHP extracted") {
+                                    if ($phpState === "PHP extracted") {
                                         echo '<a class="link_submit" href="./forms_admin.php?name=' . attr_url($fname) . '&method=register&csrf_token_form=' . attr_url(CsrfUtils::collectCsrfToken()) . '">' . xlt('register') . '</a>';
                                     } else {
                                         echo '<span class="text">' . xlt('n/a') . '</span>';

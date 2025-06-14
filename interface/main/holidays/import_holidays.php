@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/main/holidays/import_holidays.php holidays/clinic handle import/download holidays files
  *
@@ -14,8 +16,8 @@
 
 set_time_limit(0);
 
-require_once('../../globals.php');
-require_once("Holidays_Controller.php");
+require_once(__DIR__ . '/../../globals.php');
+require_once(__DIR__ . "/Holidays_Controller.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -102,7 +104,6 @@ if (!empty($_POST['sync'])) {
 if (!empty($saved)) {
     echo "<p style='color:green'>" .
         xlt('Successfully Completed');
-        "</p>\n";
 } elseif (
     !empty($_POST['bn_upload'])             &&
         !empty($_POST['import_holidays'])       &&
@@ -110,7 +111,6 @@ if (!empty($saved)) {
 ) {
     echo "<p style='color:red'>" .
         xlt('Operation Failed');
-    "</p>\n";
 }
 ?>
 <div class="container-fluid">

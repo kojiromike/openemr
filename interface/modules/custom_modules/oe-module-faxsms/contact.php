@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -30,7 +32,6 @@ if ($logged_in != 1) {
 }
 $isSMS = (int)$clientApp->getRequest('isSMS', false);
 $isEmail = (int)$clientApp->getRequest('isEmail', false);
-$isForward = $isFax = 0;
 $isForward = ($clientApp->getRequest('mode', false) == 'forward') ? 1 : 0;
 $isFax = ($serviceType == 'fax') ? 1 : 0;
 $isUniversal = (int)$clientApp->getRequest('isUniversal', false);
@@ -38,7 +39,7 @@ $isUniversal = (int)$clientApp->getRequest('isUniversal', false);
 $isSMTP = !empty($GLOBALS['SMTP_PASS'] ?? null) && !empty($GLOBALS["SMTP_USER"] ?? null);
 $isOnetime = (int)$clientApp->getRequest('isOnetime', false);
 
-if ($isUniversal) {
+if ($isUniversal !== 0) {
     $isSMS = !empty($GLOBALS['oefax_enable_sms'] ?? 0);
     $isEmail = !empty($GLOBALS['oe_enable_email'] ?? 0);
 }
@@ -50,7 +51,7 @@ $interface_pid = null;
 $file_mime = '';
 $recipient_phone = '';
 $file_name = '';
-if (empty($isSMS)) {
+if ($isSMS === 0 || $isSMS === false) {
 // fax contact form
     $interface_pid = $clientApp->getRequest('pid', '');
     $the_file = $clientApp->getRequest('file');
@@ -317,7 +318,7 @@ $interface_pid = $interface_pid == 0 ? '' : $interface_pid;
                             <input id="form_phone" type="tel" name="phone" class="form-control"
                                 placeholder="<?php echo xla('Phone number of recipient') ?>"
                                 title="<?php echo xla('You may also forward to a new fax number if enabled.') ?>"
-                                value="" <?php echo(!$isForward ? 'required' : ''); ?> />
+                                value="" <?php echo($isForward === 0 ? 'required' : ''); ?> />
                         </div>
                     <?php } ?>
                     <?php if ($isUniversal && $isEmail) { ?>
@@ -363,7 +364,7 @@ $interface_pid = $interface_pid == 0 ? '' : $interface_pid;
                                 <?php } ?>
                             </span>
                         <?php } ?>
-                        <button type="submit" class="btn btn-success btn-send-msg float-right" value=""><?php echo (empty($isSMS) || $isOnetime || $isUniversal) ? xlt('Submit') : xlt('Send SMS') ?></button>
+                        <button type="submit" class="btn btn-success btn-send-msg float-right" value=""><?php echo ($isSMS === 0 || $isSMS === false || $isOnetime || $isUniversal) ? xlt('Submit') : xlt('Send SMS') ?></button>
                     </div>
                 </div>
             </div>

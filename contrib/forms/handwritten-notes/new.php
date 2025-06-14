@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Create new handwritten notes area
  *
@@ -18,22 +20,20 @@ if (!$encounter) {
     die(xlt("Internal Error: We do not seem to be in an encounter!"));
 }
 
-if ($_POST) {
-    if (!empty($_POST['docid'])) {
-        $setdocid = "UPDATE `form_handwritten` SET `value` = ? WHERE `name` = 'doc_category'";
-        sqlStatement($setdocid, [$_POST['docid']]);
-        echo xlt("Your data has been saved.");
-    }
+if ($_POST !== [] && !empty($_POST['docid'])) {
+    $setdocid = "UPDATE `form_handwritten` SET `value` = ? WHERE `name` = 'doc_category'";
+    sqlStatement($setdocid, [$_POST['docid']]);
+    echo xlt("Your data has been saved.");
 }
 
-function getDocCats()
+function getDocCats(): string
 {
     $output = "";
     // Get document categories
     $sql = "SELECT `id`, `name` FROM `categories`";
-    $categories = sqlStatement($sql);
+    $recordset = sqlStatement($sql);
 
-    while ($cat = sqlFetchArray($categories)) {
+    while ($cat = sqlFetchArray($recordset)) {
         $output .= '<option value="' . attr($cat['id']) . '">' . text($cat['name']) . '</option>\n';
     }
 

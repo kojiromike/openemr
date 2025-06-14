@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functional cognitive status form report.php.
  *
@@ -16,17 +18,16 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function functional_cognitive_status_report($pid, $encounter, $cols, $id)
+function functional_cognitive_status_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
     $sql = "SELECT * FROM `form_functional_cognitive_status` WHERE id=? AND pid = ? AND encounter = ?";
-    $res = sqlStatement($sql, array($id, $pid, $encounter));
+    $recordset = sqlStatement($sql, array($id, $pid, $encounter));
 
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($recordset); ++$iter) {
         $data[$iter] = $row;
     }
 
-    if (!empty($data)) {
+    if ($data !== []) {
         ?>
         <table class="table w-100">
             <thead>
@@ -40,7 +41,7 @@ function functional_cognitive_status_report($pid, $encounter, $cols, $id)
             </thead>
             <tbody>
             <?php
-            foreach ($data as $key => $value) {
+            foreach ($data as $value) {
                 ?>
                 <tr>
                     <td class="border p-1"><span class=text><?php echo text($value['code']); ?></span></td>

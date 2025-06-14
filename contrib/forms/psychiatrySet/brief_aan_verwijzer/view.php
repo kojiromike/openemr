@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * brief_aan_verwijzer
  * letter to ... - Dutch specific form
@@ -22,8 +24,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -100,11 +102,7 @@ if ($vectAutosave['id'] && $vectAutosave['id'] != "" && $vectAutosave['id'] > 0)
 
 <?php
 
-if ($_GET["id"]) {
-    $brief_aan_verwijzer_id = $_GET["id"];
-} else {
-    $brief_aan_verwijzer_id = "0";
-}
+$brief_aan_verwijzer_id = $_GET["id"] ? $_GET["id"] : "0";
 
 ?>
 <script>
@@ -183,7 +181,7 @@ function autosave( )
 </script>
 
 <?php
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 //$obj = formFetch("form_brief_aan_verwijzer", (int)$_GET["id"]);
 ?>
 
@@ -214,7 +212,7 @@ require_once("$srcdir/api.inc.php");
 <a href="javascript:document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit"
- onclick="delete_autosave();top.restoreSession()">[<?php echo xlt('Don\'t Save Changes'); ?>]</a>
+ onclick="delete_autosave();top.restoreSession()">[<?php echo xlt("Don't Save Changes"); ?>]</a>
 </form>
 
 <div id="timestamp"></div>

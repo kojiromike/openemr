@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  package OpenEMR
  *  link    https://www.open-emr.org

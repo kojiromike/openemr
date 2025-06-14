@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Patient data template.
  *
@@ -93,18 +95,18 @@ switch ($search_any_type) {
                         $closeIconClass = 'text-muted';
                         break;
                 endswitch;
-                echo "<$wrapperElement class=\"$wrapperElementClass\">";
+                echo sprintf('<%s class="%s">', $wrapperElement, $wrapperElementClass);
                 ?>
                     <a class="ptName <?php echo $classes ?? ''; ?> " data-bind="click:refreshPatient,with: patient" href="#" title="<?php echo xla("To Dashboard") ?>">
                         <span data-bind="text: pname()"></span>
                         <<?php echo $pubpidElement;?> class="text-muted">(<span data-bind="text: pubpid"></span>)</<?php echo $pubpidElement;?>>
                     </a>
-                    <?php echo ($closeElement !== '') ? "<$closeElement class=\"$closeElementClass\">" : ''; ?>
+                    <?php echo ($closeElement !== '') ? sprintf('<%s class="%s">', $closeElement, $closeElementClass) : ''; ?>
                     <a href="#" class="pt-1<?php echo (($classes ?? '') !== "") ? " " . $classes : "";?> <?php echo ($closeAnchorClasses !== "") ? " " . $closeAnchorClasses : ""; ?>" data-bind="click:clearPatient" title="<?php echo xla("Close Patient Chart") ?>">
                         <i class="fa fa-times<?php echo ($closeIconClass !== "") ? " " . $closeIconClass : ""; ?>"></i>
                     </a>
-                    <?php echo ($closeElement !== '') ? "</$closeElement>" : ''; ?>
-                <?php echo "</$wrapperElement>"; ?>
+                    <?php echo ($closeElement !== '') ? sprintf('</%s>', $closeElement) : ''; ?>
+                <?php echo sprintf('</%s>', $wrapperElement); ?>
 
                 <div class="mt-2">
                     <span data-bind="text:patient().str_dob()"></span>

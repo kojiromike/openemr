@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS admin.php
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once('../../globals.php');
+require_once(__DIR__ . '/../../globals.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -40,22 +42,22 @@ if ($_POST['export']) {
         $statement1 = sqlStatement($query1);
         while ($result1 = sqlFetchArray($statement1)) {
                 $tmp = $result1['category'];
-                $tmp = "<category>$tmp</category>" . "\n";
+                $tmp = sprintf('<category>%s</category>', $tmp) . "\n";
                 fwrite($temp, $tmp);
                 $query2 = "select id,subcategory from " . mitigateSqlTableUpperCase("form_CAMOS_subcategory") . " where category_id=?";
                 $statement2 = sqlStatement($query2, array($result1['id']));
             while ($result2 = sqlFetchArray($statement2)) {
                 $tmp = $result2['subcategory'];
-                $tmp = "<subcategory>$tmp</subcategory>" . "\n";
+                $tmp = sprintf('<subcategory>%s</subcategory>', $tmp) . "\n";
                 fwrite($temp, $tmp);
                 $query3 = "select item, content from " . mitigateSqlTableUpperCase("form_CAMOS_item") . " where subcategory_id=?";
                 $statement3 = sqlStatement($query3, array($result2['id']));
                 while ($result3 = sqlFetchArray($statement3)) {
                     $tmp = $result3['item'];
-                    $tmp = "<item>$tmp</item>" . "\n";
+                    $tmp = sprintf('<item>%s</item>', $tmp) . "\n";
                     fwrite($temp, $tmp);
                     $tmp = preg_replace(array("/\n/","/\r/"), array("\\\\n","\\\\r"), $result3['content']);
-                    $tmp = "<content>$tmp</content>" . "\n";
+                    $tmp = sprintf('<content>%s</content>', $tmp) . "\n";
                     fwrite($temp, $tmp);
                 }
             }
@@ -66,7 +68,7 @@ if ($_POST['export']) {
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         header("Content-Type: text/plain");
-            header("Content-Disposition: attachment; filename=\"CAMOS_export.txt\"");
+            header('Content-Disposition: attachment; filename="CAMOS_export.txt"');
 
         fpassthru($temp);
         fclose($temp);
@@ -138,7 +140,7 @@ if ($_POST['import']) {
                 $mode = $matches[1];
                 $value = trim($matches[2]);
                 $insert_value = '';
-                if ($mode == 'item') {
+                if ($mode === 'item') {
                     $postfix = 0;
                     $statement = sqlStatement("select id from " . mitigateSqlTableUpperCase("form_CAMOS_item") . " where item like ? " .
                     "and subcategory_id = ?", array($value, $subcategory_id));
@@ -156,7 +158,7 @@ if ($_POST['import']) {
                                     sqlStatement($inner_query, array($_SESSION['authUser'], $insert_value, $subcategory_id));
                                     $inserted_duplicate = true;
                             } else {
-                                $postfix++;
+                                ++$postfix;
                             }
                         }
                     } else {
@@ -174,7 +176,7 @@ if ($_POST['import']) {
                     if ($result = sqlFetchArray($statement)) {
                         $item_id = $result['id'];
                     }
-                } elseif ($mode == 'content') {
+                } elseif ($mode === 'content') {
                     $statement = sqlStatement("select content from " . mitigateSqlTableUpperCase("form_CAMOS_item") . " where id = ?", array($item_id));
                     if ($result = sqlFetchArray($statement)) {
                         //$content = "/*old*/\n\n".$result['content']."\n\n/*new*/\n\n$value";

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * ROS form
  *
@@ -11,9 +13,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
-require("C_FormROS.class.php");
+require(__DIR__ . "/C_FormROS.class.php");
 
 $c = new C_FormROS();
 echo $c->default_action();

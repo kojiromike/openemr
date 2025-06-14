@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This is the Indigent Patients Report.  It displays a summary of
  * encounters within the specified time period for patients without
@@ -14,8 +16,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -30,8 +32,8 @@ if (!AclMain::aclCheckCore('acct', 'rep_a')) {
 
 $alertmsg = '';
 
-$form_start_date = (!empty($_POST['form_start_date'])) ?  DateToYYYYMMDD($_POST['form_start_date']) : date('Y-01-01');
-$form_end_date  = (!empty($_POST['form_end_date'])) ? DateToYYYYMMDD($_POST['form_end_date']) : date('Y-m-d');
+$form_start_date = (empty($_POST['form_start_date'])) ?  date('Y-01-01') : DateToYYYYMMDD($_POST['form_start_date']);
+$form_end_date  = (empty($_POST['form_end_date'])) ? date('Y-m-d') : DateToYYYYMMDD($_POST['form_end_date']);
 
 ?>
 <html>
@@ -188,19 +190,19 @@ if (!empty($_POST['form_refresh'])) {
 
     if ($form_start_date) {
         $where .= " AND e.date >= ?";
-        array_push($sqlBindArray, $form_start_date);
+        $sqlBindArray[] = $form_start_date;
     }
 
     if ($form_end_date) {
         $where .= " AND e.date <= ?";
-        array_push($sqlBindArray, $form_end_date);
+        $sqlBindArray[] = $form_end_date;
     }
 
     $rez = sqlStatement("SELECT " .
     "e.date, e.encounter, p.pid, p.lname, p.fname, p.mname, p.ss " .
     "FROM form_encounter AS e, patient_data AS p, insurance_data AS i " .
     "WHERE p.pid = e.pid AND i.pid = e.pid AND i.type = 'primary' " .
-    "AND i.provider = ''$where " .
+    sprintf("AND i.provider = ''%s ", $where) .
     "ORDER BY p.lname, p.fname, p.mname, p.pid, e.date", $sqlBindArray);
 
     $total_amount = 0;
@@ -232,7 +234,7 @@ if (!empty($_POST['form_refresh'])) {
         $total_amount += $inv_amount;
         $total_paid   += $inv_paid;
 
-        $bgcolor = (($irow & 1) ? "#ffdddd" : "#ddddff");
+        $bgcolor = ((($irow & 1) !== 0) ? "#ffdddd" : "#ddddff");
         ?>
   <tr bgcolor='<?php  echo $bgcolor ?>'>
 <td class="detail">
@@ -299,7 +301,7 @@ if (!empty($_POST['form_refresh'])) {
 </form>
 <script>
 <?php
-if ($alertmsg) {
+if ($alertmsg !== '') {
     echo "alert(" . js_escape($alertmsg) . ");\n";
 }
 ?>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once(dirname(__DIR__, 4) . "/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
@@ -143,11 +145,7 @@ $endDate = $_GET['endDate'] ?? date('m/d/Y');
         if ($backGroundTask ?? false) {
             echo '<h6 class="mb-2">';
             while ($task = sqlFetchArray($backGroundTask)) {
-                if ($task['name'] === 'WenoExchangePharmacies') {
-                    $title = xlt("Pharmacy Directory");
-                } else {
-                    $title = xlt("Sync Report");
-                }
+                $title = $task['name'] === 'WenoExchangePharmacies' ? xlt("Pharmacy Directory") : xlt("Sync Report");
                 $nextRun = $task['next_run'];
                 echo '<span class="mr-5 text-success">' . $title . '  ' . xlt("next run") . ': <span class="text-dark">' . text($nextRun) . '</span></span>';
             }
@@ -238,13 +236,9 @@ $endDate = $_GET['endDate'] ?? date('m/d/Y');
         $fmtStartDate = date('Y-m-d', strtotime($startDate));
         $fmtEndDate = date('Y-m-d', strtotime($endDate));
 
-        if (isset($_GET['search'])) {
-            if ($fmtStartDate > $fmtEndDate) {
-                echo '<div class="alert alert-danger" role="alert">' . xlt("End date must be after start date!") . '</div>';
-                exit;
-            }
-        }
-        if (isset($_GET['archive'])) {
+        if (isset($_GET['search']) && $fmtStartDate > $fmtEndDate) {
+            echo '<div class="alert alert-danger" role="alert">' . xlt("End date must be after start date!") . '</div>';
+            exit;
         }
 
         if (isset($_GET['search'])) {

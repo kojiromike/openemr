@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * knockoutjs template for rendering review of old fee sheets.
  *

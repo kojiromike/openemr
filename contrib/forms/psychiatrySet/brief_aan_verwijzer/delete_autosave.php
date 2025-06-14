@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    Brief Aan Verwijzer - Delete Autosave
 // Package: remove autosaved form  - Dutch specific form

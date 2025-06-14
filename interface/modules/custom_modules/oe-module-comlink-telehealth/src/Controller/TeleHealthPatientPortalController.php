@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Responsible for rendering TeleHealth features on the patient portal
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Controller;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Repository\CalendarEventCategoryRepository;
@@ -27,44 +28,44 @@ use Twig\Environment;
 
 class TeleHealthPatientPortalController
 {
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
+
     private $assetPath;
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $config;
-    public function __construct(Environment $twig, $assetPath, TelehealthGlobalConfig $config)
+
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig $telehealthGlobalConfig;
+
+    public function __construct(Environment $twigEnvironment, $assetPath, TelehealthGlobalConfig $telehealthGlobalConfig)
     {
-        $this->twig = $twig;
+        $this->twigEnvironment = $twigEnvironment;
         $this->assetPath = $assetPath;
-        $this->config = $config;
+        $this->telehealthGlobalConfig = $telehealthGlobalConfig;
     }
 
-    public function subscribeToEvents(EventDispatcher $eventDispatcher)
+    public function subscribeToEvents(EventDispatcher $eventDispatcher): void
     {
         $eventDispatcher->addListener(AppointmentFilterEvent::EVENT_NAME, [$this, 'filterPatientAppointment']);
         $eventDispatcher->addListener(RenderEvent::EVENT_SECTION_RENDER_POST, [$this, 'renderTeleHealthPatientVideo']);
     }
 
-    public function renderTeleHealthPatientVideo(GenericEvent $event)
+    public function renderTeleHealthPatientVideo(GenericEvent $genericEvent): void
     {
 
         $data = [
             'assetPath' => $this->assetPath,
-            'debug' => $this->config->isDebugModeEnabled()
+            'debug' => $this->telehealthGlobalConfig->isDebugModeEnabled()
         ];
-        echo $this->twig->render('comlink/patient-portal.twig', $data);
+        echo $this->twigEnvironment->render('comlink/patient-portal.twig', $data);
     }
 
-    public function filterPatientAppointment(AppointmentFilterEvent $event)
+    public function filterPatientAppointment(AppointmentFilterEvent $appointmentFilterEvent): void
     {
-        $dbRecord = $event->getDbRecord();
-        $appointment = $event->getAppointment();
+        $dbRecord = $appointmentFilterEvent->getDbRecord();
+        $appointment = $appointmentFilterEvent->getAppointment();
         // 'appointmentDate' => $dayname . ', ' . $row['pc_eventDate'] . ' ' . $disphour . ':' . $dispmin . ' ' . $dispampm,
         $dateTime = \DateTime::createFromFormat("Y-m-d H:i:s", $dbRecord['pc_eventDate']
             . " " . $dbRecord['pc_startTime']);
 
-        $apptService = new AppointmentService();
+        $appointmentService = new AppointmentService();
 
         $appointment['showTelehealth'] = false;
         if (
@@ -72,14 +73,15 @@ class TeleHealthPatientPortalController
             // since this hits the database we do this one last
         ) {
             if (
-                $apptService->isCheckOutStatus($dbRecord['pc_apptstatus'])
-                || $apptService->isPendingStatus($dbRecord['pc_apptstatus'])
+                $appointmentService->isCheckOutStatus($dbRecord['pc_apptstatus'])
+                || $appointmentService->isPendingStatus($dbRecord['pc_apptstatus'])
             ) {
                 $appointment['showTelehealth'] = false;
             } else {
                 $appointment['showTelehealth'] = true;
             }
         }
-        $event->setAppointment($appointment);
+
+        $appointmentFilterEvent->setAppointment($appointment);
     }
 }

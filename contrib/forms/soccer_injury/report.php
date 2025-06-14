@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
@@ -9,7 +11,7 @@ $si_report_colno = 0;
 // Helper function used by soccer_injury_report().
 // Writes a title/value pair to a table cell.
 //
-function si_report_item($title, $value)
+function si_report_item($title, $value): void
 {
     global $si_report_cols, $si_report_colno;
     if (!$value) {
@@ -29,7 +31,7 @@ function si_report_item($title, $value)
 // when viewing a "comprehensive patient report".  Also from
 // interface/patient_file/encounter/forms.php.
 //
-function soccer_injury_report($pid, $encounter, $cols, $id)
+function soccer_injury_report($pid, $encounter, $cols, $id): void
 {
     global $si_report_cols;
 
@@ -163,7 +165,7 @@ function soccer_injury_report($pid, $encounter, $cols, $id)
     si_report_item("Position", $arr_position[$row['siposition']]);
     si_report_item("Footwear", $arr_footwear[$row['sifootwear']]);
     foreach ($arr_equip as $key => $value) {
-        if ($row["siequip_$key"]) {
+        if ($row['siequip_' . $key]) {
             si_report_item("Equipment", $value);
         }
     }
@@ -171,7 +173,7 @@ function soccer_injury_report($pid, $encounter, $cols, $id)
     si_report_item("Side", $arr_side[$row['siside']]);
     si_report_item("Removed", $arr_removed[$row['siremoved']]);
     foreach ($arr_treat as $key => $value) {
-        if ($row["sitreat_$key"]) {
+        if ($row['sitreat_' . $key]) {
             si_report_item("Treatment", $value);
         }
     }

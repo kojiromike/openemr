@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form for entering clinical data as a scanned document.
  *
@@ -9,5 +11,4 @@
  * @copyright Copyright (c) 2006-2013 Rod Roark <rod@sunsetsystems.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-require_once("new.php");
+require_once(__DIR__ . "/new.php");

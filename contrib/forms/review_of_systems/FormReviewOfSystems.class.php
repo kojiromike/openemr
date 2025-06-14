@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * class Prosthesis
  *
@@ -19,31 +21,51 @@ class FormReviewOfSystems extends ORDataObject
      * @access private
      */
 
-    var $id;
-    var $date;
-    var $pid;
-    var $activity;
-    var $date_tetnus_shot;
-    var $date_pneumonia_shot;
-    var $date_flu_shot;
-    var $date_pap_smear;
-    var $date_mammogram;
-    var $date_bone_density_scan;
-    var $abnormal_pap_smear;
-    var $abnormal_mammogram;
-    var $date_last_psa;
-    var $packs_per_day;
-    var $years_smoked;
-    var $alcohol_per_week;
-    var $recreational_drugs;
-    var $checks;
+    public $id;
+
+    /**
+     * @var string
+     */
+    public $date;
+
+    public $pid;
+
+    public $activity;
+
+    public $date_tetnus_shot;
+
+    public $date_pneumonia_shot;
+
+    public $date_flu_shot;
+
+    public $date_pap_smear;
+
+    public $date_mammogram;
+
+    public $date_bone_density_scan;
+
+    public $abnormal_pap_smear;
+
+    public $abnormal_mammogram;
+
+    public $date_last_psa;
+
+    public $packs_per_day;
+
+    public $years_smoked;
+
+    public $alcohol_per_week;
+
+    public $recreational_drugs;
+
+    public $checks;
 
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -62,27 +84,27 @@ class FormReviewOfSystems extends ORDataObject
         }
     }
 
-    function __toString()
+    public function __toString(): string
     {
         return "ID: " . $this->id . "\n";
     }
 
-    function populate()
+    public function populate(): void
     {
         parent::populate();
 
         $sql = "SELECT name from form_review_of_systems_checks where foreign_id = ?";
-        $results = sqlQ($sql, array($this->id));
+        $recordset = sqlQ($sql, array($this->id));
 
-        while ($row = sqlFetchArray($results)) {
+        while ($row = sqlFetchArray($recordset)) {
             $this->checks[] = $row['name'];
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
-        if (is_numeric($this->id) and !empty($this->checks)) {
+        if (is_numeric($this->id) && !empty($this->checks)) {
             $sql = "delete FROM form_review_of_systems_checks where foreign_id = ?";
             sqlQuery($sql, array($this->id ));
             foreach ($this->checks as $check) {
@@ -95,166 +117,184 @@ class FormReviewOfSystems extends ORDataObject
         }
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function set_date_tetnus_shot($string)
+    public function set_date_tetnus_shot($string): void
     {
         $this->date_tetnus_shot = $string;
     }
-    function get_date_tetnus_shot()
+
+    public function get_date_tetnus_shot()
     {
         return $this->date_tetnus_shot;
     }
 
-    function set_date_pneumonia_shot($string)
+    public function set_date_pneumonia_shot($string): void
     {
         $this->date_pneumonia_shot = $string;
     }
-    function get_date_pneumonia_shot()
+
+    public function get_date_pneumonia_shot()
     {
         return $this->date_pneumonia_shot;
     }
 
-    function set_date_flu_shot($string)
+    public function set_date_flu_shot($string): void
     {
         $this->date_flu_shot = $string;
     }
-    function get_date_flu_shot()
+
+    public function get_date_flu_shot()
     {
         return $this->date_flu_shot;
     }
 
-    function set_date_pap_smear($string)
+    public function set_date_pap_smear($string): void
     {
         $this->date_pap_smear = $string;
     }
-    function get_date_pap_smear()
+
+    public function get_date_pap_smear()
     {
         return $this->date_pap_smear;
     }
 
-    function set_date_mammogram($string)
+    public function set_date_mammogram($string): void
     {
         $this->date_mammogram = $string;
     }
-    function get_date_mammogram()
+
+    public function get_date_mammogram()
     {
         return $this->date_mammogram;
     }
 
-    function set_date_bone_density_scan($string)
+    public function set_date_bone_density_scan($string): void
     {
         $this->date_bone_density_scan = $string;
     }
-    function get_date_bone_density_scan()
+
+    public function get_date_bone_density_scan()
     {
         return $this->date_bone_density_scan;
     }
 
-    function set_abnormal_pap_smear($string)
+    public function set_abnormal_pap_smear($string): void
     {
         $this->abnormal_pap_smear = $string;
     }
-    function get_abnormal_pap_smear()
+
+    public function get_abnormal_pap_smear()
     {
         return $this->abnormal_pap_smear;
     }
 
-    function set_abnormal_mammogram($string)
+    public function set_abnormal_mammogram($string): void
     {
         $this->abnormal_mammogram = $string;
     }
-    function get_abnormal_mammogram()
+
+    public function get_abnormal_mammogram()
     {
         return $this->abnormal_mammogram;
     }
 
-    function set_date_last_psa($string)
+    public function set_date_last_psa($string): void
     {
         $this->date_last_psa = $string;
     }
-    function get_date_last_psa()
+
+    public function get_date_last_psa()
     {
         return $this->date_last_psa;
     }
 
-    function set_packs_per_day($string)
+    public function set_packs_per_day($string): void
     {
         $this->packs_per_day = $string;
     }
-    function get_packs_per_day()
+
+    public function get_packs_per_day()
     {
         return $this->packs_per_day;
     }
 
-    function set_years_smoked($string)
+    public function set_years_smoked($string): void
     {
         $this->years_smoked = $string;
     }
-    function get_years_smoked()
+
+    public function get_years_smoked()
     {
         return $this->years_smoked;
     }
 
-    function set_alcohol_per_week($string)
+    public function set_alcohol_per_week($string): void
     {
         $this->alcohol_per_week = $string;
     }
-    function get_alcohol_per_week()
+
+    public function get_alcohol_per_week()
     {
         return $this->alcohol_per_week;
     }
 
-    function set_recreational_drugs($string)
+    public function set_recreational_drugs($string): void
     {
         $this->recreational_drugs = $string;
     }
-    function get_recreational_drugs()
+
+    public function get_recreational_drugs()
     {
         return $this->recreational_drugs;
     }
 
-    function set_checks($check_array)
+    public function set_checks($check_array): void
     {
         $this->checks = $check_array;
     }
 
-    function get_checks()
+    public function get_checks()
     {
         return $this->checks;
     }
 
 
-    function _form_layout()
+    public function _form_layout(): array
     {
         $a = array();
 
@@ -371,14 +411,12 @@ class FormReviewOfSystems extends ORDataObject
         $a['Neurological'] = $at;
 
         $at = array();
-        $a_bottom = array();
         $at[1]['hematologic_easy_bruising']     =  "Easy Bruising";
         $at[1]['hematologic_bleeding_gums']     =  "Bleeding Gums";
 
         $a['Hematologic'] = $at;
 
         $at = array();
-        $a_bottom = array();
         $at["When sexually active,<br /> are you active with:"]['sexually_active_men']    =  "Men";
         $at["When sexually active,<br /> are you active with:"]['sexually_active_women']  =  "Women";
         $at["When sexually active,<br /> are you active with:"]['sexually_active_both']   =  "Both";

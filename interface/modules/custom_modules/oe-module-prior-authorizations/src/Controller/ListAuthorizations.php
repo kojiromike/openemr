@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  package OpenEMR
  *  link    https://www.open-emr.org
@@ -7,16 +9,12 @@
  *  Copyright (c) 2022.
  *  All Rights Reserved
  */
-
 namespace Juggernaut\OpenEMR\Modules\PriorAuthModule\Controller;
 
 class ListAuthorizations
 {
     private int $pid;
 
-    /**
-     * @param int $pid
-     */
     public function setPid(int $pid): void
     {
         $this->pid = $pid;
@@ -33,11 +31,12 @@ class ListAuthorizations
     private static function getAuthsFromModulePriorAuth(): false|array
     {
         $sql = "SELECT auth_num FROM module_prior_authorizations WHERE pid = ?";
-        $auths = sqlStatement($sql, [$_SESSION['pid'] ?? null]);
+        $recordset = sqlStatement($sql, [$_SESSION['pid'] ?? null]);
         $auth_array = [];
-        while ($row = sqlFetchArray($auths)) {
+        while ($row = sqlFetchArray($recordset)) {
             $auth_array[] = $row['auth_num'];
         }
+
         return $auth_array;
     }
 
@@ -56,25 +55,25 @@ class ListAuthorizations
         if (is_array($moduleAuths) && is_array($array_merger)) {
             $insertArray = array_diff($moduleAuths, $array_merger);
 
-            if (!empty($insertArray)) {
-                foreach ($insertArray as $auth) {
-                    $isinstalled = sqlQuery("SELECT 1 FROM `form_prior_auth` LIMIT 1");
-                    if ($isinstalled !== false) {
-                        $getinfo = sqlQuery("SELECT date_from, date_to FROM `form_prior_auth` WHERE `prior_auth_number` = ? ORDER BY `id` DESC LIMIT 1 ", [$auth]);
-                    }
-                    if (!empty($getinfo['date_from'])) {
-                        $saveInfoWithDate = "INSERT INTO `module_prior_authorizations` SET `id` = '', `pid` = ?, `auth_num` = ?, `start_date` = ?, `end_date` = ?";
-                        $bindArray = [$_SESSION['pid'], $auth, $getinfo['date_from'], $getinfo['date_to']];
-                        sqlStatement($saveInfoWithDate, $bindArray);
-                    } elseif (!empty($auth)) {
-                        $saveInfoWithDate = "INSERT INTO `module_prior_authorizations` SET `id` = '', `pid` = ?, `auth_num` = ?";
-                        $bindArray = [$_SESSION['pid'], $auth];
-                        sqlStatement($saveInfoWithDate, $bindArray);
-                    }
+            foreach ($insertArray as $auth) {
+                $isinstalled = sqlQuery("SELECT 1 FROM `form_prior_auth` LIMIT 1");
+                if ($isinstalled !== false) {
+                    $getinfo = sqlQuery("SELECT date_from, date_to FROM `form_prior_auth` WHERE `prior_auth_number` = ? ORDER BY `id` DESC LIMIT 1 ", [$auth]);
+                }
+
+                if (!empty($getinfo['date_from'])) {
+                    $saveInfoWithDate = "INSERT INTO `module_prior_authorizations` SET `id` = '', `pid` = ?, `auth_num` = ?, `start_date` = ?, `end_date` = ?";
+                    $bindArray = [$_SESSION['pid'], $auth, $getinfo['date_from'], $getinfo['date_to']];
+                    sqlStatement($saveInfoWithDate, $bindArray);
+                } elseif (!empty($auth)) {
+                    $saveInfoWithDate = "INSERT INTO `module_prior_authorizations` SET `id` = '', `pid` = ?, `auth_num` = ?";
+                    $bindArray = [$_SESSION['pid'], $auth];
+                    sqlStatement($saveInfoWithDate, $bindArray);
                 }
             }
         }
     }
+
     /**
      * @return array
      * from form prior auth
@@ -89,22 +88,22 @@ class ListAuthorizations
             while ($row = sqlFetchArray($auths)) {
                 $auths_array[] = $row['prior_auth_number'];
             }
+
             return $auths_array;
         }
+
         return $auths_array;
     }
 
-    /**
-     * @return array
-     */
     private static function formMiscBilling(): array
     {
         $sql = "select prior_auth_number from form_misc_billing_options where pid = ?";
-        $auths = sqlStatement($sql, [$_SESSION['pid'] ?? null]);
+        $recordset = sqlStatement($sql, [$_SESSION['pid'] ?? null]);
         $auths_array = [];
-        while ($row = sqlFetchArray($auths)) {
+        while ($row = sqlFetchArray($recordset)) {
             $auths_array[] = $row['prior_auth_number'];
         }
+
         return $auths_array;
     }
 
@@ -112,10 +111,11 @@ class ListAuthorizations
     {
         $list = [];
         $sql = "SELECT `pid`  FROM `insurance_data` WHERE `provider` LIKE '133' ORDER BY `id` ASC";
-        $load = sqlStatement($sql);
-        while ($row = sqlFetchArray($load)) {
+        $recordset = sqlStatement($sql);
+        while ($row = sqlFetchArray($recordset)) {
             $list[] = $row['pid'];
         }
+
         return $list;
     }
 }

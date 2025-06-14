@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This the first of two pages to support posting of EOBs.
  * The second is sl_eob_invoice.php.
@@ -21,16 +23,16 @@
 // Updated by Growlingflea Software.  now generates correct service and billing facility on statement.
 // any questions contact Daniel Pflieger at daniel@growlingflea.com
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/appointments.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/appointments.inc.php');
 require_once($GLOBALS['OE_SITE_DIR'] . "/statement.inc.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/../controllers/C_Document.class.php");
-require_once("$srcdir/documents.php");
-require_once("$srcdir/options.inc.php");
-require_once "$srcdir/user.inc.php";
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/../controllers/C_Document.class.php');
+require_once($srcdir . '/documents.php');
+require_once($srcdir . '/options.inc.php');
+require_once $srcdir . '/user.inc.php';
 
 use Mpdf\Mpdf;
 use OpenEMR\Billing\InvoiceSummary;
@@ -61,10 +63,10 @@ $form_cb = false;
 /* Load dependencies only if we need them */
 if (!empty($GLOBALS['portal_onsite_two_enable'])) {
     /* Addition of onsite portal patient notify of invoice and reformated invoice - sjpadgett 01/2017 */
-    require_once("../../portal/lib/portal_mail.inc.php");
-    require_once("../../portal/lib/appsql.class.php");
+    require_once(__DIR__ . "/../../portal/lib/portal_mail.inc.php");
+    require_once(__DIR__ . "/../../portal/lib/appsql.class.php");
 
-    function is_auth_portal($pid = 0)
+    function is_auth_portal($pid = 0): bool
     {
         if ($pData = sqlQuery("SELECT id, allow_patient_portal, fname, lname FROM `patient_data` WHERE `pid` = ?", array($pid))) {
             if ($pData['allow_patient_portal'] != "YES") {
@@ -78,7 +80,7 @@ if (!empty($GLOBALS['portal_onsite_two_enable'])) {
         }
     }
 
-    function notify_portal($thispid, array $invoices, $template, $invid)
+    function notify_portal(string $thispid, array $invoices, $template, string $invid): bool
     {
         $builddir = $GLOBALS['OE_SITE_DIR'] . '/documents/onsite_portal_documents/templates/' . $thispid;
         if (!is_dir($builddir)) {
@@ -108,15 +110,10 @@ if (!empty($GLOBALS['portal_onsite_two_enable'])) {
         if ($data == "") {
             return false;
         }
-
-        if (!file_put_contents($ifile, $data)) {
-            return false;
-        }
-
-        return true;
+        return (bool) file_put_contents($ifile, $data);
     }
 
-    function SavePatientAudit($pid, $invs)
+    function SavePatientAudit($pid, $invs): \Exception|bool
     {
         $appsql = new ApplicationTable();
         try {
@@ -139,8 +136,8 @@ if (!empty($GLOBALS['portal_onsite_two_enable'])) {
             } else {
                 $appsql->portalAudit('insert', '', $audit);
             }
-        } catch (Exception $ex) {
-            return $ex;
+        } catch (Exception $exception) {
+            return $exception;
         }
 
         return true;
@@ -148,7 +145,7 @@ if (!empty($GLOBALS['portal_onsite_two_enable'])) {
 }
 
 // This is called back by ParseERA::parseERA() if we are processing X12 835's.
-function era_callback(&$out)
+function era_callback(&$out): void
 {
     global $where, $eracount, $eraname;
     // print_r($out); // debugging
@@ -170,16 +167,12 @@ function era_callback(&$out)
     }
 }
 
-function validEmail($email)
+function validEmail($email): bool
 {
-    if (preg_match("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$^", $email)) {
-        return true;
-    }
-
-    return false;
+    return (bool) preg_match("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$^", $email);
 }
 
-function emailLogin($patient_id, $message)
+function emailLogin($patient_id, string $message): bool
 {
     $patientData = sqlQuery("SELECT * FROM `patient_data` WHERE `pid`=?", array($patient_id));
     if ($patientData['hipaa_allowemail'] != "YES" || empty($patientData['email']) || empty($GLOBALS['patient_reminder_sender_email'])) {
@@ -226,7 +219,7 @@ function emailLogin($patient_id, $message)
 
 // Upload a file to the client's browser
 //
-function upload_file_to_client($file_to_send)
+function upload_file_to_client($file_to_send): void
 {
     header("Pragma: public");
     header("Expires: 0");
@@ -239,12 +232,10 @@ function upload_file_to_client($file_to_send)
     // flush the content to the browser. If you don't do this, the text from the subsequent
     // output from this script will be in the file instead of sent to the browser.
     flush();
-    exit(); //added to exit from process properly in order to stop bad html code -ehrlive
-    // sleep one second to ensure there's no follow-on.
-    sleep(1);
+    exit();
 }
 
-function upload_file_to_client_email($ppid, $file_to_send)
+function upload_file_to_client_email($ppid, $file_to_send): void
 {
     $message = "";
     global $STMT_TEMP_FILE_PDF;
@@ -254,20 +245,20 @@ function upload_file_to_client_email($ppid, $file_to_send)
 
         $message = $message . $OneLine . '<br />';
 
-        $countline++;
+        ++$countline;
     }
 
     emailLogin($ppid, $message);
 }
 
-function upload_file_to_client_pdf($file_to_send, $aPatFirstName = '', $aPatID = null, $flagCFN = false)
+function upload_file_to_client_pdf($file_to_send, $aPatFirstName = '', $aPatID = null, $flagCFN = false): void
 {
     //modified for statement title name
     //Function reads a HTML file and converts to pdf.
 
     $aPatFName = convert_safe_file_dir_name($aPatFirstName); //modified for statement title name
     if ($flagCFN) {
-        $STMT_TEMP_FILE_PDF = $GLOBALS['temporary_files_dir'] . "/Stmt_{$aPatFName}_{$aPatID}.pdf";
+        $STMT_TEMP_FILE_PDF = $GLOBALS['temporary_files_dir'] . sprintf('/Stmt_%s_%s.pdf', $aPatFName, $aPatID);
     } else {
         global $STMT_TEMP_FILE_PDF;
     }
@@ -317,7 +308,7 @@ function upload_file_to_client_pdf($file_to_send, $aPatFirstName = '', $aPatID =
                 $pdf->ezText($OneLine, 12, array('justification' => 'left', 'leading' => 6));
             }
 
-            $countline++;
+            ++$countline;
         }
         // stored to a pdf file
         $fh = @fopen($STMT_TEMP_FILE_PDF, 'w');
@@ -340,8 +331,6 @@ function upload_file_to_client_pdf($file_to_send, $aPatFirstName = '', $aPatID =
     flush();
     // added to exit from process properly in order to stop bad html code -ehrlive
     exit();
-    // sleep one second to ensure there's no follow-on.
-    sleep(1);
 }
 
 
@@ -372,10 +361,10 @@ if (
     $where = "";
     foreach ($_REQUEST['form_cb'] as $key => $value) {
         $where .= " OR f.id = ?";
-        array_push($sqlBindArray, $key);
+        $sqlBindArray[] = $key;
     }
 
-    if (!empty($where)) {
+    if ($where !== '' && $where !== '0') {
         $where = substr($where, 4);
         $where = '( ' . $where . ' ) AND';
     }
@@ -384,7 +373,7 @@ if (
         "f.id, f.date, f.pid, f.encounter, f.stmt_count, f.last_stmt_date, f.last_level_closed, f.last_level_billed, f.billing_note as enc_billing_note, " .
         "p.fname, p.mname, p.lname, p.street, p.city, p.state, p.postal_code, p.billing_note as pat_billing_note, f.provider_id " .
         "FROM form_encounter AS f, patient_data AS p " .
-        "WHERE $where " .
+        sprintf('WHERE %s ', $where) .
         "p.pid = f.pid " .
         "ORDER BY p.lname, p.fname, f.pid, f.date, f.encounter", $sqlBindArray);
 
@@ -404,7 +393,7 @@ if (
     if (!empty($_REQUEST['form_portalnotify'])) {
         foreach ($_REQUEST['form_invpids'] as $key => $v) {
             if ($_REQUEST['form_cb'][$key]) {
-                array_push($inv_pid, key($v));
+                $inv_pid[] = key($v);
             }
         }
     }
@@ -412,13 +401,13 @@ if (
     while ($row = sqlFetchArray($res)) {
         $rows[] = $row;
         if (empty($inv_pid[$rcnt])) {
-            array_push($inv_pid, $row['pid']);
+            $inv_pid[] = $row['pid'];
         }
-        $rcnt++;
+        ++$rcnt;
     }
     // This loops once for each invoice/encounter.
     //
-    for ($rcnt = 0; $row = $rows[$rcnt] ?? null; $rcnt++) {
+    for ($rcnt = 0; $row = $rows[$rcnt] ?? null; ++$rcnt) {
         $svcdate = substr($row['date'], 0, 10);
         $duedate = $svcdate; // TBD?
         $duncount = $row['stmt_count'];
@@ -475,27 +464,19 @@ if (
             #If you use the field in demographics layout called
             #guardiansname this will allow you to send statements to the parent
             #of a child or a guardian etc
-            if (empty($row['guardiansname'])) {
-                $stmt['to'] = array($row['fname'] . ' ' . $row['lname']);
-            } else {
-                $stmt['to'] = array($row['guardiansname']);
-            }
-
+            $stmt['to'] = empty($row['guardiansname']) ? array($row['fname'] . ' ' . $row['lname']) : array($row['guardiansname']);
             if ($row['street']) {
                 $stmt['to'][] = $row['street'];
             }
-
             $stmt['to'][] = $row['city'] . ", " . $row['state'] . " " . $row['postal_code'];
             $stmt['lines'] = array();
             $stmt['amount'] = '0.00';
             $stmt['ins_paid'] = 0;
             $stmt['today'] = $today;
             $stmt['duedate'] = $duedate;
-        } else {
+        } elseif ($duedate < $stmt['duedate']) {
             // Report the oldest due date.
-            if ($duedate < $stmt['duedate']) {
-                $stmt['duedate'] = $duedate;
-            }
+            $stmt['duedate'] = $duedate;
         }
 
         // Recompute age at each invoice.
@@ -510,7 +491,7 @@ if (
             if ($GLOBALS['use_custom_statement']) {
                 $line['desc'] = ($key == 'CO-PAY') ? "Patient Payment" : $value['code_text'];
             } else {
-                $line['desc'] = ($key == 'CO-PAY') ? "Patient Payment" : "Procedure $key";
+                $line['desc'] = ($key == 'CO-PAY') ? "Patient Payment" : 'Procedure ' . $key;
             }
 
             $line['amount'] = sprintf("%.2f", $value['chg']);
@@ -521,11 +502,11 @@ if (
             $line['bill_date'] = $bdrow['bill_date'];
             $stmt['lines'][] = $line;
             $stmt['amount'] = sprintf("%.2f", $stmt['amount'] + $value['bal']);
-            $stmt['ins_paid'] = $stmt['ins_paid'] + ($value['ins'] ?? null);
+            $stmt['ins_paid'] += $value['ins'] ?? null;
         }
 
         // Record that this statement was run.
-        if (!$DEBUG && empty($_REQUEST['form_without'])) {
+        if (empty($_REQUEST['form_without'])) {
             sqlStatement("UPDATE form_encounter SET " .
                 "last_stmt_date = ?, stmt_count = stmt_count + 1 " .
                 "WHERE id = ?", array($today, $row['id']));
@@ -551,49 +532,47 @@ if (
             } else {
                 continue;
             }
-        } else {
-            if ($inv_pid[$inv_count] != ($inv_pid[$inv_count + 1] ?? null)) {
-                if ($_REQUEST['form_category'] == 'Due Pt' && (get_patient_balance($stmt['pid']) < 0)) {
-                    // not printing statement if patient balance is less than zero even though
-                    // a single encounter may have a balance
-                    unset($stmt);
-                } else {
-                    $tmp = make_statement($stmt);
-                    if (empty($tmp)) {
-                        $tmp = xlt("This EOB item does not meet minimum print requirements setup in Globals or there is an unknown error.") . " " . xlt("EOB Id") . ":" . text($inv_pid[$inv_count]) . " " . xlt("Encounter") . ":" . text($stmt['encounter']) . "\n";
-                        $tmp .= "<br />\n\014<br /><br />";
-                    }
-                    fwrite($fhprint, $tmp);
-                    // now save it to pt documents
-                    $d = new Document();
-                    $doc_pid = $inv_pid[$inv_count];
-                    $invoice_category_id = 0;
-                    $catrow = sqlQuery("SELECT id FROM categories WHERE name = ?", ['Invoices']);
-                    if (!empty($catrow['id'])) {
-                        $invoice_category_id = $catrow['id'];
-                    }
-                    // even if click download pdf the file content in $tmp is text
-                    // set mimetype and fileext based on statement appearance
-                    $isPdf = ($GLOBALS['statement_appearance'] == 1);
-                    $fileext = $isPdf ? '.pdf' : '.txt';
-                    $inv_filename = 'Invoice-' . date('Y-m-d-H:i:s') . $fileext;
-                    $mimetype = $isPdf ? 'pdf' : 'text/plain';
-                    if ($isPdf) {
-                        $pdf2 = new mPDF(Config_Mpdf::getConfigMpdf());
-                        if ($_SESSION['language_direction'] == 'rtl') {
-                            $pdf2->SetDirectionality('rtl');
-                        }
-                        $pdf2->WriteHTML($tmp);
-                        $tmp = $pdf2->Output('', 'S');
-                    }
-                    $invoice = $d->createDocument(
-                        $doc_pid,
-                        $invoice_category_id, // TBD: Make sure not 0
-                        $inv_filename,
-                        $mimetype,
-                        $tmp
-                    );
+        } elseif ($inv_pid[$inv_count] != ($inv_pid[$inv_count + 1] ?? null)) {
+            if ($_REQUEST['form_category'] == 'Due Pt' && (get_patient_balance($stmt['pid']) < 0)) {
+                // not printing statement if patient balance is less than zero even though
+                // a single encounter may have a balance
+                unset($stmt);
+            } else {
+                $tmp = make_statement($stmt);
+                if (empty($tmp)) {
+                    $tmp = xlt("This EOB item does not meet minimum print requirements setup in Globals or there is an unknown error.") . " " . xlt("EOB Id") . ":" . text($inv_pid[$inv_count]) . " " . xlt("Encounter") . ":" . text($stmt['encounter']) . "\n";
+                    $tmp .= "<br />\n\014<br /><br />";
                 }
+                fwrite($fhprint, $tmp);
+                // now save it to pt documents
+                $d = new Document();
+                $doc_pid = $inv_pid[$inv_count];
+                $invoice_category_id = 0;
+                $catrow = sqlQuery("SELECT id FROM categories WHERE name = ?", ['Invoices']);
+                if (!empty($catrow['id'])) {
+                    $invoice_category_id = $catrow['id'];
+                }
+                // even if click download pdf the file content in $tmp is text
+                // set mimetype and fileext based on statement appearance
+                $isPdf = ($GLOBALS['statement_appearance'] == 1);
+                $fileext = $isPdf ? '.pdf' : '.txt';
+                $inv_filename = 'Invoice-' . date('Y-m-d-H:i:s') . $fileext;
+                $mimetype = $isPdf ? 'pdf' : 'text/plain';
+                if ($isPdf) {
+                    $pdf2 = new mPDF(Config_Mpdf::getConfigMpdf());
+                    if ($_SESSION['language_direction'] == 'rtl') {
+                        $pdf2->SetDirectionality('rtl');
+                    }
+                    $pdf2->WriteHTML($tmp);
+                    $tmp = $pdf2->Output('', 'S');
+                }
+                $invoice = $d->createDocument(
+                    $doc_pid,
+                    $invoice_category_id, // TBD: Make sure not 0
+                    $inv_filename,
+                    $mimetype,
+                    $tmp
+                );
             }
         }
     } // end while
@@ -616,7 +595,7 @@ if (
             $alertmsg = xl('Sending Invoice to Patient Portal Completed');
         }
     } else { // Must be print!
-        if ($DEBUG) {
+        if ($DEBUG !== 0) {
             $alertmsg = xl("Printing skipped; see test output in") . ' ' . $STMT_TEMP_FILE;
         } else {
             exec(escapeshellcmd($STMT_PRINT_CMD) . " " . escapeshellarg($STMT_TEMP_FILE));
@@ -821,7 +800,7 @@ if (
                         <div class="form-group col-lg">
                             <label class="control-label oe-large" for="only_with_debt"><?php echo xlt('Pt Debt'); ?>:</label>
                             <label class="control-label oe-small" for="only_with_debt"><?php echo xlt('Debt'); ?>:</label>
-                            <input <?php echo (!empty($_REQUEST['only_with_debt'])) ? 'checked=checked' : ''; ?> type="checkbox" name="only_with_debt" id="only_with_debt" />
+                            <input <?php echo (empty($_REQUEST['only_with_debt'])) ? '' : 'checked=checked'; ?> type="checkbox" name="only_with_debt" id="only_with_debt" />
                         </div>
                     </div>
                 </fieldset>
@@ -848,7 +827,7 @@ if (
                         <div class="form-row p-2">
                             <div class="form-group col-lg">
                                 <label class="control-label" for="form_name"><?php echo xlt('Name'); ?>:</label>
-                                <input type='text' name='form_name' id='form_name' class='form-control' value='<?php echo attr($_REQUEST['form_name'] ?? ''); ?>' title='<?php echo xla("Any part of the patient name, or \"last,first\", or \"X-Y\""); ?>' placeholder='<?php echo xla('Last name, First name'); ?>' />
+                                <input type='text' name='form_name' id='form_name' class='form-control' value='<?php echo attr($_REQUEST['form_name'] ?? ''); ?>' title='<?php echo xla('Any part of the patient name, or "last,first", or "X-Y"'); ?>' placeholder='<?php echo xla('Last name, First name'); ?>' />
                             </div>
                             <div class="form-group col-lg">
                                 <label class="control-label" for="form_pid"><?php echo xlt('Chart ID'); ?>:</label>
@@ -915,273 +894,310 @@ if (
                     <div class="table-responsive">
                         <?php
                         if (!empty($_REQUEST['form_search']) || !empty($_REQUEST['form_print'])) {
-                            if (!CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
-                                CsrfUtils::csrfNotVerified();
-                            }
-
-                            $form_name = trim($_REQUEST['form_name']);
-                            $form_pid = trim($_REQUEST['form_pid']);
-                            $form_encounter = trim($_REQUEST['form_encounter']);
-                            $form_date = fixDate($_REQUEST['form_date'], "");
-                            $form_to_date = fixDate($_REQUEST['form_to_date'], "");
-
-                            $where = "";
-
-                            // Handle X12 835 file upload.
-                            //
-                            if ($_FILES['form_erafile']['size']) {
-                                $tmp_name = $_FILES['form_erafile']['tmp_name'];
-
-                                // Handle .zip extension if present.  Probably won't work on Windows.
-                                if (strtolower(substr($_FILES['form_erafile']['name'], -4)) == '.zip') {
-                                    rename($tmp_name, "$tmp_name.zip");
-                                    exec("unzip -p " . escapeshellarg($tmp_name . ".zip") . " > " . escapeshellarg($tmp_name));
-                                    unlink("$tmp_name.zip");
-                                }
-
-                                echo "<!-- Notes from ERA upload processing:\n";
-                                $alertmsg .= ParseERA::parseERA($tmp_name, 'era_callback');
-                                echo "-->\n";
-                                $erafullname = $GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.edi";
-                                $edihname = $GLOBALS['OE_SITE_DIR'] . "/documents/edi/history/f835/$eraname.835";
-
-                                if (is_file($erafullname)) {
-                                    $alertmsg .= "Warning: Set $eraname was already uploaded ";
-                                    if (is_file($GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.html")) {
-                                        $alertmsg .= "and processed. ";
-                                    } else {
-                                        $alertmsg .= "but not yet processed. ";
-                                    }
-                                }
-                                rename($tmp_name, $erafullname);
-                                copy($erafullname, $edihname);
-                            } // End 835 upload
-
-                            if ($eracount) {
-                                // Note that ParseERA::parseERA() modified $eracount and $where.
-                                if (!$where) {
-                                    $where = '1 = 2';
-                                }
-                            } else {
-                                if ($form_name) {
-                                    if ($where) {
-                                        $where .= " AND ";
-                                    }
-                                    // Allow the last name to be followed by a comma and some part of a first name.
-                                    if (preg_match('/^(.*\S)\s*,\s*(.*)/', $form_name, $matches)) {
-                                        $where .= "p.lname LIKE '" . add_escape_custom($matches[1]) . "%' AND p.fname LIKE '" . add_escape_custom($matches[2]) . "%'";
-                                        // Allow a filter like "A-C" on the first character of the last name.
-                                    } elseif (preg_match('/^(\S)\s*-\s*(\S)$/', $form_name, $matches)) {
-                                        $tmp = '1 = 2';
-                                        while (ord($matches[1]) <= ord($matches[2])) {
-                                            $tmp .= " OR p.lname LIKE '" . add_escape_custom($matches[1]) . "%'";
-                                            $matches[1] = chr(ord($matches[1]) + 1);
+                                        if (!CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
+                                            CsrfUtils::csrfNotVerified();
                                         }
-                                        $where .= "( $tmp ) ";
-                                    } else {
-                                        $where .= "p.lname LIKE '%" . add_escape_custom($form_name) . "%'";
-                                    }
-                                }
-                                if ($form_pid) {
-                                    if ($where) {
-                                        $where .= " AND ";
-                                    }
-                                    $where .= "f.pid = '" . add_escape_custom($form_pid) . "'";
-                                }
-                                if ($form_encounter) {
-                                    if ($where) {
-                                        $where .= " AND ";
-                                    }
-                                    $where .= "f.encounter = '" . add_escape_custom($form_encounter) . "'";
-                                }
-                                if ($form_date) {
-                                    if ($where) {
-                                        $where .= " AND ";
-                                    }
-                                    if ($form_to_date) {
-                                        $where .= "f.date >= '" . add_escape_custom($form_date) . "' AND f.date <= '" . add_escape_custom($form_to_date) . "'";
-                                    } else {
-                                        $where .= "f.date = '" . add_escape_custom($form_date) . "'";
-                                    }
-                                }
-                                if (!$where) {
-                                    if ($_REQUEST['form_category'] == 'All') {
-                                        $alertmsg .= xlt("At least one search parameter is required if you select All.");
-                                    } else {
-                                        $where = "1 = 1";
-                                    }
-                                }
-                            }
-
-                            // Notes that as of release 4.1.1 the copays are stored
-                            // in the ar_activity table marked with a PCP in the account_code column.
-                            $query = "SELECT f.id, f.pid, f.encounter, f.date, " .
-                            "f.last_level_billed, f.last_level_closed, f.last_stmt_date, f.stmt_count, f.in_collection, " .
-                            "p.fname, p.mname, p.lname, p.pubpid, p.billing_note, " .
-                            "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
-                            "b.pid = f.pid AND b.encounter = f.encounter AND " .
-                            "b.activity = 1 AND b.code_type != 'COPAY' ) AS charges, " .
-                            "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-                            "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.payer_type = 0 AND a.account_code = 'PCP')*-1 AS copays, " .
-                            "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-                            "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.account_code != 'PCP') AS payments, " .
-                            "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
-                            "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS adjustments " .
-                            "FROM form_encounter AS f " .
-                            "JOIN patient_data AS p ON p.pid = f.pid " .
-                            "WHERE $where " .
-                            "ORDER BY p.lname, p.fname, p.mname, f.pid, f.encounter";
-
-                            // Note that unlike the SQL-Ledger case, this query does not weed
-                            // out encounters that are paid up.  Also the use of sub-selects
-                            // will require MySQL 4.1 or greater.
-
-                            $num_invoices = 0;
-
-                            // removed if condition on alert message so biller can see what's in the era
-                            $t_res = sqlStatement($query);
-                            $num_invoices = sqlNumRows($t_res);
-
-                            if ($eracount && $num_invoices != $eracount) {
-                                $alertmsg .= "Of $eracount remittances, there are $num_invoices " .
-                                    "matching encounters in OpenEMR. ";
-                            }
-                            ?>
+                                        $form_name = trim($_REQUEST['form_name']);
+                                        $form_pid = trim($_REQUEST['form_pid']);
+                                        $form_encounter = trim($_REQUEST['form_encounter']);
+                                        $form_date = fixDate($_REQUEST['form_date'], "");
+                                        $form_to_date = fixDate($_REQUEST['form_to_date'], "");
+                                        $where = "";
+                                        // Handle X12 835 file upload.
+                                        //
+                                        if ($_FILES['form_erafile']['size']) {
+                                            $tmp_name = $_FILES['form_erafile']['tmp_name'];
+            
+                                            // Handle .zip extension if present.  Probably won't work on Windows.
+                                            if (strtolower(substr($_FILES['form_erafile']['name'], -4)) === '.zip') {
+                                                rename($tmp_name, $tmp_name . '.zip');
+                                                exec("unzip -p " . escapeshellarg($tmp_name . ".zip") . " > " . escapeshellarg($tmp_name));
+                                                unlink($tmp_name . '.zip');
+                                            }
+            
+                                            echo "<!-- Notes from ERA upload processing:\n";
+                                            $alertmsg .= ParseERA::parseERA($tmp_name, 'era_callback');
+                                            echo "-->\n";
+                                            $erafullname = $GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.edi', $eraname);
+                                            $edihname = $GLOBALS['OE_SITE_DIR'] . sprintf('/documents/edi/history/f835/%s.835', $eraname);
+            
+                                            if (is_file($erafullname)) {
+                                                $alertmsg .= sprintf('Warning: Set %s was already uploaded ', $eraname);
+                                                if (is_file($GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.html', $eraname))) {
+                                                    $alertmsg .= "and processed. ";
+                                                } else {
+                                                    $alertmsg .= "but not yet processed. ";
+                                                }
+                                            }
+                                            rename($tmp_name, $erafullname);
+                                            copy($erafullname, $edihname);
+                                        }
+                                        // End 835 upload
+                                        if ($eracount !== 0) {
+                                            // Note that ParseERA::parseERA() modified $eracount and $where.
+                                            $where = '1 = 2';
+                                        } else {
+                                            if ($form_name !== '' && $form_name !== '0') {
+                                                if ($where !== '') {
+                                                    $where .= " AND ";
+                                                }
+                                                // Allow the last name to be followed by a comma and some part of a first name.
+                                                if (preg_match('/^(.*\S)\s*,\s*(.*)/', $form_name, $matches)) {
+                                                    $where .= "p.lname LIKE '" . add_escape_custom($matches[1]) . "%' AND p.fname LIKE '" . add_escape_custom($matches[2]) . "%'";
+                                                    // Allow a filter like "A-C" on the first character of the last name.
+                                                } elseif (preg_match('/^(\S)\s*-\s*(\S)$/', $form_name, $matches)) {
+                                                    $tmp = '1 = 2';
+                                                    while (ord($matches[1]) <= ord($matches[2])) {
+                                                        $tmp .= " OR p.lname LIKE '" . add_escape_custom($matches[1]) . "%'";
+                                                        $matches[1] = chr(ord($matches[1]) + 1);
+                                                    }
+                                                    $where .= sprintf('( %s ) ', $tmp);
+                                                } else {
+                                                    $where .= "p.lname LIKE '%" . add_escape_custom($form_name) . "%'";
+                                                }
+                                            }
+                                            if ($form_pid !== '' && $form_pid !== '0') {
+                                                if ($where !== '' && $where !== '0') {
+                                                    $where .= " AND ";
+                                                }
+                                                $where .= "f.pid = '" . add_escape_custom($form_pid) . "'";
+                                            }
+                                            if ($form_encounter !== '' && $form_encounter !== '0') {
+                                                if ($where !== '' && $where !== '0') {
+                                                    $where .= " AND ";
+                                                }
+                                                $where .= "f.encounter = '" . add_escape_custom($form_encounter) . "'";
+                                            }
+                                            if ($form_date) {
+                                                if ($where !== '' && $where !== '0') {
+                                                    $where .= " AND ";
+                                                }
+                                                if ($form_to_date) {
+                                                    $where .= "f.date >= '" . add_escape_custom($form_date) . "' AND f.date <= '" . add_escape_custom($form_to_date) . "'";
+                                                } else {
+                                                    $where .= "f.date = '" . add_escape_custom($form_date) . "'";
+                                                }
+                                            }
+                                            if ($where === '' || $where === '0') {
+                                                if ($_REQUEST['form_category'] == 'All') {
+                                                    $alertmsg .= xlt("At least one search parameter is required if you select All.");
+                                                } else {
+                                                    $where = "1 = 1";
+                                                }
+                                            }
+                                        }
+                                        // Notes that as of release 4.1.1 the copays are stored
+                                        // in the ar_activity table marked with a PCP in the account_code column.
+                                        $query = "SELECT f.id, f.pid, f.encounter, f.date, " .
+                                        "f.last_level_billed, f.last_level_closed, f.last_stmt_date, f.stmt_count, f.in_collection, " .
+                                        "p.fname, p.mname, p.lname, p.pubpid, p.billing_note, " .
+                                        "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
+                                        "b.pid = f.pid AND b.encounter = f.encounter AND " .
+                                        "b.activity = 1 AND b.code_type != 'COPAY' ) AS charges, " .
+                                        "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
+                                        "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.payer_type = 0 AND a.account_code = 'PCP')*-1 AS copays, " .
+                                        "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
+                                        "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.account_code != 'PCP') AS payments, " .
+                                        "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
+                                        "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS adjustments " .
+                                        "FROM form_encounter AS f " .
+                                        "JOIN patient_data AS p ON p.pid = f.pid " .
+                                        sprintf('WHERE %s ', $where) .
+                                        "ORDER BY p.lname, p.fname, p.mname, f.pid, f.encounter";
+                                        // Note that unlike the SQL-Ledger case, this query does not weed
+                                        // out encounters that are paid up.  Also the use of sub-selects
+                                        // will require MySQL 4.1 or greater.
+                                        $num_invoices = 0;
+                                        // removed if condition on alert message so biller can see what's in the era
+                                        $t_res = sqlStatement($query);
+                                        $num_invoices = sqlNumRows($t_res);
+                                        if ($eracount && $num_invoices != $eracount) {
+                                            $alertmsg .= sprintf('Of %s remittances, there are %d ', $eracount, $num_invoices) .
+                                                "matching encounters in OpenEMR. ";
+                                        }
+                                        ?>
                         <table class="table table-striped table-sm">
                             <thead>
                             <tr>
-                                <th class="id dehead"><?php echo xlt('Billing Note'); ?></th>
-                                <th class="dehead">&nbsp;<?php echo xlt('Patient'); ?></th>
-                                <th class="dehead">&nbsp;<?php echo xlt('Invoice'); ?></th>
-                                <th class="dehead">&nbsp;<?php echo xlt('Svc Date'); ?></th>
-                                <th class="dehead">&nbsp;<?php echo xlt('Last Stmt'); ?></th>
-                                <th class="dehead text-right"><?php echo xlt('Charge'); ?>&nbsp;</th>
-                                <th class="dehead text-right"><?php echo xlt('Adjust'); ?>&nbsp;</th>
-                                <th class="dehead text-right"><?php echo xlt('Paid'); ?>&nbsp;</th>
-                                <th class="dehead text-right"><?php echo xlt('Balance'); ?>&nbsp;</th>
-                                <th class="dehead text-center"><?php echo xlt('Prv'); ?></th>
-                                <?php
-                                if (!$eracount) { ?>
-                                    <th class="dehead text-left"><?php echo xlt('Sel'); ?></th>
-                                    <th class="dehead text-center"><?php echo xlt('Email'); ?></th>
-                                    <?php
-                                } ?>
+                                <th class="id dehead"><?php 
+                                        echo xlt('Billing Note');
+                                        ?></th>
+                                <th class="dehead">&nbsp;<?php 
+                                        echo xlt('Patient');
+                                        ?></th>
+                                <th class="dehead">&nbsp;<?php 
+                                        echo xlt('Invoice');
+                                        ?></th>
+                                <th class="dehead">&nbsp;<?php 
+                                        echo xlt('Svc Date');
+                                        ?></th>
+                                <th class="dehead">&nbsp;<?php 
+                                        echo xlt('Last Stmt');
+                                        ?></th>
+                                <th class="dehead text-right"><?php 
+                                        echo xlt('Charge');
+                                        ?>&nbsp;</th>
+                                <th class="dehead text-right"><?php 
+                                        echo xlt('Adjust');
+                                        ?>&nbsp;</th>
+                                <th class="dehead text-right"><?php 
+                                        echo xlt('Paid');
+                                        ?>&nbsp;</th>
+                                <th class="dehead text-right"><?php 
+                                        echo xlt('Balance');
+                                        ?>&nbsp;</th>
+                                <th class="dehead text-center"><?php 
+                                        echo xlt('Prv');
+                                        ?></th>
+                                <?php 
+                                        ?>
+                                    <th class="dehead text-left"><?php 
+                                        echo xlt('Sel');
+                                        ?></th>
+                                    <th class="dehead text-center"><?php 
+                                        echo xlt('Email');
+                                        ?></th>
+                                    <?php 
+                                        ?>
                             </tr>
                             </thead>
-                            <?php
-                            $orow = -1;
-
-                            while ($row = sqlFetchArray($t_res)) {
-                                $balance = sprintf("%.2f", $row['charges'] + $row['copays'] - $row['payments'] - $row['adjustments']);
-                                //new filter only patients with debt.
-                                if (!empty($_REQUEST['only_with_debt']) && $balance <= 0) {
-                                    continue;
-                                }
-
-
-                                if ($_REQUEST['form_category'] != 'All' && $eracount == 0 && $balance == 0) {
-                                    continue;
-                                }
-
-                                // Determine if customer is in collections.
-                                //
-                                $billnote = $row['billing_note'];
-                                $in_collections = stristr($billnote, 'IN COLLECTIONS') !== false
-                                    || $row['in_collection'] == 1;
-
-                                // $duncount was originally supposed to be the number of times that
-                                // the patient was sent a statement for this invoice.
-                                //
-                                $duncount = $row['stmt_count'];
-
-                                // But if we have not yet billed the patient, then compute $duncount as a
-                                // negative count of the number of insurance plans for which we have not
-                                // yet closed out insurance.
-                                //
-                                if (!$duncount) {
-                                    for ($i = 1; $i <= 3 && SLEOB::arGetPayerID($row['pid'], $row['date'], $i); ++$i) {
-                                    }
-                                    $duncount = $row['last_level_closed'] + 1 - $i;
-                                }
-
-                                $isdueany = ($balance > 0);
-
-                                // An invoice is now due from the patient if money is owed and we are
-                                // not waiting for insurance to pay.
-                                //
-                                $isduept = ($duncount >= 0 && $isdueany && !$in_collections) ? " checked" : "";
-
-                                // Skip invoices not in the desired "Due..." category.
-                                //
-                                if (substr($_REQUEST['form_category'], 0, 3) == 'Due' && !$isdueany) {
-                                    continue;
-                                }
-                                if ($_REQUEST['form_category'] == 'Due Ins' && ($duncount >= 0 || !$isdueany)) {
-                                    continue;
-                                }
-                                if ($_REQUEST['form_category'] == 'Due Pt' && ($duncount < 0 || !$isdueany)) {
-                                    continue;
-                                }
-
-                                $bgcolor = ((++$orow & 1) ? "#ffdddd" : "#ddddff");
-
-                                $svcdate = substr($row['date'], 0, 10);
-                                $last_stmt_date = empty($row['last_stmt_date']) ? '' : $row['last_stmt_date'];
-
-                                ?>
+                            <?php 
+                                        $orow = -1;
+                                        while ($row = sqlFetchArray($t_res)) {
+                                            $balance = sprintf("%.2f", $row['charges'] + $row['copays'] - $row['payments'] - $row['adjustments']);
+                                            //new filter only patients with debt.
+                                            if (!empty($_REQUEST['only_with_debt']) && $balance <= 0) {
+                                                continue;
+                                            }
+                                            if ($_REQUEST['form_category'] != 'All' && $eracount === 0 && $balance == 0) {
+                                                continue;
+                                            }
+                                            // Determine if customer is in collections.
+                                            //
+                                            $billnote = $row['billing_note'];
+                                            $in_collections = stristr($billnote, 'IN COLLECTIONS') !== false
+                                                || $row['in_collection'] == 1;
+                                            // $duncount was originally supposed to be the number of times that
+                                            // the patient was sent a statement for this invoice.
+                                            //
+                                            $duncount = $row['stmt_count'];
+                                            // But if we have not yet billed the patient, then compute $duncount as a
+                                            // negative count of the number of insurance plans for which we have not
+                                            // yet closed out insurance.
+                                            //
+                                            if (!$duncount) {
+                                                for ($i = 1; $i <= 3 && SLEOB::arGetPayerID($row['pid'], $row['date'], $i); ++$i) {
+                                                }
+                                                $duncount = $row['last_level_closed'] + 1 - $i;
+                                            }
+                                            $isdueany = ($balance > 0);
+                                            // An invoice is now due from the patient if money is owed and we are
+                                            // not waiting for insurance to pay.
+                                            //
+                                            $isduept = ($duncount >= 0 && $isdueany && !$in_collections) ? " checked" : "";
+                                            // Skip invoices not in the desired "Due..." category.
+                                            //
+                                            if (substr($_REQUEST['form_category'], 0, 3) === 'Due' && !$isdueany) {
+                                                continue;
+                                            }
+                                            if ($_REQUEST['form_category'] == 'Due Ins' && ($duncount >= 0 || !$isdueany)) {
+                                                continue;
+                                            }
+                                            if ($_REQUEST['form_category'] == 'Due Pt' && ($duncount < 0 || !$isdueany)) {
+                                                continue;
+                                            }
+                                            $bgcolor = (((++$orow & 1) !== 0) ? "#ffdddd" : "#ddddff");
+                                            $svcdate = substr($row['date'], 0, 10);
+                                            $last_stmt_date = empty($row['last_stmt_date']) ? '' : $row['last_stmt_date'];
+                                            ?>
                                 <tr>
                                     <td class="detail">
-                                        <a href="#" class="btn btn-secondary btn-sm" onclick="npopup(event, <?php echo attr_js($row['pid']); ?>)"><?php echo text($row['pid']); ?></a>
+                                        <a href="#" class="btn btn-secondary btn-sm" onclick="npopup(event, <?php 
+                                            echo attr_js($row['pid']);
+                                            ?>)"><?php 
+                                            echo text($row['pid']);
+                                            ?></a>
                                     </td>
                                     <td class="detail">&nbsp;
-                                        <a href="#" class="btn btn-secondary btn-sm" onclick="toEncSummary(event, <?php echo attr_js($row['pid']); ?>)"><?php echo text($row['lname']) . ', ' . text($row['fname']); ?></a>
+                                        <a href="#" class="btn btn-secondary btn-sm" onclick="toEncSummary(event, <?php 
+                                            echo attr_js($row['pid']);
+                                            ?>)"><?php 
+                                            echo text($row['lname']) . ', ' . text($row['fname']);
+                                            ?></a>
                                     </td>
                                     <td class="detail">&nbsp;
-                                        <a href="#" class="btn btn-secondary btn-sm" onclick="editInvoice(event,<?php echo attr_js($row['id']); ?>)"><?php echo text($row['pid']) . '.' . text($row['encounter']); ?></a>
+                                        <a href="#" class="btn btn-secondary btn-sm" onclick="editInvoice(event,<?php 
+                                            echo attr_js($row['id']);
+                                            ?>)"><?php 
+                                            echo text($row['pid']) . '.' . text($row['encounter']);
+                                            ?></a>
                                     </td>
-                                    <td class="detail">&nbsp;<?php echo text(oeFormatShortDate($svcdate)); ?></td>
+                                    <td class="detail">&nbsp;<?php 
+                                            echo text(oeFormatShortDate($svcdate));
+                                            ?></td>
                                     <td class="detail">
-                                        &nbsp;<?php echo text(oeFormatShortDate($last_stmt_date)); ?></td>
-                                    <td class="detail text-right"><?php echo text(FormatMoney::getBucks($row['charges'])); ?>&nbsp;
+                                        &nbsp;<?php 
+                                            echo text(oeFormatShortDate($last_stmt_date));
+                                            ?></td>
+                                    <td class="detail text-right"><?php 
+                                            echo text(FormatMoney::getBucks($row['charges']));
+                                            ?>&nbsp;
                                     </td>
-                                    <td class="detail text-right"><?php echo text(FormatMoney::getBucks($row['adjustments'])); ?>
+                                    <td class="detail text-right"><?php 
+                                            echo text(FormatMoney::getBucks($row['adjustments']));
+                                            ?>
                                         &nbsp;
                                     </td>
-                                    <td class="detail text-right"><?php echo text(FormatMoney::getBucks($row['payments'] - $row['copays'])); ?>
+                                    <td class="detail text-right"><?php 
+                                            echo text(FormatMoney::getBucks($row['payments'] - $row['copays']));
+                                            ?>
                                         &nbsp;
                                     </td>
-                                    <td class="detail text-right"><?php echo text(FormatMoney::getBucks($balance)); ?>&nbsp;</td>
-                                    <td class="detail text-center"><?php echo $duncount ? text($duncount) : "&nbsp;" ?></td>
-                                    <?php if (!$eracount) { ?>
+                                    <td class="detail text-right"><?php 
+                                            echo text(FormatMoney::getBucks($balance));
+                                            ?>&nbsp;</td>
+                                    <td class="detail text-center"><?php 
+                                            echo $duncount ? text($duncount) : "&nbsp;" ?>
+                                            ?></td>
+                                    <?php 
+                                            ?>
                                         <td class="detail text-left">
                                             <input type='checkbox'
-                                                   name='form_cb[<?php echo attr($row['id']) ?>]'<?php echo text($isduept); ?> />
-                                            <?php
+                                                   name='form_cb[<?php 
+                                            echo attr($row['id']) ?>
+                                            ?>]'<?php 
+                                            echo text($isduept);
+                                            ?> />
+                                            <?php 
                                             if ($in_collections) {
-                                                echo "<span class='font-weight-bold text-danger'>IC</span>";
-                                            } ?>
-                                            <?php
+                                                            echo "<span class='font-weight-bold text-danger'>IC</span>";
+                                                        }
+                                            ?>
+                                            <?php 
                                             if (function_exists('is_auth_portal') ? is_auth_portal($row['pid']) : false) {
                                                 echo(' PPt');
                                                 echo("<input type='hidden' name='form_invpids[" . attr($row['id']) . "][" . attr($row['pid']) . "]' />");
                                                 $is_portal = true;
-                                            } ?>
+                                            }
+                                            ?>
                                         </td>
-                                    <?php } ?>
+                                    <?php 
+                                            ?>
                                     <td class="detail text-left">
-                                        <?php
-                                        $patientData = sqlQuery("SELECT * FROM `patient_data` WHERE `pid`=?", array($row['pid']));
-                                        if ($patientData['hipaa_allowemail'] == "YES" && $patientData['allow_patient_portal'] == "YES" && $patientData['hipaa_notice'] == "YES" && validEmail($patientData['email'])) {
-                                            echo xlt("YES");
-                                        } else {
-                                            echo xlt("NO");
-                                        }
-                                        ?>
+                                        <?php 
+                                            $patientData = sqlQuery("SELECT * FROM `patient_data` WHERE `pid`=?", array($row['pid']));
+                                            if ($patientData['hipaa_allowemail'] == "YES" && $patientData['allow_patient_portal'] == "YES" && $patientData['hipaa_notice'] == "YES" && validEmail($patientData['email'])) {
+                                                echo xlt("YES");
+                                            } else {
+                                                echo xlt("NO");
+                                            }
+                                            ?>
                                     </td>
                                 </tr>
-                                <?php
-                            } // end while
-                        } // end search/print logic
+                                <?php 
+                                        }
+                                        // end while
+                                    } // end search/print logic
                         ?>
                         </table>
                     </div><!--End of table-responsive div-->
@@ -1191,7 +1207,7 @@ if (
                     <div class="form-row text-left position-override oe-show-hide" id="statement-download">
                         <div class="btn-group" role="group">
                             <?php
-                            if ($eracount) { ?>
+                            if ($eracount !== 0) { ?>
                                 <button type="button" class="btn btn-secondary btn-save" name="Submit" onclick='processERA()' value="<?php echo xla('Process ERA File'); ?>">
                                     <?php echo xlt('Process ERA File'); ?></button>
                                 <?php

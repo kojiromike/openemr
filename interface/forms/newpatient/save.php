@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form save script.
  *
@@ -13,8 +15,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/encounter.inc.php");
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/encounter.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -217,10 +219,10 @@ $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_catego
         <?php if ($mode == 'new') { ?>
         my_left_nav.setEncounter(<?php echo js_escape(oeFormatShortDate($date)) . ", " . js_escape($encounter) . ", window.name"; ?>);
         // Load the tab set for the new encounter, w is usually the RBot frame.
-        w.location.href = '<?php echo "$rootdir/patient_file/encounter/encounter_top.php"; ?>';
+        w.location.href = '<?php echo $rootdir . '/patient_file/encounter/encounter_top.php'; ?>';
         <?php } else { // not new encounter ?>
         // Always return to encounter summary page.
-        window.location.href = '<?php echo "$rootdir/patient_file/encounter/forms.php"; ?>';
+        window.location.href = '<?php echo $rootdir . '/patient_file/encounter/forms.php'; ?>';
         <?php } // end if not new encounter ?>
 
     </script>

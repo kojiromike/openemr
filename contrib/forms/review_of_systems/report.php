@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function review_of_systems_report($pid, $encounter, $cols, $id)
+function review_of_systems_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_review_of_systems", $id);
     $sql = "SELECT name from form_review_of_systems_checks where foreign_id = ?";
-    $results = sqlQ($sql, array($id));
+    $recordset = sqlQ($sql, array($id));
     $data2 = array();
-    while ($row = sqlFetchArray($results)) {
+    while ($row = sqlFetchArray($recordset)) {
         $data2[] = $row['name'];
     }
 
     $data = array_merge($data, $data2);
-    if ($data) {
+    if ($data !== []) {
         print "<table><tr>";
         foreach ($data as $key => $value) {
             if ($key == "id" || $key == "pid" || $key == "user" || $key == "groupname" || $key == "authorized" || $key == "activity" || $key == "date" || $value == "" || $value == "0000-00-00 00:00:00") {
@@ -32,7 +34,7 @@ function review_of_systems_report($pid, $encounter, $cols, $id)
             }
 
             print "<td><span class=bold>" . text($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * physical_exam edit_diagnoses.php
  *
@@ -62,7 +64,7 @@ if ($_POST['form_save']) {
   // Close this window and redisplay the updated encounter form.
   //
     echo "<script>\n";
-    if ($info_msg) {
+    if ($info_msg !== '') {
         echo " alert(" . js_escape($info_msg) . ");\n";
     }
 

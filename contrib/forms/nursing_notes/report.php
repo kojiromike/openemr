@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -8,7 +10,7 @@
 //------------Forms generated from formsWiz
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-function nursing_notes_report($pid, $encounter, $cols, $id)
+function nursing_notes_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_nursing_notes", $id);
@@ -29,7 +31,7 @@ function nursing_notes_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td><span class=bold>" . text($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

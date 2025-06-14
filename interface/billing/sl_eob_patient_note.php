@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This allows entry and editing of a "billing note" for the patient.
  *
@@ -13,9 +15,9 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("../../library/patient.inc.php");
-require_once("../../library/forms.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/../../library/patient.inc.php");
+require_once(__DIR__ . "/../../library/forms.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -48,7 +50,7 @@ $info_msg = "";
             "WHERE pid = ? ", array($thevalue, $patient_id));
 
         echo "<script>\n";
-        if ($info_msg) {
+        if ($info_msg !== '') {
             echo " alert(" . js_escape($info_msg) . ");\n";
         }
         echo " dlgclose();\n";

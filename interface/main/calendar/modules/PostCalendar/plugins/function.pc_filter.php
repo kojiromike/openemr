@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,7 +27,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_filter($args, &$smarty)
+function smarty_function_pc_filter($args, &$smarty): void
 {
     extract($args);
     unset($args);
@@ -48,7 +50,7 @@ function smarty_function_pc_filter($args, &$smarty)
         $d = substr($Date, 6, 2);
     }
 
-    $tplview = pnVarCleanFromInput('tplview');
+    pnVarCleanFromInput('tplview');
     $viewtype = pnVarCleanFromInput('viewtype');
     $pc_username = pnVarCleanFromInput('pc_username');
 
@@ -59,8 +61,9 @@ function smarty_function_pc_filter($args, &$smarty)
     $types = explode(',', $type);
     $output = new pnHTML();
     $output->SetOutputMode(_PNH_RETURNOUTPUT);
+
     $modinfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
-    $mdir = pnVarPrepForOS($modinfo['directory']);
+    pnVarPrepForOS($modinfo['directory']);
     unset($modinfo);
     $pcTemplate = pnVarPrepForOS(_SETTING_TEMPLATE);
     if (empty($pcTemplate)) {
@@ -80,13 +83,13 @@ function smarty_function_pc_filter($args, &$smarty)
 
         $result = $dbconn->Execute($sql);
         if ($result !== false) {
-            $useroptions  = "<select multiple='multiple' size='3' name=\"pc_username[]\" class=\"$class\">";
-            $useroptions .= "<option value=\"\" class=\"$class\">" . _PC_FILTER_USERS . "</option>";
+            $useroptions  = sprintf("<select multiple='multiple' size='3' name=\"pc_username[]\" class=\"%s\">", $class);
+            $useroptions .= sprintf('<option value="" class="%s">', $class) . _PC_FILTER_USERS . "</option>";
             $selected = $pc_username == '__PC_ALL__' ? 'selected="selected"' : '';
-            $useroptions .= "<option value=\"__PC_ALL__\" class=\"$class\" $selected>" . _PC_FILTER_USERS_ALL . "</option>";
+            $useroptions .= sprintf('<option value="__PC_ALL__" class="%s" %s>', $class, $selected) . _PC_FILTER_USERS_ALL . "</option>";
             for (; !$result->EOF; $result->MoveNext()) {
                 $sel = $pc_username == $result->fields[0] ? 'selected="selected"' : '';
-                $useroptions .= "<option value=\"" . $result->fields[0] . "\" $sel class=\"$class\">" . $result->fields[1] . ", " . $result->fields[2] . "</option>";
+                $useroptions .= '<option value="' . $result->fields[0] . sprintf('" %s class="%s">', $sel, $class) . $result->fields[1] . ", " . $result->fields[2] . "</option>";
             }
 
             $useroptions .= '</select>';
@@ -101,11 +104,11 @@ function smarty_function_pc_filter($args, &$smarty)
         @define('_PC_FORM_CATEGORY', true);
         $category = pnVarCleanFromInput('pc_category');
         $categories = pnModAPIFunc(__POSTCALENDAR__, 'user', 'getCategories');
-        $catoptions  = "<select name=\"pc_category\" class=\"$class\">";
-        $catoptions .= "<option value=\"\" class=\"$class\">" . _PC_FILTER_CATEGORY . "</option>";
+        $catoptions  = sprintf('<select name="pc_category" class="%s">', $class);
+        $catoptions .= sprintf('<option value="" class="%s">', $class) . _PC_FILTER_CATEGORY . "</option>";
         foreach ($categories as $c) {
             $sel = $category == $c['id'] ? 'selected="selected"' : '';
-            $catoptions .= "<option value=\"$c[id]\" $sel class=\"$class\">" . xl_appt_category($c[name]) . "</option>";
+            $catoptions .= sprintf('<option value="%s" %s class="%s">', $c[id], $sel, $class) . xl_appt_category($c[name]) . "</option>";
         }
 
         $catoptions .= '</select>';
@@ -118,11 +121,11 @@ function smarty_function_pc_filter($args, &$smarty)
         @define('_PC_FORM_TOPIC', true);
         $topic = pnVarCleanFromInput('pc_topic');
         $topics = pnModAPIFunc(__POSTCALENDAR__, 'user', 'getTopics');
-        $topoptions  = "<select name=\"pc_topic\" class=\"$class\">";
-        $topoptions .= "<option value=\"\" class=\"$class\">" . _PC_FILTER_TOPIC . "</option>";
+        $topoptions  = sprintf('<select name="pc_topic" class="%s">', $class);
+        $topoptions .= sprintf('<option value="" class="%s">', $class) . _PC_FILTER_TOPIC . "</option>";
         foreach ($topics as $t) {
             $sel = $topic == $t['id'] ? 'selected="selected"' : '';
-            $topoptions .= "<option value=\"$t[id]\" $sel class=\"$class\">$t[text]</option>";
+            $topoptions .= sprintf('<option value="%s" %s class="%s">%s</option>', $t[id], $sel, $class, $t[text]);
         }
 
         $topoptions .= '</select>';
@@ -137,19 +140,19 @@ function smarty_function_pc_filter($args, &$smarty)
         $label = _PC_TPL_VIEW_SUBMIT;
     }
 
-    $submit = "<input type=\"submit\" valign=\"middle\" name=\"submit\" value=\"$label\" class=\"$class\" />";
+    $submit = sprintf('<input type="submit" valign="middle" name="submit" value="%s" class="%s" />', $label, $class);
     $orderArray = array('user' => $useroptions, 'category' => $catoptions, 'topic' => $topoptions, 'jump' => $submit);
 
     if (isset($order)) {
         $newOrder = array();
         $order = explode(',', $order);
         foreach ($order as $tmp_order) {
-            array_push($newOrder, $orderArray[$tmp_order]);
+            $newOrder[] = $orderArray[$tmp_order];
         }
 
         foreach ($orderArray as $key => $old_order) {
             if (!in_array($key, $newOrder)) {
-                array_push($newOrder, $orderArray[$old_order]);
+                $newOrder[] = $orderArray[$old_order];
             }
         }
 

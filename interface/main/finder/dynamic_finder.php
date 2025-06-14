@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * dynamic_finder.php
  *
@@ -17,8 +19,8 @@
  */
 
 require_once(dirname(__FILE__) . "/../../globals.php");
-require_once "$srcdir/user.inc.php";
-require_once "$srcdir/options.inc.php";
+require_once $srcdir . '/user.inc.php';
+require_once $srcdir . '/options.inc.php';
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -55,19 +57,19 @@ while ($row = sqlFetchArray($res)) {
     $header .= "</th>\n";
     $header0 .= "   <td ><input type='text' size='20' ";
     $header0 .= "value='' class='form-control search_init' placeholder='" . xla("Search by") . " " . $title1 . "'/></td>\n";
-    if ($coljson) {
+    if ($coljson !== '' && $coljson !== '0') {
         $coljson .= ", ";
     }
 
-    $coljson .= "{\"sName\": \"" . addcslashes($colname, "\t\r\n\"\\") . "\"";
+    $coljson .= '{"sName": "' . addcslashes($colname, "\t\r\n\"\\") . '"';
     if ($title1 == xl('Name')) {
-        $coljson .= ", \"mRender\": wrapInLink";
+        $coljson .= ', "mRender": wrapInLink';
     }
     $coljson .= "}";
-    if ($orderjson) {
+    if ($orderjson !== '' && $orderjson !== '0') {
         $orderjson .= ", ";
     }
-    $orderjson .= "[\"$colcount\", \"" . addcslashes($colorder, "\t\r\n\"\\") . "\"]";
+    $orderjson .= sprintf('["%d", "', $colcount) . addcslashes($colorder, "\t\r\n\"\\") . '"]';
     ++$colcount;
 }
 $loading = "";
@@ -287,7 +289,7 @@ $loading = "";
 
 
         <?php
-        $checked = (!empty($GLOBALS['gbl_pt_list_new_window'])) ? 'checked' : '';
+        $checked = (empty($GLOBALS['gbl_pt_list_new_window'])) ? '' : 'checked';
         ?>
         $("div.mytopdiv").html("<form name='myform'><div class='form-check form-check-inline'><label for='form_new_window' class='form-check-label' id='form_new_window_label'><input type='checkbox' class='form-check-input' id='form_new_window' name='form_new_window' value='1' <?php echo $checked; ?> /><?php echo xlt('Open in New Browser Tab'); ?></label></div><div class='form-check form-check-inline'><label for='setting_search_type' id='setting_search_type_label' class='form-check-label'><input type='checkbox' name='setting_search_type' class='form-check-input' id='setting_search_type' onchange='persistCriteria(this, event)' value='<?php echo attr($patient_finder_exact_search); ?>'<?php echo text($patient_finder_exact_search); ?>/><?php echo xlt('Search with exact method'); ?></label></div></form>");
 
@@ -371,7 +373,7 @@ $loading = "";
     );
     $oemr_ui = new OemrUI($arrOeUiSettings);
 
-    $eventDispatcher->addListener(PageHeadingRenderEvent::EVENT_PAGE_HEADING_RENDER, function ($event) {
+    $eventDispatcher->addListener(PageHeadingRenderEvent::EVENT_PAGE_HEADING_RENDER, function ($event): void {
         if ($event->getPageId() !== 'dynamic_finder') {
             return;
         }
@@ -388,12 +390,12 @@ $loading = "";
 <body>
 <?php
 
-function rp()
+function rp(): array
 {
     $sql = "SELECT option_id, title FROM list_options WHERE list_id = 'recent_patient_columns' AND activity = '1' ORDER BY seq ASC";
-    $res = sqlStatement($sql);
+    $recordset = sqlStatement($sql);
     $headers = [];
-    while ($row = sqlFetchArray($res)) {
+    while ($row = sqlFetchArray($recordset)) {
         $headers[] = $row;
     }
     $patientService = new PatientService();
@@ -410,13 +412,13 @@ function rp()
     foreach ($pd_dtCols as $k => $v) {
         if ($v['data_type'] == "datetime") {
             $datetime_cols[] = $v['column_name'];
-        } else if ($v['data_type'] == "date") {
+        } elseif ($v['data_type'] == "date") {
             $date_cols[] = $v['column_name'];
         }
     }
     // Build SQL statement to pull desired columns from patient_data table...
     $pd_sql = "SELECT pid";
-    foreach ($headers as $k => $v) {
+    foreach ($headers as $v) {
         $pd_sql .= ', ';
         $col_name = $v['option_id'];
         $dt_format = '';
@@ -450,7 +452,7 @@ function rp()
     }
     $pd_sql .= " FROM patient_data WHERE pid = ?";
     $pd_data = [];
-    foreach ($rp as $k => $v) {
+    foreach ($rp as $v) {
         $pd_data[] = sqlQuery($pd_sql, $v['pid']);
     }
     return ['headers' => $headers, 'rp' => $pd_data];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * The outside frame that holds all of the OpenEMR User Interface.
  *
@@ -16,7 +18,7 @@
 
 // Set $sessionAllowWrite to true to prevent session concurrency issues during authorization and app setup related code
 $sessionAllowWrite = true;
-require_once('../globals.php');
+require_once(__DIR__ . '/../globals.php');
 
 use OpenEMR\Common\Auth\AuthUtils;
 use OpenEMR\Common\Crypto\CryptoGen;
@@ -32,14 +34,14 @@ use u2flib_server\U2F;
 // Functions to support MFA.
 ///////////////////////////////////////////////////////////////////////
 
-function posted_to_hidden($name)
+function posted_to_hidden($name): void
 {
     if (isset($_POST[$name])) {
         echo "<input type='hidden' name='" . attr($name) . "' value='" . attr($_POST[$name]) . "' />\r\n";
     }
 }
 
-function generate_html_start()
+function generate_html_start(): void
 {
     ?>
     <html>
@@ -55,7 +57,7 @@ function generate_html_start()
     <?php
 }
 
-function generate_html_u2f()
+function generate_html_u2f(): void
 {
     global $appId;
     ?>
@@ -89,7 +91,7 @@ function generate_html_u2f()
     </script>
     <?php
 }
-function input_focus()
+function input_focus(): void
 {
     ?>
     <script>
@@ -101,13 +103,13 @@ function input_focus()
     <?php
 }
 
-function generate_html_top()
+function generate_html_top(): void
 {
     echo '</head>';
     echo '<body>';
 }
 
-function generate_html_middle()
+function generate_html_middle(): void
 {
     posted_to_hidden('new_login_session_management');
     posted_to_hidden('languageChoice');
@@ -116,7 +118,7 @@ function generate_html_middle()
 }
 
 require_once(dirname(__FILE__) . "/../../src/Common/Session/SessionUtil.php");
-function generate_html_end()
+function generate_html_end(): int
 {
     // to be safe, remove clearPass from memory now (if it is not empty yet)
     if (!empty($_POST["clearPass"])) {
@@ -173,7 +175,7 @@ if (isset($_POST['new_login_session_management'])) {
         $form_response = empty($_POST['form_response']) ? '' : $_POST['form_response'];
         if ($form_response) {
             // TOTP METHOD enabled if TOTP is visible in post request
-            if (isset($_POST['totp']) && trim($_POST['totp']) != "" && $isTOTP) {
+            if (isset($_POST['totp']) && trim($_POST['totp']) !== "" && $isTOTP) {
                 $errormsg = false;
 
                 $form_response = '';
@@ -191,7 +193,7 @@ if (isset($_POST['new_login_session_management'])) {
                 // First, try standard method that uses standard key
                 $cryptoGen = new CryptoGen();
                 $secret = $cryptoGen->decryptStandard($registrationSecret);
-                if (empty($secret)) {
+                if ($secret === '' || $secret === '0' || $secret === false) {
                     // Second, try the password hash, which was setup during install and is temporary
                     $passwordResults = privQuery(
                         "SELECT password FROM users_secure WHERE username = ?",
@@ -199,7 +201,7 @@ if (isset($_POST['new_login_session_management'])) {
                     );
                     if (!empty($passwordResults["password"])) {
                         $secret = $cryptoGen->decryptStandard($registrationSecret, $passwordResults["password"]);
-                        if (!empty($secret)) {
+                        if (!($secret === '' || $secret === '0' || $secret === false)) {
                             error_log("Disregard the decryption failed authentication error reported above this line; it is not an error.");
                             // Re-encrypt with the more secure standard key
                             $secretEncrypt = $cryptoGen->encryptStandard($secret);
@@ -211,7 +213,7 @@ if (isset($_POST['new_login_session_management'])) {
                     }
                 }
 
-                if (!empty($secret)) {
+                if (!($secret === '' || $secret === '0' || $secret === false)) {
                     $googleAuth = new Totp($secret);
                     $form_response = $googleAuth->validateCode($_POST['totp']);
                 }
@@ -279,7 +281,7 @@ if (isset($_POST['new_login_session_management'])) {
                 echo '        <h2>' . xlt('TOTP Verification') . '</h2>';
                 echo '    </div>';
                 echo '</div>';
-                if ($errormsg && $errortype == "TOTP") {
+                if ($errormsg && $errortype === "TOTP") {
                     echo '<div class="row"><div class="col-sm-12"><div class="alert alert-danger alert-msg">' . text($errormsg) . '</div></div></div>';
                 }
 
@@ -321,7 +323,7 @@ if (isset($_POST['new_login_session_management'])) {
                 echo '        <h2>' . xlt('U2F Key Verification') . '</h2>';
                 echo '    </div>';
                 echo '</div>';
-                if ($errormsg && $errortype == "U2F") {
+                if ($errormsg && $errortype === "U2F") {
                     echo '<div class="row"><div class="col-sm-12"><div class="alert alert-danger  alert-msg">' . text($errormsg) . '</div></div></div>';
                 }
                 echo '<div class="row">';
@@ -420,7 +422,7 @@ if ((!AuthUtils::useActiveDirectory()) && ($GLOBALS['password_expiration_days'] 
     // Display the password expiration message (will show during the grace time)
     $pwd_alert_date = date('Y-m-d', strtotime($pwd_last_update . '+' . $GLOBALS['password_expiration_days'] . ' days'));
 
-    if (empty(strtotime($pwd_alert_date))) {
+    if (in_array(strtotime($pwd_alert_date), [0, false], true)) {
         error_log("OpenEMR ERROR: there is a problem when trying to check if user's password is expired");
     } elseif (strtotime($current_date) >= strtotime($pwd_alert_date)) {
         $is_expired = true;

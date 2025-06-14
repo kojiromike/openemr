@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS content_parser.php
  *
@@ -22,7 +24,8 @@ function addAppt($days, $time)
     " day),'from CAMOS', ?, ?)";
     return sqlInsert($sql, array($_SESSION['pid'], $_SESSION['authUserID'], $time));
 }
-function addVitals($weight, $height, $systolic, $diastolic, $pulse, $temp)
+
+function addVitals($weight, $height, $systolic, $diastolic, $pulse, $temp): void
 {
 //This is based on code from /openemr/interface/forms/vitals/C_FormVitals.class.phpif it doesn't work, look there for changes.
     $_POST['process'] = 'true';
@@ -33,15 +36,16 @@ function addVitals($weight, $height, $systolic, $diastolic, $pulse, $temp)
     $_POST['pulse'] = $pulse;
     $_POST['temperature'] = $temp;
     $c = new C_FormVitals();
-    echo $c->default_action_process($_POST);
+    echo $c->default_action_process();
 }
 
 //This function was copied from BillingUtilities class and altered to support 'justify'
-function addBilling2($encounter, $code_type, $code, $code_text, string $modifier = null, string $units = null, string $fee = null, $justify)
+function addBilling2($encounter, $code_type, $code, $code_text, $justify, string $modifier = null, string $units = null, string $fee = null)
 {
     if (!$fee) {
         $fee = "0.00";
     }
+
     $justify_string = '';
     if ($justify) {
         //trim eahc entry
@@ -75,10 +79,9 @@ function content_parser($input)
    //reduce more than two empty lines to no more than two.
     $content = preg_replace("/([^\n]\r[^\n]){2,}/", "\r\r", $content);
     $content = preg_replace("/([^\r]\n[^\r]){2,}/", "\n\n", $content);
-    $content = preg_replace("/(\r\n){2,}/", "\r\n\r\n", $content);
 
 
-    return $content;
+    return preg_replace("/(\r\n){2,}/", "\r\n\r\n", $content);
 }
 
 // implement C style comments ie remove anything between /* and */
@@ -90,7 +93,7 @@ function remove_comments($string_to_process)
 //process commands embedded in C style comments where function name is first
 //followed by args separated by :: delimiter and nothing else
 
-function process_commands(&$string_to_process, &$camos_return_data)
+function process_commands(&$string_to_process, &$camos_return_data): int
 {
 
   //First, handle replace function as special case.  full depth of inserts should be evaluated prior
@@ -108,6 +111,7 @@ function process_commands(&$string_to_process, &$camos_return_data)
                 if ($result = sqlFetchArray($statement)) {
                     $replacement_text = $result['content'];
                 }
+
                 $string_to_process = str_replace($val, $replacement_text, $string_to_process);
             }
         } else {
@@ -156,7 +160,7 @@ function process_commands(&$string_to_process, &$camos_return_data)
         $comm = preg_replace("/(\/\*)|(\*\/)/", "", $val);
         $comm_array = explode('::', $comm); //array where first element is command and rest are args
         //Here is where we process particular commands
-        if (trim($comm_array[0]) == 'billing') {
+        if (trim($comm_array[0]) === 'billing') {
             array_shift($comm_array); //couldn't do it in 'if' or would lose element 0 for next if
             //insert data into the billing table, see, easy!
             $type = trim(array_shift($comm_array));
@@ -165,28 +169,28 @@ function process_commands(&$string_to_process, &$camos_return_data)
             $modifier = trim(array_shift($comm_array));
             $units = trim(array_shift($comm_array));
             //make default units 1 if left blank - bm
-            if ($units == '') {
+            if ($units === '') {
                 $units = 1;
             }
 
             $fee = sprintf("%01.2f", trim(array_shift($comm_array)));
             //make default fee 0.00 if left blank
-            if ($fee == '') {
+            if ($fee === '') {
                 $fee = sprintf("%01.2f", '0.00');
             }
 
             //in function call 'addBilling' note last param is the remainder of the array.  we will look for justifications here...
-            addBilling2($encounter, $type, $code, $text, $modifier, $units, $fee, $comm_array);
+            addBilling2($encounter, $type, $code, $text, $comm_array, $modifier, $units, $fee);
         }
 
-        if (trim($comm_array[0]) == 'appt') {
+        if (trim($comm_array[0]) === 'appt') {
             array_shift($comm_array);
             $days = trim(array_shift($comm_array));
             $time = trim(array_shift($comm_array));
             addAppt($days, $time);
         }
 
-        if (trim($comm_array[0]) == 'vitals') {
+        if (trim($comm_array[0]) === 'vitals') {
             array_shift($comm_array);
             $weight = trim(array_shift($comm_array));
             $height = trim(array_shift($comm_array));
@@ -198,25 +202,23 @@ function process_commands(&$string_to_process, &$camos_return_data)
         }
 
         $command_count = 0;
-        if (trim($comm_array[0]) == 'camos') {
-            $command_count++;
+        if (trim($comm_array[0]) === 'camos') {
+            ++$command_count;
             //data to be submitted as separate camos forms
             //this is for embedded prescriptions, test orders etc... usually within a soap note or something
             //data collected here will be returned so that save.php can give it special treatment and insert
             //into the database after the main form data is submitted so it will be in a sensible order
-            array_push(
-                $camos_return_data,
-                array("category" => trim($comm_array[1]),
-                "subcategory" => trim($comm_array[2]),
-                "item" => trim($comm_array[3]),
-                "content" => trim($comm_array[4]))
-            );
+            $camos_return_data[] = array("category" => trim($comm_array[1]),
+            "subcategory" => trim($comm_array[2]),
+            "item" => trim($comm_array[3]),
+            "content" => trim($comm_array[4]));
         }
     }
 
     $string_to_process = remove_comments($string_to_process);
     return $return_value;
 }
+
 // I was using this for debugging.  touch logging, chmod 777 logging, then can use.
   //file_put_contents('./logging',$string_to_process."\n\n*************\n\n",FILE_APPEND);//DEBUG
 
@@ -246,11 +248,7 @@ function replace($pid, $enc, $content)
         $fname = $results['fname'];
         $mname = $results['mname'];
         $lname = $results['lname'];
-        if ($mname) {
-            $name = $fname . ' ' . $mname . ' ' . $lname;
-        } else {
-            $name = $fname . ' ' . $lname;
-        }
+        $name = $mname ? $fname . ' ' . $mname . ' ' . $lname : $fname . ' ' . $lname;
 
             $dob = $results['DOB'];
             $date = $results['date'];
@@ -272,6 +270,7 @@ function replace($pid, $enc, $content)
     //Below will fix blocks that were inadvertently double escaped in openemr versions 5.0.1.0 - 5.0.1.5
     return str_replace("\\n", "\n", $ret);
 }
+
 function patient_age($birthday, $date)
 {
  //calculate age from birthdate and a given later date
@@ -281,9 +280,9 @@ function patient_age($birthday, $date)
     $month_diff = $date_month - $birth_month;
     $day_diff   = (int) $date_day - $birth_day;
     if ($month_diff < 0) {
-        $year_diff--;
+        --$year_diff;
     } elseif (($month_diff == 0) && ($day_diff < 0)) {
-        $year_diff--;
+        --$year_diff;
     }
 
     return $year_diff;

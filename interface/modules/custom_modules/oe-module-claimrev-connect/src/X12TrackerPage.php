@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 class X12TrackerPage
@@ -20,8 +21,7 @@ class X12TrackerPage
         $endDate = $_POST['endDate'];
 
         $sql = "SELECT * FROM x12_remote_tracker where created_at BETWEEN ? AND ?";
-        $files = sqlStatementNoLog($sql, array($startDate,$endDate));
 
-        return $files;
+        return sqlStatementNoLog($sql, array($startDate,$endDate));
     }
 }

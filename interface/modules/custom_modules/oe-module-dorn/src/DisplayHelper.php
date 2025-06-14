@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,18 +11,18 @@
  * @copyright Copyright (c) 2022-2025 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn;
 
 use OpenEMR\Modules\Dorn\Bootstrap;
 
 class DisplayHelper
 {
-    public static function SelectOption($compareA, $compareB)
+    public static function SelectOption($compareA, $compareB): string
     {
         if ($compareA == $compareB) {
             return 'selected';
         }
+
         return ' ';
     }
 }

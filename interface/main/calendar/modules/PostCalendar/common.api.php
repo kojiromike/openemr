@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -55,18 +57,23 @@ define('REPEAT_EVERY_FOURTH', 4);
 if (!defined('REPEAT_EVERY_DAY')) {
     define('REPEAT_EVERY_DAY', 0);
 }
+
 if (!defined('REPEAT_EVERY_WEEK')) {
     define('REPEAT_EVERY_WEEK', 1);
 }
+
 if (!defined('REPEAT_EVERY_MONTH')) {
     define('REPEAT_EVERY_MONTH', 2);
 }
+
 if (!defined('REPEAT_EVERY_YEAR')) {
     define('REPEAT_EVERY_YEAR', 3);
 }
+
 if (!defined('REPEAT_EVERY_WORK_DAY')) {
     define('REPEAT_EVERY_WORK_DAY', 4);
 }
+
 // $event_repeat_on_num
 define('REPEAT_ON_1ST', 1);
 define('REPEAT_ON_2ND', 2);
@@ -133,35 +140,38 @@ define('_SETTING_NOTIFY_EMAIL', pnModGetVar(__POSTCALENDAR__, 'pcNotifyEmail'));
 //  Require and Setup utility classes and functions
 //=========================================================================
 define('DATE_CALC_BEGIN_WEEKDAY', _SETTING_FIRST_DAY_WEEK);
-require_once("modules/$pcDir/pnincludes/Date/Calc.php");
+require_once(sprintf('modules/%s/pnincludes/Date/Calc.php', $pcDir));
 //=========================================================================
 //  grab the global language file
 //=========================================================================
-require_once("modules/$pcDir/pnlang/eng/global.php");
+require_once(sprintf('modules/%s/pnlang/eng/global.php', $pcDir));
 
 //=========================================================================
 //  Setup Smarty defines
 //=========================================================================
-require_once("modules/$pcDir/pcSmarty.class.php");
+require_once(sprintf('modules/%s/pcSmarty.class.php', $pcDir));
 //=========================================================================
 //  utility functions for postcalendar
 //=========================================================================
-function &pcVarPrepForDisplay($s)
+function &pcVarPrepForDisplay($s): array|string|null
 {
     $s = nl2br(pnVarPrepForDisplay(postcalendar_removeScriptTags($s)));
     $s = preg_replace('/&amp;(#)?([0-9a-z]+);/i', '&\\1\\2;', $s);
     return $s;
 }
+
 function &pcVarPrepHTMLDisplay($s)
 {
-    $postcalendarRemoveScriptTags = pnVarPrepHTMLDisplay(postcalendar_removeScriptTags($s));
-    return $postcalendarRemoveScriptTags;
+    $prepared = pnVarPrepHTMLDisplay(postcalendar_removeScriptTags($s));
+    return $prepared;
 }
-function pcGetTopicName($topicid)
+
+function pcGetTopicName($topicid): string
 {
     // not using topics in OpenEMR, so just return nothing
     return '';
 }
+
 function &postcalendar_makeValidURL($s)
 {
     if (empty($s)) {
@@ -175,12 +185,13 @@ function &postcalendar_makeValidURL($s)
 
     return $s;
 }
+
 function postcalendar_removeScriptTags($in)
 {
     return preg_replace("/<script.*?>(.*?)<\/script>/", "", ($in ?? ''));
 }
 
-function postcalendar_getDate($format = 'Ymd')
+function postcalendar_getDate($format = 'Ymd'): string
 {
     list($Date, $jumpday, $jumpmonth, $jumpyear, $jumpdate) =
         pnVarCleanFromInput('Date', 'jumpday', 'jumpmonth', 'jumpyear', 'jumpdate');
@@ -192,37 +203,30 @@ function postcalendar_getDate($format = 'Ymd')
             $jumpmonth = substr($jumpdate, 5, 2);
             $jumpday   = substr($jumpdate, 8, 2);
         } else {
-            if (!empty($_SESSION['lastcaldate'])) {
-                $time = strtotime($_SESSION['lastcaldate']);
-            } else {
-                $time = time();
-            }
-
+            $time = empty($_SESSION['lastcaldate']) ? time() : strtotime($_SESSION['lastcaldate']);
             if (!isset($jumpday)) {
                 $jumpday   = date('d', $time);
             }
-
             if (!isset($jumpmonth)) {
                 $jumpmonth = date('m', $time);
             }
-
             if (!isset($jumpyear)) {
                 $jumpyear  = date('Y', $time);
             }
         }
 
         // create the correct date string
-        $Date = (int) "$jumpyear$jumpmonth$jumpday";
+        $Date = (int) ($jumpyear . $jumpmonth . $jumpday);
     }
 
     $y = substr($Date, 0, 4);
     $m = substr($Date, 4, 2);
     $d = substr($Date, 6, 2);
-    OpenEMR\Common\Session\SessionUtil::setSession('lastcaldate', "$y-$m-$d"); // remember the last chosen date
+    OpenEMR\Common\Session\SessionUtil::setSession('lastcaldate', sprintf('%s-%s-%s', $y, $m, $d)); // remember the last chosen date
     return date($format, mktime(0, 0, 0, $m, $d, $y));
 }
 
-function &postcalendar_today($format = 'Ymd')
+function &postcalendar_today($format = 'Ymd'): string
 {
     $time = time();
     $date = date($format, $time);
@@ -236,7 +240,7 @@ function &postcalendar_today($format = 'Ymd')
  * sets up any necessary javascript for the page
  * @return string javascript to insert into the page
  */
-function postcalendar_userapi_pageSetup()
+function postcalendar_userapi_pageSetup(): string
 {
     $output = '';
     // load the DHTML JavaScript code and insert it into the page
@@ -251,11 +255,12 @@ function postcalendar_userapi_pageSetup()
 
     return $output;
 }
+
 /**
  * postcalendar_userapi_jsPopup
  * Creates the necessary javascript code for a popup window
  */
-function postcalendar_userapi_jsPopup()
+function postcalendar_userapi_jsPopup(): false|string
 {
     if (defined('_POSTCALENDAR_JSPOPUPS_LOADED')) {
         // only put the script on the page once
@@ -275,27 +280,25 @@ function postcalendar_userapi_jsPopup()
                        . 'resizable=no,'
                        . 'width=600,'
                        . 'height=300';
-
-    $output = <<<EOF
+    return <<<EOF
 
 <script>
 <!--
 function opencal(eid,date) {
     window.name='csCalendar';
-    w = window.open($js_link,'PostCalendarEvents','$js_window_options');
+    w = window.open({$js_link},'PostCalendarEvents','{$js_window_options}');
 }
 // -->
 </script>
 
 EOF;
-    return $output;
 }
 
 /**
  * postcalendar_userapi_loadPopups
  * Creates the necessary javascript code for mouseover dHTML popups
  */
-function postcalendar_userapi_loadPopups()
+function postcalendar_userapi_loadPopups(): false|string
 {
     if (defined('_POSTCALENDAR_LOADPOPUPS_LOADED')) {
         // only put the script on the page once
@@ -310,20 +313,19 @@ function postcalendar_userapi_loadPopups()
 
     // lets get the module's information
     $modinfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
-    $pcDir = pnVarPrepForOS($modinfo['directory']);
+    $prepared = pnVarPrepForOS($modinfo['directory']);
     unset($modinfo);
     $capicon = '';
     $close = _PC_OL_CLOSE;
-
-    $output = <<<EOF
+    return <<<EOF
 
 <script>
 <!-- overLIB configuration -->
-ol_fgcolor = "$bgcolor1";
-ol_bgcolor = "$bgcolor2";
-ol_textcolor = "$textcolor2";
-ol_capcolor = "$textcolor2";
-ol_closecolor = "$textcolor2";
+ol_fgcolor = "{$bgcolor1}";
+ol_bgcolor = "{$bgcolor2}";
+ol_textcolor = "{$textcolor2}";
+ol_capcolor = "{$textcolor2}";
+ol_closecolor = "{$textcolor2}";
 ol_textfont = "Verdana,Arial,Helvetica";
 ol_captionfont = "Verdana,Arial,Helvetica";
 ol_captionsize = 2;
@@ -333,7 +335,7 @@ ol_width = 350;
 ol_offsetx = 10;
 ol_offsety = 10;
 ol_sticky = 0;
-ol_close = "$close";
+ol_close = "{$close}";
 ol_closeclick = 0;
 ol_autostatus = 2;
 ol_snapx = 0;
@@ -347,17 +349,16 @@ ol_padxl = 1;
 ol_padxr = 1;
 ol_padyt = 1;
 ol_padyb = 1;
-ol_capicon = "$capicon";
+ol_capicon = "{$capicon}";
 ol_hauto = 1;
 ol_vauto = 1;
 </script>
 <div id="overDiv" style="position:absolute; top:0px; left:0px; visibility:hidden; z-index:1000;"></div>
-<script src="modules/$pcDir/pnincludes/overlib_mini.js">
+<script src="modules/{$prepared}/pnincludes/overlib_mini.js">
 <!-- overLIB (c) Erik Bosrup -->
 </script>
 
 EOF;
-    return $output;
 }
 
 /**
@@ -385,8 +386,9 @@ function postcalendar_userapi_getmonthname($args)
 
 /**
  *  Returns an array of form data for FormSelectMultiple
+ * @return array{id: string, selected: bool, name: mixed}[]
  */
-function postcalendar_userapi_buildMonthSelect($args)
+function postcalendar_userapi_buildMonthSelect($args): array
 {
     extract($args);
     unset($args);
@@ -402,7 +404,7 @@ function postcalendar_userapi_buildMonthSelect($args)
 
     for ($c = 0,$i = 1; $i <= 12; $i++,$c++) {
         if ($selected) {
-            $sel = $selected == $i ? true : false;
+            $sel = $selected == $i;
         } elseif ($i == $pc_month) {
             $sel = true;
         } else {
@@ -419,8 +421,9 @@ function postcalendar_userapi_buildMonthSelect($args)
 
 /**
  *  Returns an array of form data for FormSelectMultiple
+ * @return array{id: string, selected: bool, name: string}[]
  */
-function postcalendar_userapi_buildDaySelect($args)
+function postcalendar_userapi_buildDaySelect($args): array
 {
     extract($args);
     unset($args);
@@ -436,7 +439,7 @@ function postcalendar_userapi_buildDaySelect($args)
 
     for ($c = 0,$i = 1; $i <= 31; $i++,$c++) {
         if ($selected) {
-            $sel = $selected == $i ? true : false;
+            $sel = $selected == $i;
         } elseif ($i == $pc_day) {
             $sel = true;
         } else {
@@ -453,8 +456,9 @@ function postcalendar_userapi_buildDaySelect($args)
 
 /**
  *  Returns an array of form data for FormSelectMultiple
+ * @return array{id: string, selected: bool, name: string}[]
  */
-function postcalendar_userapi_buildYearSelect($args)
+function postcalendar_userapi_buildYearSelect($args): array
 {
     extract($args);
     unset($args);
@@ -474,7 +478,7 @@ function postcalendar_userapi_buildYearSelect($args)
 
     for ($c = 0,$i = $pc_start_year; $i <= $pc_end_year; $i++,$c++) {
         if ($selected) {
-            $sel = $selected == $i ? true : false;
+            $sel = $selected == $i;
         } elseif ($i == $pc_year) {
             $sel = true;
         } else {
@@ -489,7 +493,10 @@ function postcalendar_userapi_buildYearSelect($args)
     return $output;
 }
 
-function &postcalendar_userapi_getCategories()
+/**
+ * @return array{id: mixed, name: mixed, constantid: mixed, color: mixed, desc: mixed, value_cat_type: mixed, active: mixed, sequence: mixed, event_repeat: mixed, event_repeat_freq: mixed, event_repeat_freq_type: mixed, event_repeat_on_num: mixed, event_repeat_on_day: mixed, event_repeat_on_freq: mixed, event_recurrspec: mixed, event_duration: mixed, event_durationh: int, event_durationm: (float | int<-59, 59>), end_date_flag: mixed, end_date_type: mixed, end_date_freq: mixed, end_all_day: mixed, aco: mixed, dailylimit: mixed}[]
+ */
+function &postcalendar_userapi_getCategories(): array
 {
     list($dbconn) = pnDBGetConn();
     $pntable = pnDBGetTables();
@@ -497,7 +504,7 @@ function &postcalendar_userapi_getCategories()
     $sql = "SELECT pc_catid,pc_catname,pc_constant_id,pc_catcolor,pc_catdesc,
             pc_recurrtype,pc_recurrspec,pc_recurrfreq,pc_duration,
             pc_dailylimit,pc_end_date_flag,pc_end_date_type,pc_end_date_freq,
-            pc_end_all_day,pc_cattype,pc_active,pc_seq,aco_spec FROM $cat_table
+            pc_end_all_day,pc_cattype,pc_active,pc_seq,aco_spec FROM {$cat_table}
             ORDER BY pc_catname";
     $result = $dbconn->Execute($sql);
 
@@ -546,14 +553,14 @@ function &postcalendar_userapi_getCategories()
     return $categories;
 }
 
-function &postcalendar_userapi_getTopics()
+function &postcalendar_userapi_getTopics(): false|array
 {
     list($dbconn) = pnDBGetConn();
     $pntable = pnDBGetTables();
     $topics_table = $pntable['topics'];
     $topics_column = &$pntable['topics_column'];
     $sql = "SELECT $topics_column[topicid], $topics_column[topictext], $topics_column[topicname]
-            FROM $topics_table
+            FROM {$topics_table}
             ORDER BY $topics_column[topictext]";
     $topiclist = $dbconn->Execute($sql);
     if ($dbconn->ErrorNo() != 0) {
@@ -570,18 +577,18 @@ function &postcalendar_userapi_getTopics()
     return $data;
 }
 
-function findFirstAvailable($period)
+/**
+ * @return non-empty-list[]
+ */
+function findFirstAvailable($period): array
 {
-    //print_r($period);
-
-    $day_date = "";
     $available_times = array();
     foreach ($period as $date => $day) {
         //echo "begin free times for $date:<br />";
         $ffid_res = findFirstInDay($day, $date);
-        foreach ($ffid_res as $times) {
+        foreach ($ffid_res as $ffid_re) {
             //echo "starting: " . date("h:i:s A",$times['startTime']) . " long: " . $times['duration'] . "<br />";
-            $available_times[$date][] = $times;
+            $available_times[$date][] = $ffid_re;
             //echo "count of times is:" . count($available_times) . "<br />";
         }
 
@@ -591,10 +598,11 @@ function findFirstAvailable($period)
     return $available_times;
 }
 
-function findFirstInDay($day, $date)
+/**
+ * @return array{startTime: mixed, endTime: (float | int)}[]
+ */
+function findFirstInDay($day, string $date): array
 {
-    $stack = array();
-    $lastcat = 3;
     $intime = false;
     $outtime = false;
     foreach ($day as $event) {
@@ -609,7 +617,7 @@ function findFirstInDay($day, $date)
         }
     }
 
-    if ($intime == false or $outtime == false) {
+    if ($intime == false || $outtime == false) {
         return array();
     }
 
@@ -630,13 +638,13 @@ function findFirstInDay($day, $date)
                 $estart = dtSec($date, $event['startTime']) ;
                 $eend = dtSecDur($date, $event['startTime'], $event['duration']);
 
-                if ($eend < $intime_sec or $estart > $outtime_sec) {
+                if ($eend < $intime_sec || $estart > $outtime_sec) {
                     //event ends before intime or starts after outtime we don't care move on;
                     continue;
                 } elseif ($eend < $i) {
                     //event ended before time currently being evaluated, we don't care move on;
                     continue;
-                } elseif ($estart < $i and $eend > $i) {
+                } elseif ($estart < $i && $eend > $i) {
                     //event occupies part of the time we are looking at, look at another time
                     continue;
                 } elseif ($estart >= $i) {
@@ -692,85 +700,97 @@ function findFirstInDay($day, $date)
     return $times;
 }
 
-function dtSec($date, $time)
+function dtSec(string $date, string $time): string
 {
     return date("U", strtotime($date . " " . $time));
 }
 
-function dtSecDur($date, $time, $dur)
+function dtSecDur(string $date, string $time, $dur)
 {
     $time_sec = date("U", strtotime($date . " " . $time));
     return $time_sec + $dur;
 }
 
-function postcalendar_footer()
+function postcalendar_footer(): string
 {
     // lets get the module's information
-    $modinfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
+    pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
     //$footer = "<p align=\"right\"><a href=\"http://www.postcalendar.tv\">PostCalendar v$modinfo[version]</a></p>";
     $footer = "";
     return $footer;
 }
 
-function sort_byCategoryA($a, $b)
+function sort_byCategoryA(array $a, array $b): ?int
 {
     if ($a['catname'] < $b['catname']) {
         return -1;
     } elseif ($a['catname'] > $b['catname']) {
         return 1;
     }
+    return null;
 }
-function sort_byCategoryD($a, $b)
+
+function sort_byCategoryD(array $a, array $b): ?int
 {
     if ($a['catname'] < $b['catname']) {
         return 1;
     } elseif ($a['catname'] > $b['catname']) {
         return -1;
     }
+    return null;
 }
-function sort_byTitleA($a, $b)
+
+function sort_byTitleA(array $a, array $b): ?int
 {
     if ($a['title'] < $b['title']) {
         return -1;
     } elseif ($a['title'] > $b['title']) {
         return 1;
     }
+    return null;
 }
-function sort_byTitleD($a, $b)
+
+function sort_byTitleD(array $a, array $b): ?int
 {
     if ($a['title'] < $b['title']) {
         return 1;
     } elseif ($a['title'] > $b['title']) {
         return -1;
     }
+    return null;
 }
-function sort_byTimeA($a, $b)
+
+function sort_byTimeA(array $a, $b): ?int
 {
     if ($a['startTime'] < ($b['startTime'] ?? null)) {
         return -1;
     } elseif ($a['startTime'] > ($b['startTime'] ?? null)) {
         return 1;
     }
+    return null;
 }
-function sort_byTimeD($a, $b)
+
+function sort_byTimeD(array $a, array $b): ?int
 {
     if ($a['startTime'] < $b['startTime']) {
         return 1;
     } elseif ($a['startTime'] > $b['startTime']) {
         return -1;
     }
+    return null;
 }
+
 /**
  *    pc_clean
  *    @param s string text to clean
  *    @return string cleaned up text
  */
-function pc_clean($s)
+function pc_clean($s): string
 {
     $display_type = substr($s, 0, 6);
-    if ($display_type == ':text:') {
+    if ($display_type === ':text:') {
         $s = substr($s, 6);
-    } elseif ($display_type == ':html:') {
+    } elseif ($display_type === ':html:') {
         $s = substr($s, 6);
     }
 
@@ -782,5 +802,5 @@ function pc_clean($s)
     // we only want to break at spaces to allow for
     // correct interpretation of special characters
     $tmp = explode(' ', $s);
-    return join("'+' ", $tmp);
+    return implode("'+' ", $tmp);
 }

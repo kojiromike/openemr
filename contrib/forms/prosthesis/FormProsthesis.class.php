@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\ORDataObject\ORDataObject;
 
 /**
@@ -20,49 +22,88 @@ class FormProsthesis extends ORDataObject
      * @access private
      */
 
-    var $id;
-    var $date;
-    var $pid;
-    var $activity;
-    var $therapist;
-    var $involvement_left;
-    var $involvement_right;
-    var $involvement_bilateral;
-    var $location;
-    var $location_array = array("office" => "Office", "home" => "Home", "skilled_nurse_fac" => "Skilled Nurs. Fac.", "acute_hospital" => "Acute Hosp.",
+    public $id;
+
+    /**
+     * @var string
+     */
+    public $date;
+
+    public $pid;
+
+    public $activity;
+
+    public $therapist;
+
+    public $involvement_left;
+
+    public $involvement_right;
+
+    public $involvement_bilateral;
+
+    public $location;
+
+    public $location_array = array("office" => "Office", "home" => "Home", "skilled_nurse_fac" => "Skilled Nurs. Fac.", "acute_hospital" => "Acute Hosp.",
                         "nursing_home" => "Nursing Home", "rehab_hospital" => "Rehab. Hosp.", "other" => "Other");
-    var $diagnosis;
-    var $hx;
-    var $worn_le_past_five;
-    var $model;
-    var $size;
-    var $new;
-    var $replacement;
-    var $foam_impressions;
-    var $shoe_size;
-    var $calf;
-    var $ankle;
-    var $purpose;
-    var $purpose_array  = array("pain_reduction" => "Pain Reduction", "offload_involved_area" => "Offload invloved Area", "immobilize" => "Immobilize",
+
+    public $diagnosis;
+
+    public $hx;
+
+    public $worn_le_past_five;
+
+    public $model;
+
+    public $size;
+
+    public $new;
+
+    public $replacement;
+
+    public $foam_impressions;
+
+    public $shoe_size;
+
+    public $calf;
+
+    public $ankle;
+
+    public $purpose;
+
+    public $purpose_array  = array("pain_reduction" => "Pain Reduction", "offload_involved_area" => "Offload invloved Area", "immobilize" => "Immobilize",
                         "limit_motion" => "Limit Motion", "accomodation" => "Accomodation", "reduce_edema" => "Reduce Edema",
                         "facilitate_healing" => "Facilitate Healing", "other" => "Other");
-    var $notes;
-    var $goals_discussed;
-    var $use_reviewed;
-    var $wear_reviewed;
-    var $worn_years;
-    var $age_months;
-    var $age_years;
-    var $wear_hours;
-    var $plan_to_order;
-    var $plan_to_order_date;
-    var $receiveded_product;
-    var $received_product_date;
-    var $given_instructions;
-    var $patient_understands;
 
-    var $cpt_array = array( "L0500" => "L0500 LS corset",           "L3010" => "L3010 Molded FO",           "L3020" => "L3020 Molded FO + Met pad",
-                            "L3221" => "L3221 Men's depth shoes",   "L3216" => "L3216 Women's depth shoes", "L3332" => "L3332 In-shoe .5\" heel lift",
+    public $notes;
+
+    public $goals_discussed;
+
+    public $use_reviewed;
+
+    public $wear_reviewed;
+
+    public $worn_years;
+
+    public $age_months;
+
+    public $age_years;
+
+    public $wear_hours;
+
+    public $plan_to_order;
+
+    public $plan_to_order_date;
+
+    public $receiveded_product;
+
+    public $received_product_date;
+
+    public $given_instructions;
+
+    public $patient_understands;
+
+    public $cpt_array = array( "L0500" => "L0500 LS corset",           "L3010" => "L3010 Molded FO",           "L3020" => "L3020 Molded FO + Met pad",
+                            "L3221" => "L3221 Men's depth shoes",   "L3216" => "L3216 Women's depth shoes", "L3332" => 'L3332 In-shoe .5" heel lift',
                             "L8100" => "L8100 BK comp hose (20-30mmHg)","L8110" => "L8110 BK comp hose (30-40mmHg)", "L8130" => "L8130 AK comp hose (20-30mmHg)",
                             "L8140" => "L8140 AK comp hose (30-40mmHg)");
 
@@ -71,7 +112,7 @@ class FormProsthesis extends ORDataObject
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -90,353 +131,368 @@ class FormProsthesis extends ORDataObject
         }
     }
 
-    function __toString()
+    public function __toString()
     {
         return "ID: " . $this->id . "\n";
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function set_therapist($string)
+    public function set_therapist($string): void
     {
         $this->therapist = $string;
     }
 
-    function get_therapist()
+    public function get_therapist()
     {
         return $this->therapist;
     }
 
-    function set_involvement_left($tf)
+    public function set_involvement_left($tf): void
     {
         $this->involvement_left = $tf;
     }
 
-    function get_involvement_left()
+    public function get_involvement_left()
     {
         return $this->involvement_left;
     }
 
-    function set_involvement_right($tf)
+    public function set_involvement_right($tf): void
     {
         $this->involvement_right = $tf;
     }
 
-    function get_involvement_right()
+    public function get_involvement_right()
     {
         return $this->involvement_right;
     }
 
-    function set_involvement_bilateral($tf)
+    public function set_involvement_bilateral($tf): void
     {
         $this->involvement_bilateral = $tf;
     }
 
-    function get_involvement_bilateral()
+    public function get_involvement_bilateral()
     {
         return $this->involvement_bilateral;
     }
 
-    function set_location($string)
+    public function set_location($string): void
     {
         $this->location = $string;
     }
 
-    function get_location()
+    public function get_location()
     {
         return $this->location;
     }
-    function set_diagnosis($string)
+
+    public function set_diagnosis($string): void
     {
         $this->diagnosis = $string;
     }
 
-    function get_diagnosis()
+    public function get_diagnosis()
     {
         return $this->diagnosis;
     }
-    function set_hx($string)
+
+    public function set_hx($string): void
     {
         $this->hx = $string;
     }
 
-    function get_hx()
+    public function get_hx()
     {
         return $this->hx;
     }
 
-    function set_worn_le_past_five($tf)
+    public function set_worn_le_past_five($tf): void
     {
         $this->worn_le_past_five = $tf;
     }
 
-    function get_worn_le_past_five()
+    public function get_worn_le_past_five()
     {
         return $this->worn_le_past_five;
     }
 
-    function set_model($string)
+    public function set_model($string): void
     {
         $this->model = $string;
     }
 
-    function get_model()
+    public function get_model()
     {
         return $this->model;
     }
 
-    function set_new($tf)
+    public function set_new($tf): void
     {
         $this->new = $tf;
     }
 
-    function get_new()
+    public function get_new()
     {
         return $this->new;
     }
 
-    function set_size($string)
+    public function set_size($string): void
     {
         $this->size = $string;
     }
 
-    function get_size()
+    public function get_size()
     {
         return $this->size;
     }
 
-    function set_replacement($tf)
+    public function set_replacement($tf): void
     {
         $this->replacement = $tf;
     }
 
-    function get_replacement()
+    public function get_replacement()
     {
         return $this->replacement;
     }
 
-    function set_foam_impressions($tf)
+    public function set_foam_impressions($tf): void
     {
         $this->foam_impressions = $tf;
     }
 
-    function get_foam_impressions()
+    public function get_foam_impressions()
     {
         return $this->foam_impressions;
     }
 
-    function set_shoe_size($string)
+    public function set_shoe_size($string): void
     {
         $this->shoe_size = $string;
     }
 
-    function get_shoe_size()
+    public function get_shoe_size()
     {
         return $this->shoe_size;
     }
-    function set_calf($string)
+
+    public function set_calf($string): void
     {
         $this->calf = $string;
     }
 
-    function get_calf()
+    public function get_calf()
     {
         return $this->calf;
     }
-    function set_ankle($string)
+
+    public function set_ankle($string): void
     {
         $this->ankle = $string;
     }
 
-    function get_ankle()
+    public function get_ankle()
     {
         return $this->ankle;
     }
 
-    function set_purpose($string)
+    public function set_purpose($string): void
     {
         $this->purpose = $string;
     }
 
-    function get_purpose()
+    public function get_purpose()
     {
         return $this->purpose;
     }
-    function set_purpose_other($string)
+
+    public function set_purpose_other($string): void
     {
         $this->purpose_other = $string;
     }
 
-    function get_purpose_other()
+    public function get_purpose_other()
     {
         return $this->purpose_other;
     }
 
-    function set_notes($string)
+    public function set_notes($string): void
     {
         $this->notes = $string;
     }
 
-    function get_notes()
+    public function get_notes()
     {
         return $this->notes;
     }
-    function set_goals_discussed($tf)
+
+    public function set_goals_discussed($tf): void
     {
         $this->goals_discussed = $tf;
     }
 
-    function get_goals_discussed()
+    public function get_goals_discussed()
     {
         return $this->goals_discussed;
     }
 
-    function set_use_reviewed($tf)
+    public function set_use_reviewed($tf): void
     {
         $this->use_reviewed = $tf;
     }
 
-    function get_use_reviewed()
+    public function get_use_reviewed()
     {
         return $this->use_reviewed;
     }
 
-    function set_wear_reviewed($tf)
+    public function set_wear_reviewed($tf): void
     {
         $this->wear_reviewed = $tf;
     }
 
-    function get_wear_reviewed()
+    public function get_wear_reviewed()
     {
         return $this->wear_reviewed;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
-    function set_worn_years($string)
+    public function set_worn_years($string): void
     {
         $this->worn_years = $string;
     }
 
-    function get_worn_years()
+    public function get_worn_years()
     {
         return $this->worn_years;
     }
-    function set_age_months($string)
+
+    public function set_age_months($string): void
     {
         $this->age_months = $string;
     }
 
-    function get_age_months()
+    public function get_age_months()
     {
         return $this->age_months;
     }
-    function set_age_years($string)
+
+    public function set_age_years($string): void
     {
         $this->age_years = $string;
     }
 
-    function get_age_years()
+    public function get_age_years()
     {
         return $this->age_years;
     }
-    function set_wear_hours($string)
+
+    public function set_wear_hours($string): void
     {
         $this->wear_hours = $string;
     }
 
-    function get_wear_hours()
+    public function get_wear_hours()
     {
         return $this->wear_hours;
     }
 
-    function set_plan_to_order($tf)
+    public function set_plan_to_order($tf): void
     {
         $this->plan_to_order = $tf;
     }
 
-    function get_plan_to_order()
+    public function get_plan_to_order()
     {
         return $this->plan_to_order;
     }
 
-    function set_plan_to_order_date($string)
+    public function set_plan_to_order_date($string): void
     {
         $this->plan_to_order_date = $string;
     }
 
-    function get_plan_to_order_date()
+    public function get_plan_to_order_date()
     {
         return $this->plan_to_order_date;
     }
 
-    function set_received_product($tf)
+    public function set_received_product($tf): void
     {
         $this->received_product = $tf;
     }
 
-    function get_received_product()
+    public function get_received_product()
     {
         return $this->received_product;
     }
-    function set_received_product_date($string)
+
+    public function set_received_product_date($string): void
     {
         $this->received_product_date = $string;
     }
 
-    function get_received_product_date()
+    public function get_received_product_date()
     {
         return $this->received_product_date;
     }
 
-    function set_given_instructions($tf)
+    public function set_given_instructions($tf): void
     {
         $this->given_instructions = $tf;
     }
 
-    function get_given_instructions()
+    public function get_given_instructions()
     {
         return $this->given_instructions;
     }
 
-    function set_patient_understands($tf)
+    public function set_patient_understands($tf): void
     {
         $this->patient_understands = $tf;
     }
 
-    function get_patient_understands()
+    public function get_patient_understands()
     {
         return $this->patient_understands;
     }

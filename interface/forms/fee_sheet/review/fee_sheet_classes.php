@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * class definitions for objects used in processing fee sheet related data
  *
@@ -16,18 +18,16 @@
  */
 
 
-require_once("$srcdir/../custom/code_types.inc.php");
+require_once($srcdir . '/../custom/code_types.inc.php');
 
 class code_info
 {
-    function __construct($c, $ct, $desc, $selected = true)
+    public function __construct($c, $ct, $desc, $selected = true)
     {
         $this->code = $c;
         $this->code_type = $ct;
         $this->description = $desc;
         $this->selected = $selected;
-        // check if the code type is active and allowed to create medical problems from diagnosis elements
-        $this->allowed_to_create_problem_from_diagnosis = "FALSE";
         if (check_code_set_filters($ct, array("active","problem"))) {
             $this->allowed_to_create_problem_from_diagnosis = "TRUE";
         }
@@ -38,16 +38,30 @@ class code_info
             $this->allowed_to_create_diagnosis_from_problem = "TRUE";
         }
     }
+
     public $code;
+
     public $code_type;
+
     public $description;
+
     public $selected;
+
     public $db_id;
-    public $allowed_to_create_problem_from_diagnosis;
+
+    /**
+     * @var 'TRUE'
+     */
+    public $allowed_to_create_problem_from_diagnosis = "FALSE";
+
+    /**
+     * @var 'FALSE'|'TRUE'
+     */
     public $allowed_to_create_diagnosis_from_problem;
+
     public $create_problem;
 
-    public function getKey()
+    public function getKey(): string
     {
         return $this->code_type . "|" . $this->code;
     }
@@ -56,13 +70,17 @@ class code_info
     {
         return $this->code;
     }
+
     public function getCode_type()
     {
         return $this->code_type;
     }
-    public function addArrayParams(&$arr)
+
+    public function addArrayParams(&$arr): void
     {
-        array_push($arr, $this->code_type, $this->code, $this->description);
+        $arr[] = $this->code_type;
+        $arr[] = $this->code;
+        $arr[] = $this->description;
     }
 }
 
@@ -72,7 +90,7 @@ class code_info
  */
 class procedure extends code_info
 {
-    function __construct($c, $ct, $desc, $fee, $justify, $modifiers, $units, $mod_size, $selected = true)
+    public function __construct($c, $ct, $desc, $fee, $justify, $modifiers, $units, $mod_size, $selected = true)
     {
         parent::__construct($c, $ct, $desc, $selected);
         $this->fee = $fee;
@@ -81,17 +99,25 @@ class procedure extends code_info
         $this->units = $units;
         $this->mod_size = $mod_size;
     }
+
     public $fee;
+
     public $justify;
+
     public $modifiers;
+
     public $units;
+
     public $mod_size;
 
     //modifier, units, fee, justify
 
-    public function addProcParameters(&$params)
+    public function addProcParameters(&$params): void
     {
-        array_push($params, $this->modifiers, $this->units, $this->fee, $this->justify);
+        $params[] = $this->modifiers;
+        $params[] = $this->units;
+        $params[] = $this->fee;
+        $params[] = $this->justify;
     }
 }
 
@@ -100,16 +126,17 @@ class procedure extends code_info
  */
 class encounter_info
 {
-    function __construct($id, $date)
+    public function __construct($id, $date)
     {
         $this->id = $id;
         $this->date = $date;
     }
 
     public $id;
+
     public $date;
 
-    function getID()
+    public function getID()
     {
         return $this->id;
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -9,17 +11,13 @@
  *  @copyright Copyright (c) 2023 Omega Systems Group International <info@omegasystemsgroup.com>
  *  @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 use Exception;
 
 class LogDataInsert
 {
-    public function __construct()
-    {
-    }
-    public function insertPrescriptions($insertdata)
+    public function insertPrescriptions(array $insertdata): ?string
     {
         $sql = "INSERT INTO prescriptions SET ";
         $sql .= "active = ?, ";
@@ -51,12 +49,13 @@ class LogDataInsert
                 $insertdata['provider_id'],
                 $insertdata['prescriptionguid']
             ]);
-        } catch (Exception $e) {
-            return $e->getMessage();
+        } catch (Exception $exception) {
+            return $exception->getMessage();
         }
+        return null;
     }
 
-    public function updatePrescriptions($updatedata)
+    public function updatePrescriptions(array $updatedata): ?string
     {
         $sql = "UPDATE prescriptions SET ";
         $sql .= "active = ?, ";
@@ -88,8 +87,9 @@ class LogDataInsert
                 $updatedata['provider_id'],
                 $updatedata['prescriptionguid']
             ]);
-        } catch (Exception $e) {
-            return $e->getMessage();
+        } catch (Exception $exception) {
+            return $exception->getMessage();
         }
+        return null;
     }
 }

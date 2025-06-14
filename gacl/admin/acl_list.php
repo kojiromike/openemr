@@ -1,6 +1,8 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -12,7 +14,7 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once('gacl_admin.inc.php');
+require_once(__DIR__ . '/gacl_admin.inc.php');
 
 $getAction = $_GET['action'] ?? null;
 switch ($getAction) {
@@ -25,7 +27,7 @@ switch ($getAction) {
 
 		$gacl_api->debug_text('Delete!');
 
-		if (is_array ($_GET['delete_acl']) AND !empty($_GET['delete_acl'])) {
+		if (is_array ($_GET['delete_acl']) && (isset($_GET['delete_acl']) && $_GET['delete_acl'] !== [])) {
 			foreach($_GET['delete_acl'] as $id) {
 				$gacl_api->del_acl($id);
 			}
@@ -46,7 +48,7 @@ switch ($getAction) {
 		 * but will only return the matching rows, so it won't show the entire ACL information.
 		 *
 		 */
-		if (isset($getAction) AND $getAction == 'Filter') {
+		if (isset($getAction) && $getAction == 'Filter') {
 			$gacl_api->debug_text('Filtering...');
 
 			$query = '
@@ -56,10 +58,11 @@ switch ($getAction) {
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'aro_map ar ON ar.acl_id=a.id
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'axo_map ax ON ax.acl_id=a.id';
 
-			if ( isset($_GET['filter_aco_section']) AND $_GET['filter_aco_section'] != '-1') {
+			if ( isset($_GET['filter_aco_section']) && $_GET['filter_aco_section'] != '-1') {
 				$filter_query[] = 'ac.section_value='. $db->qstr(strtolower($_GET['filter_aco_section']));
 			}
-			if ( isset($_GET['filter_aco']) AND $_GET['filter_aco'] != '') {
+
+			if ( isset($_GET['filter_aco']) && $_GET['filter_aco'] != '') {
 				$query .= '
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'aco c ON (c.section_value=ac.section_value AND c.value=ac.value)';
 
@@ -67,17 +70,19 @@ switch ($getAction) {
 				$filter_query[] = '(lower(c.value) LIKE '. $name .' OR lower(c.name) LIKE '. $name .')';
 			}
 
-			if ( isset($_GET['filter_aro_section']) AND $_GET['filter_aro_section'] != '-1') {
+			if ( isset($_GET['filter_aro_section']) && $_GET['filter_aro_section'] != '-1') {
 				$filter_query[] = 'ar.section_value='. $db->qstr(strtolower($_GET['filter_aro_section']));
 			}
-			if ( isset($_GET['filter_aro']) AND $_GET['filter_aro'] != '') {
+
+			if ( isset($_GET['filter_aro']) && $_GET['filter_aro'] != '') {
 				$query .= '
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'aro r ON (r.section_value=ar.section_value AND r.value=ar.value)';
 
 				$name = $db->qstr(strtolower($_GET['filter_aro']));
 				$filter_query[] = '(lower(r.value) LIKE '. $name .' OR lower(r.name) LIKE '. $name .')';
 			}
-			if ( isset($_GET['filter_aro_group']) AND $_GET['filter_aro_group'] != '') {
+
+			if ( isset($_GET['filter_aro_group']) && $_GET['filter_aro_group'] != '') {
 				$query .= '
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'aro_groups_map arg ON arg.acl_id=a.id
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'aro_groups rg ON rg.id=arg.group_id';
@@ -85,17 +90,19 @@ switch ($getAction) {
 				$filter_query[] = '(lower(rg.name) LIKE '. $db->qstr(strtolower($_GET['filter_aro_group'])) .')';
 			}
 
-			if ( isset($_GET['filter_axo_section']) AND $_GET['filter_axo_section'] != '-1') {
+			if ( isset($_GET['filter_axo_section']) && $_GET['filter_axo_section'] != '-1') {
 				$filter_query[] = 'ax.section_value='. $db->qstr(strtolower($_GET['filter_axo_section']));
 			}
-			if ( isset($_GET['filter_axo']) AND $_GET['filter_axo'] != '') {
+
+			if ( isset($_GET['filter_axo']) && $_GET['filter_axo'] != '') {
 				$query .= '
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'axo x ON (x.section_value=ax.section_value AND x.value=ax.value)';
 
 				$name = $db->qstr(strtolower($_GET['filter_axo']));
 				$filter_query[] = '(lower(x.value) LIKE '. $name .' OR lower(x.name) LIKE '. $name .')';
 			}
-			if ( isset($_GET['filter_axo_group']) AND $_GET['filter_axo_group'] != '') {
+
+			if ( isset($_GET['filter_axo_group']) && $_GET['filter_axo_group'] != '') {
 				$query .= '
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'axo_groups_map axg ON axg.acl_id=a.id
 				LEFT JOIN	'. $gacl_api->_db_table_prefix .'axo_groups xg ON xg.id=axg.group_id';
@@ -103,20 +110,23 @@ switch ($getAction) {
 				$filter_query[] = '(lower(xg.name) LIKE '. $db->qstr(strtolower($_GET['filter_axo_group'])) .')';
 			}
 
-			if ( isset($_GET['filter_acl_section']) AND $_GET['filter_acl_section'] != '-1') {
+			if ( isset($_GET['filter_acl_section']) && $_GET['filter_acl_section'] != '-1') {
 				$filter_query[] = 'a.section_value='. $db->qstr(strtolower($_GET['filter_acl_section']));
 			}
-			if ( isset($_GET['filter_return_value']) AND $_GET['filter_return_value'] != '') {
+
+			if ( isset($_GET['filter_return_value']) && $_GET['filter_return_value'] != '') {
 				$filter_query[] = '(lower(a.return_value) LIKE '. $db->qstr(strtolower($_GET['filter_return_value'])) .')';
 			}
-			if ( isset($_GET['filter_allow']) AND $_GET['filter_allow'] != '-1') {
+
+			if ( isset($_GET['filter_allow']) && $_GET['filter_allow'] != '-1') {
 				$filter_query[] = '(a.allow LIKE '. $db->qstr($_GET['filter_allow']) .')';
 			}
-			if ( isset($_GET['filter_enabled']) AND $_GET['filter_enabled'] != '-1') {
+
+			if ( isset($_GET['filter_enabled']) && $_GET['filter_enabled'] != '-1') {
 				$filter_query[] = '(a.enabled LIKE '. $db->qstr($_GET['filter_enabled']) .')';
 			}
 
-			if (isset($filter_query) AND is_array($filter_query)) {
+			if (isset($filter_query) && is_array($filter_query)) {
 				$query .= '
 				WHERE '. implode(' AND ', $filter_query);
 			}
@@ -141,7 +151,7 @@ switch ($getAction) {
 			$rs->Close();
 		}
 
-		if ( !empty($acl_ids) ) {
+		if ( $acl_ids !== [] ) {
 			$acl_ids_sql = implode(',', $acl_ids);
 		} else {
 			//This shouldn't match any ACLs, returning 0 rows.
@@ -151,7 +161,7 @@ switch ($getAction) {
 		$acls = array();
 
 		//If the user is searching, and there are no results, don't run the query at all
-		if ( !($getAction == 'Filter' AND $acl_ids_sql == -1) ) {
+		if ( !($getAction == 'Filter' && $acl_ids_sql == -1) ) {
 
 			// grab acl details
 			$query = '
@@ -268,7 +278,7 @@ switch ($getAction) {
 
 			$smarty->assign('options_filter_'. $type . '_sections',  $options);
 
-			if (!isset($_GET['filter_' . $type . '_section']) OR $_GET['filter_' . $type . '_section'] == '') {
+			if (!isset($_GET['filter_' . $type . '_section']) || $_GET['filter_' . $type . '_section'] == '') {
 				$_GET['filter_' . $type . '_section'] = '-1';
 			}
 
@@ -279,10 +289,11 @@ switch ($getAction) {
 		$smarty->assign('options_filter_allow', array('-1' => 'Any', 1 => 'Allow', 0 => 'Deny'));
 		$smarty->assign('options_filter_enabled', array('-1' => 'Any', 1 => 'Yes', 0 => 'No'));
 
-		if (!isset($_GET['filter_allow']) OR $_GET['filter_allow'] == '') {
+		if (!isset($_GET['filter_allow']) || $_GET['filter_allow'] == '') {
 			$_GET['filter_allow'] = '-1';
 		}
-		if (!isset($_GET['filter_enabled']) OR $_GET['filter_enabled'] == '') {
+
+		if (!isset($_GET['filter_enabled']) || $_GET['filter_enabled'] == '') {
 			$_GET['filter_enabled'] = '-1';
 		}
 

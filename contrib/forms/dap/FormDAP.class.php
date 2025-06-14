@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -30,22 +32,31 @@ class FormDAP extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $authorized;
-    var $activity;
-    var $data;
-    var $assessment;
-    var $plan;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $authorized;
+
+    public $activity;
+
+    public $data;
+
+    public $assessment;
+
+    public $plan;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         if (is_numeric($id)) {
             $this->id = $id;
@@ -61,100 +72,115 @@ class FormDAP extends ORDataObject
             $this->populate();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
     }
 
-    function toString($html = false)
+    public function toString($html = false): string
     {
         $string = "\n" . "ID: " . $this->id . "\n";
         return $html ? nl2br($string) : $string;
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
-    function set_date($dt)
+
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
-    function get_user()
+
+    public function get_user()
     {
         return $this->user;
     }
-    function set_user($u)
+
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
-    function get_data()
+
+    public function get_data()
     {
         return $this->data;
     }
-    function set_data($data)
+
+    public function set_data($data): void
     {
         if (!empty($data)) {
             $this->data = $data;
         }
     }
-    function get_assessment()
+
+    public function get_assessment()
     {
         return $this->assessment;
     }
-    function set_assessment($data)
+
+    public function set_assessment($data): void
     {
         if (!empty($data)) {
             $this->assessment = $data;
         }
     }
-    function get_plan()
+
+    public function get_plan()
     {
         return $this->plan;
     }
-    function set_plan($data)
+
+    public function set_plan($data): void
     {
         if (!empty($data)) {
             $this->plan = $data;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }

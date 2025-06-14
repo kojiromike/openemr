@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // $Id$
 // ----------------------------------------------------------------------
 // PostNuke Content Management System
@@ -45,9 +47,9 @@ if (ini_get('register_globals') != 1) {
                             '_FILES',
                             '_GLOBALS' );
 
-    foreach ($supers as $__s) {
-        if ((isset($$__s) == true) && (is_array($$__s) == true)) {
-            extract($$__s, EXTR_OVERWRITE);
+    foreach ($supers as $super) {
+        if ((isset($$super) == true) && (is_array($$super) == true)) {
+            extract($$super, EXTR_OVERWRITE);
         }
     }
 
@@ -90,7 +92,7 @@ define('_PN_CONFIG_MODULE', '/PNConfig');
  * @returns true|false
  * @return none
  */
-function pnConfigInit()
+function pnConfigInit(): bool
 {
     global $pnconfig;
 
@@ -105,7 +107,7 @@ function pnConfigInit()
      */
     $query = "SELECT $columns[name],
                      $columns[value]
-              FROM $table
+              FROM {$table}
               WHERE $columns[modname]='" . pnVarPrepForStore(_PN_CONFIG_MODULE) . "'";
     $dbresult = $dbconn->Execute($query);
     if ($dbconn->ErrorNo() != 0) {
@@ -157,7 +159,7 @@ function pnConfigGetVar($name)
          * Make query and go
          */
         $query = "SELECT $columns[value]
-                  FROM $table
+                  FROM {$table}
                   WHERE $columns[modname]='" . pnVarPrepForStore(_PN_CONFIG_MODULE) . "'
                     AND $columns[name]='" . pnVarPrepForStore($name) . "'";
         $dbresult = $dbconn->Execute($query);
@@ -202,7 +204,7 @@ function pnConfigGetVar($name)
  * running.
  * @returns void
  */
-function pnInit()
+function pnInit(): bool
 {
     // Hack for some weird PHP systems that should have the
     // LC_* constants defined, but don't
@@ -220,12 +222,12 @@ function pnInit()
     // Initialise and load configuration
     global $pnconfig;
     $pnconfig = array();
-    require 'config.php';
+    require __DIR__ . '/config.php';
 
     // Initialise and load pntables
     global $pntable;
     $pntable = array();
-    require 'pntables.php';
+    require __DIR__ . '/pntables.php';
 
     // Connect to database
     if (!pnDBInit()) {
@@ -236,13 +238,13 @@ function pnInit()
     pnConfigInit();
 
     // Other other includes
-    require 'includes/pnHTML.php';
-    require 'includes/pnMod.php';
+    require __DIR__ . '/includes/pnHTML.php';
+    require __DIR__ . '/includes/pnMod.php';
 
     return true;
 }
 
-function pnDBInit()
+function pnDBInit(): bool
 {
     // Get database parameters
     global $pnconfig;
@@ -261,23 +263,23 @@ function pnDBInit()
     // Set mysql to use ssl, if applicable.
     // Can support basic encryption by including just the mysql-ca pem (this is mandatory for ssl)
     // Can also support client based certificate if also include mysql-cert and mysql-key (this is optional for ssl)
-    if (file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-ca")) {
-        if (defined('MYSQLI_CLIENT_SSL')) {
-            if (
-                file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-key") &&
-                file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-cert")
-            ) {
-                // with client side certificate/key
-                $dbconn->ssl_key = "{$GLOBALS['OE_SITE_DIR']}/documents/certificates/mysql-key";
-                $dbconn->ssl_cert = "{$GLOBALS['OE_SITE_DIR']}/documents/certificates/mysql-cert";
-                $dbconn->ssl_ca = "{$GLOBALS['OE_SITE_DIR']}/documents/certificates/mysql-ca";
-            } else {
-                // without client side certificate/key
-                $dbconn->ssl_ca = "{$GLOBALS['OE_SITE_DIR']}/documents/certificates/mysql-ca";
-            }
-            $dbconn->clientFlags = MYSQLI_CLIENT_SSL;
+    if (file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-ca") && defined('MYSQLI_CLIENT_SSL')) {
+        if (
+            file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-key") &&
+            file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-cert")
+        ) {
+            // with client side certificate/key
+            $dbconn->ssl_key = $GLOBALS['OE_SITE_DIR'] . '/documents/certificates/mysql-key';
+            $dbconn->ssl_cert = $GLOBALS['OE_SITE_DIR'] . '/documents/certificates/mysql-cert';
+            $dbconn->ssl_ca = $GLOBALS['OE_SITE_DIR'] . '/documents/certificates/mysql-ca';
+        } else {
+            // without client side certificate/key
+            $dbconn->ssl_ca = $GLOBALS['OE_SITE_DIR'] . '/documents/certificates/mysql-ca';
         }
+
+        $dbconn->clientFlags = MYSQLI_CLIENT_SSL;
     }
+
     $dbconn->port = $dbport;
 
     if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($_SESSION["enable_database_connection_pooling"])) && empty($GLOBALS['connection_pooling_off'])) {
@@ -285,6 +287,7 @@ function pnDBInit()
     } else {
         $dbh = $dbconn->connect($dbhost, $dbuname, $dbpass, $dbname);
     }
+
     if (!$dbh) {
         //$dbpass = "";
         //die("$dbtype://$dbuname:$dbpass@$dbhost/$dbname failed to connect" . $dbconn->ErrorMsg());
@@ -335,7 +338,7 @@ function pnDBInit()
  * @returns array
  * @return array of database connections
  */
-function pnDBGetConn()
+function pnDBGetConn(): array
 {
     global $dbconn;
 
@@ -383,22 +386,22 @@ function pnVarCleanFromInput()
     // Get var
         global $$var;
         if (empty($var)) {
-            return;
+            return null;
         }
 
         $ourvar = $$var;
         if (!isset($ourvar)) {
-            array_push($resarray, null);
+            $resarray[] = null;
             continue;
         }
 
         if (empty($ourvar)) {
-            array_push($resarray, $ourvar);
+            $resarray[] = $ourvar;
             continue;
         }
 
         // Add to result array
-        array_push($resarray, $ourvar);
+        $resarray[] = $ourvar;
     }
 
     // Return vars
@@ -435,10 +438,10 @@ function pnVarPrepForDisplay()
 
         $ourvar = preg_replace_callback(
             $search,
-            function ($m) {
+            function (array $m) {
 
                 $output = "";
-                for ($i = 0; $i < (strlen($m[0])); $i++) {
+                for ($i = 0; $i < (strlen($m[0])); ++$i) {
                     $output .= '&#' . ord($m[0][$i]) . ';';
                 }
 
@@ -449,7 +452,7 @@ function pnVarPrepForDisplay()
 
 
         // Add to array
-        array_push($resarray, $ourvar);
+        $resarray[] = $ourvar;
     }
 
     // Return vars
@@ -498,7 +501,7 @@ function pnVarPrepHTMLDisplay()
         $ourvar = htmlspecialchars($ourvar);
         $ourvar = preg_replace_callback(
             $search,
-            function ($matches) {
+            function ($matches): string {
                 return "&#" .
                 sprintf("%03d", ord($matches[1])) .
                 ";&#064;&#" .
@@ -510,8 +513,8 @@ function pnVarPrepHTMLDisplay()
         // Fix the HTML that we want
         $ourvar = preg_replace_callback(
             '/\022([^\024]*)\024/',
-            function ($matches) {
-                return '<' . strtr("$matches[1]", array('&gt;' => '>', '&lt;' => '<', '&quot;' => '\"')) . '>';
+            function ($matches): string {
+                return '<' . strtr($matches[1], array('&gt;' => '>', '&lt;' => '<', '&quot;' => '\"')) . '>';
             },
             $ourvar
         );
@@ -522,7 +525,7 @@ function pnVarPrepHTMLDisplay()
         }
 
         // Add to array
-        array_push($resarray, $ourvar);
+        $resarray[] = $ourvar;
     }
 
     // Return vars
@@ -552,7 +555,7 @@ function pnVarPrepForStore()
         $ourvar = add_escape_custom($ourvar);
 
         // Add to array
-        array_push($resarray, $ourvar);
+        $resarray[] = $ourvar;
     }
 
     // Return vars
@@ -596,7 +599,7 @@ function pnVarPrepForOS()
         $ourvar = addslashes($ourvar);
 
         // Add to array
-        array_push($resarray, $ourvar);
+        $resarray[] = $ourvar;
     }
 
     // Return vars
@@ -613,22 +616,18 @@ function pnVarPrepForOS()
  * @returns string
  * @return base URI for PostNuke
  */
-function pnGetBaseURI()
+function pnGetBaseURI(): string
 {
     global $HTTP_SERVER_VARS;
 
     // Get the name of this URI
 
     // Start of with REQUEST_URI
-    if (isset($HTTP_SERVER_VARS['REQUEST_URI'])) {
-        $path = $HTTP_SERVER_VARS['REQUEST_URI'];
-    } else {
-        $path = getenv('REQUEST_URI');
-    }
+    $path = isset($HTTP_SERVER_VARS['REQUEST_URI']) ? $HTTP_SERVER_VARS['REQUEST_URI'] : getenv('REQUEST_URI');
 
     if (
         (empty($path)) ||
-        (substr($path, -1, 1) == '/')
+        (substr($path, -1, 1) === '/')
     ) {
         // REQUEST_URI was empty or pointed to a path
         // Try looking at PATH_INFO
@@ -636,11 +635,7 @@ function pnGetBaseURI()
         if (empty($path)) {
             // No luck there either
             // Try SCRIPT_NAME
-            if (isset($HTTP_SERVER_VARS['SCRIPT_NAME'])) {
-                $path = $HTTP_SERVER_VARS['SCRIPT_NAME'];
-            } else {
-                $path = getenv('SCRIPT_NAME');
-            }
+            $path = isset($HTTP_SERVER_VARS['SCRIPT_NAME']) ? $HTTP_SERVER_VARS['SCRIPT_NAME'] : getenv('SCRIPT_NAME');
         }
     }
 
@@ -659,13 +654,13 @@ function pnGetBaseURI()
  * @returns string
  * @return base URL for PostNuke
  */
-function pnGetBaseURL()
+function pnGetBaseURL(): string
 {
 
     // Removed majority of this function in 10/2017 to just use relative path
     // (the full path would break in some https server setups)
 
-    $path = pnGetBaseURI();
+    $base = pnGetBaseURI();
 
-    return "$path/";
+    return $base . '/';
 }

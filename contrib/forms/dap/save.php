@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -9,7 +11,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -17,7 +19,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
     CsrfUtils::csrfNotVerified();
 }
 
-require("C_FormDAP.class.php");
+require(__DIR__ . "/C_FormDAP.class.php");
 $c = new C_FormDAP();
-echo $c->default_action_process($_POST);
+echo $c->default_action_process();
 @formJump();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This program saves data from the misc_billing_form
  *
@@ -17,8 +19,8 @@
 
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Session\SessionUtil;
@@ -33,6 +35,7 @@ if (isset($_SESSION['billencounter'])) {
     $encounter = $_SESSION['billencounter'];
     echo "<script src='" . $webroot . "/interface/main/tabs/js/include_opener.js'></script>";
 }
+
 if (!$encounter) { // comes from globals.php
     die(xlt("Internal error: we do not seem to be in an encounter!"));
 }
@@ -88,7 +91,7 @@ $sets = "pid = ?,
 
 if (empty($id)) {
     $newid = sqlInsert(
-        "INSERT INTO form_misc_billing_options SET $sets",
+        'INSERT INTO form_misc_billing_options SET ' . $sets,
         [
             $pid,
             $_SESSION["authProvider"],
@@ -126,7 +129,7 @@ if (empty($id)) {
     addForm($encounter, "Misc Billing Options", $newid, "misc_billing_options", $pid, $userauthorized);
 } else {
     sqlStatement(
-        "UPDATE form_misc_billing_options SET $sets WHERE id = ?",
+        sprintf('UPDATE form_misc_billing_options SET %s WHERE id = ?', $sets),
         [
             $pid,
             $_SESSION["authProvider"],

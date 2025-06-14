@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * sdoh form
  *
@@ -23,7 +25,7 @@ if ($patientPortalSession) {
 $patientPortalOther = CoreFormToPortalUtility::isPatientPortalOther($_GET);
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -180,7 +182,7 @@ if (!empty($_GET['id'])) {
         <div class="row">
             <div class="col-12">
                 <h2><?php echo xlt("Social Screening Tool");?></h2>
-                <?php if ($mode == "new") { ?>
+                <?php if ($mode === "new") { ?>
                     <form method="post" action="<?php echo $rootdir;?>/forms/sdoh/save.php?mode=new<?php echo ($patientPortalSession) ? '&isPortal=1' : '' ?>" name="my_form" onsubmit="return top.restoreSession()">
                 <?php } else { // $mode == "update" ?>
                     <form method="post" action="<?php echo $rootdir;?>/forms/sdoh/save.php?mode=update&id=<?php echo attr_url($_GET["id"]); ?><?php echo ($patientPortalSession) ? '&isPortal=1' : '' ?><?php echo ($patientPortalOther) ? '&formOrigin=' . attr_url($_GET['formOrigin']) : '' ?>" name="my_form" onsubmit="return top.restoreSession()">

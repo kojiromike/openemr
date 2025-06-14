@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functional cognitive status form.
  *
@@ -16,19 +18,18 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function observation_report($pid, $encounter, $cols, $id)
+function observation_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
     $sql = "SELECT * FROM `form_observation` WHERE id=? AND pid = ? AND encounter = ?";
-    $res = sqlStatement($sql, array($id,$_SESSION["pid"], $_SESSION["encounter"]));
+    $recordset = sqlStatement($sql, array($id,$_SESSION["pid"], $_SESSION["encounter"]));
 
 
 
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($recordset); ++$iter) {
         $data[$iter] = $row;
     }
 
-    if (!empty($data)) {
+    if ($data !== []) {
         print "<table style='border-collapse:collapse;border-spacing:0;width: 100%;'>
             <tr>
                 <td align='center' style='border:1px solid #ccc;padding:4px;'><span class=bold>" . xlt('Code') . "</span></td>
@@ -39,7 +40,7 @@ function observation_report($pid, $encounter, $cols, $id)
                 <td align='center' style='border:1px solid #ccc;padding:4px;'><span class=bold>" . xlt('Unit') . "</span></td>
                 <td align='center' style='border:1px solid #ccc;padding:4px;'><span class=bold>" . xlt('Date') . "</span></td>
             </tr>";
-        foreach ($data as $key => $value) {
+        foreach ($data as $value) {
             if ($value['code'] == 'SS003') {
                 if ($value['ob_value'] == '261QE0002X') {
                     $value['ob_value'] = 'Emergency Care';

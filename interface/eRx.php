@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRx.php Redirect to NewCrop pages.
  *
@@ -22,15 +24,9 @@ require_once($GLOBALS['fileroot'] . '/interface/eRxPage.php');
 
 set_time_limit(0);
 
-function array_key_exists_default($key, $search, $default = null)
+function array_key_exists_default($key, array $search, $default = null)
 {
-    if (array_key_exists($key, $search)) {
-        $value = $search[$key];
-    } else {
-        $value = $default;
-    }
-
-    return $value;
+    return array_key_exists($key, $search) ? $search[$key] : $default;
 }
 
 $GLOBALS_REF = $GLOBALS;
@@ -127,8 +123,8 @@ if (count($missingExtensions) > 0) {
             ?>
         <strong><?php echo xlt('NewCrop call failed'); ?></strong>
         <ul>
-            <?php foreach ($errors as $message) {
-                echo '<li>' . text($message) . '</li>';
+            <?php foreach ($errors as $error) {
+                echo '<li>' . text($error) . '</li>';
             } ?>
         <ul>
             <?php

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * soap form
  *
@@ -34,23 +36,33 @@ class FormSOAP extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $authorized;
-    var $activity;
-    var $subjective;
-    var $objective;
-    var $assessment;
-    var $plan;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $authorized;
+
+    public $activity;
+
+    public $subjective;
+
+    public $objective;
+
+    public $assessment;
+
+    public $plan;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         if (is_numeric($id)) {
             $this->id = $id;
@@ -67,111 +79,128 @@ class FormSOAP extends ORDataObject
             //$this->date = $this->get_date();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function toString($html = false)
+    public function toString($html = false): string
     {
         $string = "\n" . "ID: " . $this->id . "\n";
         return $html ? nl2br($string) : $string;
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
-    function set_date($dt)
+
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
-    function get_user()
+
+    public function get_user()
     {
         return $this->user;
     }
-    function set_user($u)
+
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
-    function get_subjective()
+
+    public function get_subjective()
     {
         return $this->subjective;
     }
-    function set_subjective($data)
+
+    public function set_subjective($data): void
     {
         if (!empty($data)) {
             $this->subjective = $data;
         }
     }
-    function get_objective()
+
+    public function get_objective()
     {
         return $this->objective;
     }
-    function set_objective($data)
+
+    public function set_objective($data): void
     {
         if (!empty($data)) {
             $this->objective = $data;
         }
     }
-    function get_assessment()
+
+    public function get_assessment()
     {
         return $this->assessment;
     }
-    function set_assessment($data)
+
+    public function set_assessment($data): void
     {
         if (!empty($data)) {
             $this->assessment = $data;
         }
     }
-    function get_plan()
+
+    public function get_plan()
     {
         return $this->plan;
     }
-    function set_plan($data)
+
+    public function set_plan($data): void
     {
         if (!empty($data)) {
             $this->plan = $data;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -8,7 +10,6 @@
  * @copyright Copyright (c) 2025 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn\EventSubscriber;
 
 use OpenEMR\Events\Services\DornLabEvent;
@@ -26,36 +27,36 @@ class DornLabSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function onGenHl7Order(DornLabEvent $event): void
+    public function onGenHl7Order(DornLabEvent $dornLabEvent): void
     {
         try {
-            $dorn = new DornGenHl7Order();
-            $msg = $dorn->genHl7Order($event->getFormid(), $event->getHl7());
-            $event->addMessage($msg);
-        } catch (\Exception $e) {
-            $event->addMessage("GEN_HL7_ORDER error: " . $e->getMessage());
+            $dornGenHl7Order = new DornGenHl7Order();
+            $msg = $dornGenHl7Order->genHl7Order($dornLabEvent->getFormid(), $dornLabEvent->getHl7());
+            $dornLabEvent->addMessage($msg);
+        } catch (\Exception $exception) {
+            $dornLabEvent->addMessage("GEN_HL7_ORDER error: " . $exception->getMessage());
         }
     }
 
-    public function onGenBarcode(DornLabEvent $event): void
+    public function onGenBarcode(DornLabEvent $dornLabEvent): void
     {
         try {
-            $dorn = new DornGenHl7Order();
-            $msg = $dorn->genHl7OrderBarCode($event->getFormid(), $event->getReqStr());
-            $event->addMessage($msg);
-        } catch (\Exception $e) {
-            $event->addMessage("GEN_BARCODE error: " . $e->getMessage());
+            $dornGenHl7Order = new DornGenHl7Order();
+            $msg = $dornGenHl7Order->genHl7OrderBarCode($dornLabEvent->getFormid(), $dornLabEvent->getReqStr());
+            $dornLabEvent->addMessage($msg);
+        } catch (\Exception $exception) {
+            $dornLabEvent->addMessage("GEN_BARCODE error: " . $exception->getMessage());
         }
     }
 
-    public function onSendOrder(DornLabEvent $event): void
+    public function onSendOrder(DornLabEvent $dornLabEvent): void
     {
         try {
-            $dorn = new DornGenHl7Order();
-            $msg = $dorn->sendHl7Order($event->getPpid(), $event->getFormid(), $event->getHl7());
-            $event->addMessage($msg);
-        } catch (\Exception $e) {
-            $event->addMessage("SEND_ORDER error: " . $e->getMessage());
+            $dornGenHl7Order = new DornGenHl7Order();
+            $msg = $dornGenHl7Order->sendHl7Order($dornLabEvent->getPpid(), $dornLabEvent->getFormid(), $dornLabEvent->getHl7());
+            $dornLabEvent->addMessage($msg);
+        } catch (\Exception $exception) {
+            $dornLabEvent->addMessage("SEND_ORDER error: " . $exception->getMessage());
         }
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Batch Email processor, included from batchcom
  *
@@ -14,7 +16,7 @@
 
 // create file header.
 // menu for fields could be added in the future
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -31,7 +33,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
 </head>
 <body class="body_top container">
 <header class="row">
-    <?php require_once("batch_navigation.php");?>
+    <?php require_once(__DIR__ . "/batch_navigation.php");?>
     <h1 class="col-md-12">
         <a href="batchcom.php"><?php echo xlt('Batch Communication Tool')?></a>
         <small><?php echo xlt('Email Notification Report'); ?></small>
@@ -54,7 +56,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
             $email_body = preg_replace('/\*{3}NAME\*{3}/', $pt_name, $email_body);
 
             $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "To: $pt_name<" . $pt_email . ">\r\n";
+            $headers .= sprintf('To: %s<', $pt_name) . $pt_email . ">\r\n";
             $headers .= "From: <" . $email_sender . ">\r\n";
             $headers .= "Reply-to: <" . $email_sender . ">\r\n";
             $headers .= "X-Priority: 3\r\n";
@@ -63,7 +65,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
                 echo "<li>" . xlt('Email sent to') . ": " . text($pt_name) . " , " . text($pt_email) . "</li>";
             } else {
                 $m_error = true;
-                $m_error_count++;
+                ++$m_error_count;
             }
         }
         ?>

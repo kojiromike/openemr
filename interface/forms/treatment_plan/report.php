@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * treatment plan form.
  *
@@ -15,7 +17,7 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function treatment_plan_report($pid, $encounter, $cols, $id)
+function treatment_plan_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_treatment_plan", $id);
@@ -32,7 +34,7 @@ function treatment_plan_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td><span class=bold>" . xlt($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

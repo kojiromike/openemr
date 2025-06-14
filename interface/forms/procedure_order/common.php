@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form for entering procedure orders.
  *
@@ -18,9 +20,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/options.inc.php');
 require_once(__DIR__ . "/../../orders/qoe.inc.php");
 require_once(__DIR__ . "/../../../custom/code_types.inc.php");
 
@@ -66,10 +68,7 @@ function isDornLab($ppid)
 
     $sql = "SELECT 1 FROM mod_dorn_routes WHERE ppid = ?";
     $dornRecord = sqlQuery($sql, [$ppid]);
-    if ($dornRecord !== false) {
-        return true;
-    }
-    return false;
+    return $dornRecord !== false;
 }
 
 function get_lab_name($id): string
@@ -92,7 +91,7 @@ if (!function_exists('ucname')) {
     function ucname($string): string
     {
         $string = ucwords(strtolower($string));
-        foreach (array('-', '\'') as $delimiter) {
+        foreach (array('-', "'") as $delimiter) {
             if (strpos($string, $delimiter) !== false) {
                 $string = implode($delimiter, array_map('ucfirst', explode($delimiter, $string)));
             }
@@ -106,15 +105,14 @@ function cbvalue($cbname): string
     return $_POST[$cbname] ? '1' : '0';
 }
 
-function cbinput($name, $colname)
+function cbinput($name, $colname): string
 {
     global $row;
     $ret = "<input type='checkbox' name='" . attr($name) . "' value='1'";
     if ($row[$colname]) {
         $ret .= " checked";
     }
-    $ret .= " />";
-    return $ret;
+    return $ret . " />";
 }
 
 function cbcell($name, $desc, $colname): string
@@ -134,10 +132,10 @@ function QuotedOrNull($fld)
 function getListOptions($list_id, $fieldnames = array('option_id', 'title', 'seq')): array
 {
     $output = array();
-    $query = sqlStatement("SELECT " . implode(',', $fieldnames) . " FROM list_options where list_id = ? AND activity = 1 order by seq", array($list_id));
-    while ($ll = sqlFetchArray($query)) {
-        foreach ($fieldnames as $val) {
-            $output[$ll['option_id']][$val] = $ll[$val];
+    $recordset = sqlStatement("SELECT " . implode(',', $fieldnames) . " FROM list_options where list_id = ? AND activity = 1 order by seq", array($list_id));
+    while ($ll = sqlFetchArray($recordset)) {
+        foreach ($fieldnames as $fieldname) {
+            $output[$ll['option_id']][$fieldname] = $ll[$fieldname];
         }
     }
     return $output;
@@ -213,22 +211,22 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
     );
 // If updating an existing form...
 //
-    if ($formid) {
-        $query = "UPDATE procedure_order SET $sets WHERE procedure_order_id = ?";
+    if ($formid !== 0) {
+        $query = sprintf('UPDATE procedure_order SET %s WHERE procedure_order_id = ?', $sets);
         $set_array_temp = $set_array;
         $set_array_temp[] = $formid;
         sqlStatement($query, $set_array_temp);
         $gbl_lab = get_lab_name($ppid);
         $tmp = $_POST['procedure_type_names'] ?: $formid;
-        $lab_title = $gbl_lab_title . "-$tmp";
+        $lab_title = $gbl_lab_title . ('-' . $tmp);
         $query = "UPDATE forms SET form_name = ? WHERE encounter = ? AND form_id = ? AND formdir = ?";
         sqlStatement($query, array($lab_title, $encounter, $formid, 'procedure_order'));
     } else {
-        $query = "INSERT INTO procedure_order SET $sets";
+        $query = 'INSERT INTO procedure_order SET ' . $sets;
         $formid = sqlInsert($query, $set_array);
         $gbl_lab = get_lab_name($ppid);
         $tmp = $_POST['procedure_type_names'] ?: $formid;
-        $lab_title = $gbl_lab_title . "-$tmp";
+        $lab_title = $gbl_lab_title . ('-' . $tmp);
         addForm($encounter, $lab_title, $formid, "procedure_order", $pid, $userauthorized);
         $mode = 'update';
         $viewmode = true;
@@ -273,7 +271,7 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
             }
         }
 
-        $prefix = "ans$i" . "_";
+        $prefix = 'ans' . $i . "_";
 
         sqlBeginTrans();
         $procedure_order_seq = sqlQuery("SELECT IFNULL(MAX(procedure_order_seq),0) + 1 AS increment FROM procedure_order_code WHERE procedure_order_id = ? ", array($formid));
@@ -283,17 +281,17 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
         $reason_date_high = trim($_POST['form_proc_reason_date_high'][$i] ?? '');
         $reason_status = trim($_POST['form_proc_reason_status'][$i] ?? '');
 
-        if (empty($reason_code)) {
+        if ($reason_code === '' || $reason_code === '0') {
             $reason_description = null;
             $reason_date_low = null;
             $reason_date_high = null;
             $reason_status = null;
         }
         // set these values to null if they are empty as we don't want it to use 0000-00-00 00:00:00 for the datetime
-        if (empty($reason_date_low)) {
+        if ($reason_date_low === null || $reason_date_low === '' || $reason_date_low === '0') {
             $reason_date_low = null;
         }
-        if (empty($reason_date_high)) {
+        if ($reason_date_high === null || $reason_date_high === '' || $reason_date_high === '0') {
             $reason_date_high = null;
         }
 
@@ -347,11 +345,11 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
             $fldtype = $qrow['fldtype'];
             $data = '';
             if ($fldtype == 'G') {
-                if ($_POST["G1_$prefix$qcode"]) {
-                    $data = $_POST["G1_$prefix$qcode"] * 7 + $_POST["G2_$prefix$qcode"];
+                if ($_POST[sprintf('G1_%s%s', $prefix, $qcode)]) {
+                    $data = $_POST[sprintf('G1_%s%s', $prefix, $qcode)] * 7 + $_POST[sprintf('G2_%s%s', $prefix, $qcode)];
                 }
             } else {
-                $data = $_POST["$prefix$qcode"];
+                $data = $_POST[$prefix . $qcode];
             }
 
             if (!isset($data) || $data === '') {
@@ -419,7 +417,7 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
         if (empty($_POST['form_billing_type'])) {
             $order_data .= "\n" . xlt("Billing Type is required but not selected!");
         }
-        if ($order_data) {
+        if ($order_data !== '' && $order_data !== '0') {
             $alertmsg = date('Y-m-d H:i') . " " . xlt("Prior Validations Errors") . $order_data;
             $order_data .= "\n<span class='text-danger'>" . "- " .
                 xlt("Please resolve errors and resubmit order.") .
@@ -440,25 +438,23 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
                 $alertmsg .= $event->getMessagesAsString('Generate Order:', true);
                 // TODO: Generate Barcode may be used for requisition printing.
                 /*$ed->dispatch($event, DornLabEvent::GEN_BARCODE);
-                $alertmsg .= $event->getMessagesAsString('Generate Barcode: ', true);*/
+                  $alertmsg .= $event->getMessagesAsString('Generate Barcode: ', true);*/
+            } elseif ($gbl_lab === 'ammon' || $gbl_lab === 'clarity') {
+                require_once(__DIR__ . "/../../procedure_tools/gen_universal_hl7/gen_hl7_order.inc.php");
+                $alertmsg = gen_hl7_order($formid, $hl7);
+            } elseif ($gbl_lab === 'labcorp') {
+                error_log("in the labcorp");
+                require_once(__DIR__ . "/../../procedure_tools/labcorp/ereq_form.php");
+                require_once(__DIR__ . "/../../procedure_tools/labcorp/gen_hl7_order.inc.php");
+                $alertmsg = gen_hl7_order($formid, $hl7, $reqStr);
+            } elseif ($gbl_lab === 'quest') {
+                error_log("in the quest");
+                require_once(__DIR__ . "/../../procedure_tools/quest/gen_hl7_order.inc.php");
+                $alertmsg = gen_hl7_order($formid, $hl7, $reqStr);
             } else {
-                if ($gbl_lab === 'ammon' || $gbl_lab === 'clarity') {
-                    require_once(__DIR__ . "/../../procedure_tools/gen_universal_hl7/gen_hl7_order.inc.php");
-                    $alertmsg = gen_hl7_order($formid, $hl7);
-                } elseif ($gbl_lab === 'labcorp') {
-                    error_log("in the labcorp");
-                    require_once(__DIR__ . "/../../procedure_tools/labcorp/ereq_form.php");
-                    require_once(__DIR__ . "/../../procedure_tools/labcorp/gen_hl7_order.inc.php");
-                    $alertmsg = gen_hl7_order($formid, $hl7, $reqStr);
-                } elseif ($gbl_lab === 'quest') {
-                    error_log("in the quest");
-                    require_once(__DIR__ . "/../../procedure_tools/quest/gen_hl7_order.inc.php");
-                    $alertmsg = gen_hl7_order($formid, $hl7, $reqStr);
-                } else {
-                    // Default lab. Add more labs here.
-                    require_once(__DIR__ . "/../../orders/gen_hl7_order.inc.php");
-                    $alertmsg = gen_hl7_order($formid, $hl7);
-                }
+                // Default lab. Add more labs here.
+                require_once(__DIR__ . "/../../orders/gen_hl7_order.inc.php");
+                $alertmsg = gen_hl7_order($formid, $hl7);
             }
 
             if (empty($alertmsg)) {
@@ -487,16 +483,14 @@ if (($_POST['bn_save'] ?? null) || !empty($_POST['bn_xmit']) || !empty($_POST['b
                     }
                     if ($gbl_lab === 'quest' && $isDorn === false) {
                         $order_log .= xlt("Transmitting order to Quest");
-                        $ed->dispatch(new QuestLabTransmitEvent($hl7), QuestLabTransmitEvent::EVENT_LAB_TRANSMIT, 10);
-                        $ed->dispatch(new QuestLabTransmitEvent($pid), QuestLabTransmitEvent::EVENT_LAB_POST_ORDER_LOAD, 10);
+                        $ed->dispatch(new QuestLabTransmitEvent($hl7), QuestLabTransmitEvent::EVENT_LAB_TRANSMIT);
+                        $ed->dispatch(new QuestLabTransmitEvent($pid), QuestLabTransmitEvent::EVENT_LAB_POST_ORDER_LOAD);
                     }
 
-                    if ($_POST['form_order_psc']) {
-                        if ($gbl_lab === 'labcorp' && $isDorn === false) {
-                            $order_log .= "\n" . date('Y-m-d H:i') . " " .
-                                xlt("Generating and charting requisition for PSC Hold Order") . "...\n";
-                            ereqForm($pid, $encounter, $formid, $reqStr, $savereq);
-                        }
+                    if ($_POST['form_order_psc'] && ($gbl_lab === 'labcorp' && $isDorn === false)) {
+                        $order_log .= "\n" . date('Y-m-d H:i') . " " .
+                            xlt("Generating and charting requisition for PSC Hold Order") . "...\n";
+                        ereqForm($pid, $encounter, $formid, $reqStr, $savereq);
                     }
                 } else {
                     $savereq = false;
@@ -559,10 +553,8 @@ $account_facility = $location['id'] ?? '';
 if (!empty($row['lab_id'])) {
     $log_file = $GLOBALS["OE_SITE_DIR"] . "/documents/labs/" . check_file_dir_name(get_lab_name($row['lab_id'])) . "/logs/";
 
-    if (!is_dir($log_file)) {
-        if (!mkdir($log_file, 0755, true) && !is_dir($log_file)) {
-            throw new Exception(sprintf('Directory "%s" was not created', $log_file));
-        }
+    if (!is_dir($log_file) && (!mkdir($log_file, 0755, true) && !is_dir($log_file))) {
+        throw new Exception(sprintf('Directory "%s" was not created', $log_file));
     }
 // filename
     $log_file .= check_file_dir_name($formid) . '_order_log.log';
@@ -582,7 +574,7 @@ if (!empty($row['lab_id'])) {
         var currentLabId = <?php echo js_escape($row['lab_id'] ?? ''); ?>;
         var currentLab = <?php echo js_escape($gbl_lab); ?>;
         var currentLabTitle = <?php echo js_escape($gbl_lab_title); ?>;
-        var viewmode = <?php echo !empty($viewmode) ? 1 : 0 ?>;
+        var viewmode = <?php echo empty($viewmode) ? 0 : 1 ?>;
         var refreshForm = <?php echo js_escape($reload_url); ?>;
 
 
@@ -1098,7 +1090,7 @@ if (!empty($row['lab_id'])) {
 </head>
 <?php
 $name = $enrow['fname'] . ' ';
-$name .= (!empty($enrow['mname'])) ? $enrow['mname'] . ' ' . $enrow['lname'] : $enrow['lname'];
+$name .= (empty($enrow['mname'])) ? $enrow['lname'] : $enrow['mname'] . ' ' . $enrow['lname'];
 $date = xl('on') . ' ' . oeFormatShortDate(substr($enrow['date'], 0, 10));
 $title = array(xl('Order for'), $name, $date);
 $reasonCodeStatii = ReasonStatusCodes::getCodesWithDescriptions();
@@ -1340,7 +1332,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             onclick='transmitting = false;'><?php echo xlt('Manual eREQ'); ?>
                                         </button>
                                     <?php } elseif ($gbl_lab === 'clarity') {
-                                        echo "<a class='btn btn-outline-primary' target='_blank' href='$rootdir/procedure_tools/clarity/ereq_form.php?debug=1&formid=" . attr_url($formid) . "'>" . xlt("Manual eREQ") . "</a>";
+                                        echo sprintf("<a class='btn btn-outline-primary' target='_blank' href='%s/procedure_tools/clarity/ereq_form.php?debug=1&formid=", $rootdir) . attr_url($formid) . "'>" . xlt("Manual eREQ") . "</a>";
                                     }
                                     ?>
                                 </div>
@@ -1367,7 +1359,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                 <fieldset class="col-md-12">
                     <div class="my-0 py-0 text-center">
                         <?php $t = "<span class='lfont1'>" .
-                            ($gbl_lab === "labcorp" ? "Location Account: $account_name $account" : "") .
+                            ($gbl_lab === "labcorp" ? sprintf('Location Account: %s %s', $account_name, $account) : "") .
                             "</span>";
                         echo "<h4>" . xlt('Procedure Order Details') . " " . text($gbl_lab_title) . "</h4> " . $t; ?>
                     </div>
@@ -1419,10 +1411,11 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                             while ($oprow = sqlFetchArray($opres)) {
                                 $oparr[] = $oprow;
                             }
-                            $reqres = $opres = sqlStatement(
+                            $reqres = sqlStatement(
                                 "Select id, url, documentationOf From documents where foreign_id = ? And list_id = ? Order By id",
                                 array($pid, $formid)
                             );
+                            $opres = $reqres;
                             $req = array();
                             while ($oprow = sqlFetchArray($reqres)) {
                                 $doc_type = stripos($oprow['url'], 'ABN') ? 'ABN' : 'REQ';
@@ -1436,7 +1429,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                             }
                             $req_count = count($req);
                         }
-                        if (empty($oparr)) {
+                        if ($oparr === []) {
                             $oparr[] = array('procedure_name' => '');
                         }
                         ?>
@@ -1496,8 +1489,8 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             <?php
                                             $qoe_init_javascript = '';
                                             echo generate_qoe_html($ptid ?? '', $formid, null, $i);
-                                            if ($qoe_init_javascript) {
-                                                echo "<script>$qoe_init_javascript</script>";
+                                            if ($qoe_init_javascript !== '') {
+                                                echo sprintf('<script>%s</script>', $qoe_init_javascript);
                                             }
                                             ?>
                                         </div>
@@ -1508,7 +1501,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             data-toggle-container="reason_code_<?php echo attr($i); ?>"><i class="fa fa-chevron-down"></i></button>
                                     </td>
                                 </tr>
-                                <?php include "templates/procedure_reason_row.php" ?>
+                                <?php include __DIR__ . "/templates/procedure_reason_row.php" ?>
                                 </tbody>
                             </table>
                         </template>
@@ -1585,8 +1578,8 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             <?php
                                             $qoe_init_javascript = '';
                                             echo generate_qoe_html($ptid, $formid, ($oprow['procedure_order_seq'] ?? null), $i);
-                                            if ($qoe_init_javascript) {
-                                                echo "<script>$qoe_init_javascript</script>";
+                                            if ($qoe_init_javascript !== '') {
+                                                echo sprintf('<script>%s</script>', $qoe_init_javascript);
                                             }
                                             ?>
                                         </div>
@@ -1597,7 +1590,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             data-toggle-container="reason_code_<?php echo attr($i); ?>"><i class="fa fa-chevron-down"></i></button>
                                     </td>
                                 </tr>
-                                <?php include "templates/procedure_reason_row.php" ?>
+                                <?php include __DIR__ . "/templates/procedure_reason_row.php" ?>
                                 </tbody>
                             </table>
                             <?php

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * forms/eye_mag/new.php
  *
@@ -12,8 +14,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Session\SessionUtil;
 
@@ -40,11 +42,7 @@ if (empty($group)) {
     $group = $_SESSION['authProvider'];
 }
 
-if (!$_SESSION['encounter']) {
-    $encounter = date("Ymd");
-} else {
-    $encounter = $_SESSION['encounter'];
-}
+$encounter = $_SESSION['encounter'] ? $_SESSION['encounter'] : date("Ymd");
 
 $query = "select * from form_encounter where pid =? and encounter= ?";
 $encounter_data = sqlQuery($query, array($pid,$encounter));
@@ -62,7 +60,7 @@ if (!empty($erow['form_id']) && ($erow['form_id'] > '0')) {
     formFooter();
     exit;
 } else {
-    $id = (!empty($erow2['count'])) ? $erow2['count']++ : null; //erow2['count'] is not defined and formSubmit doesn't use it since we are inserting...
+    $id = (empty($erow2['count'])) ? null : $erow2['count']++; //erow2['count'] is not defined and formSubmit doesn't use it since we are inserting...
     $providerid = findProvider(attr($pid), $encounter);
     $newid = formSubmit($table_name, $_POST, $id, $providerid);
     $tables = array('form_eye_hpi','form_eye_ros','form_eye_vitals',
@@ -73,6 +71,7 @@ if (!empty($erow['form_id']) && ($erow['form_id'] > '0')) {
         $sql = "INSERT INTO " . $table . " set id=?, pid=?";
         sqlStatement($sql, array($newid, $pid));
     }
+
     $sql = "insert into forms (date, encounter, form_name, form_id, pid, " .
             "user, groupname, authorized, formdir) values (NOW(),?,?,?,?,?,?,?,?)";
     $answer = sqlInsert($sql, array($encounter,$form_name,$newid,$pid,$user,$group,$providerid,$form_folder));

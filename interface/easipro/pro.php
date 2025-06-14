@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * pro.php
  *
@@ -13,8 +15,8 @@
  */
 
 require_once(dirname(__FILE__) . "/../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -252,7 +254,7 @@ use OpenEMR\OeUI\OemrUI;
             });
         }
 
-        <?php require_once("$include_root/patient_file/erx_patient_portal_js.php"); // jQuery for popups for eRx and patient portal ?>
+        <?php require_once($include_root . '/patient_file/erx_patient_portal_js.php'); // jQuery for popups for eRx and patient portal ?>
     </script>
     <?php
     $arrOeUiSettings = array(
@@ -273,7 +275,7 @@ use OpenEMR\OeUI\OemrUI;
     <div id="container_div" class="<?php echo $oemr_ui->oeContainer(); ?>">
         <div class="row">
             <div class="col-sm-12">
-                <?php require_once("$include_root/patient_file/summary/dashboard_header.php"); ?>
+                <?php require_once($include_root . '/patient_file/summary/dashboard_header.php'); ?>
             </div>
         </div>
         <div class="row">

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functions to globally validate and prepare data for sql database insertion.
  *
@@ -15,27 +17,25 @@
  */
 
 require_once(dirname(__file__) . "/../globals.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/report.inc.php");
-require_once("$srcdir/calendar.inc.php");
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/report.inc.php');
+require_once($srcdir . '/calendar.inc.php');
 
 use OpenEMR\Billing\EDI270;
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 //  File location (URL or server path)
 $target = $GLOBALS['edi_271_file_path'];
 $batch_log = '';
 
-if (isset($_FILES) && !empty($_FILES)) {
+if ($_FILES !== []) {
     $target = $target . time() . basename($_FILES['uploaded']['name']);
 
     if ($_FILES['uploaded']['size'] > 350000) {

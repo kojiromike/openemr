@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,8 +11,7 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-    namespace OpenEMR\Modules\ClaimRevConnector;
+namespace OpenEMR\Modules\ClaimRevConnector;
 
 class RevenueToolsRequest
 {
@@ -18,48 +19,73 @@ class RevenueToolsRequest
     public $payerResponsibility;
 
     //defaults that maybe set as global vars
-    public $accountNumber;//
-    public $serviceTypeCodes;//
-    public $includeCredit;//
+    public $accountNumber;
+    //
+    public $serviceTypeCodes;
+    //
+    public $includeCredit;
+    //
     public $productsToRun;//
 
-    public $practiceName;//
+    public $practiceName;
+    //
     public $requestingSoftware;//
 
     public $originatingSystemId;//
 
-    public $npi;//
-    public $pinCode;//
-    public $practiceState;//
-    public $subscriberId;//
-    public $patientFirstName;//
-    public $patientLastName;//
-    public $patientGender;//
-    public $patientDob;//
-    public $patientSsn;//
-    public $patientAddress1;//
+    public $npi;
+    //
+    public $pinCode;
+    //
+    public $practiceState;
+    //
+    public $subscriberId;
+    //
+    public $patientFirstName;
+    //
+    public $patientLastName;
+    //
+    public $patientGender;
+    //
+    public $patientDob;
+    //
+    public $patientSsn;
+    //
+    public $patientAddress1;
+    //
     public $patientAddress2;
-    public $patientCity;//
-    public $patientState;//
-    public $patientZip;//
-    public $patientEmailAddress;//
+
+    public $patientCity;
+    //
+    public $patientState;
+    //
+    public $patientZip;
+    //
+    public $patientEmailAddress;
+    //
     public $payers;
 
     public $subscriberFirstName;
+
     public $subscriberLastName;
+
     public $subscriberDob;
 
     public $serviceBeginDate;
-    public $serviceEndDate;
-    public $procedureCodes;
-    public $diagnosisCodes;
-    public $clientId;
-    public $createDate;
-    public $uniqueTransactionNumber;
-    public $patientEmployer;
-    public $patientEmployerState;
 
-    public function __construct()
-    {
-    }
+    public $serviceEndDate;
+
+    public $procedureCodes;
+
+    public $diagnosisCodes;
+
+    public $clientId;
+
+    public $createDate;
+
+    public $uniqueTransactionNumber;
+
+    public $patientEmployer;
+
+    public $patientEmployerState;
 }

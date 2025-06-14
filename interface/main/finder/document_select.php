@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * document_select.php is intended to be used in a dialog finder window for searching and selecting an individual
  * document from the calling window.
@@ -21,7 +23,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -30,10 +32,8 @@ use OpenEMR\Services\PatientService;
 use OpenEMR\Services\Search\StringSearchField;
 use OpenEMR\Services\Search\SearchModifier;
 
-if (!empty($_REQUEST)) {
-    if (!CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_REQUEST === []) && !CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 $searchArray = [];
 $pid = $_REQUEST['pid'] ?? $_SESSION['pid'] ?? null;
@@ -52,7 +52,7 @@ if (!empty($_REQUEST['pid'])) {
 $MAX_RECORDS = 25;
 $searchparm = trim($_REQUEST['searchparm'] ?? '');
 $searchResult = [];
-if (!empty($searchparm)) {
+if ($searchparm !== '' && $searchparm !== '0') {
     $fuzzySearchName = new StringSearchField("name", [$searchparm], SearchModifier::CONTAINS);
     $searchArray['name'] = $fuzzySearchName;
     $documentService = new DocumentService();

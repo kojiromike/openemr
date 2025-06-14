@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package     OpenEMR Weno Module
@@ -10,7 +12,6 @@
  * @license     GNU General Public License 3
  *
  */
-
 namespace OpenEMR\Modules\WenoModule;
 
 /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -30,19 +32,25 @@ class FormROS2 extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $authorized;
-    var $activity;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $authorized;
+
+    public $activity;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -61,69 +69,79 @@ class FormROS2 extends ORDataObject
             //$this->date = $this->get_date();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function __toString()
+    public function __toString(): string
     {
         return "ID: " . $this->id . "\n";
     }
-    function set_id($id)
+
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
-    function set_date($dt)
+
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
-    function get_user()
+
+    public function get_user()
     {
         return $this->user;
     }
-    function set_user($u)
+
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }
@@ -132,31 +150,38 @@ class FormROS2 extends ORDataObject
 
     // ----- headache -----
 
-    var $general_headache;
-    var $general_headache_text;
-    function get_general_headache()
+    public $general_headache;
+
+    public $general_headache_text;
+
+    public function get_general_headache()
     {
         return $this->general_headache;
     }
-    function get_general_headache_yes()
+
+    public function get_general_headache_yes(): string
     {
         return $this->general_headache == "Yes" ? "CHECKED" : "";
     }
-    function get_general_headache_no()
+
+    public function get_general_headache_no(): string
     {
         return $this->general_headache == "No" ? "CHECKED" : "";
     }
-    function set_general_headache($data)
+
+    public function set_general_headache($data): void
     {
         if (!empty($data)) {
             $this->general_headache = $data;
         }
     }
-    function get_general_headache_text()
+
+    public function get_general_headache_text()
     {
         return $this->general_headache_text;
     }
-    function set_general_headache_text($data)
+
+    public function set_general_headache_text($data): void
     {
         if (!empty($data)) {
             $this->general_headache_text = $data;
@@ -164,31 +189,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_fever;
-    var $general_fever_text;
-    function get_general_fever()
+    public $general_fever;
+
+    public $general_fever_text;
+
+    public function get_general_fever()
     {
         return $this->general_fever;
     }
-    function get_general_fever_yes()
+
+    public function get_general_fever_yes(): string
     {
         return $this->general_fever == "Yes" ? "CHECKED" : "";
     }
-    function get_general_fever_no()
+
+    public function get_general_fever_no(): string
     {
         return $this->general_fever == "No" ? "CHECKED" : "";
     }
-    function set_general_fever($data)
+
+    public function set_general_fever($data): void
     {
         if (!empty($data)) {
             $this->general_fever = $data;
         }
     }
-    function get_general_fever_text()
+
+    public function get_general_fever_text()
     {
         return $this->general_fever_text;
     }
-    function set_general_fever_text($data)
+
+    public function set_general_fever_text($data): void
     {
         if (!empty($data)) {
             $this->general_fever_text = $data;
@@ -196,31 +228,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_chills;
-    var $general_chills_text;
-    function get_general_chills()
+    public $general_chills;
+
+    public $general_chills_text;
+
+    public function get_general_chills()
     {
         return $this->general_chills;
     }
-    function get_general_chills_yes()
+
+    public function get_general_chills_yes(): string
     {
         return $this->general_chills == "Yes" ? "CHECKED" : "";
     }
-    function get_general_chills_no()
+
+    public function get_general_chills_no(): string
     {
         return $this->general_chills == "No" ? "CHECKED" : "";
     }
-    function set_general_chills($data)
+
+    public function set_general_chills($data): void
     {
         if (!empty($data)) {
             $this->general_chills = $data;
         }
     }
-    function get_general_chills_text()
+
+    public function get_general_chills_text()
     {
         return $this->general_chills_text;
     }
-    function set_general_chills_text($data)
+
+    public function set_general_chills_text($data): void
     {
         if (!empty($data)) {
             $this->general_chills_text = $data;
@@ -228,31 +267,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_body_aches;
-    var $general_body_aches_text;
-    function get_general_body_aches()
+    public $general_body_aches;
+
+    public $general_body_aches_text;
+
+    public function get_general_body_aches()
     {
         return $this->general_body_aches;
     }
-    function get_general_body_aches_yes()
+
+    public function get_general_body_aches_yes(): string
     {
         return $this->general_body_aches == "Yes" ? "CHECKED" : "";
     }
-    function get_general_body_aches_no()
+
+    public function get_general_body_aches_no(): string
     {
         return $this->general_body_aches == "No" ? "CHECKED" : "";
     }
-    function set_general_body_aches($data)
+
+    public function set_general_body_aches($data): void
     {
         if (!empty($data)) {
             $this->general_body_aches = $data;
         }
     }
-    function get_general_body_aches_text()
+
+    public function get_general_body_aches_text()
     {
         return $this->general_body_aches_text;
     }
-    function set_general_body_aches_text($data)
+
+    public function set_general_body_aches_text($data): void
     {
         if (!empty($data)) {
             $this->general_body_aches_text = $data;
@@ -260,31 +306,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_fatigue;
-    var $general_fatigue_text;
-    function get_general_fatigue()
+    public $general_fatigue;
+
+    public $general_fatigue_text;
+
+    public function get_general_fatigue()
     {
         return $this->general_fatigue;
     }
-    function get_general_fatigue_yes()
+
+    public function get_general_fatigue_yes(): string
     {
         return $this->general_fatigue == "Yes" ? "CHECKED" : "";
     }
-    function get_general_fatigue_no()
+
+    public function get_general_fatigue_no(): string
     {
         return $this->general_fatigue == "No" ? "CHECKED" : "";
     }
-    function set_general_fatigue($data)
+
+    public function set_general_fatigue($data): void
     {
         if (!empty($data)) {
             $this->general_fatigue = $data;
         }
     }
-    function get_general_fatigue_text()
+
+    public function get_general_fatigue_text()
     {
         return $this->general_fatigue_text;
     }
-    function set_general_fatigue_text($data)
+
+    public function set_general_fatigue_text($data): void
     {
         if (!empty($data)) {
             $this->general_fatigue_text = $data;
@@ -292,31 +345,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_loss_of_appetite;
-    var $general_loss_of_appetite_text;
-    function get_general_loss_of_appetite()
+    public $general_loss_of_appetite;
+
+    public $general_loss_of_appetite_text;
+
+    public function get_general_loss_of_appetite()
     {
         return $this->general_loss_of_appetite;
     }
-    function get_general_loss_of_appetite_yes()
+
+    public function get_general_loss_of_appetite_yes(): string
     {
         return $this->general_loss_of_appetite == "Yes" ? "CHECKED" : "";
     }
-    function get_general_loss_of_appetite_no()
+
+    public function get_general_loss_of_appetite_no(): string
     {
         return $this->general_loss_of_appetite == "No" ? "CHECKED" : "";
     }
-    function set_general_loss_of_appetite($data)
+
+    public function set_general_loss_of_appetite($data): void
     {
         if (!empty($data)) {
             $this->general_loss_of_appetite = $data;
         }
     }
-    function get_general_loss_of_appetite_text()
+
+    public function get_general_loss_of_appetite_text()
     {
         return $this->general_loss_of_appetite_text;
     }
-    function set_general_loss_of_appetite_text($data)
+
+    public function set_general_loss_of_appetite_text($data): void
     {
         if (!empty($data)) {
             $this->general_loss_of_appetite_text = $data;
@@ -324,31 +384,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_weight_loss;
-    var $general_weight_loss_text;
-    function get_general_weight_loss()
+    public $general_weight_loss;
+
+    public $general_weight_loss_text;
+
+    public function get_general_weight_loss()
     {
         return $this->general_weight_loss;
     }
-    function get_general_weight_loss_yes()
+
+    public function get_general_weight_loss_yes(): string
     {
         return $this->general_weight_loss == "Yes" ? "CHECKED" : "";
     }
-    function get_general_weight_loss_no()
+
+    public function get_general_weight_loss_no(): string
     {
         return $this->general_weight_loss == "No" ? "CHECKED" : "";
     }
-    function set_general_weight_loss($data)
+
+    public function set_general_weight_loss($data): void
     {
         if (!empty($data)) {
             $this->general_weight_loss = $data;
         }
     }
-    function get_general_weight_loss_text()
+
+    public function get_general_weight_loss_text()
     {
         return $this->general_weight_loss_text;
     }
-    function set_general_weight_loss_text($data)
+
+    public function set_general_weight_loss_text($data): void
     {
         if (!empty($data)) {
             $this->general_weight_loss_text = $data;
@@ -356,31 +423,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_daytime_drowsiness;
-    var $general_daytime_drowsiness_text;
-    function get_general_daytime_drowsiness()
+    public $general_daytime_drowsiness;
+
+    public $general_daytime_drowsiness_text;
+
+    public function get_general_daytime_drowsiness()
     {
         return $this->general_daytime_drowsiness;
     }
-    function get_general_daytime_drowsiness_yes()
+
+    public function get_general_daytime_drowsiness_yes(): string
     {
         return $this->general_daytime_drowsiness == "Yes" ? "CHECKED" : "";
     }
-    function get_general_daytime_drowsiness_no()
+
+    public function get_general_daytime_drowsiness_no(): string
     {
         return $this->general_daytime_drowsiness == "No" ? "CHECKED" : "";
     }
-    function set_general_daytime_drowsiness($data)
+
+    public function set_general_daytime_drowsiness($data): void
     {
         if (!empty($data)) {
             $this->general_daytime_drowsiness = $data;
         }
     }
-    function get_general_daytime_drowsiness_text()
+
+    public function get_general_daytime_drowsiness_text()
     {
         return $this->general_daytime_drowsiness_text;
     }
-    function set_general_daytime_drowsiness_text($data)
+
+    public function set_general_daytime_drowsiness_text($data): void
     {
         if (!empty($data)) {
             $this->general_daytime_drowsiness_text = $data;
@@ -388,31 +462,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $general_excessive_snoring;
-    var $general_excessive_snoring_text;
-    function get_general_excessive_snoring()
+    public $general_excessive_snoring;
+
+    public $general_excessive_snoring_text;
+
+    public function get_general_excessive_snoring()
     {
         return $this->general_excessive_snoring;
     }
-    function get_general_excessive_snoring_yes()
+
+    public function get_general_excessive_snoring_yes(): string
     {
         return $this->general_excessive_snoring == "Yes" ? "CHECKED" : "";
     }
-    function get_general_excessive_snoring_no()
+
+    public function get_general_excessive_snoring_no(): string
     {
         return $this->general_excessive_snoring == "No" ? "CHECKED" : "";
     }
-    function set_general_excessive_snoring($data)
+
+    public function set_general_excessive_snoring($data): void
     {
         if (!empty($data)) {
             $this->general_excessive_snoring = $data;
         }
     }
-    function get_general_excessive_snoring_text()
+
+    public function get_general_excessive_snoring_text()
     {
         return $this->general_excessive_snoring_text;
     }
-    function set_general_excessive_snoring_text($data)
+
+    public function set_general_excessive_snoring_text($data): void
     {
         if (!empty($data)) {
             $this->general_excessive_snoring_text = $data;
@@ -421,31 +502,38 @@ class FormROS2 extends ORDataObject
 
     // ----- disorientation -----
 
-    var $neuro_disorientation;
-    var $neuro_disorientation_text;
-    function get_neuro_disorientation()
+    public $neuro_disorientation;
+
+    public $neuro_disorientation_text;
+
+    public function get_neuro_disorientation()
     {
         return $this->neuro_disorientation;
     }
-    function get_neuro_disorientation_yes()
+
+    public function get_neuro_disorientation_yes(): string
     {
         return $this->neuro_disorientation == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_disorientation_no()
+
+    public function get_neuro_disorientation_no(): string
     {
         return $this->neuro_disorientation == "No" ? "CHECKED" : "";
     }
-    function set_neuro_disorientation($data)
+
+    public function set_neuro_disorientation($data): void
     {
         if (!empty($data)) {
             $this->neuro_disorientation = $data;
         }
     }
-    function get_neuro_disorientation_text()
+
+    public function get_neuro_disorientation_text()
     {
         return $this->neuro_disorientation_text;
     }
-    function set_neuro_disorientation_text($data)
+
+    public function set_neuro_disorientation_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_disorientation_text = $data;
@@ -453,31 +541,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_loss_of_consciousness;
-    var $neuro_loss_of_consciousness_text;
-    function get_neuro_loss_of_consciousness()
+    public $neuro_loss_of_consciousness;
+
+    public $neuro_loss_of_consciousness_text;
+
+    public function get_neuro_loss_of_consciousness()
     {
         return $this->neuro_loss_of_consciousness;
     }
-    function get_neuro_loss_of_consciousness_yes()
+
+    public function get_neuro_loss_of_consciousness_yes(): string
     {
         return $this->neuro_loss_of_consciousness == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_loss_of_consciousness_no()
+
+    public function get_neuro_loss_of_consciousness_no(): string
     {
         return $this->neuro_loss_of_consciousness == "No" ? "CHECKED" : "";
     }
-    function set_neuro_loss_of_consciousness($data)
+
+    public function set_neuro_loss_of_consciousness($data): void
     {
         if (!empty($data)) {
             $this->neuro_loss_of_consciousness = $data;
         }
     }
-    function get_neuro_loss_of_consciousness_text()
+
+    public function get_neuro_loss_of_consciousness_text()
     {
         return $this->neuro_loss_of_consciousness_text;
     }
-    function set_neuro_loss_of_consciousness_text($data)
+
+    public function set_neuro_loss_of_consciousness_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_loss_of_consciousness_text = $data;
@@ -485,31 +580,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_numbness;
-    var $neuro_numbness_text;
-    function get_neuro_numbness()
+    public $neuro_numbness;
+
+    public $neuro_numbness_text;
+
+    public function get_neuro_numbness()
     {
         return $this->neuro_numbness;
     }
-    function get_neuro_numbness_yes()
+
+    public function get_neuro_numbness_yes(): string
     {
         return $this->neuro_numbness == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_numbness_no()
+
+    public function get_neuro_numbness_no(): string
     {
         return $this->neuro_numbness == "No" ? "CHECKED" : "";
     }
-    function set_neuro_numbness($data)
+
+    public function set_neuro_numbness($data): void
     {
         if (!empty($data)) {
             $this->neuro_numbness = $data;
         }
     }
-    function get_neuro_numbness_text()
+
+    public function get_neuro_numbness_text()
     {
         return $this->neuro_numbness_text;
     }
-    function set_neuro_numbness_text($data)
+
+    public function set_neuro_numbness_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_numbness_text = $data;
@@ -517,31 +619,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_tingling;
-    var $neuro_tingling_text;
-    function get_neuro_tingling()
+    public $neuro_tingling;
+
+    public $neuro_tingling_text;
+
+    public function get_neuro_tingling()
     {
         return $this->neuro_tingling;
     }
-    function get_neuro_tingling_yes()
+
+    public function get_neuro_tingling_yes(): string
     {
         return $this->neuro_tingling == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_tingling_no()
+
+    public function get_neuro_tingling_no(): string
     {
         return $this->neuro_tingling == "No" ? "CHECKED" : "";
     }
-    function set_neuro_tingling($data)
+
+    public function set_neuro_tingling($data): void
     {
         if (!empty($data)) {
             $this->neuro_tingling = $data;
         }
     }
-    function get_neuro_tingling_text()
+
+    public function get_neuro_tingling_text()
     {
         return $this->neuro_tingling_text;
     }
-    function set_neuro_tingling_text($data)
+
+    public function set_neuro_tingling_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_tingling_text = $data;
@@ -549,31 +658,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_restlessness;
-    var $neuro_restlessness_text;
-    function get_neuro_restlessness()
+    public $neuro_restlessness;
+
+    public $neuro_restlessness_text;
+
+    public function get_neuro_restlessness()
     {
         return $this->neuro_restlessness;
     }
-    function get_neuro_restlessness_yes()
+
+    public function get_neuro_restlessness_yes(): string
     {
         return $this->neuro_restlessness == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_restlessness_no()
+
+    public function get_neuro_restlessness_no(): string
     {
         return $this->neuro_restlessness == "No" ? "CHECKED" : "";
     }
-    function set_neuro_restlessness($data)
+
+    public function set_neuro_restlessness($data): void
     {
         if (!empty($data)) {
             $this->neuro_restlessness = $data;
         }
     }
-    function get_neuro_restlessness_text()
+
+    public function get_neuro_restlessness_text()
     {
         return $this->neuro_restlessness_text;
     }
-    function set_neuro_restlessness_text($data)
+
+    public function set_neuro_restlessness_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_restlessness_text = $data;
@@ -581,31 +697,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_dizziness;
-    var $neuro_dizziness_text;
-    function get_neuro_dizziness()
+    public $neuro_dizziness;
+
+    public $neuro_dizziness_text;
+
+    public function get_neuro_dizziness()
     {
         return $this->neuro_dizziness;
     }
-    function get_neuro_dizziness_yes()
+
+    public function get_neuro_dizziness_yes(): string
     {
         return $this->neuro_dizziness == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_dizziness_no()
+
+    public function get_neuro_dizziness_no(): string
     {
         return $this->neuro_dizziness == "No" ? "CHECKED" : "";
     }
-    function set_neuro_dizziness($data)
+
+    public function set_neuro_dizziness($data): void
     {
         if (!empty($data)) {
             $this->neuro_dizziness = $data;
         }
     }
-    function get_neuro_dizziness_text()
+
+    public function get_neuro_dizziness_text()
     {
         return $this->neuro_dizziness_text;
     }
-    function set_neuro_dizziness_text($data)
+
+    public function set_neuro_dizziness_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_dizziness_text = $data;
@@ -613,31 +736,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_vertigo;
-    var $neuro_vertigo_text;
-    function get_neuro_vertigo()
+    public $neuro_vertigo;
+
+    public $neuro_vertigo_text;
+
+    public function get_neuro_vertigo()
     {
         return $this->neuro_vertigo;
     }
-    function get_neuro_vertigo_yes()
+
+    public function get_neuro_vertigo_yes(): string
     {
         return $this->neuro_vertigo == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_vertigo_no()
+
+    public function get_neuro_vertigo_no(): string
     {
         return $this->neuro_vertigo == "No" ? "CHECKED" : "";
     }
-    function set_neuro_vertigo($data)
+
+    public function set_neuro_vertigo($data): void
     {
         if (!empty($data)) {
             $this->neuro_vertigo = $data;
         }
     }
-    function get_neuro_vertigo_text()
+
+    public function get_neuro_vertigo_text()
     {
         return $this->neuro_vertigo_text;
     }
-    function set_neuro_vertigo_text($data)
+
+    public function set_neuro_vertigo_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_vertigo_text = $data;
@@ -645,31 +775,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_amaurosis_fugax;
-    var $neuro_amaurosis_fugax_text;
-    function get_neuro_amaurosis_fugax()
+    public $neuro_amaurosis_fugax;
+
+    public $neuro_amaurosis_fugax_text;
+
+    public function get_neuro_amaurosis_fugax()
     {
         return $this->neuro_amaurosis_fugax;
     }
-    function get_neuro_amaurosis_fugax_yes()
+
+    public function get_neuro_amaurosis_fugax_yes(): string
     {
         return $this->neuro_amaurosis_fugax == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_amaurosis_fugax_no()
+
+    public function get_neuro_amaurosis_fugax_no(): string
     {
         return $this->neuro_amaurosis_fugax == "No" ? "CHECKED" : "";
     }
-    function set_neuro_amaurosis_fugax($data)
+
+    public function set_neuro_amaurosis_fugax($data): void
     {
         if (!empty($data)) {
             $this->neuro_amaurosis_fugax = $data;
         }
     }
-    function get_neuro_amaurosis_fugax_text()
+
+    public function get_neuro_amaurosis_fugax_text()
     {
         return $this->neuro_amaurosis_fugax_text;
     }
-    function set_neuro_amaurosis_fugax_text($data)
+
+    public function set_neuro_amaurosis_fugax_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_amaurosis_fugax_text = $data;
@@ -677,31 +814,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_stroke;
-    var $neuro_stroke_text;
-    function get_neuro_stroke()
+    public $neuro_stroke;
+
+    public $neuro_stroke_text;
+
+    public function get_neuro_stroke()
     {
         return $this->neuro_stroke;
     }
-    function get_neuro_stroke_yes()
+
+    public function get_neuro_stroke_yes(): string
     {
         return $this->neuro_stroke == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_stroke_no()
+
+    public function get_neuro_stroke_no(): string
     {
         return $this->neuro_stroke == "No" ? "CHECKED" : "";
     }
-    function set_neuro_stroke($data)
+
+    public function set_neuro_stroke($data): void
     {
         if (!empty($data)) {
             $this->neuro_stroke = $data;
         }
     }
-    function get_neuro_stroke_text()
+
+    public function get_neuro_stroke_text()
     {
         return $this->neuro_stroke_text;
     }
-    function set_neuro_stroke_text($data)
+
+    public function set_neuro_stroke_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_stroke_text = $data;
@@ -709,31 +853,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_gait_abnormality;
-    var $neuro_gait_abnormality_text;
-    function get_neuro_gait_abnormality()
+    public $neuro_gait_abnormality;
+
+    public $neuro_gait_abnormality_text;
+
+    public function get_neuro_gait_abnormality()
     {
         return $this->neuro_gait_abnormality;
     }
-    function get_neuro_gait_abnormality_yes()
+
+    public function get_neuro_gait_abnormality_yes(): string
     {
         return $this->neuro_gait_abnormality == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_gait_abnormality_no()
+
+    public function get_neuro_gait_abnormality_no(): string
     {
         return $this->neuro_gait_abnormality == "No" ? "CHECKED" : "";
     }
-    function set_neuro_gait_abnormality($data)
+
+    public function set_neuro_gait_abnormality($data): void
     {
         if (!empty($data)) {
             $this->neuro_gait_abnormality = $data;
         }
     }
-    function get_neuro_gait_abnormality_text()
+
+    public function get_neuro_gait_abnormality_text()
     {
         return $this->neuro_gait_abnormality_text;
     }
-    function set_neuro_gait_abnormality_text($data)
+
+    public function set_neuro_gait_abnormality_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_gait_abnormality_text = $data;
@@ -741,31 +892,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_frequent_headaches;
-    var $neuro_frequent_headaches_text;
-    function get_neuro_frequent_headaches()
+    public $neuro_frequent_headaches;
+
+    public $neuro_frequent_headaches_text;
+
+    public function get_neuro_frequent_headaches()
     {
         return $this->neuro_frequent_headaches;
     }
-    function get_neuro_frequent_headaches_yes()
+
+    public function get_neuro_frequent_headaches_yes(): string
     {
         return $this->neuro_frequent_headaches == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_frequent_headaches_no()
+
+    public function get_neuro_frequent_headaches_no(): string
     {
         return $this->neuro_frequent_headaches == "No" ? "CHECKED" : "";
     }
-    function set_neuro_frequent_headaches($data)
+
+    public function set_neuro_frequent_headaches($data): void
     {
         if (!empty($data)) {
             $this->neuro_frequent_headaches = $data;
         }
     }
-    function get_neuro_frequent_headaches_text()
+
+    public function get_neuro_frequent_headaches_text()
     {
         return $this->neuro_frequent_headaches_text;
     }
-    function set_neuro_frequent_headaches_text($data)
+
+    public function set_neuro_frequent_headaches_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_frequent_headaches_text = $data;
@@ -773,31 +931,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_parathesias;
-    var $neuro_parathesias_text;
-    function get_neuro_parathesias()
+    public $neuro_parathesias;
+
+    public $neuro_parathesias_text;
+
+    public function get_neuro_parathesias()
     {
         return $this->neuro_parathesias;
     }
-    function get_neuro_parathesias_yes()
+
+    public function get_neuro_parathesias_yes(): string
     {
         return $this->neuro_parathesias == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_parathesias_no()
+
+    public function get_neuro_parathesias_no(): string
     {
         return $this->neuro_parathesias == "No" ? "CHECKED" : "";
     }
-    function set_neuro_parathesias($data)
+
+    public function set_neuro_parathesias($data): void
     {
         if (!empty($data)) {
             $this->neuro_parathesias = $data;
         }
     }
-    function get_neuro_parathesias_text()
+
+    public function get_neuro_parathesias_text()
     {
         return $this->neuro_parathesias_text;
     }
-    function set_neuro_parathesias_text($data)
+
+    public function set_neuro_parathesias_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_parathesias_text = $data;
@@ -805,31 +970,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_seizures;
-    var $neuro_seizures_text;
-    function get_neuro_seizures()
+    public $neuro_seizures;
+
+    public $neuro_seizures_text;
+
+    public function get_neuro_seizures()
     {
         return $this->neuro_seizures;
     }
-    function get_neuro_seizures_yes()
+
+    public function get_neuro_seizures_yes(): string
     {
         return $this->neuro_seizures == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_seizures_no()
+
+    public function get_neuro_seizures_no(): string
     {
         return $this->neuro_seizures == "No" ? "CHECKED" : "";
     }
-    function set_neuro_seizures($data)
+
+    public function set_neuro_seizures($data): void
     {
         if (!empty($data)) {
             $this->neuro_seizures = $data;
         }
     }
-    function get_neuro_seizures_text()
+
+    public function get_neuro_seizures_text()
     {
         return $this->neuro_seizures_text;
     }
-    function set_neuro_seizures_text($data)
+
+    public function set_neuro_seizures_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_seizures_text = $data;
@@ -837,31 +1009,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_trans_ischemic_attacks;
-    var $neuro_trans_ischemic_attacks_text;
-    function get_neuro_trans_ischemic_attacks()
+    public $neuro_trans_ischemic_attacks;
+
+    public $neuro_trans_ischemic_attacks_text;
+
+    public function get_neuro_trans_ischemic_attacks()
     {
         return $this->neuro_trans_ischemic_attacks;
     }
-    function get_neuro_trans_ischemic_attacks_yes()
+
+    public function get_neuro_trans_ischemic_attacks_yes(): string
     {
         return $this->neuro_trans_ischemic_attacks == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_trans_ischemic_attacks_no()
+
+    public function get_neuro_trans_ischemic_attacks_no(): string
     {
         return $this->neuro_trans_ischemic_attacks == "No" ? "CHECKED" : "";
     }
-    function set_neuro_trans_ischemic_attacks($data)
+
+    public function set_neuro_trans_ischemic_attacks($data): void
     {
         if (!empty($data)) {
             $this->neuro_trans_ischemic_attacks = $data;
         }
     }
-    function get_neuro_trans_ischemic_attacks_text()
+
+    public function get_neuro_trans_ischemic_attacks_text()
     {
         return $this->neuro_trans_ischemic_attacks_text;
     }
-    function set_neuro_trans_ischemic_attacks_text($data)
+
+    public function set_neuro_trans_ischemic_attacks_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_trans_ischemic_attacks_text = $data;
@@ -869,31 +1048,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neuro_significant_tremors;
-    var $neuro_significant_tremors_text;
-    function get_neuro_significant_tremors()
+    public $neuro_significant_tremors;
+
+    public $neuro_significant_tremors_text;
+
+    public function get_neuro_significant_tremors()
     {
         return $this->neuro_significant_tremors;
     }
-    function get_neuro_significant_tremors_yes()
+
+    public function get_neuro_significant_tremors_yes(): string
     {
         return $this->neuro_significant_tremors == "Yes" ? "CHECKED" : "";
     }
-    function get_neuro_significant_tremors_no()
+
+    public function get_neuro_significant_tremors_no(): string
     {
         return $this->neuro_significant_tremors == "No" ? "CHECKED" : "";
     }
-    function set_neuro_significant_tremors($data)
+
+    public function set_neuro_significant_tremors($data): void
     {
         if (!empty($data)) {
             $this->neuro_significant_tremors = $data;
         }
     }
-    function get_neuro_significant_tremors_text()
+
+    public function get_neuro_significant_tremors_text()
     {
         return $this->neuro_significant_tremors_text;
     }
-    function set_neuro_significant_tremors_text($data)
+
+    public function set_neuro_significant_tremors_text($data): void
     {
         if (!empty($data)) {
             $this->neuro_significant_tremors_text = $data;
@@ -902,31 +1088,38 @@ class FormROS2 extends ORDataObject
 
     // ----- neck stiffness -----
 
-    var $neck_neck_stiffness;
-    var $neck_neck_stiffness_text;
-    function get_neck_neck_stiffness()
+    public $neck_neck_stiffness;
+
+    public $neck_neck_stiffness_text;
+
+    public function get_neck_neck_stiffness()
     {
         return $this->neck_neck_stiffness;
     }
-    function get_neck_neck_stiffness_yes()
+
+    public function get_neck_neck_stiffness_yes(): string
     {
         return $this->neck_neck_stiffness == "Yes" ? "CHECKED" : "";
     }
-    function get_neck_neck_stiffness_no()
+
+    public function get_neck_neck_stiffness_no(): string
     {
         return $this->neck_neck_stiffness == "No" ? "CHECKED" : "";
     }
-    function set_neck_neck_stiffness($data)
+
+    public function set_neck_neck_stiffness($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_stiffness = $data;
         }
     }
-    function get_neck_neck_stiffness_text()
+
+    public function get_neck_neck_stiffness_text()
     {
         return $this->neck_neck_stiffness_text;
     }
-    function set_neck_neck_stiffness_text($data)
+
+    public function set_neck_neck_stiffness_text($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_stiffness_text = $data;
@@ -934,31 +1127,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neck_neck_pain;
-    var $neck_neck_pain_text;
-    function get_neck_neck_pain()
+    public $neck_neck_pain;
+
+    public $neck_neck_pain_text;
+
+    public function get_neck_neck_pain()
     {
         return $this->neck_neck_pain;
     }
-    function get_neck_neck_pain_yes()
+
+    public function get_neck_neck_pain_yes(): string
     {
         return $this->neck_neck_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_neck_neck_pain_no()
+
+    public function get_neck_neck_pain_no(): string
     {
         return $this->neck_neck_pain == "No" ? "CHECKED" : "";
     }
-    function set_neck_neck_pain($data)
+
+    public function set_neck_neck_pain($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_pain = $data;
         }
     }
-    function get_neck_neck_pain_text()
+
+    public function get_neck_neck_pain_text()
     {
         return $this->neck_neck_pain_text;
     }
-    function set_neck_neck_pain_text($data)
+
+    public function set_neck_neck_pain_text($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_pain_text = $data;
@@ -966,31 +1166,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neck_neck_masses;
-    var $neck_neck_masses_text;
-    function get_neck_neck_masses()
+    public $neck_neck_masses;
+
+    public $neck_neck_masses_text;
+
+    public function get_neck_neck_masses()
     {
         return $this->neck_neck_masses;
     }
-    function get_neck_neck_masses_yes()
+
+    public function get_neck_neck_masses_yes(): string
     {
         return $this->neck_neck_masses == "Yes" ? "CHECKED" : "";
     }
-    function get_neck_neck_masses_no()
+
+    public function get_neck_neck_masses_no(): string
     {
         return $this->neck_neck_masses == "No" ? "CHECKED" : "";
     }
-    function set_neck_neck_masses($data)
+
+    public function set_neck_neck_masses($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_masses = $data;
         }
     }
-    function get_neck_neck_masses_text()
+
+    public function get_neck_neck_masses_text()
     {
         return $this->neck_neck_masses_text;
     }
-    function set_neck_neck_masses_text($data)
+
+    public function set_neck_neck_masses_text($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_masses_text = $data;
@@ -998,31 +1205,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $neck_neck_tenderness;
-    var $neck_neck_tenderness_text;
-    function get_neck_neck_tenderness()
+    public $neck_neck_tenderness;
+
+    public $neck_neck_tenderness_text;
+
+    public function get_neck_neck_tenderness()
     {
         return $this->neck_neck_tenderness;
     }
-    function get_neck_neck_tenderness_yes()
+
+    public function get_neck_neck_tenderness_yes(): string
     {
         return $this->neck_neck_tenderness == "Yes" ? "CHECKED" : "";
     }
-    function get_neck_neck_tenderness_no()
+
+    public function get_neck_neck_tenderness_no(): string
     {
         return $this->neck_neck_tenderness == "No" ? "CHECKED" : "";
     }
-    function set_neck_neck_tenderness($data)
+
+    public function set_neck_neck_tenderness($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_tenderness = $data;
         }
     }
-    function get_neck_neck_tenderness_text()
+
+    public function get_neck_neck_tenderness_text()
     {
         return $this->neck_neck_tenderness_text;
     }
-    function set_neck_neck_tenderness_text($data)
+
+    public function set_neck_neck_tenderness_text($data): void
     {
         if (!empty($data)) {
             $this->neck_neck_tenderness_text = $data;
@@ -1031,31 +1245,38 @@ class FormROS2 extends ORDataObject
 
     // ----- oral ulcers -----
 
-    var $heent_oral_ulcers;
-    var $heent_oral_ulcers_text;
-    function get_heent_oral_ulcers()
+    public $heent_oral_ulcers;
+
+    public $heent_oral_ulcers_text;
+
+    public function get_heent_oral_ulcers()
     {
         return $this->heent_oral_ulcers;
     }
-    function get_heent_oral_ulcers_yes()
+
+    public function get_heent_oral_ulcers_yes(): string
     {
         return $this->heent_oral_ulcers == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_oral_ulcers_no()
+
+    public function get_heent_oral_ulcers_no(): string
     {
         return $this->heent_oral_ulcers == "No" ? "CHECKED" : "";
     }
-    function set_heent_oral_ulcers($data)
+
+    public function set_heent_oral_ulcers($data): void
     {
         if (!empty($data)) {
             $this->heent_oral_ulcers = $data;
         }
     }
-    function get_heent_oral_ulcers_text()
+
+    public function get_heent_oral_ulcers_text()
     {
         return $this->heent_oral_ulcers_text;
     }
-    function set_heent_oral_ulcers_text($data)
+
+    public function set_heent_oral_ulcers_text($data): void
     {
         if (!empty($data)) {
             $this->heent_oral_ulcers_text = $data;
@@ -1063,31 +1284,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_excessive_cavities;
-    var $heent_excessive_cavities_text;
-    function get_heent_excessive_cavities()
+    public $heent_excessive_cavities;
+
+    public $heent_excessive_cavities_text;
+
+    public function get_heent_excessive_cavities()
     {
         return $this->heent_excessive_cavities;
     }
-    function get_heent_excessive_cavities_yes()
+
+    public function get_heent_excessive_cavities_yes(): string
     {
         return $this->heent_excessive_cavities == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_excessive_cavities_no()
+
+    public function get_heent_excessive_cavities_no(): string
     {
         return $this->heent_excessive_cavities == "No" ? "CHECKED" : "";
     }
-    function set_heent_excessive_cavities($data)
+
+    public function set_heent_excessive_cavities($data): void
     {
         if (!empty($data)) {
             $this->heent_excessive_cavities = $data;
         }
     }
-    function get_heent_excessive_cavities_text()
+
+    public function get_heent_excessive_cavities_text()
     {
         return $this->heent_excessive_cavities_text;
     }
-    function set_heent_excessive_cavities_text($data)
+
+    public function set_heent_excessive_cavities_text($data): void
     {
         if (!empty($data)) {
             $this->heent_excessive_cavities_text = $data;
@@ -1095,31 +1323,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_gingival_disease;
-    var $heent_gingival_disease_text;
-    function get_heent_gingival_disease()
+    public $heent_gingival_disease;
+
+    public $heent_gingival_disease_text;
+
+    public function get_heent_gingival_disease()
     {
         return $this->heent_gingival_disease;
     }
-    function get_heent_gingival_disease_yes()
+
+    public function get_heent_gingival_disease_yes(): string
     {
         return $this->heent_gingival_disease == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_gingival_disease_no()
+
+    public function get_heent_gingival_disease_no(): string
     {
         return $this->heent_gingival_disease == "No" ? "CHECKED" : "";
     }
-    function set_heent_gingival_disease($data)
+
+    public function set_heent_gingival_disease($data): void
     {
         if (!empty($data)) {
             $this->heent_gingival_disease = $data;
         }
     }
-    function get_heent_gingival_disease_text()
+
+    public function get_heent_gingival_disease_text()
     {
         return $this->heent_gingival_disease_text;
     }
-    function set_heent_gingival_disease_text($data)
+
+    public function set_heent_gingival_disease_text($data): void
     {
         if (!empty($data)) {
             $this->heent_gingival_disease_text = $data;
@@ -1127,31 +1362,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_persistent_hoarseness;
-    var $heent_persistent_hoarseness_text;
-    function get_heent_persistent_hoarseness()
+    public $heent_persistent_hoarseness;
+
+    public $heent_persistent_hoarseness_text;
+
+    public function get_heent_persistent_hoarseness()
     {
         return $this->heent_persistent_hoarseness;
     }
-    function get_heent_persistent_hoarseness_yes()
+
+    public function get_heent_persistent_hoarseness_yes(): string
     {
         return $this->heent_persistent_hoarseness == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_persistent_hoarseness_no()
+
+    public function get_heent_persistent_hoarseness_no(): string
     {
         return $this->heent_persistent_hoarseness == "No" ? "CHECKED" : "";
     }
-    function set_heent_persistent_hoarseness($data)
+
+    public function set_heent_persistent_hoarseness($data): void
     {
         if (!empty($data)) {
             $this->heent_persistent_hoarseness = $data;
         }
     }
-    function get_heent_persistent_hoarseness_text()
+
+    public function get_heent_persistent_hoarseness_text()
     {
         return $this->heent_persistent_hoarseness_text;
     }
-    function set_heent_persistent_hoarseness_text($data)
+
+    public function set_heent_persistent_hoarseness_text($data): void
     {
         if (!empty($data)) {
             $this->heent_persistent_hoarseness_text = $data;
@@ -1159,31 +1401,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_mouth_lesions;
-    var $heent_mouth_lesions_text;
-    function get_heent_mouth_lesions()
+    public $heent_mouth_lesions;
+
+    public $heent_mouth_lesions_text;
+
+    public function get_heent_mouth_lesions()
     {
         return $this->heent_mouth_lesions;
     }
-    function get_heent_mouth_lesions_yes()
+
+    public function get_heent_mouth_lesions_yes(): string
     {
         return $this->heent_mouth_lesions == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_mouth_lesions_no()
+
+    public function get_heent_mouth_lesions_no(): string
     {
         return $this->heent_mouth_lesions == "No" ? "CHECKED" : "";
     }
-    function set_heent_mouth_lesions($data)
+
+    public function set_heent_mouth_lesions($data): void
     {
         if (!empty($data)) {
             $this->heent_mouth_lesions = $data;
         }
     }
-    function get_heent_mouth_lesions_text()
+
+    public function get_heent_mouth_lesions_text()
     {
         return $this->heent_mouth_lesions_text;
     }
-    function set_heent_mouth_lesions_text($data)
+
+    public function set_heent_mouth_lesions_text($data): void
     {
         if (!empty($data)) {
             $this->heent_mouth_lesions_text = $data;
@@ -1191,31 +1440,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_dysphagia;
-    var $heent_dysphagia_text;
-    function get_heent_dysphagia()
+    public $heent_dysphagia;
+
+    public $heent_dysphagia_text;
+
+    public function get_heent_dysphagia()
     {
         return $this->heent_dysphagia;
     }
-    function get_heent_dysphagia_yes()
+
+    public function get_heent_dysphagia_yes(): string
     {
         return $this->heent_dysphagia == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_dysphagia_no()
+
+    public function get_heent_dysphagia_no(): string
     {
         return $this->heent_dysphagia == "No" ? "CHECKED" : "";
     }
-    function set_heent_dysphagia($data)
+
+    public function set_heent_dysphagia($data): void
     {
         if (!empty($data)) {
             $this->heent_dysphagia = $data;
         }
     }
-    function get_heent_dysphagia_text()
+
+    public function get_heent_dysphagia_text()
     {
         return $this->heent_dysphagia_text;
     }
-    function set_heent_dysphagia_text($data)
+
+    public function set_heent_dysphagia_text($data): void
     {
         if (!empty($data)) {
             $this->heent_dysphagia_text = $data;
@@ -1223,31 +1479,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_odynophagia;
-    var $heent_odynophagia_text;
-    function get_heent_odynophagia()
+    public $heent_odynophagia;
+
+    public $heent_odynophagia_text;
+
+    public function get_heent_odynophagia()
     {
         return $this->heent_odynophagia;
     }
-    function get_heent_odynophagia_yes()
+
+    public function get_heent_odynophagia_yes(): string
     {
         return $this->heent_odynophagia == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_odynophagia_no()
+
+    public function get_heent_odynophagia_no(): string
     {
         return $this->heent_odynophagia == "No" ? "CHECKED" : "";
     }
-    function set_heent_odynophagia($data)
+
+    public function set_heent_odynophagia($data): void
     {
         if (!empty($data)) {
             $this->heent_odynophagia = $data;
         }
     }
-    function get_heent_odynophagia_text()
+
+    public function get_heent_odynophagia_text()
     {
         return $this->heent_odynophagia_text;
     }
-    function set_heent_odynophagia_text($data)
+
+    public function set_heent_odynophagia_text($data): void
     {
         if (!empty($data)) {
             $this->heent_odynophagia_text = $data;
@@ -1255,31 +1518,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_dental_pain;
-    var $heent_dental_pain_text;
-    function get_heent_dental_pain()
+    public $heent_dental_pain;
+
+    public $heent_dental_pain_text;
+
+    public function get_heent_dental_pain()
     {
         return $this->heent_dental_pain;
     }
-    function get_heent_dental_pain_yes()
+
+    public function get_heent_dental_pain_yes(): string
     {
         return $this->heent_dental_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_dental_pain_no()
+
+    public function get_heent_dental_pain_no(): string
     {
         return $this->heent_dental_pain == "No" ? "CHECKED" : "";
     }
-    function set_heent_dental_pain($data)
+
+    public function set_heent_dental_pain($data): void
     {
         if (!empty($data)) {
             $this->heent_dental_pain = $data;
         }
     }
-    function get_heent_dental_pain_text()
+
+    public function get_heent_dental_pain_text()
     {
         return $this->heent_dental_pain_text;
     }
-    function set_heent_dental_pain_text($data)
+
+    public function set_heent_dental_pain_text($data): void
     {
         if (!empty($data)) {
             $this->heent_dental_pain_text = $data;
@@ -1287,31 +1557,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_sore_throat;
-    var $heent_sore_throat_text;
-    function get_heent_sore_throat()
+    public $heent_sore_throat;
+
+    public $heent_sore_throat_text;
+
+    public function get_heent_sore_throat()
     {
         return $this->heent_sore_throat;
     }
-    function get_heent_sore_throat_yes()
+
+    public function get_heent_sore_throat_yes(): string
     {
         return $this->heent_sore_throat == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_sore_throat_no()
+
+    public function get_heent_sore_throat_no(): string
     {
         return $this->heent_sore_throat == "No" ? "CHECKED" : "";
     }
-    function set_heent_sore_throat($data)
+
+    public function set_heent_sore_throat($data): void
     {
         if (!empty($data)) {
             $this->heent_sore_throat = $data;
         }
     }
-    function get_heent_sore_throat_text()
+
+    public function get_heent_sore_throat_text()
     {
         return $this->heent_sore_throat_text;
     }
-    function set_heent_sore_throat_text($data)
+
+    public function set_heent_sore_throat_text($data): void
     {
         if (!empty($data)) {
             $this->heent_sore_throat_text = $data;
@@ -1319,31 +1596,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_ear_pain;
-    var $heent_ear_pain_text;
-    function get_heent_ear_pain()
+    public $heent_ear_pain;
+
+    public $heent_ear_pain_text;
+
+    public function get_heent_ear_pain()
     {
         return $this->heent_ear_pain;
     }
-    function get_heent_ear_pain_yes()
+
+    public function get_heent_ear_pain_yes(): string
     {
         return $this->heent_ear_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_ear_pain_no()
+
+    public function get_heent_ear_pain_no(): string
     {
         return $this->heent_ear_pain == "No" ? "CHECKED" : "";
     }
-    function set_heent_ear_pain($data)
+
+    public function set_heent_ear_pain($data): void
     {
         if (!empty($data)) {
             $this->heent_ear_pain = $data;
         }
     }
-    function get_heent_ear_pain_text()
+
+    public function get_heent_ear_pain_text()
     {
         return $this->heent_ear_pain_text;
     }
-    function set_heent_ear_pain_text($data)
+
+    public function set_heent_ear_pain_text($data): void
     {
         if (!empty($data)) {
             $this->heent_ear_pain_text = $data;
@@ -1351,31 +1635,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_ear_discharge;
-    var $heent_ear_discharge_text;
-    function get_heent_ear_discharge()
+    public $heent_ear_discharge;
+
+    public $heent_ear_discharge_text;
+
+    public function get_heent_ear_discharge()
     {
         return $this->heent_ear_discharge;
     }
-    function get_heent_ear_discharge_yes()
+
+    public function get_heent_ear_discharge_yes(): string
     {
         return $this->heent_ear_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_ear_discharge_no()
+
+    public function get_heent_ear_discharge_no(): string
     {
         return $this->heent_ear_discharge == "No" ? "CHECKED" : "";
     }
-    function set_heent_ear_discharge($data)
+
+    public function set_heent_ear_discharge($data): void
     {
         if (!empty($data)) {
             $this->heent_ear_discharge = $data;
         }
     }
-    function get_heent_ear_discharge_text()
+
+    public function get_heent_ear_discharge_text()
     {
         return $this->heent_ear_discharge_text;
     }
-    function set_heent_ear_discharge_text($data)
+
+    public function set_heent_ear_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->heent_ear_discharge_text = $data;
@@ -1383,31 +1674,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_tinnitus;
-    var $heent_tinnitus_text;
-    function get_heent_tinnitus()
+    public $heent_tinnitus;
+
+    public $heent_tinnitus_text;
+
+    public function get_heent_tinnitus()
     {
         return $this->heent_tinnitus;
     }
-    function get_heent_tinnitus_yes()
+
+    public function get_heent_tinnitus_yes(): string
     {
         return $this->heent_tinnitus == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_tinnitus_no()
+
+    public function get_heent_tinnitus_no(): string
     {
         return $this->heent_tinnitus == "No" ? "CHECKED" : "";
     }
-    function set_heent_tinnitus($data)
+
+    public function set_heent_tinnitus($data): void
     {
         if (!empty($data)) {
             $this->heent_tinnitus = $data;
         }
     }
-    function get_heent_tinnitus_text()
+
+    public function get_heent_tinnitus_text()
     {
         return $this->heent_tinnitus_text;
     }
-    function set_heent_tinnitus_text($data)
+
+    public function set_heent_tinnitus_text($data): void
     {
         if (!empty($data)) {
             $this->heent_tinnitus_text = $data;
@@ -1415,31 +1713,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_hearing_loss;
-    var $heent_hearing_loss_text;
-    function get_heent_hearing_loss()
+    public $heent_hearing_loss;
+
+    public $heent_hearing_loss_text;
+
+    public function get_heent_hearing_loss()
     {
         return $this->heent_hearing_loss;
     }
-    function get_heent_hearing_loss_yes()
+
+    public function get_heent_hearing_loss_yes(): string
     {
         return $this->heent_hearing_loss == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_hearing_loss_no()
+
+    public function get_heent_hearing_loss_no(): string
     {
         return $this->heent_hearing_loss == "No" ? "CHECKED" : "";
     }
-    function set_heent_hearing_loss($data)
+
+    public function set_heent_hearing_loss($data): void
     {
         if (!empty($data)) {
             $this->heent_hearing_loss = $data;
         }
     }
-    function get_heent_hearing_loss_text()
+
+    public function get_heent_hearing_loss_text()
     {
         return $this->heent_hearing_loss_text;
     }
-    function set_heent_hearing_loss_text($data)
+
+    public function set_heent_hearing_loss_text($data): void
     {
         if (!empty($data)) {
             $this->heent_hearing_loss_text = $data;
@@ -1447,31 +1752,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_allergic_rhinitis;
-    var $heent_allergic_rhinitis_text;
-    function get_heent_allergic_rhinitis()
+    public $heent_allergic_rhinitis;
+
+    public $heent_allergic_rhinitis_text;
+
+    public function get_heent_allergic_rhinitis()
     {
         return $this->heent_allergic_rhinitis;
     }
-    function get_heent_allergic_rhinitis_yes()
+
+    public function get_heent_allergic_rhinitis_yes(): string
     {
         return $this->heent_allergic_rhinitis == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_allergic_rhinitis_no()
+
+    public function get_heent_allergic_rhinitis_no(): string
     {
         return $this->heent_allergic_rhinitis == "No" ? "CHECKED" : "";
     }
-    function set_heent_allergic_rhinitis($data)
+
+    public function set_heent_allergic_rhinitis($data): void
     {
         if (!empty($data)) {
             $this->heent_allergic_rhinitis = $data;
         }
     }
-    function get_heent_allergic_rhinitis_text()
+
+    public function get_heent_allergic_rhinitis_text()
     {
         return $this->heent_allergic_rhinitis_text;
     }
-    function set_heent_allergic_rhinitis_text($data)
+
+    public function set_heent_allergic_rhinitis_text($data): void
     {
         if (!empty($data)) {
             $this->heent_allergic_rhinitis_text = $data;
@@ -1479,31 +1791,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_nasal_congestion;
-    var $heent_nasal_congestion_text;
-    function get_heent_nasal_congestion()
+    public $heent_nasal_congestion;
+
+    public $heent_nasal_congestion_text;
+
+    public function get_heent_nasal_congestion()
     {
         return $this->heent_nasal_congestion;
     }
-    function get_heent_nasal_congestion_yes()
+
+    public function get_heent_nasal_congestion_yes(): string
     {
         return $this->heent_nasal_congestion == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_nasal_congestion_no()
+
+    public function get_heent_nasal_congestion_no(): string
     {
         return $this->heent_nasal_congestion == "No" ? "CHECKED" : "";
     }
-    function set_heent_nasal_congestion($data)
+
+    public function set_heent_nasal_congestion($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_congestion = $data;
         }
     }
-    function get_heent_nasal_congestion_text()
+
+    public function get_heent_nasal_congestion_text()
     {
         return $this->heent_nasal_congestion_text;
     }
-    function set_heent_nasal_congestion_text($data)
+
+    public function set_heent_nasal_congestion_text($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_congestion_text = $data;
@@ -1511,31 +1830,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_nasal_discharge;
-    var $heent_nasal_discharge_text;
-    function get_heent_nasal_discharge()
+    public $heent_nasal_discharge;
+
+    public $heent_nasal_discharge_text;
+
+    public function get_heent_nasal_discharge()
     {
         return $this->heent_nasal_discharge;
     }
-    function get_heent_nasal_discharge_yes()
+
+    public function get_heent_nasal_discharge_yes(): string
     {
         return $this->heent_nasal_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_nasal_discharge_no()
+
+    public function get_heent_nasal_discharge_no(): string
     {
         return $this->heent_nasal_discharge == "No" ? "CHECKED" : "";
     }
-    function set_heent_nasal_discharge($data)
+
+    public function set_heent_nasal_discharge($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_discharge = $data;
         }
     }
-    function get_heent_nasal_discharge_text()
+
+    public function get_heent_nasal_discharge_text()
     {
         return $this->heent_nasal_discharge_text;
     }
-    function set_heent_nasal_discharge_text($data)
+
+    public function set_heent_nasal_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_discharge_text = $data;
@@ -1543,31 +1869,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_nasal_injury;
-    var $heent_nasal_injury_text;
-    function get_heent_nasal_injury()
+    public $heent_nasal_injury;
+
+    public $heent_nasal_injury_text;
+
+    public function get_heent_nasal_injury()
     {
         return $this->heent_nasal_injury;
     }
-    function get_heent_nasal_injury_yes()
+
+    public function get_heent_nasal_injury_yes(): string
     {
         return $this->heent_nasal_injury == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_nasal_injury_no()
+
+    public function get_heent_nasal_injury_no(): string
     {
         return $this->heent_nasal_injury == "No" ? "CHECKED" : "";
     }
-    function set_heent_nasal_injury($data)
+
+    public function set_heent_nasal_injury($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_injury = $data;
         }
     }
-    function get_heent_nasal_injury_text()
+
+    public function get_heent_nasal_injury_text()
     {
         return $this->heent_nasal_injury_text;
     }
-    function set_heent_nasal_injury_text($data)
+
+    public function set_heent_nasal_injury_text($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_injury_text = $data;
@@ -1575,31 +1908,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_nasal_surgery;
-    var $heent_nasal_surgery_text;
-    function get_heent_nasal_surgery()
+    public $heent_nasal_surgery;
+
+    public $heent_nasal_surgery_text;
+
+    public function get_heent_nasal_surgery()
     {
         return $this->heent_nasal_surgery;
     }
-    function get_heent_nasal_surgery_yes()
+
+    public function get_heent_nasal_surgery_yes(): string
     {
         return $this->heent_nasal_surgery == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_nasal_surgery_no()
+
+    public function get_heent_nasal_surgery_no(): string
     {
         return $this->heent_nasal_surgery == "No" ? "CHECKED" : "";
     }
-    function set_heent_nasal_surgery($data)
+
+    public function set_heent_nasal_surgery($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_surgery = $data;
         }
     }
-    function get_heent_nasal_surgery_text()
+
+    public function get_heent_nasal_surgery_text()
     {
         return $this->heent_nasal_surgery_text;
     }
-    function set_heent_nasal_surgery_text($data)
+
+    public function set_heent_nasal_surgery_text($data): void
     {
         if (!empty($data)) {
             $this->heent_nasal_surgery_text = $data;
@@ -1607,31 +1947,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_nose_bleeds;
-    var $heent_nose_bleeds_text;
-    function get_heent_nose_bleeds()
+    public $heent_nose_bleeds;
+
+    public $heent_nose_bleeds_text;
+
+    public function get_heent_nose_bleeds()
     {
         return $this->heent_nose_bleeds;
     }
-    function get_heent_nose_bleeds_yes()
+
+    public function get_heent_nose_bleeds_yes(): string
     {
         return $this->heent_nose_bleeds == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_nose_bleeds_no()
+
+    public function get_heent_nose_bleeds_no(): string
     {
         return $this->heent_nose_bleeds == "No" ? "CHECKED" : "";
     }
-    function set_heent_nose_bleeds($data)
+
+    public function set_heent_nose_bleeds($data): void
     {
         if (!empty($data)) {
             $this->heent_nose_bleeds = $data;
         }
     }
-    function get_heent_nose_bleeds_text()
+
+    public function get_heent_nose_bleeds_text()
     {
         return $this->heent_nose_bleeds_text;
     }
-    function set_heent_nose_bleeds_text($data)
+
+    public function set_heent_nose_bleeds_text($data): void
     {
         if (!empty($data)) {
             $this->heent_nose_bleeds_text = $data;
@@ -1639,31 +1986,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_post_nasal_drip;
-    var $heent_post_nasal_drip_text;
-    function get_heent_post_nasal_drip()
+    public $heent_post_nasal_drip;
+
+    public $heent_post_nasal_drip_text;
+
+    public function get_heent_post_nasal_drip()
     {
         return $this->heent_post_nasal_drip;
     }
-    function get_heent_post_nasal_drip_yes()
+
+    public function get_heent_post_nasal_drip_yes(): string
     {
         return $this->heent_post_nasal_drip == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_post_nasal_drip_no()
+
+    public function get_heent_post_nasal_drip_no(): string
     {
         return $this->heent_post_nasal_drip == "No" ? "CHECKED" : "";
     }
-    function set_heent_post_nasal_drip($data)
+
+    public function set_heent_post_nasal_drip($data): void
     {
         if (!empty($data)) {
             $this->heent_post_nasal_drip = $data;
         }
     }
-    function get_heent_post_nasal_drip_text()
+
+    public function get_heent_post_nasal_drip_text()
     {
         return $this->heent_post_nasal_drip_text;
     }
-    function set_heent_post_nasal_drip_text($data)
+
+    public function set_heent_post_nasal_drip_text($data): void
     {
         if (!empty($data)) {
             $this->heent_post_nasal_drip_text = $data;
@@ -1671,31 +2025,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_sinus_pressure;
-    var $heent_sinus_pressure_text;
-    function get_heent_sinus_pressure()
+    public $heent_sinus_pressure;
+
+    public $heent_sinus_pressure_text;
+
+    public function get_heent_sinus_pressure()
     {
         return $this->heent_sinus_pressure;
     }
-    function get_heent_sinus_pressure_yes()
+
+    public function get_heent_sinus_pressure_yes(): string
     {
         return $this->heent_sinus_pressure == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_sinus_pressure_no()
+
+    public function get_heent_sinus_pressure_no(): string
     {
         return $this->heent_sinus_pressure == "No" ? "CHECKED" : "";
     }
-    function set_heent_sinus_pressure($data)
+
+    public function set_heent_sinus_pressure($data): void
     {
         if (!empty($data)) {
             $this->heent_sinus_pressure = $data;
         }
     }
-    function get_heent_sinus_pressure_text()
+
+    public function get_heent_sinus_pressure_text()
     {
         return $this->heent_sinus_pressure_text;
     }
-    function set_heent_sinus_pressure_text($data)
+
+    public function set_heent_sinus_pressure_text($data): void
     {
         if (!empty($data)) {
             $this->heent_sinus_pressure_text = $data;
@@ -1703,31 +2064,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_sinus_pain;
-    var $heent_sinus_pain_text;
-    function get_heent_sinus_pain()
+    public $heent_sinus_pain;
+
+    public $heent_sinus_pain_text;
+
+    public function get_heent_sinus_pain()
     {
         return $this->heent_sinus_pain;
     }
-    function get_heent_sinus_pain_yes()
+
+    public function get_heent_sinus_pain_yes(): string
     {
         return $this->heent_sinus_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_sinus_pain_no()
+
+    public function get_heent_sinus_pain_no(): string
     {
         return $this->heent_sinus_pain == "No" ? "CHECKED" : "";
     }
-    function set_heent_sinus_pain($data)
+
+    public function set_heent_sinus_pain($data): void
     {
         if (!empty($data)) {
             $this->heent_sinus_pain = $data;
         }
     }
-    function get_heent_sinus_pain_text()
+
+    public function get_heent_sinus_pain_text()
     {
         return $this->heent_sinus_pain_text;
     }
-    function set_heent_sinus_pain_text($data)
+
+    public function set_heent_sinus_pain_text($data): void
     {
         if (!empty($data)) {
             $this->heent_sinus_pain_text = $data;
@@ -1735,31 +2103,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_headache;
-    var $heent_headache_text;
-    function get_heent_headache()
+    public $heent_headache;
+
+    public $heent_headache_text;
+
+    public function get_heent_headache()
     {
         return $this->heent_headache;
     }
-    function get_heent_headache_yes()
+
+    public function get_heent_headache_yes(): string
     {
         return $this->heent_headache == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_headache_no()
+
+    public function get_heent_headache_no(): string
     {
         return $this->heent_headache == "No" ? "CHECKED" : "";
     }
-    function set_heent_headache($data)
+
+    public function set_heent_headache($data): void
     {
         if (!empty($data)) {
             $this->heent_headache = $data;
         }
     }
-    function get_heent_headache_text()
+
+    public function get_heent_headache_text()
     {
         return $this->heent_headache_text;
     }
-    function set_heent_headache_text($data)
+
+    public function set_heent_headache_text($data): void
     {
         if (!empty($data)) {
             $this->heent_headache_text = $data;
@@ -1767,31 +2142,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_eye_pain;
-    var $heent_eye_pain_text;
-    function get_heent_eye_pain()
+    public $heent_eye_pain;
+
+    public $heent_eye_pain_text;
+
+    public function get_heent_eye_pain()
     {
         return $this->heent_eye_pain;
     }
-    function get_heent_eye_pain_yes()
+
+    public function get_heent_eye_pain_yes(): string
     {
         return $this->heent_eye_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_eye_pain_no()
+
+    public function get_heent_eye_pain_no(): string
     {
         return $this->heent_eye_pain == "No" ? "CHECKED" : "";
     }
-    function set_heent_eye_pain($data)
+
+    public function set_heent_eye_pain($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_pain = $data;
         }
     }
-    function get_heent_eye_pain_text()
+
+    public function get_heent_eye_pain_text()
     {
         return $this->heent_eye_pain_text;
     }
-    function set_heent_eye_pain_text($data)
+
+    public function set_heent_eye_pain_text($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_pain_text = $data;
@@ -1799,31 +2181,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_eye_redness;
-    var $heent_eye_redness_text;
-    function get_heent_eye_redness()
+    public $heent_eye_redness;
+
+    public $heent_eye_redness_text;
+
+    public function get_heent_eye_redness()
     {
         return $this->heent_eye_redness;
     }
-    function get_heent_eye_redness_yes()
+
+    public function get_heent_eye_redness_yes(): string
     {
         return $this->heent_eye_redness == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_eye_redness_no()
+
+    public function get_heent_eye_redness_no(): string
     {
         return $this->heent_eye_redness == "No" ? "CHECKED" : "";
     }
-    function set_heent_eye_redness($data)
+
+    public function set_heent_eye_redness($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_redness = $data;
         }
     }
-    function get_heent_eye_redness_text()
+
+    public function get_heent_eye_redness_text()
     {
         return $this->heent_eye_redness_text;
     }
-    function set_heent_eye_redness_text($data)
+
+    public function set_heent_eye_redness_text($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_redness_text = $data;
@@ -1831,31 +2220,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_visual_changes;
-    var $heent_visual_changes_text;
-    function get_heent_visual_changes()
+    public $heent_visual_changes;
+
+    public $heent_visual_changes_text;
+
+    public function get_heent_visual_changes()
     {
         return $this->heent_visual_changes;
     }
-    function get_heent_visual_changes_yes()
+
+    public function get_heent_visual_changes_yes(): string
     {
         return $this->heent_visual_changes == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_visual_changes_no()
+
+    public function get_heent_visual_changes_no(): string
     {
         return $this->heent_visual_changes == "No" ? "CHECKED" : "";
     }
-    function set_heent_visual_changes($data)
+
+    public function set_heent_visual_changes($data): void
     {
         if (!empty($data)) {
             $this->heent_visual_changes = $data;
         }
     }
-    function get_heent_visual_changes_text()
+
+    public function get_heent_visual_changes_text()
     {
         return $this->heent_visual_changes_text;
     }
-    function set_heent_visual_changes_text($data)
+
+    public function set_heent_visual_changes_text($data): void
     {
         if (!empty($data)) {
             $this->heent_visual_changes_text = $data;
@@ -1863,31 +2259,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_blurry_vision;
-    var $heent_blurry_vision_text;
-    function get_heent_blurry_vision()
+    public $heent_blurry_vision;
+
+    public $heent_blurry_vision_text;
+
+    public function get_heent_blurry_vision()
     {
         return $this->heent_blurry_vision;
     }
-    function get_heent_blurry_vision_yes()
+
+    public function get_heent_blurry_vision_yes(): string
     {
         return $this->heent_blurry_vision == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_blurry_vision_no()
+
+    public function get_heent_blurry_vision_no(): string
     {
         return $this->heent_blurry_vision == "No" ? "CHECKED" : "";
     }
-    function set_heent_blurry_vision($data)
+
+    public function set_heent_blurry_vision($data): void
     {
         if (!empty($data)) {
             $this->heent_blurry_vision = $data;
         }
     }
-    function get_heent_blurry_vision_text()
+
+    public function get_heent_blurry_vision_text()
     {
         return $this->heent_blurry_vision_text;
     }
-    function set_heent_blurry_vision_text($data)
+
+    public function set_heent_blurry_vision_text($data): void
     {
         if (!empty($data)) {
             $this->heent_blurry_vision_text = $data;
@@ -1895,31 +2298,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_eye_discharge;
-    var $heent_eye_discharge_text;
-    function get_heent_eye_discharge()
+    public $heent_eye_discharge;
+
+    public $heent_eye_discharge_text;
+
+    public function get_heent_eye_discharge()
     {
         return $this->heent_eye_discharge;
     }
-    function get_heent_eye_discharge_yes()
+
+    public function get_heent_eye_discharge_yes(): string
     {
         return $this->heent_eye_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_eye_discharge_no()
+
+    public function get_heent_eye_discharge_no(): string
     {
         return $this->heent_eye_discharge == "No" ? "CHECKED" : "";
     }
-    function set_heent_eye_discharge($data)
+
+    public function set_heent_eye_discharge($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_discharge = $data;
         }
     }
-    function get_heent_eye_discharge_text()
+
+    public function get_heent_eye_discharge_text()
     {
         return $this->heent_eye_discharge_text;
     }
-    function set_heent_eye_discharge_text($data)
+
+    public function set_heent_eye_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_discharge_text = $data;
@@ -1927,31 +2337,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_eye_glasses_contacts;
-    var $heent_eye_glasses_contacts_text;
-    function get_heent_eye_glasses_contacts()
+    public $heent_eye_glasses_contacts;
+
+    public $heent_eye_glasses_contacts_text;
+
+    public function get_heent_eye_glasses_contacts()
     {
         return $this->heent_eye_glasses_contacts;
     }
-    function get_heent_eye_glasses_contacts_yes()
+
+    public function get_heent_eye_glasses_contacts_yes(): string
     {
         return $this->heent_eye_glasses_contacts == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_eye_glasses_contacts_no()
+
+    public function get_heent_eye_glasses_contacts_no(): string
     {
         return $this->heent_eye_glasses_contacts == "No" ? "CHECKED" : "";
     }
-    function set_heent_eye_glasses_contacts($data)
+
+    public function set_heent_eye_glasses_contacts($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_glasses_contacts = $data;
         }
     }
-    function get_heent_eye_glasses_contacts_text()
+
+    public function get_heent_eye_glasses_contacts_text()
     {
         return $this->heent_eye_glasses_contacts_text;
     }
-    function set_heent_eye_glasses_contacts_text($data)
+
+    public function set_heent_eye_glasses_contacts_text($data): void
     {
         if (!empty($data)) {
             $this->heent_eye_glasses_contacts_text = $data;
@@ -1959,31 +2376,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_excess_tearing;
-    var $heent_excess_tearing_text;
-    function get_heent_excess_tearing()
+    public $heent_excess_tearing;
+
+    public $heent_excess_tearing_text;
+
+    public function get_heent_excess_tearing()
     {
         return $this->heent_excess_tearing;
     }
-    function get_heent_excess_tearing_yes()
+
+    public function get_heent_excess_tearing_yes(): string
     {
         return $this->heent_excess_tearing == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_excess_tearing_no()
+
+    public function get_heent_excess_tearing_no(): string
     {
         return $this->heent_excess_tearing == "No" ? "CHECKED" : "";
     }
-    function set_heent_excess_tearing($data)
+
+    public function set_heent_excess_tearing($data): void
     {
         if (!empty($data)) {
             $this->heent_excess_tearing = $data;
         }
     }
-    function get_heent_excess_tearing_text()
+
+    public function get_heent_excess_tearing_text()
     {
         return $this->heent_excess_tearing_text;
     }
-    function set_heent_excess_tearing_text($data)
+
+    public function set_heent_excess_tearing_text($data): void
     {
         if (!empty($data)) {
             $this->heent_excess_tearing_text = $data;
@@ -1991,31 +2415,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_photophobia;
-    var $heent_photophobia_text;
-    function get_heent_photophobia()
+    public $heent_photophobia;
+
+    public $heent_photophobia_text;
+
+    public function get_heent_photophobia()
     {
         return $this->heent_photophobia;
     }
-    function get_heent_photophobia_yes()
+
+    public function get_heent_photophobia_yes(): string
     {
         return $this->heent_photophobia == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_photophobia_no()
+
+    public function get_heent_photophobia_no(): string
     {
         return $this->heent_photophobia == "No" ? "CHECKED" : "";
     }
-    function set_heent_photophobia($data)
+
+    public function set_heent_photophobia($data): void
     {
         if (!empty($data)) {
             $this->heent_photophobia = $data;
         }
     }
-    function get_heent_photophobia_text()
+
+    public function get_heent_photophobia_text()
     {
         return $this->heent_photophobia_text;
     }
-    function set_heent_photophobia_text($data)
+
+    public function set_heent_photophobia_text($data): void
     {
         if (!empty($data)) {
             $this->heent_photophobia_text = $data;
@@ -2023,31 +2454,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_scotomata;
-    var $heent_scotomata_text;
-    function get_heent_scotomata()
+    public $heent_scotomata;
+
+    public $heent_scotomata_text;
+
+    public function get_heent_scotomata()
     {
         return $this->heent_scotomata;
     }
-    function get_heent_scotomata_yes()
+
+    public function get_heent_scotomata_yes(): string
     {
         return $this->heent_scotomata == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_scotomata_no()
+
+    public function get_heent_scotomata_no(): string
     {
         return $this->heent_scotomata == "No" ? "CHECKED" : "";
     }
-    function set_heent_scotomata($data)
+
+    public function set_heent_scotomata($data): void
     {
         if (!empty($data)) {
             $this->heent_scotomata = $data;
         }
     }
-    function get_heent_scotomata_text()
+
+    public function get_heent_scotomata_text()
     {
         return $this->heent_scotomata_text;
     }
-    function set_heent_scotomata_text($data)
+
+    public function set_heent_scotomata_text($data): void
     {
         if (!empty($data)) {
             $this->heent_scotomata_text = $data;
@@ -2055,31 +2493,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_tunnel_vision;
-    var $heent_tunnel_vision_text;
-    function get_heent_tunnel_vision()
+    public $heent_tunnel_vision;
+
+    public $heent_tunnel_vision_text;
+
+    public function get_heent_tunnel_vision()
     {
         return $this->heent_tunnel_vision;
     }
-    function get_heent_tunnel_vision_yes()
+
+    public function get_heent_tunnel_vision_yes(): string
     {
         return $this->heent_tunnel_vision == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_tunnel_vision_no()
+
+    public function get_heent_tunnel_vision_no(): string
     {
         return $this->heent_tunnel_vision == "No" ? "CHECKED" : "";
     }
-    function set_heent_tunnel_vision($data)
+
+    public function set_heent_tunnel_vision($data): void
     {
         if (!empty($data)) {
             $this->heent_tunnel_vision = $data;
         }
     }
-    function get_heent_tunnel_vision_text()
+
+    public function get_heent_tunnel_vision_text()
     {
         return $this->heent_tunnel_vision_text;
     }
-    function set_heent_tunnel_vision_text($data)
+
+    public function set_heent_tunnel_vision_text($data): void
     {
         if (!empty($data)) {
             $this->heent_tunnel_vision_text = $data;
@@ -2087,31 +2532,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $heent_glaucoma;
-    var $heent_glaucoma_text;
-    function get_heent_glaucoma()
+    public $heent_glaucoma;
+
+    public $heent_glaucoma_text;
+
+    public function get_heent_glaucoma()
     {
         return $this->heent_glaucoma;
     }
-    function get_heent_glaucoma_yes()
+
+    public function get_heent_glaucoma_yes(): string
     {
         return $this->heent_glaucoma == "Yes" ? "CHECKED" : "";
     }
-    function get_heent_glaucoma_no()
+
+    public function get_heent_glaucoma_no(): string
     {
         return $this->heent_glaucoma == "No" ? "CHECKED" : "";
     }
-    function set_heent_glaucoma($data)
+
+    public function set_heent_glaucoma($data): void
     {
         if (!empty($data)) {
             $this->heent_glaucoma = $data;
         }
     }
-    function get_heent_glaucoma_text()
+
+    public function get_heent_glaucoma_text()
     {
         return $this->heent_glaucoma_text;
     }
-    function set_heent_glaucoma_text($data)
+
+    public function set_heent_glaucoma_text($data): void
     {
         if (!empty($data)) {
             $this->heent_glaucoma_text = $data;
@@ -2120,31 +2572,38 @@ class FormROS2 extends ORDataObject
 
     // ----- sub sternal or left chest pain -----
 
-    var $cardiovascular_sub_sternal_or_left_chest_pain;
-    var $cardiovascular_sub_sternal_or_left_chest_pain_text;
-    function get_cardiovascular_sub_sternal_or_left_chest_pain()
+    public $cardiovascular_sub_sternal_or_left_chest_pain;
+
+    public $cardiovascular_sub_sternal_or_left_chest_pain_text;
+
+    public function get_cardiovascular_sub_sternal_or_left_chest_pain()
     {
         return $this->cardiovascular_sub_sternal_or_left_chest_pain;
     }
-    function get_cardiovascular_sub_sternal_or_left_chest_pain_yes()
+
+    public function get_cardiovascular_sub_sternal_or_left_chest_pain_yes(): string
     {
         return $this->cardiovascular_sub_sternal_or_left_chest_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_sub_sternal_or_left_chest_pain_no()
+
+    public function get_cardiovascular_sub_sternal_or_left_chest_pain_no(): string
     {
         return $this->cardiovascular_sub_sternal_or_left_chest_pain == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_sub_sternal_or_left_chest_pain($data)
+
+    public function set_cardiovascular_sub_sternal_or_left_chest_pain($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_sub_sternal_or_left_chest_pain = $data;
         }
     }
-    function get_cardiovascular_sub_sternal_or_left_chest_pain_text()
+
+    public function get_cardiovascular_sub_sternal_or_left_chest_pain_text()
     {
         return $this->cardiovascular_sub_sternal_or_left_chest_pain_text;
     }
-    function set_cardiovascular_sub_sternal_or_left_chest_pain_text($data)
+
+    public function set_cardiovascular_sub_sternal_or_left_chest_pain_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_sub_sternal_or_left_chest_pain_text = $data;
@@ -2152,31 +2611,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_other_chest_pain;
-    var $cardiovascular_other_chest_pain_text;
-    function get_cardiovascular_other_chest_pain()
+    public $cardiovascular_other_chest_pain;
+
+    public $cardiovascular_other_chest_pain_text;
+
+    public function get_cardiovascular_other_chest_pain()
     {
         return $this->cardiovascular_other_chest_pain;
     }
-    function get_cardiovascular_other_chest_pain_yes()
+
+    public function get_cardiovascular_other_chest_pain_yes(): string
     {
         return $this->cardiovascular_other_chest_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_other_chest_pain_no()
+
+    public function get_cardiovascular_other_chest_pain_no(): string
     {
         return $this->cardiovascular_other_chest_pain == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_other_chest_pain($data)
+
+    public function set_cardiovascular_other_chest_pain($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_other_chest_pain = $data;
         }
     }
-    function get_cardiovascular_other_chest_pain_text()
+
+    public function get_cardiovascular_other_chest_pain_text()
     {
         return $this->cardiovascular_other_chest_pain_text;
     }
-    function set_cardiovascular_other_chest_pain_text($data)
+
+    public function set_cardiovascular_other_chest_pain_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_other_chest_pain_text = $data;
@@ -2184,31 +2650,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_palpitations;
-    var $cardiovascular_palpitations_text;
-    function get_cardiovascular_palpitations()
+    public $cardiovascular_palpitations;
+
+    public $cardiovascular_palpitations_text;
+
+    public function get_cardiovascular_palpitations()
     {
         return $this->cardiovascular_palpitations;
     }
-    function get_cardiovascular_palpitations_yes()
+
+    public function get_cardiovascular_palpitations_yes(): string
     {
         return $this->cardiovascular_palpitations == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_palpitations_no()
+
+    public function get_cardiovascular_palpitations_no(): string
     {
         return $this->cardiovascular_palpitations == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_palpitations($data)
+
+    public function set_cardiovascular_palpitations($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_palpitations = $data;
         }
     }
-    function get_cardiovascular_palpitations_text()
+
+    public function get_cardiovascular_palpitations_text()
     {
         return $this->cardiovascular_palpitations_text;
     }
-    function set_cardiovascular_palpitations_text($data)
+
+    public function set_cardiovascular_palpitations_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_palpitations_text = $data;
@@ -2216,31 +2689,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_irregular_rhythm;
-    var $cardiovascular_irregular_rhythm_text;
-    function get_cardiovascular_irregular_rhythm()
+    public $cardiovascular_irregular_rhythm;
+
+    public $cardiovascular_irregular_rhythm_text;
+
+    public function get_cardiovascular_irregular_rhythm()
     {
         return $this->cardiovascular_irregular_rhythm;
     }
-    function get_cardiovascular_irregular_rhythm_yes()
+
+    public function get_cardiovascular_irregular_rhythm_yes(): string
     {
         return $this->cardiovascular_irregular_rhythm == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_irregular_rhythm_no()
+
+    public function get_cardiovascular_irregular_rhythm_no(): string
     {
         return $this->cardiovascular_irregular_rhythm == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_irregular_rhythm($data)
+
+    public function set_cardiovascular_irregular_rhythm($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_irregular_rhythm = $data;
         }
     }
-    function get_cardiovascular_irregular_rhythm_text()
+
+    public function get_cardiovascular_irregular_rhythm_text()
     {
         return $this->cardiovascular_irregular_rhythm_text;
     }
-    function set_cardiovascular_irregular_rhythm_text($data)
+
+    public function set_cardiovascular_irregular_rhythm_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_irregular_rhythm_text = $data;
@@ -2248,31 +2728,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_jugular_vein_distention;
-    var $cardiovascular_jugular_vein_distention_text;
-    function get_cardiovascular_jugular_vein_distention()
+    public $cardiovascular_jugular_vein_distention;
+
+    public $cardiovascular_jugular_vein_distention_text;
+
+    public function get_cardiovascular_jugular_vein_distention()
     {
         return $this->cardiovascular_jugular_vein_distention;
     }
-    function get_cardiovascular_jugular_vein_distention_yes()
+
+    public function get_cardiovascular_jugular_vein_distention_yes(): string
     {
         return $this->cardiovascular_jugular_vein_distention == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_jugular_vein_distention_no()
+
+    public function get_cardiovascular_jugular_vein_distention_no(): string
     {
         return $this->cardiovascular_jugular_vein_distention == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_jugular_vein_distention($data)
+
+    public function set_cardiovascular_jugular_vein_distention($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_jugular_vein_distention = $data;
         }
     }
-    function get_cardiovascular_jugular_vein_distention_text()
+
+    public function get_cardiovascular_jugular_vein_distention_text()
     {
         return $this->cardiovascular_jugular_vein_distention_text;
     }
-    function set_cardiovascular_jugular_vein_distention_text($data)
+
+    public function set_cardiovascular_jugular_vein_distention_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_jugular_vein_distention_text = $data;
@@ -2280,31 +2767,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_claudication;
-    var $cardiovascular_claudication_text;
-    function get_cardiovascular_claudication()
+    public $cardiovascular_claudication;
+
+    public $cardiovascular_claudication_text;
+
+    public function get_cardiovascular_claudication()
     {
         return $this->cardiovascular_claudication;
     }
-    function get_cardiovascular_claudication_yes()
+
+    public function get_cardiovascular_claudication_yes(): string
     {
         return $this->cardiovascular_claudication == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_claudication_no()
+
+    public function get_cardiovascular_claudication_no(): string
     {
         return $this->cardiovascular_claudication == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_claudication($data)
+
+    public function set_cardiovascular_claudication($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_claudication = $data;
         }
     }
-    function get_cardiovascular_claudication_text()
+
+    public function get_cardiovascular_claudication_text()
     {
         return $this->cardiovascular_claudication_text;
     }
-    function set_cardiovascular_claudication_text($data)
+
+    public function set_cardiovascular_claudication_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_claudication_text = $data;
@@ -2312,31 +2806,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_dizziness;
-    var $cardiovascular_dizziness_text;
-    function get_cardiovascular_dizziness()
+    public $cardiovascular_dizziness;
+
+    public $cardiovascular_dizziness_text;
+
+    public function get_cardiovascular_dizziness()
     {
         return $this->cardiovascular_dizziness;
     }
-    function get_cardiovascular_dizziness_yes()
+
+    public function get_cardiovascular_dizziness_yes(): string
     {
         return $this->cardiovascular_dizziness == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_dizziness_no()
+
+    public function get_cardiovascular_dizziness_no(): string
     {
         return $this->cardiovascular_dizziness == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_dizziness($data)
+
+    public function set_cardiovascular_dizziness($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_dizziness = $data;
         }
     }
-    function get_cardiovascular_dizziness_text()
+
+    public function get_cardiovascular_dizziness_text()
     {
         return $this->cardiovascular_dizziness_text;
     }
-    function set_cardiovascular_dizziness_text($data)
+
+    public function set_cardiovascular_dizziness_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_dizziness_text = $data;
@@ -2344,31 +2845,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_dyspnea_on_exertion;
-    var $cardiovascular_dyspnea_on_exertion_text;
-    function get_cardiovascular_dyspnea_on_exertion()
+    public $cardiovascular_dyspnea_on_exertion;
+
+    public $cardiovascular_dyspnea_on_exertion_text;
+
+    public function get_cardiovascular_dyspnea_on_exertion()
     {
         return $this->cardiovascular_dyspnea_on_exertion;
     }
-    function get_cardiovascular_dyspnea_on_exertion_yes()
+
+    public function get_cardiovascular_dyspnea_on_exertion_yes(): string
     {
         return $this->cardiovascular_dyspnea_on_exertion == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_dyspnea_on_exertion_no()
+
+    public function get_cardiovascular_dyspnea_on_exertion_no(): string
     {
         return $this->cardiovascular_dyspnea_on_exertion == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_dyspnea_on_exertion($data)
+
+    public function set_cardiovascular_dyspnea_on_exertion($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_dyspnea_on_exertion = $data;
         }
     }
-    function get_cardiovascular_dyspnea_on_exertion_text()
+
+    public function get_cardiovascular_dyspnea_on_exertion_text()
     {
         return $this->cardiovascular_dyspnea_on_exertion_text;
     }
-    function set_cardiovascular_dyspnea_on_exertion_text($data)
+
+    public function set_cardiovascular_dyspnea_on_exertion_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_dyspnea_on_exertion_text = $data;
@@ -2376,31 +2884,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_orthopnea;
-    var $cardiovascular_orthopnea_text;
-    function get_cardiovascular_orthopnea()
+    public $cardiovascular_orthopnea;
+
+    public $cardiovascular_orthopnea_text;
+
+    public function get_cardiovascular_orthopnea()
     {
         return $this->cardiovascular_orthopnea;
     }
-    function get_cardiovascular_orthopnea_yes()
+
+    public function get_cardiovascular_orthopnea_yes(): string
     {
         return $this->cardiovascular_orthopnea == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_orthopnea_no()
+
+    public function get_cardiovascular_orthopnea_no(): string
     {
         return $this->cardiovascular_orthopnea == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_orthopnea($data)
+
+    public function set_cardiovascular_orthopnea($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_orthopnea = $data;
         }
     }
-    function get_cardiovascular_orthopnea_text()
+
+    public function get_cardiovascular_orthopnea_text()
     {
         return $this->cardiovascular_orthopnea_text;
     }
-    function set_cardiovascular_orthopnea_text($data)
+
+    public function set_cardiovascular_orthopnea_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_orthopnea_text = $data;
@@ -2408,31 +2923,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_noctural_dyspnea;
-    var $cardiovascular_noctural_dyspnea_text;
-    function get_cardiovascular_noctural_dyspnea()
+    public $cardiovascular_noctural_dyspnea;
+
+    public $cardiovascular_noctural_dyspnea_text;
+
+    public function get_cardiovascular_noctural_dyspnea()
     {
         return $this->cardiovascular_noctural_dyspnea;
     }
-    function get_cardiovascular_noctural_dyspnea_yes()
+
+    public function get_cardiovascular_noctural_dyspnea_yes(): string
     {
         return $this->cardiovascular_noctural_dyspnea == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_noctural_dyspnea_no()
+
+    public function get_cardiovascular_noctural_dyspnea_no(): string
     {
         return $this->cardiovascular_noctural_dyspnea == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_noctural_dyspnea($data)
+
+    public function set_cardiovascular_noctural_dyspnea($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_noctural_dyspnea = $data;
         }
     }
-    function get_cardiovascular_noctural_dyspnea_text()
+
+    public function get_cardiovascular_noctural_dyspnea_text()
     {
         return $this->cardiovascular_noctural_dyspnea_text;
     }
-    function set_cardiovascular_noctural_dyspnea_text($data)
+
+    public function set_cardiovascular_noctural_dyspnea_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_noctural_dyspnea_text = $data;
@@ -2440,31 +2962,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_edema;
-    var $cardiovascular_edema_text;
-    function get_cardiovascular_edema()
+    public $cardiovascular_edema;
+
+    public $cardiovascular_edema_text;
+
+    public function get_cardiovascular_edema()
     {
         return $this->cardiovascular_edema;
     }
-    function get_cardiovascular_edema_yes()
+
+    public function get_cardiovascular_edema_yes(): string
     {
         return $this->cardiovascular_edema == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_edema_no()
+
+    public function get_cardiovascular_edema_no(): string
     {
         return $this->cardiovascular_edema == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_edema($data)
+
+    public function set_cardiovascular_edema($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_edema = $data;
         }
     }
-    function get_cardiovascular_edema_text()
+
+    public function get_cardiovascular_edema_text()
     {
         return $this->cardiovascular_edema_text;
     }
-    function set_cardiovascular_edema_text($data)
+
+    public function set_cardiovascular_edema_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_edema_text = $data;
@@ -2472,31 +3001,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_presyncope;
-    var $cardiovascular_presyncope_text;
-    function get_cardiovascular_presyncope()
+    public $cardiovascular_presyncope;
+
+    public $cardiovascular_presyncope_text;
+
+    public function get_cardiovascular_presyncope()
     {
         return $this->cardiovascular_presyncope;
     }
-    function get_cardiovascular_presyncope_yes()
+
+    public function get_cardiovascular_presyncope_yes(): string
     {
         return $this->cardiovascular_presyncope == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_presyncope_no()
+
+    public function get_cardiovascular_presyncope_no(): string
     {
         return $this->cardiovascular_presyncope == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_presyncope($data)
+
+    public function set_cardiovascular_presyncope($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_presyncope = $data;
         }
     }
-    function get_cardiovascular_presyncope_text()
+
+    public function get_cardiovascular_presyncope_text()
     {
         return $this->cardiovascular_presyncope_text;
     }
-    function set_cardiovascular_presyncope_text($data)
+
+    public function set_cardiovascular_presyncope_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_presyncope_text = $data;
@@ -2504,31 +3040,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_syncope;
-    var $cardiovascular_syncope_text;
-    function get_cardiovascular_syncope()
+    public $cardiovascular_syncope;
+
+    public $cardiovascular_syncope_text;
+
+    public function get_cardiovascular_syncope()
     {
         return $this->cardiovascular_syncope;
     }
-    function get_cardiovascular_syncope_yes()
+
+    public function get_cardiovascular_syncope_yes(): string
     {
         return $this->cardiovascular_syncope == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_syncope_no()
+
+    public function get_cardiovascular_syncope_no(): string
     {
         return $this->cardiovascular_syncope == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_syncope($data)
+
+    public function set_cardiovascular_syncope($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_syncope = $data;
         }
     }
-    function get_cardiovascular_syncope_text()
+
+    public function get_cardiovascular_syncope_text()
     {
         return $this->cardiovascular_syncope_text;
     }
-    function set_cardiovascular_syncope_text($data)
+
+    public function set_cardiovascular_syncope_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_syncope_text = $data;
@@ -2536,31 +3079,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_heart_murmur;
-    var $cardiovascular_heart_murmur_text;
-    function get_cardiovascular_heart_murmur()
+    public $cardiovascular_heart_murmur;
+
+    public $cardiovascular_heart_murmur_text;
+
+    public function get_cardiovascular_heart_murmur()
     {
         return $this->cardiovascular_heart_murmur;
     }
-    function get_cardiovascular_heart_murmur_yes()
+
+    public function get_cardiovascular_heart_murmur_yes(): string
     {
         return $this->cardiovascular_heart_murmur == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_heart_murmur_no()
+
+    public function get_cardiovascular_heart_murmur_no(): string
     {
         return $this->cardiovascular_heart_murmur == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_heart_murmur($data)
+
+    public function set_cardiovascular_heart_murmur($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_heart_murmur = $data;
         }
     }
-    function get_cardiovascular_heart_murmur_text()
+
+    public function get_cardiovascular_heart_murmur_text()
     {
         return $this->cardiovascular_heart_murmur_text;
     }
-    function set_cardiovascular_heart_murmur_text($data)
+
+    public function set_cardiovascular_heart_murmur_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_heart_murmur_text = $data;
@@ -2568,31 +3118,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_raynauds;
-    var $cardiovascular_raynauds_text;
-    function get_cardiovascular_raynauds()
+    public $cardiovascular_raynauds;
+
+    public $cardiovascular_raynauds_text;
+
+    public function get_cardiovascular_raynauds()
     {
         return $this->cardiovascular_raynauds;
     }
-    function get_cardiovascular_raynauds_yes()
+
+    public function get_cardiovascular_raynauds_yes(): string
     {
         return $this->cardiovascular_raynauds == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_raynauds_no()
+
+    public function get_cardiovascular_raynauds_no(): string
     {
         return $this->cardiovascular_raynauds == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_raynauds($data)
+
+    public function set_cardiovascular_raynauds($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_raynauds = $data;
         }
     }
-    function get_cardiovascular_raynauds_text()
+
+    public function get_cardiovascular_raynauds_text()
     {
         return $this->cardiovascular_raynauds_text;
     }
-    function set_cardiovascular_raynauds_text($data)
+
+    public function set_cardiovascular_raynauds_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_raynauds_text = $data;
@@ -2600,31 +3157,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_severe_varicose_veins;
-    var $cardiovascular_severe_varicose_veins_text;
-    function get_cardiovascular_severe_varicose_veins()
+    public $cardiovascular_severe_varicose_veins;
+
+    public $cardiovascular_severe_varicose_veins_text;
+
+    public function get_cardiovascular_severe_varicose_veins()
     {
         return $this->cardiovascular_severe_varicose_veins;
     }
-    function get_cardiovascular_severe_varicose_veins_yes()
+
+    public function get_cardiovascular_severe_varicose_veins_yes(): string
     {
         return $this->cardiovascular_severe_varicose_veins == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_severe_varicose_veins_no()
+
+    public function get_cardiovascular_severe_varicose_veins_no(): string
     {
         return $this->cardiovascular_severe_varicose_veins == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_severe_varicose_veins($data)
+
+    public function set_cardiovascular_severe_varicose_veins($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_severe_varicose_veins = $data;
         }
     }
-    function get_cardiovascular_severe_varicose_veins_text()
+
+    public function get_cardiovascular_severe_varicose_veins_text()
     {
         return $this->cardiovascular_severe_varicose_veins_text;
     }
-    function set_cardiovascular_severe_varicose_veins_text($data)
+
+    public function set_cardiovascular_severe_varicose_veins_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_severe_varicose_veins_text = $data;
@@ -2632,31 +3196,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_deep_vein_thrombosis;
-    var $cardiovascular_deep_vein_thrombosis_text;
-    function get_cardiovascular_deep_vein_thrombosis()
+    public $cardiovascular_deep_vein_thrombosis;
+
+    public $cardiovascular_deep_vein_thrombosis_text;
+
+    public function get_cardiovascular_deep_vein_thrombosis()
     {
         return $this->cardiovascular_deep_vein_thrombosis;
     }
-    function get_cardiovascular_deep_vein_thrombosis_yes()
+
+    public function get_cardiovascular_deep_vein_thrombosis_yes(): string
     {
         return $this->cardiovascular_deep_vein_thrombosis == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_deep_vein_thrombosis_no()
+
+    public function get_cardiovascular_deep_vein_thrombosis_no(): string
     {
         return $this->cardiovascular_deep_vein_thrombosis == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_deep_vein_thrombosis($data)
+
+    public function set_cardiovascular_deep_vein_thrombosis($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_deep_vein_thrombosis = $data;
         }
     }
-    function get_cardiovascular_deep_vein_thrombosis_text()
+
+    public function get_cardiovascular_deep_vein_thrombosis_text()
     {
         return $this->cardiovascular_deep_vein_thrombosis_text;
     }
-    function set_cardiovascular_deep_vein_thrombosis_text($data)
+
+    public function set_cardiovascular_deep_vein_thrombosis_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_deep_vein_thrombosis_text = $data;
@@ -2664,31 +3235,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $cardiovascular_thrombophlebitis;
-    var $cardiovascular_thrombophlebitis_text;
-    function get_cardiovascular_thrombophlebitis()
+    public $cardiovascular_thrombophlebitis;
+
+    public $cardiovascular_thrombophlebitis_text;
+
+    public function get_cardiovascular_thrombophlebitis()
     {
         return $this->cardiovascular_thrombophlebitis;
     }
-    function get_cardiovascular_thrombophlebitis_yes()
+
+    public function get_cardiovascular_thrombophlebitis_yes(): string
     {
         return $this->cardiovascular_thrombophlebitis == "Yes" ? "CHECKED" : "";
     }
-    function get_cardiovascular_thrombophlebitis_no()
+
+    public function get_cardiovascular_thrombophlebitis_no(): string
     {
         return $this->cardiovascular_thrombophlebitis == "No" ? "CHECKED" : "";
     }
-    function set_cardiovascular_thrombophlebitis($data)
+
+    public function set_cardiovascular_thrombophlebitis($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_thrombophlebitis = $data;
         }
     }
-    function get_cardiovascular_thrombophlebitis_text()
+
+    public function get_cardiovascular_thrombophlebitis_text()
     {
         return $this->cardiovascular_thrombophlebitis_text;
     }
-    function set_cardiovascular_thrombophlebitis_text($data)
+
+    public function set_cardiovascular_thrombophlebitis_text($data): void
     {
         if (!empty($data)) {
             $this->cardiovascular_thrombophlebitis_text = $data;
@@ -2697,31 +3275,38 @@ class FormROS2 extends ORDataObject
 
     // ----- cough -----
 
-    var $respirations_cough;
-    var $respirations_cough_text;
-    function get_respirations_cough()
+    public $respirations_cough;
+
+    public $respirations_cough_text;
+
+    public function get_respirations_cough()
     {
         return $this->respirations_cough;
     }
-    function get_respirations_cough_yes()
+
+    public function get_respirations_cough_yes(): string
     {
         return $this->respirations_cough == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_cough_no()
+
+    public function get_respirations_cough_no(): string
     {
         return $this->respirations_cough == "No" ? "CHECKED" : "";
     }
-    function set_respirations_cough($data)
+
+    public function set_respirations_cough($data): void
     {
         if (!empty($data)) {
             $this->respirations_cough = $data;
         }
     }
-    function get_respirations_cough_text()
+
+    public function get_respirations_cough_text()
     {
         return $this->respirations_cough_text;
     }
-    function set_respirations_cough_text($data)
+
+    public function set_respirations_cough_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_cough_text = $data;
@@ -2729,31 +3314,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_sputum;
-    var $respirations_sputum_text;
-    function get_respirations_sputum()
+    public $respirations_sputum;
+
+    public $respirations_sputum_text;
+
+    public function get_respirations_sputum()
     {
         return $this->respirations_sputum;
     }
-    function get_respirations_sputum_yes()
+
+    public function get_respirations_sputum_yes(): string
     {
         return $this->respirations_sputum == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_sputum_no()
+
+    public function get_respirations_sputum_no(): string
     {
         return $this->respirations_sputum == "No" ? "CHECKED" : "";
     }
-    function set_respirations_sputum($data)
+
+    public function set_respirations_sputum($data): void
     {
         if (!empty($data)) {
             $this->respirations_sputum = $data;
         }
     }
-    function get_respirations_sputum_text()
+
+    public function get_respirations_sputum_text()
     {
         return $this->respirations_sputum_text;
     }
-    function set_respirations_sputum_text($data)
+
+    public function set_respirations_sputum_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_sputum_text = $data;
@@ -2761,31 +3353,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_dyspnea;
-    var $respirations_dyspnea_text;
-    function get_respirations_dyspnea()
+    public $respirations_dyspnea;
+
+    public $respirations_dyspnea_text;
+
+    public function get_respirations_dyspnea()
     {
         return $this->respirations_dyspnea;
     }
-    function get_respirations_dyspnea_yes()
+
+    public function get_respirations_dyspnea_yes(): string
     {
         return $this->respirations_dyspnea == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_dyspnea_no()
+
+    public function get_respirations_dyspnea_no(): string
     {
         return $this->respirations_dyspnea == "No" ? "CHECKED" : "";
     }
-    function set_respirations_dyspnea($data)
+
+    public function set_respirations_dyspnea($data): void
     {
         if (!empty($data)) {
             $this->respirations_dyspnea = $data;
         }
     }
-    function get_respirations_dyspnea_text()
+
+    public function get_respirations_dyspnea_text()
     {
         return $this->respirations_dyspnea_text;
     }
-    function set_respirations_dyspnea_text($data)
+
+    public function set_respirations_dyspnea_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_dyspnea_text = $data;
@@ -2793,31 +3392,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_wheezes;
-    var $respirations_wheezes_text;
-    function get_respirations_wheezes()
+    public $respirations_wheezes;
+
+    public $respirations_wheezes_text;
+
+    public function get_respirations_wheezes()
     {
         return $this->respirations_wheezes;
     }
-    function get_respirations_wheezes_yes()
+
+    public function get_respirations_wheezes_yes(): string
     {
         return $this->respirations_wheezes == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_wheezes_no()
+
+    public function get_respirations_wheezes_no(): string
     {
         return $this->respirations_wheezes == "No" ? "CHECKED" : "";
     }
-    function set_respirations_wheezes($data)
+
+    public function set_respirations_wheezes($data): void
     {
         if (!empty($data)) {
             $this->respirations_wheezes = $data;
         }
     }
-    function get_respirations_wheezes_text()
+
+    public function get_respirations_wheezes_text()
     {
         return $this->respirations_wheezes_text;
     }
-    function set_respirations_wheezes_text($data)
+
+    public function set_respirations_wheezes_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_wheezes_text = $data;
@@ -2825,31 +3431,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_rales;
-    var $respirations_rales_text;
-    function get_respirations_rales()
+    public $respirations_rales;
+
+    public $respirations_rales_text;
+
+    public function get_respirations_rales()
     {
         return $this->respirations_rales;
     }
-    function get_respirations_rales_yes()
+
+    public function get_respirations_rales_yes(): string
     {
         return $this->respirations_rales == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_rales_no()
+
+    public function get_respirations_rales_no(): string
     {
         return $this->respirations_rales == "No" ? "CHECKED" : "";
     }
-    function set_respirations_rales($data)
+
+    public function set_respirations_rales($data): void
     {
         if (!empty($data)) {
             $this->respirations_rales = $data;
         }
     }
-    function get_respirations_rales_text()
+
+    public function get_respirations_rales_text()
     {
         return $this->respirations_rales_text;
     }
-    function set_respirations_rales_text($data)
+
+    public function set_respirations_rales_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_rales_text = $data;
@@ -2857,31 +3470,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_labored_breathing;
-    var $respirations_labored_breathing_text;
-    function get_respirations_labored_breathing()
+    public $respirations_labored_breathing;
+
+    public $respirations_labored_breathing_text;
+
+    public function get_respirations_labored_breathing()
     {
         return $this->respirations_labored_breathing;
     }
-    function get_respirations_labored_breathing_yes()
+
+    public function get_respirations_labored_breathing_yes(): string
     {
         return $this->respirations_labored_breathing == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_labored_breathing_no()
+
+    public function get_respirations_labored_breathing_no(): string
     {
         return $this->respirations_labored_breathing == "No" ? "CHECKED" : "";
     }
-    function set_respirations_labored_breathing($data)
+
+    public function set_respirations_labored_breathing($data): void
     {
         if (!empty($data)) {
             $this->respirations_labored_breathing = $data;
         }
     }
-    function get_respirations_labored_breathing_text()
+
+    public function get_respirations_labored_breathing_text()
     {
         return $this->respirations_labored_breathing_text;
     }
-    function set_respirations_labored_breathing_text($data)
+
+    public function set_respirations_labored_breathing_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_labored_breathing_text = $data;
@@ -2889,31 +3509,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $respirations_hemoptysis;
-    var $respirations_hemoptysis_text;
-    function get_respirations_hemoptysis()
+    public $respirations_hemoptysis;
+
+    public $respirations_hemoptysis_text;
+
+    public function get_respirations_hemoptysis()
     {
         return $this->respirations_hemoptysis;
     }
-    function get_respirations_hemoptysis_yes()
+
+    public function get_respirations_hemoptysis_yes(): string
     {
         return $this->respirations_hemoptysis == "Yes" ? "CHECKED" : "";
     }
-    function get_respirations_hemoptysis_no()
+
+    public function get_respirations_hemoptysis_no(): string
     {
         return $this->respirations_hemoptysis == "No" ? "CHECKED" : "";
     }
-    function set_respirations_hemoptysis($data)
+
+    public function set_respirations_hemoptysis($data): void
     {
         if (!empty($data)) {
             $this->respirations_hemoptysis = $data;
         }
     }
-    function get_respirations_hemoptysis_text()
+
+    public function get_respirations_hemoptysis_text()
     {
         return $this->respirations_hemoptysis_text;
     }
-    function set_respirations_hemoptysis_text($data)
+
+    public function set_respirations_hemoptysis_text($data): void
     {
         if (!empty($data)) {
             $this->respirations_hemoptysis_text = $data;
@@ -2922,31 +3549,38 @@ class FormROS2 extends ORDataObject
 
     // ----- frequent urination -----
 
-    var $gu_frequent_urination;
-    var $gu_frequent_urination_text;
-    function get_gu_frequent_urination()
+    public $gu_frequent_urination;
+
+    public $gu_frequent_urination_text;
+
+    public function get_gu_frequent_urination()
     {
         return $this->gu_frequent_urination;
     }
-    function get_gu_frequent_urination_yes()
+
+    public function get_gu_frequent_urination_yes(): string
     {
         return $this->gu_frequent_urination == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_frequent_urination_no()
+
+    public function get_gu_frequent_urination_no(): string
     {
         return $this->gu_frequent_urination == "No" ? "CHECKED" : "";
     }
-    function set_gu_frequent_urination($data)
+
+    public function set_gu_frequent_urination($data): void
     {
         if (!empty($data)) {
             $this->gu_frequent_urination = $data;
         }
     }
-    function get_gu_frequent_urination_text()
+
+    public function get_gu_frequent_urination_text()
     {
         return $this->gu_frequent_urination_text;
     }
-    function set_gu_frequent_urination_text($data)
+
+    public function set_gu_frequent_urination_text($data): void
     {
         if (!empty($data)) {
             $this->gu_frequent_urination_text = $data;
@@ -2954,31 +3588,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_dysuria;
-    var $gu_dysuria_text;
-    function get_gu_dysuria()
+    public $gu_dysuria;
+
+    public $gu_dysuria_text;
+
+    public function get_gu_dysuria()
     {
         return $this->gu_dysuria;
     }
-    function get_gu_dysuria_yes()
+
+    public function get_gu_dysuria_yes(): string
     {
         return $this->gu_dysuria == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_dysuria_no()
+
+    public function get_gu_dysuria_no(): string
     {
         return $this->gu_dysuria == "No" ? "CHECKED" : "";
     }
-    function set_gu_dysuria($data)
+
+    public function set_gu_dysuria($data): void
     {
         if (!empty($data)) {
             $this->gu_dysuria = $data;
         }
     }
-    function get_gu_dysuria_text()
+
+    public function get_gu_dysuria_text()
     {
         return $this->gu_dysuria_text;
     }
-    function set_gu_dysuria_text($data)
+
+    public function set_gu_dysuria_text($data): void
     {
         if (!empty($data)) {
             $this->gu_dysuria_text = $data;
@@ -2986,31 +3627,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_dyspareunia;
-    var $gu_dyspareunia_text;
-    function get_gu_dyspareunia()
+    public $gu_dyspareunia;
+
+    public $gu_dyspareunia_text;
+
+    public function get_gu_dyspareunia()
     {
         return $this->gu_dyspareunia;
     }
-    function get_gu_dyspareunia_yes()
+
+    public function get_gu_dyspareunia_yes(): string
     {
         return $this->gu_dyspareunia == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_dyspareunia_no()
+
+    public function get_gu_dyspareunia_no(): string
     {
         return $this->gu_dyspareunia == "No" ? "CHECKED" : "";
     }
-    function set_gu_dyspareunia($data)
+
+    public function set_gu_dyspareunia($data): void
     {
         if (!empty($data)) {
             $this->gu_dyspareunia = $data;
         }
     }
-    function get_gu_dyspareunia_text()
+
+    public function get_gu_dyspareunia_text()
     {
         return $this->gu_dyspareunia_text;
     }
-    function set_gu_dyspareunia_text($data)
+
+    public function set_gu_dyspareunia_text($data): void
     {
         if (!empty($data)) {
             $this->gu_dyspareunia_text = $data;
@@ -3018,31 +3666,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_discharge;
-    var $gu_discharge_text;
-    function get_gu_discharge()
+    public $gu_discharge;
+
+    public $gu_discharge_text;
+
+    public function get_gu_discharge()
     {
         return $this->gu_discharge;
     }
-    function get_gu_discharge_yes()
+
+    public function get_gu_discharge_yes(): string
     {
         return $this->gu_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_discharge_no()
+
+    public function get_gu_discharge_no(): string
     {
         return $this->gu_discharge == "No" ? "CHECKED" : "";
     }
-    function set_gu_discharge($data)
+
+    public function set_gu_discharge($data): void
     {
         if (!empty($data)) {
             $this->gu_discharge = $data;
         }
     }
-    function get_gu_discharge_text()
+
+    public function get_gu_discharge_text()
     {
         return $this->gu_discharge_text;
     }
-    function set_gu_discharge_text($data)
+
+    public function set_gu_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->gu_discharge_text = $data;
@@ -3050,31 +3705,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_odor;
-    var $gu_odor_text;
-    function get_gu_odor()
+    public $gu_odor;
+
+    public $gu_odor_text;
+
+    public function get_gu_odor()
     {
         return $this->gu_odor;
     }
-    function get_gu_odor_yes()
+
+    public function get_gu_odor_yes(): string
     {
         return $this->gu_odor == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_odor_no()
+
+    public function get_gu_odor_no(): string
     {
         return $this->gu_odor == "No" ? "CHECKED" : "";
     }
-    function set_gu_odor($data)
+
+    public function set_gu_odor($data): void
     {
         if (!empty($data)) {
             $this->gu_odor = $data;
         }
     }
-    function get_gu_odor_text()
+
+    public function get_gu_odor_text()
     {
         return $this->gu_odor_text;
     }
-    function set_gu_odor_text($data)
+
+    public function set_gu_odor_text($data): void
     {
         if (!empty($data)) {
             $this->gu_odor_text = $data;
@@ -3082,31 +3744,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_fertility_problems;
-    var $gu_fertility_problems_text;
-    function get_gu_fertility_problems()
+    public $gu_fertility_problems;
+
+    public $gu_fertility_problems_text;
+
+    public function get_gu_fertility_problems()
     {
         return $this->gu_fertility_problems;
     }
-    function get_gu_fertility_problems_yes()
+
+    public function get_gu_fertility_problems_yes(): string
     {
         return $this->gu_fertility_problems == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_fertility_problems_no()
+
+    public function get_gu_fertility_problems_no(): string
     {
         return $this->gu_fertility_problems == "No" ? "CHECKED" : "";
     }
-    function set_gu_fertility_problems($data)
+
+    public function set_gu_fertility_problems($data): void
     {
         if (!empty($data)) {
             $this->gu_fertility_problems = $data;
         }
     }
-    function get_gu_fertility_problems_text()
+
+    public function get_gu_fertility_problems_text()
     {
         return $this->gu_fertility_problems_text;
     }
-    function set_gu_fertility_problems_text($data)
+
+    public function set_gu_fertility_problems_text($data): void
     {
         if (!empty($data)) {
             $this->gu_fertility_problems_text = $data;
@@ -3114,31 +3783,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_flank_pain_kidney_stone;
-    var $gu_flank_pain_kidney_stone_text;
-    function get_gu_flank_pain_kidney_stone()
+    public $gu_flank_pain_kidney_stone;
+
+    public $gu_flank_pain_kidney_stone_text;
+
+    public function get_gu_flank_pain_kidney_stone()
     {
         return $this->gu_flank_pain_kidney_stone;
     }
-    function get_gu_flank_pain_kidney_stone_yes()
+
+    public function get_gu_flank_pain_kidney_stone_yes(): string
     {
         return $this->gu_flank_pain_kidney_stone == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_flank_pain_kidney_stone_no()
+
+    public function get_gu_flank_pain_kidney_stone_no(): string
     {
         return $this->gu_flank_pain_kidney_stone == "No" ? "CHECKED" : "";
     }
-    function set_gu_flank_pain_kidney_stone($data)
+
+    public function set_gu_flank_pain_kidney_stone($data): void
     {
         if (!empty($data)) {
             $this->gu_flank_pain_kidney_stone = $data;
         }
     }
-    function get_gu_flank_pain_kidney_stone_text()
+
+    public function get_gu_flank_pain_kidney_stone_text()
     {
         return $this->gu_flank_pain_kidney_stone_text;
     }
-    function set_gu_flank_pain_kidney_stone_text($data)
+
+    public function set_gu_flank_pain_kidney_stone_text($data): void
     {
         if (!empty($data)) {
             $this->gu_flank_pain_kidney_stone_text = $data;
@@ -3146,31 +3822,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_polyuria;
-    var $gu_polyuria_text;
-    function get_gu_polyuria()
+    public $gu_polyuria;
+
+    public $gu_polyuria_text;
+
+    public function get_gu_polyuria()
     {
         return $this->gu_polyuria;
     }
-    function get_gu_polyuria_yes()
+
+    public function get_gu_polyuria_yes(): string
     {
         return $this->gu_polyuria == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_polyuria_no()
+
+    public function get_gu_polyuria_no(): string
     {
         return $this->gu_polyuria == "No" ? "CHECKED" : "";
     }
-    function set_gu_polyuria($data)
+
+    public function set_gu_polyuria($data): void
     {
         if (!empty($data)) {
             $this->gu_polyuria = $data;
         }
     }
-    function get_gu_polyuria_text()
+
+    public function get_gu_polyuria_text()
     {
         return $this->gu_polyuria_text;
     }
-    function set_gu_polyuria_text($data)
+
+    public function set_gu_polyuria_text($data): void
     {
         if (!empty($data)) {
             $this->gu_polyuria_text = $data;
@@ -3178,31 +3861,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_hematuria;
-    var $gu_hematuria_text;
-    function get_gu_hematuria()
+    public $gu_hematuria;
+
+    public $gu_hematuria_text;
+
+    public function get_gu_hematuria()
     {
         return $this->gu_hematuria;
     }
-    function get_gu_hematuria_yes()
+
+    public function get_gu_hematuria_yes(): string
     {
         return $this->gu_hematuria == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_hematuria_no()
+
+    public function get_gu_hematuria_no(): string
     {
         return $this->gu_hematuria == "No" ? "CHECKED" : "";
     }
-    function set_gu_hematuria($data)
+
+    public function set_gu_hematuria($data): void
     {
         if (!empty($data)) {
             $this->gu_hematuria = $data;
         }
     }
-    function get_gu_hematuria_text()
+
+    public function get_gu_hematuria_text()
     {
         return $this->gu_hematuria_text;
     }
-    function set_gu_hematuria_text($data)
+
+    public function set_gu_hematuria_text($data): void
     {
         if (!empty($data)) {
             $this->gu_hematuria_text = $data;
@@ -3210,31 +3900,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_pyuria;
-    var $gu_pyuria_text;
-    function get_gu_pyuria()
+    public $gu_pyuria;
+
+    public $gu_pyuria_text;
+
+    public function get_gu_pyuria()
     {
         return $this->gu_pyuria;
     }
-    function get_gu_pyuria_yes()
+
+    public function get_gu_pyuria_yes(): string
     {
         return $this->gu_pyuria == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_pyuria_no()
+
+    public function get_gu_pyuria_no(): string
     {
         return $this->gu_pyuria == "No" ? "CHECKED" : "";
     }
-    function set_gu_pyuria($data)
+
+    public function set_gu_pyuria($data): void
     {
         if (!empty($data)) {
             $this->gu_pyuria = $data;
         }
     }
-    function get_gu_pyuria_text()
+
+    public function get_gu_pyuria_text()
     {
         return $this->gu_pyuria_text;
     }
-    function set_gu_pyuria_text($data)
+
+    public function set_gu_pyuria_text($data): void
     {
         if (!empty($data)) {
             $this->gu_pyuria_text = $data;
@@ -3242,31 +3939,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_umbilical_hernia;
-    var $gu_umbilical_hernia_text;
-    function get_gu_umbilical_hernia()
+    public $gu_umbilical_hernia;
+
+    public $gu_umbilical_hernia_text;
+
+    public function get_gu_umbilical_hernia()
     {
         return $this->gu_umbilical_hernia;
     }
-    function get_gu_umbilical_hernia_yes()
+
+    public function get_gu_umbilical_hernia_yes(): string
     {
         return $this->gu_umbilical_hernia == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_umbilical_hernia_no()
+
+    public function get_gu_umbilical_hernia_no(): string
     {
         return $this->gu_umbilical_hernia == "No" ? "CHECKED" : "";
     }
-    function set_gu_umbilical_hernia($data)
+
+    public function set_gu_umbilical_hernia($data): void
     {
         if (!empty($data)) {
             $this->gu_umbilical_hernia = $data;
         }
     }
-    function get_gu_umbilical_hernia_text()
+
+    public function get_gu_umbilical_hernia_text()
     {
         return $this->gu_umbilical_hernia_text;
     }
-    function set_gu_umbilical_hernia_text($data)
+
+    public function set_gu_umbilical_hernia_text($data): void
     {
         if (!empty($data)) {
             $this->gu_umbilical_hernia_text = $data;
@@ -3274,31 +3978,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_incontinence;
-    var $gu_incontinence_text;
-    function get_gu_incontinence()
+    public $gu_incontinence;
+
+    public $gu_incontinence_text;
+
+    public function get_gu_incontinence()
     {
         return $this->gu_incontinence;
     }
-    function get_gu_incontinence_yes()
+
+    public function get_gu_incontinence_yes(): string
     {
         return $this->gu_incontinence == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_incontinence_no()
+
+    public function get_gu_incontinence_no(): string
     {
         return $this->gu_incontinence == "No" ? "CHECKED" : "";
     }
-    function set_gu_incontinence($data)
+
+    public function set_gu_incontinence($data): void
     {
         if (!empty($data)) {
             $this->gu_incontinence = $data;
         }
     }
-    function get_gu_incontinence_text()
+
+    public function get_gu_incontinence_text()
     {
         return $this->gu_incontinence_text;
     }
-    function set_gu_incontinence_text($data)
+
+    public function set_gu_incontinence_text($data): void
     {
         if (!empty($data)) {
             $this->gu_incontinence_text = $data;
@@ -3306,31 +4017,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_nocturia;
-    var $gu_nocturia_text;
-    function get_gu_nocturia()
+    public $gu_nocturia;
+
+    public $gu_nocturia_text;
+
+    public function get_gu_nocturia()
     {
         return $this->gu_nocturia;
     }
-    function get_gu_nocturia_yes()
+
+    public function get_gu_nocturia_yes(): string
     {
         return $this->gu_nocturia == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_nocturia_no()
+
+    public function get_gu_nocturia_no(): string
     {
         return $this->gu_nocturia == "No" ? "CHECKED" : "";
     }
-    function set_gu_nocturia($data)
+
+    public function set_gu_nocturia($data): void
     {
         if (!empty($data)) {
             $this->gu_nocturia = $data;
         }
     }
-    function get_gu_nocturia_text()
+
+    public function get_gu_nocturia_text()
     {
         return $this->gu_nocturia_text;
     }
-    function set_gu_nocturia_text($data)
+
+    public function set_gu_nocturia_text($data): void
     {
         if (!empty($data)) {
             $this->gu_nocturia_text = $data;
@@ -3338,31 +4056,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_urinary_urgency;
-    var $gu_urinary_urgency_text;
-    function get_gu_urinary_urgency()
+    public $gu_urinary_urgency;
+
+    public $gu_urinary_urgency_text;
+
+    public function get_gu_urinary_urgency()
     {
         return $this->gu_urinary_urgency;
     }
-    function get_gu_urinary_urgency_yes()
+
+    public function get_gu_urinary_urgency_yes(): string
     {
         return $this->gu_urinary_urgency == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_urinary_urgency_no()
+
+    public function get_gu_urinary_urgency_no(): string
     {
         return $this->gu_urinary_urgency == "No" ? "CHECKED" : "";
     }
-    function set_gu_urinary_urgency($data)
+
+    public function set_gu_urinary_urgency($data): void
     {
         if (!empty($data)) {
             $this->gu_urinary_urgency = $data;
         }
     }
-    function get_gu_urinary_urgency_text()
+
+    public function get_gu_urinary_urgency_text()
     {
         return $this->gu_urinary_urgency_text;
     }
-    function set_gu_urinary_urgency_text($data)
+
+    public function set_gu_urinary_urgency_text($data): void
     {
         if (!empty($data)) {
             $this->gu_urinary_urgency_text = $data;
@@ -3370,31 +4095,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_recurrent_utis;
-    var $gu_recurrent_utis_text;
-    function get_gu_recurrent_utis()
+    public $gu_recurrent_utis;
+
+    public $gu_recurrent_utis_text;
+
+    public function get_gu_recurrent_utis()
     {
         return $this->gu_recurrent_utis;
     }
-    function get_gu_recurrent_utis_yes()
+
+    public function get_gu_recurrent_utis_yes(): string
     {
         return $this->gu_recurrent_utis == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_recurrent_utis_no()
+
+    public function get_gu_recurrent_utis_no(): string
     {
         return $this->gu_recurrent_utis == "No" ? "CHECKED" : "";
     }
-    function set_gu_recurrent_utis($data)
+
+    public function set_gu_recurrent_utis($data): void
     {
         if (!empty($data)) {
             $this->gu_recurrent_utis = $data;
         }
     }
-    function get_gu_recurrent_utis_text()
+
+    public function get_gu_recurrent_utis_text()
     {
         return $this->gu_recurrent_utis_text;
     }
-    function set_gu_recurrent_utis_text($data)
+
+    public function set_gu_recurrent_utis_text($data): void
     {
         if (!empty($data)) {
             $this->gu_recurrent_utis_text = $data;
@@ -3402,31 +4134,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gu_venereal_disease;
-    var $gu_venereal_disease_text;
-    function get_gu_venereal_disease()
+    public $gu_venereal_disease;
+
+    public $gu_venereal_disease_text;
+
+    public function get_gu_venereal_disease()
     {
         return $this->gu_venereal_disease;
     }
-    function get_gu_venereal_disease_yes()
+
+    public function get_gu_venereal_disease_yes(): string
     {
         return $this->gu_venereal_disease == "Yes" ? "CHECKED" : "";
     }
-    function get_gu_venereal_disease_no()
+
+    public function get_gu_venereal_disease_no(): string
     {
         return $this->gu_venereal_disease == "No" ? "CHECKED" : "";
     }
-    function set_gu_venereal_disease($data)
+
+    public function set_gu_venereal_disease($data): void
     {
         if (!empty($data)) {
             $this->gu_venereal_disease = $data;
         }
     }
-    function get_gu_venereal_disease_text()
+
+    public function get_gu_venereal_disease_text()
     {
         return $this->gu_venereal_disease_text;
     }
-    function set_gu_venereal_disease_text($data)
+
+    public function set_gu_venereal_disease_text($data): void
     {
         if (!empty($data)) {
             $this->gu_venereal_disease_text = $data;
@@ -3435,31 +4174,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Erectile Dysfunction -----
 
-    var $male_gu_erectile_dysfunction;
-    var $male_gu_erectile_dysfunction_text;
-    function get_male_gu_erectile_dysfunction()
+    public $male_gu_erectile_dysfunction;
+
+    public $male_gu_erectile_dysfunction_text;
+
+    public function get_male_gu_erectile_dysfunction()
     {
         return $this->male_gu_erectile_dysfunction;
     }
-    function get_male_gu_erectile_dysfunction_yes()
+
+    public function get_male_gu_erectile_dysfunction_yes(): string
     {
         return $this->male_gu_erectile_dysfunction == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_erectile_dysfunction_no()
+
+    public function get_male_gu_erectile_dysfunction_no(): string
     {
         return $this->male_gu_erectile_dysfunction == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_erectile_dysfunction($data)
+
+    public function set_male_gu_erectile_dysfunction($data): void
     {
         if (!empty($data)) {
             $this->male_gu_erectile_dysfunction = $data;
         }
     }
-    function get_male_gu_erectile_dysfunction_text()
+
+    public function get_male_gu_erectile_dysfunction_text()
     {
         return $this->male_gu_erectile_dysfunction_text;
     }
-    function set_male_gu_erectile_dysfunction_text($data)
+
+    public function set_male_gu_erectile_dysfunction_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_erectile_dysfunction_text = $data;
@@ -3467,31 +4213,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_inguinal_hernia;
-    var $male_gu_inguinal_hernia_text;
-    function get_male_gu_inguinal_hernia()
+    public $male_gu_inguinal_hernia;
+
+    public $male_gu_inguinal_hernia_text;
+
+    public function get_male_gu_inguinal_hernia()
     {
         return $this->male_gu_inguinal_hernia;
     }
-    function get_male_gu_inguinal_hernia_yes()
+
+    public function get_male_gu_inguinal_hernia_yes(): string
     {
         return $this->male_gu_inguinal_hernia == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_inguinal_hernia_no()
+
+    public function get_male_gu_inguinal_hernia_no(): string
     {
         return $this->male_gu_inguinal_hernia == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_inguinal_hernia($data)
+
+    public function set_male_gu_inguinal_hernia($data): void
     {
         if (!empty($data)) {
             $this->male_gu_inguinal_hernia = $data;
         }
     }
-    function get_male_gu_inguinal_hernia_text()
+
+    public function get_male_gu_inguinal_hernia_text()
     {
         return $this->male_gu_inguinal_hernia_text;
     }
-    function set_male_gu_inguinal_hernia_text($data)
+
+    public function set_male_gu_inguinal_hernia_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_inguinal_hernia_text = $data;
@@ -3499,31 +4252,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_penile_lesions;
-    var $male_gu_penile_lesions_text;
-    function get_male_gu_penile_lesions()
+    public $male_gu_penile_lesions;
+
+    public $male_gu_penile_lesions_text;
+
+    public function get_male_gu_penile_lesions()
     {
         return $this->male_gu_penile_lesions;
     }
-    function get_male_gu_penile_lesions_yes()
+
+    public function get_male_gu_penile_lesions_yes(): string
     {
         return $this->male_gu_penile_lesions == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_penile_lesions_no()
+
+    public function get_male_gu_penile_lesions_no(): string
     {
         return $this->male_gu_penile_lesions == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_penile_lesions($data)
+
+    public function set_male_gu_penile_lesions($data): void
     {
         if (!empty($data)) {
             $this->male_gu_penile_lesions = $data;
         }
     }
-    function get_male_gu_penile_lesions_text()
+
+    public function get_male_gu_penile_lesions_text()
     {
         return $this->male_gu_penile_lesions_text;
     }
-    function set_male_gu_penile_lesions_text($data)
+
+    public function set_male_gu_penile_lesions_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_penile_lesions_text = $data;
@@ -3531,31 +4291,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_scrotal_mass;
-    var $male_gu_scrotal_mass_text;
-    function get_male_gu_scrotal_mass()
+    public $male_gu_scrotal_mass;
+
+    public $male_gu_scrotal_mass_text;
+
+    public function get_male_gu_scrotal_mass()
     {
         return $this->male_gu_scrotal_mass;
     }
-    function get_male_gu_scrotal_mass_yes()
+
+    public function get_male_gu_scrotal_mass_yes(): string
     {
         return $this->male_gu_scrotal_mass == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_scrotal_mass_no()
+
+    public function get_male_gu_scrotal_mass_no(): string
     {
         return $this->male_gu_scrotal_mass == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_scrotal_mass($data)
+
+    public function set_male_gu_scrotal_mass($data): void
     {
         if (!empty($data)) {
             $this->male_gu_scrotal_mass = $data;
         }
     }
-    function get_male_gu_scrotal_mass_text()
+
+    public function get_male_gu_scrotal_mass_text()
     {
         return $this->male_gu_scrotal_mass_text;
     }
-    function set_male_gu_scrotal_mass_text($data)
+
+    public function set_male_gu_scrotal_mass_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_scrotal_mass_text = $data;
@@ -3563,31 +4330,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_testicular_pain;
-    var $male_gu_testicular_pain_text;
-    function get_male_gu_testicular_pain()
+    public $male_gu_testicular_pain;
+
+    public $male_gu_testicular_pain_text;
+
+    public function get_male_gu_testicular_pain()
     {
         return $this->male_gu_testicular_pain;
     }
-    function get_male_gu_testicular_pain_yes()
+
+    public function get_male_gu_testicular_pain_yes(): string
     {
         return $this->male_gu_testicular_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_testicular_pain_no()
+
+    public function get_male_gu_testicular_pain_no(): string
     {
         return $this->male_gu_testicular_pain == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_testicular_pain($data)
+
+    public function set_male_gu_testicular_pain($data): void
     {
         if (!empty($data)) {
             $this->male_gu_testicular_pain = $data;
         }
     }
-    function get_male_gu_testicular_pain_text()
+
+    public function get_male_gu_testicular_pain_text()
     {
         return $this->male_gu_testicular_pain_text;
     }
-    function set_male_gu_testicular_pain_text($data)
+
+    public function set_male_gu_testicular_pain_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_testicular_pain_text = $data;
@@ -3595,31 +4369,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_urethral_discharge;
-    var $male_gu_urethral_discharge_text;
-    function get_male_gu_urethral_discharge()
+    public $male_gu_urethral_discharge;
+
+    public $male_gu_urethral_discharge_text;
+
+    public function get_male_gu_urethral_discharge()
     {
         return $this->male_gu_urethral_discharge;
     }
-    function get_male_gu_urethral_discharge_yes()
+
+    public function get_male_gu_urethral_discharge_yes(): string
     {
         return $this->male_gu_urethral_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_urethral_discharge_no()
+
+    public function get_male_gu_urethral_discharge_no(): string
     {
         return $this->male_gu_urethral_discharge == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_urethral_discharge($data)
+
+    public function set_male_gu_urethral_discharge($data): void
     {
         if (!empty($data)) {
             $this->male_gu_urethral_discharge = $data;
         }
     }
-    function get_male_gu_urethral_discharge_text()
+
+    public function get_male_gu_urethral_discharge_text()
     {
         return $this->male_gu_urethral_discharge_text;
     }
-    function set_male_gu_urethral_discharge_text($data)
+
+    public function set_male_gu_urethral_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_urethral_discharge_text = $data;
@@ -3627,31 +4408,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $male_gu_weak_urinary_stream;
-    var $male_gu_weak_urinary_stream_text;
-    function get_male_gu_weak_urinary_stream()
+    public $male_gu_weak_urinary_stream;
+
+    public $male_gu_weak_urinary_stream_text;
+
+    public function get_male_gu_weak_urinary_stream()
     {
         return $this->male_gu_weak_urinary_stream;
     }
-    function get_male_gu_weak_urinary_stream_yes()
+
+    public function get_male_gu_weak_urinary_stream_yes(): string
     {
         return $this->male_gu_weak_urinary_stream == "Yes" ? "CHECKED" : "";
     }
-    function get_male_gu_weak_urinary_stream_no()
+
+    public function get_male_gu_weak_urinary_stream_no(): string
     {
         return $this->male_gu_weak_urinary_stream == "No" ? "CHECKED" : "";
     }
-    function set_male_gu_weak_urinary_stream($data)
+
+    public function set_male_gu_weak_urinary_stream($data): void
     {
         if (!empty($data)) {
             $this->male_gu_weak_urinary_stream = $data;
         }
     }
-    function get_male_gu_weak_urinary_stream_text()
+
+    public function get_male_gu_weak_urinary_stream_text()
     {
         return $this->male_gu_weak_urinary_stream_text;
     }
-    function set_male_gu_weak_urinary_stream_text($data)
+
+    public function set_male_gu_weak_urinary_stream_text($data): void
     {
         if (!empty($data)) {
             $this->male_gu_weak_urinary_stream_text = $data;
@@ -3660,31 +4448,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Abnormal Menses -----
 
-    var $female_gu_abnormal_menses;
-    var $female_gu_abnormal_menses_text;
-    function get_female_gu_abnormal_menses()
+    public $female_gu_abnormal_menses;
+
+    public $female_gu_abnormal_menses_text;
+
+    public function get_female_gu_abnormal_menses()
     {
         return $this->female_gu_abnormal_menses;
     }
-    function get_female_gu_abnormal_menses_yes()
+
+    public function get_female_gu_abnormal_menses_yes(): string
     {
         return $this->female_gu_abnormal_menses == "Yes" ? "CHECKED" : "";
     }
-    function get_female_gu_abnormal_menses_no()
+
+    public function get_female_gu_abnormal_menses_no(): string
     {
         return $this->female_gu_abnormal_menses == "No" ? "CHECKED" : "";
     }
-    function set_female_gu_abnormal_menses($data)
+
+    public function set_female_gu_abnormal_menses($data): void
     {
         if (!empty($data)) {
             $this->female_gu_abnormal_menses = $data;
         }
     }
-    function get_female_gu_abnormal_menses_text()
+
+    public function get_female_gu_abnormal_menses_text()
     {
         return $this->female_gu_abnormal_menses_text;
     }
-    function set_female_gu_abnormal_menses_text($data)
+
+    public function set_female_gu_abnormal_menses_text($data): void
     {
         if (!empty($data)) {
             $this->female_gu_abnormal_menses_text = $data;
@@ -3692,31 +4487,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $female_gu_abnormal_vaginal_bleeding;
-    var $female_gu_abnormal_vaginal_bleeding_text;
-    function get_female_gu_abnormal_vaginal_bleeding()
+    public $female_gu_abnormal_vaginal_bleeding;
+
+    public $female_gu_abnormal_vaginal_bleeding_text;
+
+    public function get_female_gu_abnormal_vaginal_bleeding()
     {
         return $this->female_gu_abnormal_vaginal_bleeding;
     }
-    function get_female_gu_abnormal_vaginal_bleeding_yes()
+
+    public function get_female_gu_abnormal_vaginal_bleeding_yes(): string
     {
         return $this->female_gu_abnormal_vaginal_bleeding == "Yes" ? "CHECKED" : "";
     }
-    function get_female_gu_abnormal_vaginal_bleeding_no()
+
+    public function get_female_gu_abnormal_vaginal_bleeding_no(): string
     {
         return $this->female_gu_abnormal_vaginal_bleeding == "No" ? "CHECKED" : "";
     }
-    function set_female_gu_abnormal_vaginal_bleeding($data)
+
+    public function set_female_gu_abnormal_vaginal_bleeding($data): void
     {
         if (!empty($data)) {
             $this->female_gu_abnormal_vaginal_bleeding = $data;
         }
     }
-    function get_female_gu_abnormal_vaginal_bleeding_text()
+
+    public function get_female_gu_abnormal_vaginal_bleeding_text()
     {
         return $this->female_gu_abnormal_vaginal_bleeding_text;
     }
-    function set_female_gu_abnormal_vaginal_bleeding_text($data)
+
+    public function set_female_gu_abnormal_vaginal_bleeding_text($data): void
     {
         if (!empty($data)) {
             $this->female_gu_abnormal_vaginal_bleeding_text = $data;
@@ -3724,31 +4526,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $female_gu_vaginal_discharge;
-    var $female_gu_vaginal_discharge_text;
-    function get_female_gu_vaginal_discharge()
+    public $female_gu_vaginal_discharge;
+
+    public $female_gu_vaginal_discharge_text;
+
+    public function get_female_gu_vaginal_discharge()
     {
         return $this->female_gu_vaginal_discharge;
     }
-    function get_female_gu_vaginal_discharge_yes()
+
+    public function get_female_gu_vaginal_discharge_yes(): string
     {
         return $this->female_gu_vaginal_discharge == "Yes" ? "CHECKED" : "";
     }
-    function get_female_gu_vaginal_discharge_no()
+
+    public function get_female_gu_vaginal_discharge_no(): string
     {
         return $this->female_gu_vaginal_discharge == "No" ? "CHECKED" : "";
     }
-    function set_female_gu_vaginal_discharge($data)
+
+    public function set_female_gu_vaginal_discharge($data): void
     {
         if (!empty($data)) {
             $this->female_gu_vaginal_discharge = $data;
         }
     }
-    function get_female_gu_vaginal_discharge_text()
+
+    public function get_female_gu_vaginal_discharge_text()
     {
         return $this->female_gu_vaginal_discharge_text;
     }
-    function set_female_gu_vaginal_discharge_text($data)
+
+    public function set_female_gu_vaginal_discharge_text($data): void
     {
         if (!empty($data)) {
             $this->female_gu_vaginal_discharge_text = $data;
@@ -3757,31 +4566,38 @@ class FormROS2 extends ORDataObject
 
     // ----- abdominal pain -----
 
-    var $gi_abdominal_pain;
-    var $gi_abdominal_pain_text;
-    function get_gi_abdominal_pain()
+    public $gi_abdominal_pain;
+
+    public $gi_abdominal_pain_text;
+
+    public function get_gi_abdominal_pain()
     {
         return $this->gi_abdominal_pain;
     }
-    function get_gi_abdominal_pain_yes()
+
+    public function get_gi_abdominal_pain_yes(): string
     {
         return $this->gi_abdominal_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_abdominal_pain_no()
+
+    public function get_gi_abdominal_pain_no(): string
     {
         return $this->gi_abdominal_pain == "No" ? "CHECKED" : "";
     }
-    function set_gi_abdominal_pain($data)
+
+    public function set_gi_abdominal_pain($data): void
     {
         if (!empty($data)) {
             $this->gi_abdominal_pain = $data;
         }
     }
-    function get_gi_abdominal_pain_text()
+
+    public function get_gi_abdominal_pain_text()
     {
         return $this->gi_abdominal_pain_text;
     }
-    function set_gi_abdominal_pain_text($data)
+
+    public function set_gi_abdominal_pain_text($data): void
     {
         if (!empty($data)) {
             $this->gi_abdominal_pain_text = $data;
@@ -3789,31 +4605,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_cramps;
-    var $gi_cramps_text;
-    function get_gi_cramps()
+    public $gi_cramps;
+
+    public $gi_cramps_text;
+
+    public function get_gi_cramps()
     {
         return $this->gi_cramps;
     }
-    function get_gi_cramps_yes()
+
+    public function get_gi_cramps_yes(): string
     {
         return $this->gi_cramps == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_cramps_no()
+
+    public function get_gi_cramps_no(): string
     {
         return $this->gi_cramps == "No" ? "CHECKED" : "";
     }
-    function set_gi_cramps($data)
+
+    public function set_gi_cramps($data): void
     {
         if (!empty($data)) {
             $this->gi_cramps = $data;
         }
     }
-    function get_gi_cramps_text()
+
+    public function get_gi_cramps_text()
     {
         return $this->gi_cramps_text;
     }
-    function set_gi_cramps_text($data)
+
+    public function set_gi_cramps_text($data): void
     {
         if (!empty($data)) {
             $this->gi_cramps_text = $data;
@@ -3821,31 +4644,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_tenderness;
-    var $gi_tenderness_text;
-    function get_gi_tenderness()
+    public $gi_tenderness;
+
+    public $gi_tenderness_text;
+
+    public function get_gi_tenderness()
     {
         return $this->gi_tenderness;
     }
-    function get_gi_tenderness_yes()
+
+    public function get_gi_tenderness_yes(): string
     {
         return $this->gi_tenderness == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_tenderness_no()
+
+    public function get_gi_tenderness_no(): string
     {
         return $this->gi_tenderness == "No" ? "CHECKED" : "";
     }
-    function set_gi_tenderness($data)
+
+    public function set_gi_tenderness($data): void
     {
         if (!empty($data)) {
             $this->gi_tenderness = $data;
         }
     }
-    function get_gi_tenderness_text()
+
+    public function get_gi_tenderness_text()
     {
         return $this->gi_tenderness_text;
     }
-    function set_gi_tenderness_text($data)
+
+    public function set_gi_tenderness_text($data): void
     {
         if (!empty($data)) {
             $this->gi_tenderness_text = $data;
@@ -3853,31 +4683,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_vomiting;
-    var $gi_vomiting_text;
-    function get_gi_vomiting()
+    public $gi_vomiting;
+
+    public $gi_vomiting_text;
+
+    public function get_gi_vomiting()
     {
         return $this->gi_vomiting;
     }
-    function get_gi_vomiting_yes()
+
+    public function get_gi_vomiting_yes(): string
     {
         return $this->gi_vomiting == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_vomiting_no()
+
+    public function get_gi_vomiting_no(): string
     {
         return $this->gi_vomiting == "No" ? "CHECKED" : "";
     }
-    function set_gi_vomiting($data)
+
+    public function set_gi_vomiting($data): void
     {
         if (!empty($data)) {
             $this->gi_vomiting = $data;
         }
     }
-    function get_gi_vomiting_text()
+
+    public function get_gi_vomiting_text()
     {
         return $this->gi_vomiting_text;
     }
-    function set_gi_vomiting_text($data)
+
+    public function set_gi_vomiting_text($data): void
     {
         if (!empty($data)) {
             $this->gi_vomiting_text = $data;
@@ -3885,31 +4722,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_frequent_diarrhea;
-    var $gi_frequent_diarrhea_text;
-    function get_gi_frequent_diarrhea()
+    public $gi_frequent_diarrhea;
+
+    public $gi_frequent_diarrhea_text;
+
+    public function get_gi_frequent_diarrhea()
     {
         return $this->gi_frequent_diarrhea;
     }
-    function get_gi_frequent_diarrhea_yes()
+
+    public function get_gi_frequent_diarrhea_yes(): string
     {
         return $this->gi_frequent_diarrhea == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_frequent_diarrhea_no()
+
+    public function get_gi_frequent_diarrhea_no(): string
     {
         return $this->gi_frequent_diarrhea == "No" ? "CHECKED" : "";
     }
-    function set_gi_frequent_diarrhea($data)
+
+    public function set_gi_frequent_diarrhea($data): void
     {
         if (!empty($data)) {
             $this->gi_frequent_diarrhea = $data;
         }
     }
-    function get_gi_frequent_diarrhea_text()
+
+    public function get_gi_frequent_diarrhea_text()
     {
         return $this->gi_frequent_diarrhea_text;
     }
-    function set_gi_frequent_diarrhea_text($data)
+
+    public function set_gi_frequent_diarrhea_text($data): void
     {
         if (!empty($data)) {
             $this->gi_frequent_diarrhea_text = $data;
@@ -3917,31 +4761,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_significant_constipation;
-    var $gi_significant_constipation_text;
-    function get_gi_significant_constipation()
+    public $gi_significant_constipation;
+
+    public $gi_significant_constipation_text;
+
+    public function get_gi_significant_constipation()
     {
         return $this->gi_significant_constipation;
     }
-    function get_gi_significant_constipation_yes()
+
+    public function get_gi_significant_constipation_yes(): string
     {
         return $this->gi_significant_constipation == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_significant_constipation_no()
+
+    public function get_gi_significant_constipation_no(): string
     {
         return $this->gi_significant_constipation == "No" ? "CHECKED" : "";
     }
-    function set_gi_significant_constipation($data)
+
+    public function set_gi_significant_constipation($data): void
     {
         if (!empty($data)) {
             $this->gi_significant_constipation = $data;
         }
     }
-    function get_gi_significant_constipation_text()
+
+    public function get_gi_significant_constipation_text()
     {
         return $this->gi_significant_constipation_text;
     }
-    function set_gi_significant_constipation_text($data)
+
+    public function set_gi_significant_constipation_text($data): void
     {
         if (!empty($data)) {
             $this->gi_significant_constipation_text = $data;
@@ -3949,31 +4800,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_excessive_belching;
-    var $gi_excessive_belching_text;
-    function get_gi_excessive_belching()
+    public $gi_excessive_belching;
+
+    public $gi_excessive_belching_text;
+
+    public function get_gi_excessive_belching()
     {
         return $this->gi_excessive_belching;
     }
-    function get_gi_excessive_belching_yes()
+
+    public function get_gi_excessive_belching_yes(): string
     {
         return $this->gi_excessive_belching == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_excessive_belching_no()
+
+    public function get_gi_excessive_belching_no(): string
     {
         return $this->gi_excessive_belching == "No" ? "CHECKED" : "";
     }
-    function set_gi_excessive_belching($data)
+
+    public function set_gi_excessive_belching($data): void
     {
         if (!empty($data)) {
             $this->gi_excessive_belching = $data;
         }
     }
-    function get_gi_excessive_belching_text()
+
+    public function get_gi_excessive_belching_text()
     {
         return $this->gi_excessive_belching_text;
     }
-    function set_gi_excessive_belching_text($data)
+
+    public function set_gi_excessive_belching_text($data): void
     {
         if (!empty($data)) {
             $this->gi_excessive_belching_text = $data;
@@ -3981,31 +4839,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_changed_bowel_habits;
-    var $gi_changed_bowel_habits_text;
-    function get_gi_changed_bowel_habits()
+    public $gi_changed_bowel_habits;
+
+    public $gi_changed_bowel_habits_text;
+
+    public function get_gi_changed_bowel_habits()
     {
         return $this->gi_changed_bowel_habits;
     }
-    function get_gi_changed_bowel_habits_yes()
+
+    public function get_gi_changed_bowel_habits_yes(): string
     {
         return $this->gi_changed_bowel_habits == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_changed_bowel_habits_no()
+
+    public function get_gi_changed_bowel_habits_no(): string
     {
         return $this->gi_changed_bowel_habits == "No" ? "CHECKED" : "";
     }
-    function set_gi_changed_bowel_habits($data)
+
+    public function set_gi_changed_bowel_habits($data): void
     {
         if (!empty($data)) {
             $this->gi_changed_bowel_habits = $data;
         }
     }
-    function get_gi_changed_bowel_habits_text()
+
+    public function get_gi_changed_bowel_habits_text()
     {
         return $this->gi_changed_bowel_habits_text;
     }
-    function set_gi_changed_bowel_habits_text($data)
+
+    public function set_gi_changed_bowel_habits_text($data): void
     {
         if (!empty($data)) {
             $this->gi_changed_bowel_habits_text = $data;
@@ -4013,31 +4878,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_excessive_flatulence;
-    var $gi_excessive_flatulence_text;
-    function get_gi_excessive_flatulence()
+    public $gi_excessive_flatulence;
+
+    public $gi_excessive_flatulence_text;
+
+    public function get_gi_excessive_flatulence()
     {
         return $this->gi_excessive_flatulence;
     }
-    function get_gi_excessive_flatulence_yes()
+
+    public function get_gi_excessive_flatulence_yes(): string
     {
         return $this->gi_excessive_flatulence == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_excessive_flatulence_no()
+
+    public function get_gi_excessive_flatulence_no(): string
     {
         return $this->gi_excessive_flatulence == "No" ? "CHECKED" : "";
     }
-    function set_gi_excessive_flatulence($data)
+
+    public function set_gi_excessive_flatulence($data): void
     {
         if (!empty($data)) {
             $this->gi_excessive_flatulence = $data;
         }
     }
-    function get_gi_excessive_flatulence_text()
+
+    public function get_gi_excessive_flatulence_text()
     {
         return $this->gi_excessive_flatulence_text;
     }
-    function set_gi_excessive_flatulence_text($data)
+
+    public function set_gi_excessive_flatulence_text($data): void
     {
         if (!empty($data)) {
             $this->gi_excessive_flatulence_text = $data;
@@ -4045,31 +4917,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_hematemesis;
-    var $gi_hematemesis_text;
-    function get_gi_hematemesis()
+    public $gi_hematemesis;
+
+    public $gi_hematemesis_text;
+
+    public function get_gi_hematemesis()
     {
         return $this->gi_hematemesis;
     }
-    function get_gi_hematemesis_yes()
+
+    public function get_gi_hematemesis_yes(): string
     {
         return $this->gi_hematemesis == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_hematemesis_no()
+
+    public function get_gi_hematemesis_no(): string
     {
         return $this->gi_hematemesis == "No" ? "CHECKED" : "";
     }
-    function set_gi_hematemesis($data)
+
+    public function set_gi_hematemesis($data): void
     {
         if (!empty($data)) {
             $this->gi_hematemesis = $data;
         }
     }
-    function get_gi_hematemesis_text()
+
+    public function get_gi_hematemesis_text()
     {
         return $this->gi_hematemesis_text;
     }
-    function set_gi_hematemesis_text($data)
+
+    public function set_gi_hematemesis_text($data): void
     {
         if (!empty($data)) {
             $this->gi_hematemesis_text = $data;
@@ -4077,31 +4956,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_hemorrhoids;
-    var $gi_hemorrhoids_text;
-    function get_gi_hemorrhoids()
+    public $gi_hemorrhoids;
+
+    public $gi_hemorrhoids_text;
+
+    public function get_gi_hemorrhoids()
     {
         return $this->gi_hemorrhoids;
     }
-    function get_gi_hemorrhoids_yes()
+
+    public function get_gi_hemorrhoids_yes(): string
     {
         return $this->gi_hemorrhoids == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_hemorrhoids_no()
+
+    public function get_gi_hemorrhoids_no(): string
     {
         return $this->gi_hemorrhoids == "No" ? "CHECKED" : "";
     }
-    function set_gi_hemorrhoids($data)
+
+    public function set_gi_hemorrhoids($data): void
     {
         if (!empty($data)) {
             $this->gi_hemorrhoids = $data;
         }
     }
-    function get_gi_hemorrhoids_text()
+
+    public function get_gi_hemorrhoids_text()
     {
         return $this->gi_hemorrhoids_text;
     }
-    function set_gi_hemorrhoids_text($data)
+
+    public function set_gi_hemorrhoids_text($data): void
     {
         if (!empty($data)) {
             $this->gi_hemorrhoids_text = $data;
@@ -4109,31 +4995,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_hepatitis;
-    var $gi_hepatitis_text;
-    function get_gi_hepatitis()
+    public $gi_hepatitis;
+
+    public $gi_hepatitis_text;
+
+    public function get_gi_hepatitis()
     {
         return $this->gi_hepatitis;
     }
-    function get_gi_hepatitis_yes()
+
+    public function get_gi_hepatitis_yes(): string
     {
         return $this->gi_hepatitis == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_hepatitis_no()
+
+    public function get_gi_hepatitis_no(): string
     {
         return $this->gi_hepatitis == "No" ? "CHECKED" : "";
     }
-    function set_gi_hepatitis($data)
+
+    public function set_gi_hepatitis($data): void
     {
         if (!empty($data)) {
             $this->gi_hepatitis = $data;
         }
     }
-    function get_gi_hepatitis_text()
+
+    public function get_gi_hepatitis_text()
     {
         return $this->gi_hepatitis_text;
     }
-    function set_gi_hepatitis_text($data)
+
+    public function set_gi_hepatitis_text($data): void
     {
         if (!empty($data)) {
             $this->gi_hepatitis_text = $data;
@@ -4141,31 +5034,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_jaundice;
-    var $gi_jaundice_text;
-    function get_gi_jaundice()
+    public $gi_jaundice;
+
+    public $gi_jaundice_text;
+
+    public function get_gi_jaundice()
     {
         return $this->gi_jaundice;
     }
-    function get_gi_jaundice_yes()
+
+    public function get_gi_jaundice_yes(): string
     {
         return $this->gi_jaundice == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_jaundice_no()
+
+    public function get_gi_jaundice_no(): string
     {
         return $this->gi_jaundice == "No" ? "CHECKED" : "";
     }
-    function set_gi_jaundice($data)
+
+    public function set_gi_jaundice($data): void
     {
         if (!empty($data)) {
             $this->gi_jaundice = $data;
         }
     }
-    function get_gi_jaundice_text()
+
+    public function get_gi_jaundice_text()
     {
         return $this->gi_jaundice_text;
     }
-    function set_gi_jaundice_text($data)
+
+    public function set_gi_jaundice_text($data): void
     {
         if (!empty($data)) {
             $this->gi_jaundice_text = $data;
@@ -4173,31 +5073,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_lactose_intolerance;
-    var $gi_lactose_intolerance_text;
-    function get_gi_lactose_intolerance()
+    public $gi_lactose_intolerance;
+
+    public $gi_lactose_intolerance_text;
+
+    public function get_gi_lactose_intolerance()
     {
         return $this->gi_lactose_intolerance;
     }
-    function get_gi_lactose_intolerance_yes()
+
+    public function get_gi_lactose_intolerance_yes(): string
     {
         return $this->gi_lactose_intolerance == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_lactose_intolerance_no()
+
+    public function get_gi_lactose_intolerance_no(): string
     {
         return $this->gi_lactose_intolerance == "No" ? "CHECKED" : "";
     }
-    function set_gi_lactose_intolerance($data)
+
+    public function set_gi_lactose_intolerance($data): void
     {
         if (!empty($data)) {
             $this->gi_lactose_intolerance = $data;
         }
     }
-    function get_gi_lactose_intolerance_text()
+
+    public function get_gi_lactose_intolerance_text()
     {
         return $this->gi_lactose_intolerance_text;
     }
-    function set_gi_lactose_intolerance_text($data)
+
+    public function set_gi_lactose_intolerance_text($data): void
     {
         if (!empty($data)) {
             $this->gi_lactose_intolerance_text = $data;
@@ -4205,31 +5112,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_chronic_laxative_use;
-    var $gi_chronic_laxative_use_text;
-    function get_gi_chronic_laxative_use()
+    public $gi_chronic_laxative_use;
+
+    public $gi_chronic_laxative_use_text;
+
+    public function get_gi_chronic_laxative_use()
     {
         return $this->gi_chronic_laxative_use;
     }
-    function get_gi_chronic_laxative_use_yes()
+
+    public function get_gi_chronic_laxative_use_yes(): string
     {
         return $this->gi_chronic_laxative_use == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_chronic_laxative_use_no()
+
+    public function get_gi_chronic_laxative_use_no(): string
     {
         return $this->gi_chronic_laxative_use == "No" ? "CHECKED" : "";
     }
-    function set_gi_chronic_laxative_use($data)
+
+    public function set_gi_chronic_laxative_use($data): void
     {
         if (!empty($data)) {
             $this->gi_chronic_laxative_use = $data;
         }
     }
-    function get_gi_chronic_laxative_use_text()
+
+    public function get_gi_chronic_laxative_use_text()
     {
         return $this->gi_chronic_laxative_use_text;
     }
-    function set_gi_chronic_laxative_use_text($data)
+
+    public function set_gi_chronic_laxative_use_text($data): void
     {
         if (!empty($data)) {
             $this->gi_chronic_laxative_use_text = $data;
@@ -4237,31 +5151,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_melena;
-    var $gi_melena_text;
-    function get_gi_melena()
+    public $gi_melena;
+
+    public $gi_melena_text;
+
+    public function get_gi_melena()
     {
         return $this->gi_melena;
     }
-    function get_gi_melena_yes()
+
+    public function get_gi_melena_yes(): string
     {
         return $this->gi_melena == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_melena_no()
+
+    public function get_gi_melena_no(): string
     {
         return $this->gi_melena == "No" ? "CHECKED" : "";
     }
-    function set_gi_melena($data)
+
+    public function set_gi_melena($data): void
     {
         if (!empty($data)) {
             $this->gi_melena = $data;
         }
     }
-    function get_gi_melena_text()
+
+    public function get_gi_melena_text()
     {
         return $this->gi_melena_text;
     }
-    function set_gi_melena_text($data)
+
+    public function set_gi_melena_text($data): void
     {
         if (!empty($data)) {
             $this->gi_melena_text = $data;
@@ -4269,31 +5190,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_frequent_nausea;
-    var $gi_frequent_nausea_text;
-    function get_gi_frequent_nausea()
+    public $gi_frequent_nausea;
+
+    public $gi_frequent_nausea_text;
+
+    public function get_gi_frequent_nausea()
     {
         return $this->gi_frequent_nausea;
     }
-    function get_gi_frequent_nausea_yes()
+
+    public function get_gi_frequent_nausea_yes(): string
     {
         return $this->gi_frequent_nausea == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_frequent_nausea_no()
+
+    public function get_gi_frequent_nausea_no(): string
     {
         return $this->gi_frequent_nausea == "No" ? "CHECKED" : "";
     }
-    function set_gi_frequent_nausea($data)
+
+    public function set_gi_frequent_nausea($data): void
     {
         if (!empty($data)) {
             $this->gi_frequent_nausea = $data;
         }
     }
-    function get_gi_frequent_nausea_text()
+
+    public function get_gi_frequent_nausea_text()
     {
         return $this->gi_frequent_nausea_text;
     }
-    function set_gi_frequent_nausea_text($data)
+
+    public function set_gi_frequent_nausea_text($data): void
     {
         if (!empty($data)) {
             $this->gi_frequent_nausea_text = $data;
@@ -4301,31 +5229,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_rectal_bleeding;
-    var $gi_rectal_bleeding_text;
-    function get_gi_rectal_bleeding()
+    public $gi_rectal_bleeding;
+
+    public $gi_rectal_bleeding_text;
+
+    public function get_gi_rectal_bleeding()
     {
         return $this->gi_rectal_bleeding;
     }
-    function get_gi_rectal_bleeding_yes()
+
+    public function get_gi_rectal_bleeding_yes(): string
     {
         return $this->gi_rectal_bleeding == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_rectal_bleeding_no()
+
+    public function get_gi_rectal_bleeding_no(): string
     {
         return $this->gi_rectal_bleeding == "No" ? "CHECKED" : "";
     }
-    function set_gi_rectal_bleeding($data)
+
+    public function set_gi_rectal_bleeding($data): void
     {
         if (!empty($data)) {
             $this->gi_rectal_bleeding = $data;
         }
     }
-    function get_gi_rectal_bleeding_text()
+
+    public function get_gi_rectal_bleeding_text()
     {
         return $this->gi_rectal_bleeding_text;
     }
-    function set_gi_rectal_bleeding_text($data)
+
+    public function set_gi_rectal_bleeding_text($data): void
     {
         if (!empty($data)) {
             $this->gi_rectal_bleeding_text = $data;
@@ -4333,31 +5268,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_rectal_pain;
-    var $gi_rectal_pain_text;
-    function get_gi_rectal_pain()
+    public $gi_rectal_pain;
+
+    public $gi_rectal_pain_text;
+
+    public function get_gi_rectal_pain()
     {
         return $this->gi_rectal_pain;
     }
-    function get_gi_rectal_pain_yes()
+
+    public function get_gi_rectal_pain_yes(): string
     {
         return $this->gi_rectal_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_rectal_pain_no()
+
+    public function get_gi_rectal_pain_no(): string
     {
         return $this->gi_rectal_pain == "No" ? "CHECKED" : "";
     }
-    function set_gi_rectal_pain($data)
+
+    public function set_gi_rectal_pain($data): void
     {
         if (!empty($data)) {
             $this->gi_rectal_pain = $data;
         }
     }
-    function get_gi_rectal_pain_text()
+
+    public function get_gi_rectal_pain_text()
     {
         return $this->gi_rectal_pain_text;
     }
-    function set_gi_rectal_pain_text($data)
+
+    public function set_gi_rectal_pain_text($data): void
     {
         if (!empty($data)) {
             $this->gi_rectal_pain_text = $data;
@@ -4365,31 +5307,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $gi_stool_caliber_change;
-    var $gi_stool_caliber_change_text;
-    function get_gi_stool_caliber_change()
+    public $gi_stool_caliber_change;
+
+    public $gi_stool_caliber_change_text;
+
+    public function get_gi_stool_caliber_change()
     {
         return $this->gi_stool_caliber_change;
     }
-    function get_gi_stool_caliber_change_yes()
+
+    public function get_gi_stool_caliber_change_yes(): string
     {
         return $this->gi_stool_caliber_change == "Yes" ? "CHECKED" : "";
     }
-    function get_gi_stool_caliber_change_no()
+
+    public function get_gi_stool_caliber_change_no(): string
     {
         return $this->gi_stool_caliber_change == "No" ? "CHECKED" : "";
     }
-    function set_gi_stool_caliber_change($data)
+
+    public function set_gi_stool_caliber_change($data): void
     {
         if (!empty($data)) {
             $this->gi_stool_caliber_change = $data;
         }
     }
-    function get_gi_stool_caliber_change_text()
+
+    public function get_gi_stool_caliber_change_text()
     {
         return $this->gi_stool_caliber_change_text;
     }
-    function set_gi_stool_caliber_change_text($data)
+
+    public function set_gi_stool_caliber_change_text($data): void
     {
         if (!empty($data)) {
             $this->gi_stool_caliber_change_text = $data;
@@ -4398,31 +5347,38 @@ class FormROS2 extends ORDataObject
 
     // ----- pallor -----
 
-    var $integument_pallor;
-    var $integument_pallor_text;
-    function get_integument_pallor()
+    public $integument_pallor;
+
+    public $integument_pallor_text;
+
+    public function get_integument_pallor()
     {
         return $this->integument_pallor;
     }
-    function get_integument_pallor_yes()
+
+    public function get_integument_pallor_yes(): string
     {
         return $this->integument_pallor == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_pallor_no()
+
+    public function get_integument_pallor_no(): string
     {
         return $this->integument_pallor == "No" ? "CHECKED" : "";
     }
-    function set_integument_pallor($data)
+
+    public function set_integument_pallor($data): void
     {
         if (!empty($data)) {
             $this->integument_pallor = $data;
         }
     }
-    function get_integument_pallor_text()
+
+    public function get_integument_pallor_text()
     {
         return $this->integument_pallor_text;
     }
-    function set_integument_pallor_text($data)
+
+    public function set_integument_pallor_text($data): void
     {
         if (!empty($data)) {
             $this->integument_pallor_text = $data;
@@ -4430,31 +5386,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_diaphoresis;
-    var $integument_diaphoresis_text;
-    function get_integument_diaphoresis()
+    public $integument_diaphoresis;
+
+    public $integument_diaphoresis_text;
+
+    public function get_integument_diaphoresis()
     {
         return $this->integument_diaphoresis;
     }
-    function get_integument_diaphoresis_yes()
+
+    public function get_integument_diaphoresis_yes(): string
     {
         return $this->integument_diaphoresis == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_diaphoresis_no()
+
+    public function get_integument_diaphoresis_no(): string
     {
         return $this->integument_diaphoresis == "No" ? "CHECKED" : "";
     }
-    function set_integument_diaphoresis($data)
+
+    public function set_integument_diaphoresis($data): void
     {
         if (!empty($data)) {
             $this->integument_diaphoresis = $data;
         }
     }
-    function get_integument_diaphoresis_text()
+
+    public function get_integument_diaphoresis_text()
     {
         return $this->integument_diaphoresis_text;
     }
-    function set_integument_diaphoresis_text($data)
+
+    public function set_integument_diaphoresis_text($data): void
     {
         if (!empty($data)) {
             $this->integument_diaphoresis_text = $data;
@@ -4462,31 +5425,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_rash;
-    var $integument_rash_text;
-    function get_integument_rash()
+    public $integument_rash;
+
+    public $integument_rash_text;
+
+    public function get_integument_rash()
     {
         return $this->integument_rash;
     }
-    function get_integument_rash_yes()
+
+    public function get_integument_rash_yes(): string
     {
         return $this->integument_rash == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_rash_no()
+
+    public function get_integument_rash_no(): string
     {
         return $this->integument_rash == "No" ? "CHECKED" : "";
     }
-    function set_integument_rash($data)
+
+    public function set_integument_rash($data): void
     {
         if (!empty($data)) {
             $this->integument_rash = $data;
         }
     }
-    function get_integument_rash_text()
+
+    public function get_integument_rash_text()
     {
         return $this->integument_rash_text;
     }
-    function set_integument_rash_text($data)
+
+    public function set_integument_rash_text($data): void
     {
         if (!empty($data)) {
             $this->integument_rash_text = $data;
@@ -4494,31 +5464,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_itching;
-    var $integument_itching_text;
-    function get_integument_itching()
+    public $integument_itching;
+
+    public $integument_itching_text;
+
+    public function get_integument_itching()
     {
         return $this->integument_itching;
     }
-    function get_integument_itching_yes()
+
+    public function get_integument_itching_yes(): string
     {
         return $this->integument_itching == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_itching_no()
+
+    public function get_integument_itching_no(): string
     {
         return $this->integument_itching == "No" ? "CHECKED" : "";
     }
-    function set_integument_itching($data)
+
+    public function set_integument_itching($data): void
     {
         if (!empty($data)) {
             $this->integument_itching = $data;
         }
     }
-    function get_integument_itching_text()
+
+    public function get_integument_itching_text()
     {
         return $this->integument_itching_text;
     }
-    function set_integument_itching_text($data)
+
+    public function set_integument_itching_text($data): void
     {
         if (!empty($data)) {
             $this->integument_itching_text = $data;
@@ -4526,31 +5503,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_ulcers;
-    var $integument_ulcers_text;
-    function get_integument_ulcers()
+    public $integument_ulcers;
+
+    public $integument_ulcers_text;
+
+    public function get_integument_ulcers()
     {
         return $this->integument_ulcers;
     }
-    function get_integument_ulcers_yes()
+
+    public function get_integument_ulcers_yes(): string
     {
         return $this->integument_ulcers == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_ulcers_no()
+
+    public function get_integument_ulcers_no(): string
     {
         return $this->integument_ulcers == "No" ? "CHECKED" : "";
     }
-    function set_integument_ulcers($data)
+
+    public function set_integument_ulcers($data): void
     {
         if (!empty($data)) {
             $this->integument_ulcers = $data;
         }
     }
-    function get_integument_ulcers_text()
+
+    public function get_integument_ulcers_text()
     {
         return $this->integument_ulcers_text;
     }
-    function set_integument_ulcers_text($data)
+
+    public function set_integument_ulcers_text($data): void
     {
         if (!empty($data)) {
             $this->integument_ulcers_text = $data;
@@ -4558,31 +5542,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_abscess;
-    var $integument_abscess_text;
-    function get_integument_abscess()
+    public $integument_abscess;
+
+    public $integument_abscess_text;
+
+    public function get_integument_abscess()
     {
         return $this->integument_abscess;
     }
-    function get_integument_abscess_yes()
+
+    public function get_integument_abscess_yes(): string
     {
         return $this->integument_abscess == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_abscess_no()
+
+    public function get_integument_abscess_no(): string
     {
         return $this->integument_abscess == "No" ? "CHECKED" : "";
     }
-    function set_integument_abscess($data)
+
+    public function set_integument_abscess($data): void
     {
         if (!empty($data)) {
             $this->integument_abscess = $data;
         }
     }
-    function get_integument_abscess_text()
+
+    public function get_integument_abscess_text()
     {
         return $this->integument_abscess_text;
     }
-    function set_integument_abscess_text($data)
+
+    public function set_integument_abscess_text($data): void
     {
         if (!empty($data)) {
             $this->integument_abscess_text = $data;
@@ -4590,31 +5581,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_nodules;
-    var $integument_nodules_text;
-    function get_integument_nodules()
+    public $integument_nodules;
+
+    public $integument_nodules_text;
+
+    public function get_integument_nodules()
     {
         return $this->integument_nodules;
     }
-    function get_integument_nodules_yes()
+
+    public function get_integument_nodules_yes(): string
     {
         return $this->integument_nodules == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_nodules_no()
+
+    public function get_integument_nodules_no(): string
     {
         return $this->integument_nodules == "No" ? "CHECKED" : "";
     }
-    function set_integument_nodules($data)
+
+    public function set_integument_nodules($data): void
     {
         if (!empty($data)) {
             $this->integument_nodules = $data;
         }
     }
-    function get_integument_nodules_text()
+
+    public function get_integument_nodules_text()
     {
         return $this->integument_nodules_text;
     }
-    function set_integument_nodules_text($data)
+
+    public function set_integument_nodules_text($data): void
     {
         if (!empty($data)) {
             $this->integument_nodules_text = $data;
@@ -4622,31 +5620,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_acne;
-    var $integument_acne_text;
-    function get_integument_acne()
+    public $integument_acne;
+
+    public $integument_acne_text;
+
+    public function get_integument_acne()
     {
         return $this->integument_acne;
     }
-    function get_integument_acne_yes()
+
+    public function get_integument_acne_yes(): string
     {
         return $this->integument_acne == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_acne_no()
+
+    public function get_integument_acne_no(): string
     {
         return $this->integument_acne == "No" ? "CHECKED" : "";
     }
-    function set_integument_acne($data)
+
+    public function set_integument_acne($data): void
     {
         if (!empty($data)) {
             $this->integument_acne = $data;
         }
     }
-    function get_integument_acne_text()
+
+    public function get_integument_acne_text()
     {
         return $this->integument_acne_text;
     }
-    function set_integument_acne_text($data)
+
+    public function set_integument_acne_text($data): void
     {
         if (!empty($data)) {
             $this->integument_acne_text = $data;
@@ -4654,31 +5659,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_recurrent_boils;
-    var $integument_recurrent_boils_text;
-    function get_integument_recurrent_boils()
+    public $integument_recurrent_boils;
+
+    public $integument_recurrent_boils_text;
+
+    public function get_integument_recurrent_boils()
     {
         return $this->integument_recurrent_boils;
     }
-    function get_integument_recurrent_boils_yes()
+
+    public function get_integument_recurrent_boils_yes(): string
     {
         return $this->integument_recurrent_boils == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_recurrent_boils_no()
+
+    public function get_integument_recurrent_boils_no(): string
     {
         return $this->integument_recurrent_boils == "No" ? "CHECKED" : "";
     }
-    function set_integument_recurrent_boils($data)
+
+    public function set_integument_recurrent_boils($data): void
     {
         if (!empty($data)) {
             $this->integument_recurrent_boils = $data;
         }
     }
-    function get_integument_recurrent_boils_text()
+
+    public function get_integument_recurrent_boils_text()
     {
         return $this->integument_recurrent_boils_text;
     }
-    function set_integument_recurrent_boils_text($data)
+
+    public function set_integument_recurrent_boils_text($data): void
     {
         if (!empty($data)) {
             $this->integument_recurrent_boils_text = $data;
@@ -4686,31 +5698,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_chronic_eczema;
-    var $integument_chronic_eczema_text;
-    function get_integument_chronic_eczema()
+    public $integument_chronic_eczema;
+
+    public $integument_chronic_eczema_text;
+
+    public function get_integument_chronic_eczema()
     {
         return $this->integument_chronic_eczema;
     }
-    function get_integument_chronic_eczema_yes()
+
+    public function get_integument_chronic_eczema_yes(): string
     {
         return $this->integument_chronic_eczema == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_chronic_eczema_no()
+
+    public function get_integument_chronic_eczema_no(): string
     {
         return $this->integument_chronic_eczema == "No" ? "CHECKED" : "";
     }
-    function set_integument_chronic_eczema($data)
+
+    public function set_integument_chronic_eczema($data): void
     {
         if (!empty($data)) {
             $this->integument_chronic_eczema = $data;
         }
     }
-    function get_integument_chronic_eczema_text()
+
+    public function get_integument_chronic_eczema_text()
     {
         return $this->integument_chronic_eczema_text;
     }
-    function set_integument_chronic_eczema_text($data)
+
+    public function set_integument_chronic_eczema_text($data): void
     {
         if (!empty($data)) {
             $this->integument_chronic_eczema_text = $data;
@@ -4718,31 +5737,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_changing_moles;
-    var $integument_changing_moles_text;
-    function get_integument_changing_moles()
+    public $integument_changing_moles;
+
+    public $integument_changing_moles_text;
+
+    public function get_integument_changing_moles()
     {
         return $this->integument_changing_moles;
     }
-    function get_integument_changing_moles_yes()
+
+    public function get_integument_changing_moles_yes(): string
     {
         return $this->integument_changing_moles == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_changing_moles_no()
+
+    public function get_integument_changing_moles_no(): string
     {
         return $this->integument_changing_moles == "No" ? "CHECKED" : "";
     }
-    function set_integument_changing_moles($data)
+
+    public function set_integument_changing_moles($data): void
     {
         if (!empty($data)) {
             $this->integument_changing_moles = $data;
         }
     }
-    function get_integument_changing_moles_text()
+
+    public function get_integument_changing_moles_text()
     {
         return $this->integument_changing_moles_text;
     }
-    function set_integument_changing_moles_text($data)
+
+    public function set_integument_changing_moles_text($data): void
     {
         if (!empty($data)) {
             $this->integument_changing_moles_text = $data;
@@ -4750,31 +5776,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_nail_abnormalities;
-    var $integument_nail_abnormalities_text;
-    function get_integument_nail_abnormalities()
+    public $integument_nail_abnormalities;
+
+    public $integument_nail_abnormalities_text;
+
+    public function get_integument_nail_abnormalities()
     {
         return $this->integument_nail_abnormalities;
     }
-    function get_integument_nail_abnormalities_yes()
+
+    public function get_integument_nail_abnormalities_yes(): string
     {
         return $this->integument_nail_abnormalities == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_nail_abnormalities_no()
+
+    public function get_integument_nail_abnormalities_no(): string
     {
         return $this->integument_nail_abnormalities == "No" ? "CHECKED" : "";
     }
-    function set_integument_nail_abnormalities($data)
+
+    public function set_integument_nail_abnormalities($data): void
     {
         if (!empty($data)) {
             $this->integument_nail_abnormalities = $data;
         }
     }
-    function get_integument_nail_abnormalities_text()
+
+    public function get_integument_nail_abnormalities_text()
     {
         return $this->integument_nail_abnormalities_text;
     }
-    function set_integument_nail_abnormalities_text($data)
+
+    public function set_integument_nail_abnormalities_text($data): void
     {
         if (!empty($data)) {
             $this->integument_nail_abnormalities_text = $data;
@@ -4782,31 +5815,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_psoriasis;
-    var $integument_psoriasis_text;
-    function get_integument_psoriasis()
+    public $integument_psoriasis;
+
+    public $integument_psoriasis_text;
+
+    public function get_integument_psoriasis()
     {
         return $this->integument_psoriasis;
     }
-    function get_integument_psoriasis_yes()
+
+    public function get_integument_psoriasis_yes(): string
     {
         return $this->integument_psoriasis == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_psoriasis_no()
+
+    public function get_integument_psoriasis_no(): string
     {
         return $this->integument_psoriasis == "No" ? "CHECKED" : "";
     }
-    function set_integument_psoriasis($data)
+
+    public function set_integument_psoriasis($data): void
     {
         if (!empty($data)) {
             $this->integument_psoriasis = $data;
         }
     }
-    function get_integument_psoriasis_text()
+
+    public function get_integument_psoriasis_text()
     {
         return $this->integument_psoriasis_text;
     }
-    function set_integument_psoriasis_text($data)
+
+    public function set_integument_psoriasis_text($data): void
     {
         if (!empty($data)) {
             $this->integument_psoriasis_text = $data;
@@ -4814,31 +5854,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $integument_recurrent_hives;
-    var $integument_recurrent_hives_text;
-    function get_integument_recurrent_hives()
+    public $integument_recurrent_hives;
+
+    public $integument_recurrent_hives_text;
+
+    public function get_integument_recurrent_hives()
     {
         return $this->integument_recurrent_hives;
     }
-    function get_integument_recurrent_hives_yes()
+
+    public function get_integument_recurrent_hives_yes(): string
     {
         return $this->integument_recurrent_hives == "Yes" ? "CHECKED" : "";
     }
-    function get_integument_recurrent_hives_no()
+
+    public function get_integument_recurrent_hives_no(): string
     {
         return $this->integument_recurrent_hives == "No" ? "CHECKED" : "";
     }
-    function set_integument_recurrent_hives($data)
+
+    public function set_integument_recurrent_hives($data): void
     {
         if (!empty($data)) {
             $this->integument_recurrent_hives = $data;
         }
     }
-    function get_integument_recurrent_hives_text()
+
+    public function get_integument_recurrent_hives_text()
     {
         return $this->integument_recurrent_hives_text;
     }
-    function set_integument_recurrent_hives_text($data)
+
+    public function set_integument_recurrent_hives_text($data): void
     {
         if (!empty($data)) {
             $this->integument_recurrent_hives_text = $data;
@@ -4847,31 +5894,38 @@ class FormROS2 extends ORDataObject
 
     // ----- deformity -----
 
-    var $musculoskeletal_deformity;
-    var $musculoskeletal_deformity_text;
-    function get_musculoskeletal_deformity()
+    public $musculoskeletal_deformity;
+
+    public $musculoskeletal_deformity_text;
+
+    public function get_musculoskeletal_deformity()
     {
         return $this->musculoskeletal_deformity;
     }
-    function get_musculoskeletal_deformity_yes()
+
+    public function get_musculoskeletal_deformity_yes(): string
     {
         return $this->musculoskeletal_deformity == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_deformity_no()
+
+    public function get_musculoskeletal_deformity_no(): string
     {
         return $this->musculoskeletal_deformity == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_deformity($data)
+
+    public function set_musculoskeletal_deformity($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_deformity = $data;
         }
     }
-    function get_musculoskeletal_deformity_text()
+
+    public function get_musculoskeletal_deformity_text()
     {
         return $this->musculoskeletal_deformity_text;
     }
-    function set_musculoskeletal_deformity_text($data)
+
+    public function set_musculoskeletal_deformity_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_deformity_text = $data;
@@ -4879,31 +5933,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_edema;
-    var $musculoskeletal_edema_text;
-    function get_musculoskeletal_edema()
+    public $musculoskeletal_edema;
+
+    public $musculoskeletal_edema_text;
+
+    public function get_musculoskeletal_edema()
     {
         return $this->musculoskeletal_edema;
     }
-    function get_musculoskeletal_edema_yes()
+
+    public function get_musculoskeletal_edema_yes(): string
     {
         return $this->musculoskeletal_edema == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_edema_no()
+
+    public function get_musculoskeletal_edema_no(): string
     {
         return $this->musculoskeletal_edema == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_edema($data)
+
+    public function set_musculoskeletal_edema($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_edema = $data;
         }
     }
-    function get_musculoskeletal_edema_text()
+
+    public function get_musculoskeletal_edema_text()
     {
         return $this->musculoskeletal_edema_text;
     }
-    function set_musculoskeletal_edema_text($data)
+
+    public function set_musculoskeletal_edema_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_edema_text = $data;
@@ -4911,31 +5972,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_pain;
-    var $musculoskeletal_pain_text;
-    function get_musculoskeletal_pain()
+    public $musculoskeletal_pain;
+
+    public $musculoskeletal_pain_text;
+
+    public function get_musculoskeletal_pain()
     {
         return $this->musculoskeletal_pain;
     }
-    function get_musculoskeletal_pain_yes()
+
+    public function get_musculoskeletal_pain_yes(): string
     {
         return $this->musculoskeletal_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_pain_no()
+
+    public function get_musculoskeletal_pain_no(): string
     {
         return $this->musculoskeletal_pain == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_pain($data)
+
+    public function set_musculoskeletal_pain($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_pain = $data;
         }
     }
-    function get_musculoskeletal_pain_text()
+
+    public function get_musculoskeletal_pain_text()
     {
         return $this->musculoskeletal_pain_text;
     }
-    function set_musculoskeletal_pain_text($data)
+
+    public function set_musculoskeletal_pain_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_pain_text = $data;
@@ -4943,31 +6011,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_limited_rom;
-    var $musculoskeletal_limited_rom_text;
-    function get_musculoskeletal_limited_rom()
+    public $musculoskeletal_limited_rom;
+
+    public $musculoskeletal_limited_rom_text;
+
+    public function get_musculoskeletal_limited_rom()
     {
         return $this->musculoskeletal_limited_rom;
     }
-    function get_musculoskeletal_limited_rom_yes()
+
+    public function get_musculoskeletal_limited_rom_yes(): string
     {
         return $this->musculoskeletal_limited_rom == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_limited_rom_no()
+
+    public function get_musculoskeletal_limited_rom_no(): string
     {
         return $this->musculoskeletal_limited_rom == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_limited_rom($data)
+
+    public function set_musculoskeletal_limited_rom($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_limited_rom = $data;
         }
     }
-    function get_musculoskeletal_limited_rom_text()
+
+    public function get_musculoskeletal_limited_rom_text()
     {
         return $this->musculoskeletal_limited_rom_text;
     }
-    function set_musculoskeletal_limited_rom_text($data)
+
+    public function set_musculoskeletal_limited_rom_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_limited_rom_text = $data;
@@ -4975,31 +6050,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_gait;
-    var $musculoskeletal_gait_text;
-    function get_musculoskeletal_gait()
+    public $musculoskeletal_gait;
+
+    public $musculoskeletal_gait_text;
+
+    public function get_musculoskeletal_gait()
     {
         return $this->musculoskeletal_gait;
     }
-    function get_musculoskeletal_gait_yes()
+
+    public function get_musculoskeletal_gait_yes(): string
     {
         return $this->musculoskeletal_gait == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_gait_no()
+
+    public function get_musculoskeletal_gait_no(): string
     {
         return $this->musculoskeletal_gait == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_gait($data)
+
+    public function set_musculoskeletal_gait($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_gait = $data;
         }
     }
-    function get_musculoskeletal_gait_text()
+
+    public function get_musculoskeletal_gait_text()
     {
         return $this->musculoskeletal_gait_text;
     }
-    function set_musculoskeletal_gait_text($data)
+
+    public function set_musculoskeletal_gait_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_gait_text = $data;
@@ -5007,31 +6089,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_arthritis;
-    var $musculoskeletal_arthritis_text;
-    function get_musculoskeletal_arthritis()
+    public $musculoskeletal_arthritis;
+
+    public $musculoskeletal_arthritis_text;
+
+    public function get_musculoskeletal_arthritis()
     {
         return $this->musculoskeletal_arthritis;
     }
-    function get_musculoskeletal_arthritis_yes()
+
+    public function get_musculoskeletal_arthritis_yes(): string
     {
         return $this->musculoskeletal_arthritis == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_arthritis_no()
+
+    public function get_musculoskeletal_arthritis_no(): string
     {
         return $this->musculoskeletal_arthritis == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_arthritis($data)
+
+    public function set_musculoskeletal_arthritis($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_arthritis = $data;
         }
     }
-    function get_musculoskeletal_arthritis_text()
+
+    public function get_musculoskeletal_arthritis_text()
     {
         return $this->musculoskeletal_arthritis_text;
     }
-    function set_musculoskeletal_arthritis_text($data)
+
+    public function set_musculoskeletal_arthritis_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_arthritis_text = $data;
@@ -5039,31 +6128,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_neck_pain;
-    var $musculoskeletal_neck_pain_text;
-    function get_musculoskeletal_neck_pain()
+    public $musculoskeletal_neck_pain;
+
+    public $musculoskeletal_neck_pain_text;
+
+    public function get_musculoskeletal_neck_pain()
     {
         return $this->musculoskeletal_neck_pain;
     }
-    function get_musculoskeletal_neck_pain_yes()
+
+    public function get_musculoskeletal_neck_pain_yes(): string
     {
         return $this->musculoskeletal_neck_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_neck_pain_no()
+
+    public function get_musculoskeletal_neck_pain_no(): string
     {
         return $this->musculoskeletal_neck_pain == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_neck_pain($data)
+
+    public function set_musculoskeletal_neck_pain($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_neck_pain = $data;
         }
     }
-    function get_musculoskeletal_neck_pain_text()
+
+    public function get_musculoskeletal_neck_pain_text()
     {
         return $this->musculoskeletal_neck_pain_text;
     }
-    function set_musculoskeletal_neck_pain_text($data)
+
+    public function set_musculoskeletal_neck_pain_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_neck_pain_text = $data;
@@ -5071,31 +6167,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_mid_back_pain;
-    var $musculoskeletal_mid_back_pain_text;
-    function get_musculoskeletal_mid_back_pain()
+    public $musculoskeletal_mid_back_pain;
+
+    public $musculoskeletal_mid_back_pain_text;
+
+    public function get_musculoskeletal_mid_back_pain()
     {
         return $this->musculoskeletal_mid_back_pain;
     }
-    function get_musculoskeletal_mid_back_pain_yes()
+
+    public function get_musculoskeletal_mid_back_pain_yes(): string
     {
         return $this->musculoskeletal_mid_back_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_mid_back_pain_no()
+
+    public function get_musculoskeletal_mid_back_pain_no(): string
     {
         return $this->musculoskeletal_mid_back_pain == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_mid_back_pain($data)
+
+    public function set_musculoskeletal_mid_back_pain($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_mid_back_pain = $data;
         }
     }
-    function get_musculoskeletal_mid_back_pain_text()
+
+    public function get_musculoskeletal_mid_back_pain_text()
     {
         return $this->musculoskeletal_mid_back_pain_text;
     }
-    function set_musculoskeletal_mid_back_pain_text($data)
+
+    public function set_musculoskeletal_mid_back_pain_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_mid_back_pain_text = $data;
@@ -5103,31 +6206,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_low_back_pain;
-    var $musculoskeletal_low_back_pain_text;
-    function get_musculoskeletal_low_back_pain()
+    public $musculoskeletal_low_back_pain;
+
+    public $musculoskeletal_low_back_pain_text;
+
+    public function get_musculoskeletal_low_back_pain()
     {
         return $this->musculoskeletal_low_back_pain;
     }
-    function get_musculoskeletal_low_back_pain_yes()
+
+    public function get_musculoskeletal_low_back_pain_yes(): string
     {
         return $this->musculoskeletal_low_back_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_low_back_pain_no()
+
+    public function get_musculoskeletal_low_back_pain_no(): string
     {
         return $this->musculoskeletal_low_back_pain == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_low_back_pain($data)
+
+    public function set_musculoskeletal_low_back_pain($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_low_back_pain = $data;
         }
     }
-    function get_musculoskeletal_low_back_pain_text()
+
+    public function get_musculoskeletal_low_back_pain_text()
     {
         return $this->musculoskeletal_low_back_pain_text;
     }
-    function set_musculoskeletal_low_back_pain_text($data)
+
+    public function set_musculoskeletal_low_back_pain_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_low_back_pain_text = $data;
@@ -5135,31 +6245,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_bursitis;
-    var $musculoskeletal_bursitis_text;
-    function get_musculoskeletal_bursitis()
+    public $musculoskeletal_bursitis;
+
+    public $musculoskeletal_bursitis_text;
+
+    public function get_musculoskeletal_bursitis()
     {
         return $this->musculoskeletal_bursitis;
     }
-    function get_musculoskeletal_bursitis_yes()
+
+    public function get_musculoskeletal_bursitis_yes(): string
     {
         return $this->musculoskeletal_bursitis == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_bursitis_no()
+
+    public function get_musculoskeletal_bursitis_no(): string
     {
         return $this->musculoskeletal_bursitis == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_bursitis($data)
+
+    public function set_musculoskeletal_bursitis($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_bursitis = $data;
         }
     }
-    function get_musculoskeletal_bursitis_text()
+
+    public function get_musculoskeletal_bursitis_text()
     {
         return $this->musculoskeletal_bursitis_text;
     }
-    function set_musculoskeletal_bursitis_text($data)
+
+    public function set_musculoskeletal_bursitis_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_bursitis_text = $data;
@@ -5167,31 +6284,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_gout;
-    var $musculoskeletal_gout_text;
-    function get_musculoskeletal_gout()
+    public $musculoskeletal_gout;
+
+    public $musculoskeletal_gout_text;
+
+    public function get_musculoskeletal_gout()
     {
         return $this->musculoskeletal_gout;
     }
-    function get_musculoskeletal_gout_yes()
+
+    public function get_musculoskeletal_gout_yes(): string
     {
         return $this->musculoskeletal_gout == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_gout_no()
+
+    public function get_musculoskeletal_gout_no(): string
     {
         return $this->musculoskeletal_gout == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_gout($data)
+
+    public function set_musculoskeletal_gout($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_gout = $data;
         }
     }
-    function get_musculoskeletal_gout_text()
+
+    public function get_musculoskeletal_gout_text()
     {
         return $this->musculoskeletal_gout_text;
     }
-    function set_musculoskeletal_gout_text($data)
+
+    public function set_musculoskeletal_gout_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_gout_text = $data;
@@ -5199,31 +6323,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_joint_injury;
-    var $musculoskeletal_joint_injury_text;
-    function get_musculoskeletal_joint_injury()
+    public $musculoskeletal_joint_injury;
+
+    public $musculoskeletal_joint_injury_text;
+
+    public function get_musculoskeletal_joint_injury()
     {
         return $this->musculoskeletal_joint_injury;
     }
-    function get_musculoskeletal_joint_injury_yes()
+
+    public function get_musculoskeletal_joint_injury_yes(): string
     {
         return $this->musculoskeletal_joint_injury == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_joint_injury_no()
+
+    public function get_musculoskeletal_joint_injury_no(): string
     {
         return $this->musculoskeletal_joint_injury == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_joint_injury($data)
+
+    public function set_musculoskeletal_joint_injury($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_injury = $data;
         }
     }
-    function get_musculoskeletal_joint_injury_text()
+
+    public function get_musculoskeletal_joint_injury_text()
     {
         return $this->musculoskeletal_joint_injury_text;
     }
-    function set_musculoskeletal_joint_injury_text($data)
+
+    public function set_musculoskeletal_joint_injury_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_injury_text = $data;
@@ -5231,31 +6362,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_joint_pain;
-    var $musculoskeletal_joint_pain_text;
-    function get_musculoskeletal_joint_pain()
+    public $musculoskeletal_joint_pain;
+
+    public $musculoskeletal_joint_pain_text;
+
+    public function get_musculoskeletal_joint_pain()
     {
         return $this->musculoskeletal_joint_pain;
     }
-    function get_musculoskeletal_joint_pain_yes()
+
+    public function get_musculoskeletal_joint_pain_yes(): string
     {
         return $this->musculoskeletal_joint_pain == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_joint_pain_no()
+
+    public function get_musculoskeletal_joint_pain_no(): string
     {
         return $this->musculoskeletal_joint_pain == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_joint_pain($data)
+
+    public function set_musculoskeletal_joint_pain($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_pain = $data;
         }
     }
-    function get_musculoskeletal_joint_pain_text()
+
+    public function get_musculoskeletal_joint_pain_text()
     {
         return $this->musculoskeletal_joint_pain_text;
     }
-    function set_musculoskeletal_joint_pain_text($data)
+
+    public function set_musculoskeletal_joint_pain_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_pain_text = $data;
@@ -5263,31 +6401,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_joint_swelling;
-    var $musculoskeletal_joint_swelling_text;
-    function get_musculoskeletal_joint_swelling()
+    public $musculoskeletal_joint_swelling;
+
+    public $musculoskeletal_joint_swelling_text;
+
+    public function get_musculoskeletal_joint_swelling()
     {
         return $this->musculoskeletal_joint_swelling;
     }
-    function get_musculoskeletal_joint_swelling_yes()
+
+    public function get_musculoskeletal_joint_swelling_yes(): string
     {
         return $this->musculoskeletal_joint_swelling == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_joint_swelling_no()
+
+    public function get_musculoskeletal_joint_swelling_no(): string
     {
         return $this->musculoskeletal_joint_swelling == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_joint_swelling($data)
+
+    public function set_musculoskeletal_joint_swelling($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_swelling = $data;
         }
     }
-    function get_musculoskeletal_joint_swelling_text()
+
+    public function get_musculoskeletal_joint_swelling_text()
     {
         return $this->musculoskeletal_joint_swelling_text;
     }
-    function set_musculoskeletal_joint_swelling_text($data)
+
+    public function set_musculoskeletal_joint_swelling_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_joint_swelling_text = $data;
@@ -5295,31 +6440,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_myalgias;
-    var $musculoskeletal_myalgias_text;
-    function get_musculoskeletal_myalgias()
+    public $musculoskeletal_myalgias;
+
+    public $musculoskeletal_myalgias_text;
+
+    public function get_musculoskeletal_myalgias()
     {
         return $this->musculoskeletal_myalgias;
     }
-    function get_musculoskeletal_myalgias_yes()
+
+    public function get_musculoskeletal_myalgias_yes(): string
     {
         return $this->musculoskeletal_myalgias == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_myalgias_no()
+
+    public function get_musculoskeletal_myalgias_no(): string
     {
         return $this->musculoskeletal_myalgias == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_myalgias($data)
+
+    public function set_musculoskeletal_myalgias($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_myalgias = $data;
         }
     }
-    function get_musculoskeletal_myalgias_text()
+
+    public function get_musculoskeletal_myalgias_text()
     {
         return $this->musculoskeletal_myalgias_text;
     }
-    function set_musculoskeletal_myalgias_text($data)
+
+    public function set_musculoskeletal_myalgias_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_myalgias_text = $data;
@@ -5327,31 +6479,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_sciatica;
-    var $musculoskeletal_sciatica_text;
-    function get_musculoskeletal_sciatica()
+    public $musculoskeletal_sciatica;
+
+    public $musculoskeletal_sciatica_text;
+
+    public function get_musculoskeletal_sciatica()
     {
         return $this->musculoskeletal_sciatica;
     }
-    function get_musculoskeletal_sciatica_yes()
+
+    public function get_musculoskeletal_sciatica_yes(): string
     {
         return $this->musculoskeletal_sciatica == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_sciatica_no()
+
+    public function get_musculoskeletal_sciatica_no(): string
     {
         return $this->musculoskeletal_sciatica == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_sciatica($data)
+
+    public function set_musculoskeletal_sciatica($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_sciatica = $data;
         }
     }
-    function get_musculoskeletal_sciatica_text()
+
+    public function get_musculoskeletal_sciatica_text()
     {
         return $this->musculoskeletal_sciatica_text;
     }
-    function set_musculoskeletal_sciatica_text($data)
+
+    public function set_musculoskeletal_sciatica_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_sciatica_text = $data;
@@ -5359,31 +6518,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $musculoskeletal_scoliosis;
-    var $musculoskeletal_scoliosis_text;
-    function get_musculoskeletal_scoliosis()
+    public $musculoskeletal_scoliosis;
+
+    public $musculoskeletal_scoliosis_text;
+
+    public function get_musculoskeletal_scoliosis()
     {
         return $this->musculoskeletal_scoliosis;
     }
-    function get_musculoskeletal_scoliosis_yes()
+
+    public function get_musculoskeletal_scoliosis_yes(): string
     {
         return $this->musculoskeletal_scoliosis == "Yes" ? "CHECKED" : "";
     }
-    function get_musculoskeletal_scoliosis_no()
+
+    public function get_musculoskeletal_scoliosis_no(): string
     {
         return $this->musculoskeletal_scoliosis == "No" ? "CHECKED" : "";
     }
-    function set_musculoskeletal_scoliosis($data)
+
+    public function set_musculoskeletal_scoliosis($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_scoliosis = $data;
         }
     }
-    function get_musculoskeletal_scoliosis_text()
+
+    public function get_musculoskeletal_scoliosis_text()
     {
         return $this->musculoskeletal_scoliosis_text;
     }
-    function set_musculoskeletal_scoliosis_text($data)
+
+    public function set_musculoskeletal_scoliosis_text($data): void
     {
         if (!empty($data)) {
             $this->musculoskeletal_scoliosis_text = $data;
@@ -5392,31 +6558,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Anemia -----
 
-    var $hematological_anemia;
-    var $hematological_anemia_text;
-    function get_hematological_anemia()
+    public $hematological_anemia;
+
+    public $hematological_anemia_text;
+
+    public function get_hematological_anemia()
     {
         return $this->hematological_anemia;
     }
-    function get_hematological_anemia_yes()
+
+    public function get_hematological_anemia_yes(): string
     {
         return $this->hematological_anemia == "Yes" ? "CHECKED" : "";
     }
-    function get_hematological_anemia_no()
+
+    public function get_hematological_anemia_no(): string
     {
         return $this->hematological_anemia == "No" ? "CHECKED" : "";
     }
-    function set_hematological_anemia($data)
+
+    public function set_hematological_anemia($data): void
     {
         if (!empty($data)) {
             $this->hematological_anemia = $data;
         }
     }
-    function get_hematological_anemia_text()
+
+    public function get_hematological_anemia_text()
     {
         return $this->hematological_anemia_text;
     }
-    function set_hematological_anemia_text($data)
+
+    public function set_hematological_anemia_text($data): void
     {
         if (!empty($data)) {
             $this->hematological_anemia_text = $data;
@@ -5424,31 +6597,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $hematological_pallor;
-    var $hematological_pallor_text;
-    function get_hematological_pallor()
+    public $hematological_pallor;
+
+    public $hematological_pallor_text;
+
+    public function get_hematological_pallor()
     {
         return $this->hematological_pallor;
     }
-    function get_hematological_pallor_yes()
+
+    public function get_hematological_pallor_yes(): string
     {
         return $this->hematological_pallor == "Yes" ? "CHECKED" : "";
     }
-    function get_hematological_pallor_no()
+
+    public function get_hematological_pallor_no(): string
     {
         return $this->hematological_pallor == "No" ? "CHECKED" : "";
     }
-    function set_hematological_pallor($data)
+
+    public function set_hematological_pallor($data): void
     {
         if (!empty($data)) {
             $this->hematological_pallor = $data;
         }
     }
-    function get_hematological_pallor_text()
+
+    public function get_hematological_pallor_text()
     {
         return $this->hematological_pallor_text;
     }
-    function set_hematological_pallor_text($data)
+
+    public function set_hematological_pallor_text($data): void
     {
         if (!empty($data)) {
             $this->hematological_pallor_text = $data;
@@ -5456,31 +6636,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $hematological_bleeding_tendencies;
-    var $hematological_bleeding_tendencies_text;
-    function get_hematological_bleeding_tendencies()
+    public $hematological_bleeding_tendencies;
+
+    public $hematological_bleeding_tendencies_text;
+
+    public function get_hematological_bleeding_tendencies()
     {
         return $this->hematological_bleeding_tendencies;
     }
-    function get_hematological_bleeding_tendencies_yes()
+
+    public function get_hematological_bleeding_tendencies_yes(): string
     {
         return $this->hematological_bleeding_tendencies == "Yes" ? "CHECKED" : "";
     }
-    function get_hematological_bleeding_tendencies_no()
+
+    public function get_hematological_bleeding_tendencies_no(): string
     {
         return $this->hematological_bleeding_tendencies == "No" ? "CHECKED" : "";
     }
-    function set_hematological_bleeding_tendencies($data)
+
+    public function set_hematological_bleeding_tendencies($data): void
     {
         if (!empty($data)) {
             $this->hematological_bleeding_tendencies = $data;
         }
     }
-    function get_hematological_bleeding_tendencies_text()
+
+    public function get_hematological_bleeding_tendencies_text()
     {
         return $this->hematological_bleeding_tendencies_text;
     }
-    function set_hematological_bleeding_tendencies_text($data)
+
+    public function set_hematological_bleeding_tendencies_text($data): void
     {
         if (!empty($data)) {
             $this->hematological_bleeding_tendencies_text = $data;
@@ -5488,31 +6675,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $hematological_bruising;
-    var $hematological_bruising_text;
-    function get_hematological_bruising()
+    public $hematological_bruising;
+
+    public $hematological_bruising_text;
+
+    public function get_hematological_bruising()
     {
         return $this->hematological_bruising;
     }
-    function get_hematological_bruising_yes()
+
+    public function get_hematological_bruising_yes(): string
     {
         return $this->hematological_bruising == "Yes" ? "CHECKED" : "";
     }
-    function get_hematological_bruising_no()
+
+    public function get_hematological_bruising_no(): string
     {
         return $this->hematological_bruising == "No" ? "CHECKED" : "";
     }
-    function set_hematological_bruising($data)
+
+    public function set_hematological_bruising($data): void
     {
         if (!empty($data)) {
             $this->hematological_bruising = $data;
         }
     }
-    function get_hematological_bruising_text()
+
+    public function get_hematological_bruising_text()
     {
         return $this->hematological_bruising_text;
     }
-    function set_hematological_bruising_text($data)
+
+    public function set_hematological_bruising_text($data): void
     {
         if (!empty($data)) {
             $this->hematological_bruising_text = $data;
@@ -5521,31 +6715,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Thyroid Problems -----
 
-    var $endocrine_thyroid_problems;
-    var $endocrine_thyroid_problems_text;
-    function get_endocrine_thyroid_problems()
+    public $endocrine_thyroid_problems;
+
+    public $endocrine_thyroid_problems_text;
+
+    public function get_endocrine_thyroid_problems()
     {
         return $this->endocrine_thyroid_problems;
     }
-    function get_endocrine_thyroid_problems_yes()
+
+    public function get_endocrine_thyroid_problems_yes(): string
     {
         return $this->endocrine_thyroid_problems == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_thyroid_problems_no()
+
+    public function get_endocrine_thyroid_problems_no(): string
     {
         return $this->endocrine_thyroid_problems == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_thyroid_problems($data)
+
+    public function set_endocrine_thyroid_problems($data): void
     {
         if (!empty($data)) {
             $this->endocrine_thyroid_problems = $data;
         }
     }
-    function get_endocrine_thyroid_problems_text()
+
+    public function get_endocrine_thyroid_problems_text()
     {
         return $this->endocrine_thyroid_problems_text;
     }
-    function set_endocrine_thyroid_problems_text($data)
+
+    public function set_endocrine_thyroid_problems_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_thyroid_problems_text = $data;
@@ -5553,31 +6754,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_enlarged_thyroid;
-    var $endocrine_enlarged_thyroid_text;
-    function get_endocrine_enlarged_thyroid()
+    public $endocrine_enlarged_thyroid;
+
+    public $endocrine_enlarged_thyroid_text;
+
+    public function get_endocrine_enlarged_thyroid()
     {
         return $this->endocrine_enlarged_thyroid;
     }
-    function get_endocrine_enlarged_thyroid_yes()
+
+    public function get_endocrine_enlarged_thyroid_yes(): string
     {
         return $this->endocrine_enlarged_thyroid == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_enlarged_thyroid_no()
+
+    public function get_endocrine_enlarged_thyroid_no(): string
     {
         return $this->endocrine_enlarged_thyroid == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_enlarged_thyroid($data)
+
+    public function set_endocrine_enlarged_thyroid($data): void
     {
         if (!empty($data)) {
             $this->endocrine_enlarged_thyroid = $data;
         }
     }
-    function get_endocrine_enlarged_thyroid_text()
+
+    public function get_endocrine_enlarged_thyroid_text()
     {
         return $this->endocrine_enlarged_thyroid_text;
     }
-    function set_endocrine_enlarged_thyroid_text($data)
+
+    public function set_endocrine_enlarged_thyroid_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_enlarged_thyroid_text = $data;
@@ -5585,31 +6793,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_hyperglycemia;
-    var $endocrine_hyperglycemia_text;
-    function get_endocrine_hyperglycemia()
+    public $endocrine_hyperglycemia;
+
+    public $endocrine_hyperglycemia_text;
+
+    public function get_endocrine_hyperglycemia()
     {
         return $this->endocrine_hyperglycemia;
     }
-    function get_endocrine_hyperglycemia_yes()
+
+    public function get_endocrine_hyperglycemia_yes(): string
     {
         return $this->endocrine_hyperglycemia == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_hyperglycemia_no()
+
+    public function get_endocrine_hyperglycemia_no(): string
     {
         return $this->endocrine_hyperglycemia == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_hyperglycemia($data)
+
+    public function set_endocrine_hyperglycemia($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hyperglycemia = $data;
         }
     }
-    function get_endocrine_hyperglycemia_text()
+
+    public function get_endocrine_hyperglycemia_text()
     {
         return $this->endocrine_hyperglycemia_text;
     }
-    function set_endocrine_hyperglycemia_text($data)
+
+    public function set_endocrine_hyperglycemia_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hyperglycemia_text = $data;
@@ -5617,31 +6832,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_hypoglycemia;
-    var $endocrine_hypoglycemia_text;
-    function get_endocrine_hypoglycemia()
+    public $endocrine_hypoglycemia;
+
+    public $endocrine_hypoglycemia_text;
+
+    public function get_endocrine_hypoglycemia()
     {
         return $this->endocrine_hypoglycemia;
     }
-    function get_endocrine_hypoglycemia_yes()
+
+    public function get_endocrine_hypoglycemia_yes(): string
     {
         return $this->endocrine_hypoglycemia == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_hypoglycemia_no()
+
+    public function get_endocrine_hypoglycemia_no(): string
     {
         return $this->endocrine_hypoglycemia == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_hypoglycemia($data)
+
+    public function set_endocrine_hypoglycemia($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hypoglycemia = $data;
         }
     }
-    function get_endocrine_hypoglycemia_text()
+
+    public function get_endocrine_hypoglycemia_text()
     {
         return $this->endocrine_hypoglycemia_text;
     }
-    function set_endocrine_hypoglycemia_text($data)
+
+    public function set_endocrine_hypoglycemia_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hypoglycemia_text = $data;
@@ -5649,31 +6871,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_cold_intolerance;
-    var $endocrine_cold_intolerance_text;
-    function get_endocrine_cold_intolerance()
+    public $endocrine_cold_intolerance;
+
+    public $endocrine_cold_intolerance_text;
+
+    public function get_endocrine_cold_intolerance()
     {
         return $this->endocrine_cold_intolerance;
     }
-    function get_endocrine_cold_intolerance_yes()
+
+    public function get_endocrine_cold_intolerance_yes(): string
     {
         return $this->endocrine_cold_intolerance == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_cold_intolerance_no()
+
+    public function get_endocrine_cold_intolerance_no(): string
     {
         return $this->endocrine_cold_intolerance == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_cold_intolerance($data)
+
+    public function set_endocrine_cold_intolerance($data): void
     {
         if (!empty($data)) {
             $this->endocrine_cold_intolerance = $data;
         }
     }
-    function get_endocrine_cold_intolerance_text()
+
+    public function get_endocrine_cold_intolerance_text()
     {
         return $this->endocrine_cold_intolerance_text;
     }
-    function set_endocrine_cold_intolerance_text($data)
+
+    public function set_endocrine_cold_intolerance_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_cold_intolerance_text = $data;
@@ -5681,31 +6910,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_heat_intolerance;
-    var $endocrine_heat_intolerance_text;
-    function get_endocrine_heat_intolerance()
+    public $endocrine_heat_intolerance;
+
+    public $endocrine_heat_intolerance_text;
+
+    public function get_endocrine_heat_intolerance()
     {
         return $this->endocrine_heat_intolerance;
     }
-    function get_endocrine_heat_intolerance_yes()
+
+    public function get_endocrine_heat_intolerance_yes(): string
     {
         return $this->endocrine_heat_intolerance == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_heat_intolerance_no()
+
+    public function get_endocrine_heat_intolerance_no(): string
     {
         return $this->endocrine_heat_intolerance == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_heat_intolerance($data)
+
+    public function set_endocrine_heat_intolerance($data): void
     {
         if (!empty($data)) {
             $this->endocrine_heat_intolerance = $data;
         }
     }
-    function get_endocrine_heat_intolerance_text()
+
+    public function get_endocrine_heat_intolerance_text()
     {
         return $this->endocrine_heat_intolerance_text;
     }
-    function set_endocrine_heat_intolerance_text($data)
+
+    public function set_endocrine_heat_intolerance_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_heat_intolerance_text = $data;
@@ -5713,31 +6949,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_early_awakening;
-    var $endocrine_early_awakening_text;
-    function get_endocrine_early_awakening()
+    public $endocrine_early_awakening;
+
+    public $endocrine_early_awakening_text;
+
+    public function get_endocrine_early_awakening()
     {
         return $this->endocrine_early_awakening;
     }
-    function get_endocrine_early_awakening_yes()
+
+    public function get_endocrine_early_awakening_yes(): string
     {
         return $this->endocrine_early_awakening == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_early_awakening_no()
+
+    public function get_endocrine_early_awakening_no(): string
     {
         return $this->endocrine_early_awakening == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_early_awakening($data)
+
+    public function set_endocrine_early_awakening($data): void
     {
         if (!empty($data)) {
             $this->endocrine_early_awakening = $data;
         }
     }
-    function get_endocrine_early_awakening_text()
+
+    public function get_endocrine_early_awakening_text()
     {
         return $this->endocrine_early_awakening_text;
     }
-    function set_endocrine_early_awakening_text($data)
+
+    public function set_endocrine_early_awakening_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_early_awakening_text = $data;
@@ -5745,31 +6988,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_fatigue_unexplained;
-    var $endocrine_fatigue_unexplained_text;
-    function get_endocrine_fatigue_unexplained()
+    public $endocrine_fatigue_unexplained;
+
+    public $endocrine_fatigue_unexplained_text;
+
+    public function get_endocrine_fatigue_unexplained()
     {
         return $this->endocrine_fatigue_unexplained;
     }
-    function get_endocrine_fatigue_unexplained_yes()
+
+    public function get_endocrine_fatigue_unexplained_yes(): string
     {
         return $this->endocrine_fatigue_unexplained == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_fatigue_unexplained_no()
+
+    public function get_endocrine_fatigue_unexplained_no(): string
     {
         return $this->endocrine_fatigue_unexplained == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_fatigue_unexplained($data)
+
+    public function set_endocrine_fatigue_unexplained($data): void
     {
         if (!empty($data)) {
             $this->endocrine_fatigue_unexplained = $data;
         }
     }
-    function get_endocrine_fatigue_unexplained_text()
+
+    public function get_endocrine_fatigue_unexplained_text()
     {
         return $this->endocrine_fatigue_unexplained_text;
     }
-    function set_endocrine_fatigue_unexplained_text($data)
+
+    public function set_endocrine_fatigue_unexplained_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_fatigue_unexplained_text = $data;
@@ -5777,31 +7027,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_weight_gain;
-    var $endocrine_weight_gain_text;
-    function get_endocrine_weight_gain()
+    public $endocrine_weight_gain;
+
+    public $endocrine_weight_gain_text;
+
+    public function get_endocrine_weight_gain()
     {
         return $this->endocrine_weight_gain;
     }
-    function get_endocrine_weight_gain_yes()
+
+    public function get_endocrine_weight_gain_yes(): string
     {
         return $this->endocrine_weight_gain == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_weight_gain_no()
+
+    public function get_endocrine_weight_gain_no(): string
     {
         return $this->endocrine_weight_gain == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_weight_gain($data)
+
+    public function set_endocrine_weight_gain($data): void
     {
         if (!empty($data)) {
             $this->endocrine_weight_gain = $data;
         }
     }
-    function get_endocrine_weight_gain_text()
+
+    public function get_endocrine_weight_gain_text()
     {
         return $this->endocrine_weight_gain_text;
     }
-    function set_endocrine_weight_gain_text($data)
+
+    public function set_endocrine_weight_gain_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_weight_gain_text = $data;
@@ -5809,31 +7066,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_weight_loss;
-    var $endocrine_weight_loss_text;
-    function get_endocrine_weight_loss()
+    public $endocrine_weight_loss;
+
+    public $endocrine_weight_loss_text;
+
+    public function get_endocrine_weight_loss()
     {
         return $this->endocrine_weight_loss;
     }
-    function get_endocrine_weight_loss_yes()
+
+    public function get_endocrine_weight_loss_yes(): string
     {
         return $this->endocrine_weight_loss == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_weight_loss_no()
+
+    public function get_endocrine_weight_loss_no(): string
     {
         return $this->endocrine_weight_loss == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_weight_loss($data)
+
+    public function set_endocrine_weight_loss($data): void
     {
         if (!empty($data)) {
             $this->endocrine_weight_loss = $data;
         }
     }
-    function get_endocrine_weight_loss_text()
+
+    public function get_endocrine_weight_loss_text()
     {
         return $this->endocrine_weight_loss_text;
     }
-    function set_endocrine_weight_loss_text($data)
+
+    public function set_endocrine_weight_loss_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_weight_loss_text = $data;
@@ -5841,31 +7105,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_premenstrual_symptoms;
-    var $endocrine_premenstrual_symptoms_text;
-    function get_endocrine_premenstrual_symptoms()
+    public $endocrine_premenstrual_symptoms;
+
+    public $endocrine_premenstrual_symptoms_text;
+
+    public function get_endocrine_premenstrual_symptoms()
     {
         return $this->endocrine_premenstrual_symptoms;
     }
-    function get_endocrine_premenstrual_symptoms_yes()
+
+    public function get_endocrine_premenstrual_symptoms_yes(): string
     {
         return $this->endocrine_premenstrual_symptoms == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_premenstrual_symptoms_no()
+
+    public function get_endocrine_premenstrual_symptoms_no(): string
     {
         return $this->endocrine_premenstrual_symptoms == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_premenstrual_symptoms($data)
+
+    public function set_endocrine_premenstrual_symptoms($data): void
     {
         if (!empty($data)) {
             $this->endocrine_premenstrual_symptoms = $data;
         }
     }
-    function get_endocrine_premenstrual_symptoms_text()
+
+    public function get_endocrine_premenstrual_symptoms_text()
     {
         return $this->endocrine_premenstrual_symptoms_text;
     }
-    function set_endocrine_premenstrual_symptoms_text($data)
+
+    public function set_endocrine_premenstrual_symptoms_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_premenstrual_symptoms_text = $data;
@@ -5873,31 +7144,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_hair_no_change_or_no_loss;
-    var $endocrine_hair_no_change_or_no_loss_text;
-    function get_endocrine_hair_no_change_or_no_loss()
+    public $endocrine_hair_no_change_or_no_loss;
+
+    public $endocrine_hair_no_change_or_no_loss_text;
+
+    public function get_endocrine_hair_no_change_or_no_loss()
     {
         return $this->endocrine_hair_no_change_or_no_loss;
     }
-    function get_endocrine_hair_no_change_or_no_loss_yes()
+
+    public function get_endocrine_hair_no_change_or_no_loss_yes(): string
     {
         return $this->endocrine_hair_no_change_or_no_loss == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_hair_no_change_or_no_loss_no()
+
+    public function get_endocrine_hair_no_change_or_no_loss_no(): string
     {
         return $this->endocrine_hair_no_change_or_no_loss == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_hair_no_change_or_no_loss($data)
+
+    public function set_endocrine_hair_no_change_or_no_loss($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hair_no_change_or_no_loss = $data;
         }
     }
-    function get_endocrine_hair_no_change_or_no_loss_text()
+
+    public function get_endocrine_hair_no_change_or_no_loss_text()
     {
         return $this->endocrine_hair_no_change_or_no_loss_text;
     }
-    function set_endocrine_hair_no_change_or_no_loss_text($data)
+
+    public function set_endocrine_hair_no_change_or_no_loss_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hair_no_change_or_no_loss_text = $data;
@@ -5905,31 +7183,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $endocrine_hot_flashes;
-    var $endocrine_hot_flashes_text;
-    function get_endocrine_hot_flashes()
+    public $endocrine_hot_flashes;
+
+    public $endocrine_hot_flashes_text;
+
+    public function get_endocrine_hot_flashes()
     {
         return $this->endocrine_hot_flashes;
     }
-    function get_endocrine_hot_flashes_yes()
+
+    public function get_endocrine_hot_flashes_yes(): string
     {
         return $this->endocrine_hot_flashes == "Yes" ? "CHECKED" : "";
     }
-    function get_endocrine_hot_flashes_no()
+
+    public function get_endocrine_hot_flashes_no(): string
     {
         return $this->endocrine_hot_flashes == "No" ? "CHECKED" : "";
     }
-    function set_endocrine_hot_flashes($data)
+
+    public function set_endocrine_hot_flashes($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hot_flashes = $data;
         }
     }
-    function get_endocrine_hot_flashes_text()
+
+    public function get_endocrine_hot_flashes_text()
     {
         return $this->endocrine_hot_flashes_text;
     }
-    function set_endocrine_hot_flashes_text($data)
+
+    public function set_endocrine_hot_flashes_text($data): void
     {
         if (!empty($data)) {
             $this->endocrine_hot_flashes_text = $data;
@@ -5938,31 +7223,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Swollen lymph nodes -----
 
-    var $lymphatic_swollen_lymph_nodes;
-    var $lymphatic_swollen_lymph_nodes_text;
-    function get_lymphatic_swollen_lymph_nodes()
+    public $lymphatic_swollen_lymph_nodes;
+
+    public $lymphatic_swollen_lymph_nodes_text;
+
+    public function get_lymphatic_swollen_lymph_nodes()
     {
         return $this->lymphatic_swollen_lymph_nodes;
     }
-    function get_lymphatic_swollen_lymph_nodes_yes()
+
+    public function get_lymphatic_swollen_lymph_nodes_yes(): string
     {
         return $this->lymphatic_swollen_lymph_nodes == "Yes" ? "CHECKED" : "";
     }
-    function get_lymphatic_swollen_lymph_nodes_no()
+
+    public function get_lymphatic_swollen_lymph_nodes_no(): string
     {
         return $this->lymphatic_swollen_lymph_nodes == "No" ? "CHECKED" : "";
     }
-    function set_lymphatic_swollen_lymph_nodes($data)
+
+    public function set_lymphatic_swollen_lymph_nodes($data): void
     {
         if (!empty($data)) {
             $this->lymphatic_swollen_lymph_nodes = $data;
         }
     }
-    function get_lymphatic_swollen_lymph_nodes_text()
+
+    public function get_lymphatic_swollen_lymph_nodes_text()
     {
         return $this->lymphatic_swollen_lymph_nodes_text;
     }
-    function set_lymphatic_swollen_lymph_nodes_text($data)
+
+    public function set_lymphatic_swollen_lymph_nodes_text($data): void
     {
         if (!empty($data)) {
             $this->lymphatic_swollen_lymph_nodes_text = $data;
@@ -5970,31 +7262,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $lymphatic_swollen_extremities;
-    var $lymphatic_swollen_extremities_text;
-    function get_lymphatic_swollen_extremities()
+    public $lymphatic_swollen_extremities;
+
+    public $lymphatic_swollen_extremities_text;
+
+    public function get_lymphatic_swollen_extremities()
     {
         return $this->lymphatic_swollen_extremities;
     }
-    function get_lymphatic_swollen_extremities_yes()
+
+    public function get_lymphatic_swollen_extremities_yes(): string
     {
         return $this->lymphatic_swollen_extremities == "Yes" ? "CHECKED" : "";
     }
-    function get_lymphatic_swollen_extremities_no()
+
+    public function get_lymphatic_swollen_extremities_no(): string
     {
         return $this->lymphatic_swollen_extremities == "No" ? "CHECKED" : "";
     }
-    function set_lymphatic_swollen_extremities($data)
+
+    public function set_lymphatic_swollen_extremities($data): void
     {
         if (!empty($data)) {
             $this->lymphatic_swollen_extremities = $data;
         }
     }
-    function get_lymphatic_swollen_extremities_text()
+
+    public function get_lymphatic_swollen_extremities_text()
     {
         return $this->lymphatic_swollen_extremities_text;
     }
-    function set_lymphatic_swollen_extremities_text($data)
+
+    public function set_lymphatic_swollen_extremities_text($data): void
     {
         if (!empty($data)) {
             $this->lymphatic_swollen_extremities_text = $data;
@@ -6003,31 +7302,38 @@ class FormROS2 extends ORDataObject
 
     // ----- Compulsions -----
 
-    var $psychiatric_compulsions;
-    var $psychiatric_compulsions_text;
-    function get_psychiatric_compulsions()
+    public $psychiatric_compulsions;
+
+    public $psychiatric_compulsions_text;
+
+    public function get_psychiatric_compulsions()
     {
         return $this->psychiatric_compulsions;
     }
-    function get_psychiatric_compulsions_yes()
+
+    public function get_psychiatric_compulsions_yes(): string
     {
         return $this->psychiatric_compulsions == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_compulsions_no()
+
+    public function get_psychiatric_compulsions_no(): string
     {
         return $this->psychiatric_compulsions == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_compulsions($data)
+
+    public function set_psychiatric_compulsions($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_compulsions = $data;
         }
     }
-    function get_psychiatric_compulsions_text()
+
+    public function get_psychiatric_compulsions_text()
     {
         return $this->psychiatric_compulsions_text;
     }
-    function set_psychiatric_compulsions_text($data)
+
+    public function set_psychiatric_compulsions_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_compulsions_text = $data;
@@ -6035,31 +7341,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_depression;
-    var $psychiatric_depression_text;
-    function get_psychiatric_depression()
+    public $psychiatric_depression;
+
+    public $psychiatric_depression_text;
+
+    public function get_psychiatric_depression()
     {
         return $this->psychiatric_depression;
     }
-    function get_psychiatric_depression_yes()
+
+    public function get_psychiatric_depression_yes(): string
     {
         return $this->psychiatric_depression == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_depression_no()
+
+    public function get_psychiatric_depression_no(): string
     {
         return $this->psychiatric_depression == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_depression($data)
+
+    public function set_psychiatric_depression($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_depression = $data;
         }
     }
-    function get_psychiatric_depression_text()
+
+    public function get_psychiatric_depression_text()
     {
         return $this->psychiatric_depression_text;
     }
-    function set_psychiatric_depression_text($data)
+
+    public function set_psychiatric_depression_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_depression_text = $data;
@@ -6067,31 +7380,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_fear;
-    var $psychiatric_fear_text;
-    function get_psychiatric_fear()
+    public $psychiatric_fear;
+
+    public $psychiatric_fear_text;
+
+    public function get_psychiatric_fear()
     {
         return $this->psychiatric_fear;
     }
-    function get_psychiatric_fear_yes()
+
+    public function get_psychiatric_fear_yes(): string
     {
         return $this->psychiatric_fear == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_fear_no()
+
+    public function get_psychiatric_fear_no(): string
     {
         return $this->psychiatric_fear == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_fear($data)
+
+    public function set_psychiatric_fear($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_fear = $data;
         }
     }
-    function get_psychiatric_fear_text()
+
+    public function get_psychiatric_fear_text()
     {
         return $this->psychiatric_fear_text;
     }
-    function set_psychiatric_fear_text($data)
+
+    public function set_psychiatric_fear_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_fear_text = $data;
@@ -6099,31 +7419,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_anxiety;
-    var $psychiatric_anxiety_text;
-    function get_psychiatric_anxiety()
+    public $psychiatric_anxiety;
+
+    public $psychiatric_anxiety_text;
+
+    public function get_psychiatric_anxiety()
     {
         return $this->psychiatric_anxiety;
     }
-    function get_psychiatric_anxiety_yes()
+
+    public function get_psychiatric_anxiety_yes(): string
     {
         return $this->psychiatric_anxiety == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_anxiety_no()
+
+    public function get_psychiatric_anxiety_no(): string
     {
         return $this->psychiatric_anxiety == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_anxiety($data)
+
+    public function set_psychiatric_anxiety($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_anxiety = $data;
         }
     }
-    function get_psychiatric_anxiety_text()
+
+    public function get_psychiatric_anxiety_text()
     {
         return $this->psychiatric_anxiety_text;
     }
-    function set_psychiatric_anxiety_text($data)
+
+    public function set_psychiatric_anxiety_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_anxiety_text = $data;
@@ -6131,31 +7458,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_hallucinations;
-    var $psychiatric_hallucinations_text;
-    function get_psychiatric_hallucinations()
+    public $psychiatric_hallucinations;
+
+    public $psychiatric_hallucinations_text;
+
+    public function get_psychiatric_hallucinations()
     {
         return $this->psychiatric_hallucinations;
     }
-    function get_psychiatric_hallucinations_yes()
+
+    public function get_psychiatric_hallucinations_yes(): string
     {
         return $this->psychiatric_hallucinations == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_hallucinations_no()
+
+    public function get_psychiatric_hallucinations_no(): string
     {
         return $this->psychiatric_hallucinations == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_hallucinations($data)
+
+    public function set_psychiatric_hallucinations($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_hallucinations = $data;
         }
     }
-    function get_psychiatric_hallucinations_text()
+
+    public function get_psychiatric_hallucinations_text()
     {
         return $this->psychiatric_hallucinations_text;
     }
-    function set_psychiatric_hallucinations_text($data)
+
+    public function set_psychiatric_hallucinations_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_hallucinations_text = $data;
@@ -6163,31 +7497,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_loss_of_interest;
-    var $psychiatric_loss_of_interest_text;
-    function get_psychiatric_loss_of_interest()
+    public $psychiatric_loss_of_interest;
+
+    public $psychiatric_loss_of_interest_text;
+
+    public function get_psychiatric_loss_of_interest()
     {
         return $this->psychiatric_loss_of_interest;
     }
-    function get_psychiatric_loss_of_interest_yes()
+
+    public function get_psychiatric_loss_of_interest_yes(): string
     {
         return $this->psychiatric_loss_of_interest == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_loss_of_interest_no()
+
+    public function get_psychiatric_loss_of_interest_no(): string
     {
         return $this->psychiatric_loss_of_interest == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_loss_of_interest($data)
+
+    public function set_psychiatric_loss_of_interest($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_loss_of_interest = $data;
         }
     }
-    function get_psychiatric_loss_of_interest_text()
+
+    public function get_psychiatric_loss_of_interest_text()
     {
         return $this->psychiatric_loss_of_interest_text;
     }
-    function set_psychiatric_loss_of_interest_text($data)
+
+    public function set_psychiatric_loss_of_interest_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_loss_of_interest_text = $data;
@@ -6195,31 +7536,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_memory_loss;
-    var $psychiatric_memory_loss_text;
-    function get_psychiatric_memory_loss()
+    public $psychiatric_memory_loss;
+
+    public $psychiatric_memory_loss_text;
+
+    public function get_psychiatric_memory_loss()
     {
         return $this->psychiatric_memory_loss;
     }
-    function get_psychiatric_memory_loss_yes()
+
+    public function get_psychiatric_memory_loss_yes(): string
     {
         return $this->psychiatric_memory_loss == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_memory_loss_no()
+
+    public function get_psychiatric_memory_loss_no(): string
     {
         return $this->psychiatric_memory_loss == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_memory_loss($data)
+
+    public function set_psychiatric_memory_loss($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_memory_loss = $data;
         }
     }
-    function get_psychiatric_memory_loss_text()
+
+    public function get_psychiatric_memory_loss_text()
     {
         return $this->psychiatric_memory_loss_text;
     }
-    function set_psychiatric_memory_loss_text($data)
+
+    public function set_psychiatric_memory_loss_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_memory_loss_text = $data;
@@ -6227,31 +7575,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_mood_swings;
-    var $psychiatric_mood_swings_text;
-    function get_psychiatric_mood_swings()
+    public $psychiatric_mood_swings;
+
+    public $psychiatric_mood_swings_text;
+
+    public function get_psychiatric_mood_swings()
     {
         return $this->psychiatric_mood_swings;
     }
-    function get_psychiatric_mood_swings_yes()
+
+    public function get_psychiatric_mood_swings_yes(): string
     {
         return $this->psychiatric_mood_swings == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_mood_swings_no()
+
+    public function get_psychiatric_mood_swings_no(): string
     {
         return $this->psychiatric_mood_swings == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_mood_swings($data)
+
+    public function set_psychiatric_mood_swings($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_mood_swings = $data;
         }
     }
-    function get_psychiatric_mood_swings_text()
+
+    public function get_psychiatric_mood_swings_text()
     {
         return $this->psychiatric_mood_swings_text;
     }
-    function set_psychiatric_mood_swings_text($data)
+
+    public function set_psychiatric_mood_swings_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_mood_swings_text = $data;
@@ -6259,31 +7614,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_pananoia;
-    var $psychiatric_pananoia_text;
-    function get_psychiatric_pananoia()
+    public $psychiatric_pananoia;
+
+    public $psychiatric_pananoia_text;
+
+    public function get_psychiatric_pananoia()
     {
         return $this->psychiatric_pananoia;
     }
-    function get_psychiatric_pananoia_yes()
+
+    public function get_psychiatric_pananoia_yes(): string
     {
         return $this->psychiatric_pananoia == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_pananoia_no()
+
+    public function get_psychiatric_pananoia_no(): string
     {
         return $this->psychiatric_pananoia == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_pananoia($data)
+
+    public function set_psychiatric_pananoia($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_pananoia = $data;
         }
     }
-    function get_psychiatric_pananoia_text()
+
+    public function get_psychiatric_pananoia_text()
     {
         return $this->psychiatric_pananoia_text;
     }
-    function set_psychiatric_pananoia_text($data)
+
+    public function set_psychiatric_pananoia_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_pananoia_text = $data;
@@ -6291,31 +7653,38 @@ class FormROS2 extends ORDataObject
     }
 
 
-    var $psychiatric_insomnia;
-    var $psychiatric_insomnia_text;
-    function get_psychiatric_insomnia()
+    public $psychiatric_insomnia;
+
+    public $psychiatric_insomnia_text;
+
+    public function get_psychiatric_insomnia()
     {
         return $this->psychiatric_insomnia;
     }
-    function get_psychiatric_insomnia_yes()
+
+    public function get_psychiatric_insomnia_yes(): string
     {
         return $this->psychiatric_insomnia == "Yes" ? "CHECKED" : "";
     }
-    function get_psychiatric_insomnia_no()
+
+    public function get_psychiatric_insomnia_no(): string
     {
         return $this->psychiatric_insomnia == "No" ? "CHECKED" : "";
     }
-    function set_psychiatric_insomnia($data)
+
+    public function set_psychiatric_insomnia($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_insomnia = $data;
         }
     }
-    function get_psychiatric_insomnia_text()
+
+    public function get_psychiatric_insomnia_text()
     {
         return $this->psychiatric_insomnia_text;
     }
-    function set_psychiatric_insomnia_text($data)
+
+    public function set_psychiatric_insomnia_text($data): void
     {
         if (!empty($data)) {
             $this->psychiatric_insomnia_text = $data;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Listener/Listener.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Listener;
 
 use Laminas\EventManager\EventManagerInterface;
@@ -29,23 +30,25 @@ class Listener extends AbstractActionController implements ListenerAggregateInte
    * @var \Laminas\Stdlib\CallbackHandler[]
    */
     protected $listeners = array();
+
     protected $applicationTable;
+
   /**
    * {@inheritDoc}
    */
-    public function attach(EventManagerInterface $events, $priority = 1)
+    public function attach(EventManagerInterface $eventManager, $priority = 1): void
     {
         // TODO: This aclcheckEvent doesn't appear to be in the system or used... especially since the callable onAclcheckEvent doesn't exist
         // in this class.  We should look at removing this.
-        $sharedEvents      = $events->getSharedManager();
-        $this->listeners[] = $events->attach('aclcheckEvent', array($this, 'onAclcheckEvent'));
+        $eventManager->getSharedManager();
+        $this->listeners[] = $eventManager->attach('aclcheckEvent', array($this, 'onAclcheckEvent'));
     }
 
 
-    public function detach(EventManagerInterface $events, $priority = 1)
+    public function detach(EventManagerInterface $eventManager, $priority = 1): void
     {
         foreach ($this->listeners as $index => $listener) {
-            if ($events->detach($listener)) {
+            if ($eventManager->detach($listener)) {
                 unset($this->listeners[$index]);
             }
         }

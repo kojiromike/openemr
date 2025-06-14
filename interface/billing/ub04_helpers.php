@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Helper for UB04 form.
  *
@@ -12,8 +14,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("ub04_codes.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/ub04_codes.inc.php");
 
 $lookup = isset($_GET["code_group"]) ? filter_input(INPUT_GET, 'code_group') : "";
 $term = isset($_GET["term"]) ? filter_input(INPUT_GET, 'term') : '';
@@ -64,21 +66,21 @@ while ($row = sqlFetchArray($users)) {
 </body>
 </html>
 <?php
-function lookup_codes($group, $term)
+function lookup_codes($group, string $term): void
 {
     global $ub04_codes;
     $gotem = array();
 
-    foreach ($ub04_codes as $k => $v) {
-        if ($v['code_group'] != $group) {
+    foreach ($ub04_codes as $ub04_code) {
+        if ($ub04_code['code_group'] != $group) {
             continue;
         }
         $s = "/" . $term . "/i";
-        $label = $v['code'] . " : " . $v['desc'] . ($v['desc1'] ? (" :: " . $v['desc1']) : "");
+        $label = $ub04_code['code'] . " : " . $ub04_code['desc'] . ($ub04_code['desc1'] ? (" :: " . $ub04_code['desc1']) : "");
         if (preg_match($s, $label)) {
             $gotem[] = array(
                 'label' => attr($label),
-                'value' => $v['code']
+                'value' => $ub04_code['code']
             );
         }
     }
@@ -89,13 +91,13 @@ function lookup_codes($group, $term)
 * @param lookup group string $group
 * @param search string $term
 */
-function get_codes_list($group, $term)
+function get_codes_list($group, $term): void
 {
     $term = "%" . $term . "%";
-    $response = sqlStatement("SELECT CONCAT_WS(': ', isc.code, isc.primary_desc, isc.desc1) as label, isc.code as value, isc.code_group as cg FROM inst_support_codes as isc
+    $recordset = sqlStatement("SELECT CONCAT_WS(': ', isc.code, isc.primary_desc, isc.desc1) as label, isc.code as value, isc.code_group as cg FROM inst_support_codes as isc
 HAVING label LIKE ? And cg = ? ORDER BY code ASC", array($term, $group ));
 
-    while ($row = sqlFetchArray($response)) {
+    while ($row = sqlFetchArray($recordset)) {
         $resultpd[] = $row;
     }
 

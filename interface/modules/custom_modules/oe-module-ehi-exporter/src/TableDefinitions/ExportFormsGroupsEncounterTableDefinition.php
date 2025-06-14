@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Export table definition for the form_groups_encounter table.  Handles the custom query for exporting
  * this table since the table does not have a direct foreign key to the patient_data table since it works through
@@ -13,7 +15,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\TableDefinitions;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -29,10 +30,9 @@ class ExportFormsGroupsEncounterTableDefinition extends ExportTableDefinition
 
         $patientPids = $this->getHashmapForKey('pid');
         $patientIdsCount = count($patientPids);
-        $sql = "SELECT $selectQuery FROM `" . self::TABLE_NAME . "` WHERE `group_id` IN (select DISTINCT `group_id` "
+        $sql = sprintf('SELECT %s FROM `', $selectQuery) . self::TABLE_NAME . "` WHERE `group_id` IN (select DISTINCT `group_id` "
         . " FROM `therapy_groups_participants` WHERE `pid` IN ( "
             . str_repeat("?, ", $patientIdsCount - 1) . "? ) )";
-        $records = QueryUtils::fetchRecords($sql, $patientPids);
-        return $records;
+        return QueryUtils::fetchRecords($sql, $patientPids);
     }
 }

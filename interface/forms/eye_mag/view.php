@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * forms/eye_mag/view.php
  *
@@ -15,8 +17,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/FeeSheetHtml.class.php");
-include_once("../../forms/eye_mag/php/eye_mag_functions.php");
+require_once($srcdir . '/FeeSheetHtml.class.php');
+include_once(__DIR__ . "/../../forms/eye_mag/php/eye_mag_functions.php");
 
 use OpenEMR\Core\Header;
 
@@ -167,7 +169,7 @@ if (!$form_id && !$encounter) {
     exit;
 }
 
-if ($refresh and $refresh != 'fullscreen') {
+if ($refresh && $refresh != 'fullscreen') {
     if ($refresh == "PMSFH") {
         echo display_PRIOR_section($refresh, $id, $id, $pid);
     } elseif ($refresh == "PMSFH_panel") {
@@ -322,8 +324,8 @@ if ($refresh and $refresh != 'fullscreen') {
                 <div class="loading" id="HPI_sections_loading" name="HPI_sections_loading"><i class="fa fa-spinner fa-spin"></i>
                 </div>
                 <!-- end      HPI spinner -->
-                <?php (($CLINICAL ?? null) == '1') ? ($display_Add = "size100") : ($display_Add = "size50"); ?>
-                <?php (($CLINICAL ?? null) == '0') ? ($display_Visibility = "display") : ($display_Visibility = "nodisplay"); ?>
+                <?php $display_Add = (($CLINICAL ?? null) == '1') ? ("size100") : ("size50"); ?>
+                <?php $display_Visibility = (($CLINICAL ?? null) == '0') ? ("display") : ("nodisplay"); ?>
                 <!-- start    HPI_PMH row -->
                 <div id="HPIPMH_sections" class="nodisplay">
                   <!-- start    HPI_section -->
@@ -357,7 +359,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                 <table border="0" width="100%" cellspacing="0" cellpadding="0">
                                   <tr>
                                     <td class="pad10" colspan="2">
-                                      <div class="kb kb_left">CC</div><b><span title="<?php echo xla('In the patient\'s words'); ?>"><?php echo xlt('Chief Complaint'); ?> 1:
+                                      <div class="kb kb_left">CC</div><b><span title="<?php echo xla("In the patient's words"); ?>"><?php echo xlt('Chief Complaint'); ?> 1:
                                       </span>  </b>
                                       <br />
                                       <textarea name="CC1" id="CC1" class="HPI_text" tabindex="10"><?php echo text($CC1); ?></textarea>
@@ -396,7 +398,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                   <table class="CC_table" border="0" width="100%" cellspacing="0" cellpadding="0">
                                     <tr>
                                       <td class="top pad10" colspan="2">
-                                        <b><span title="<?php echo xla('In the patient\'s words'); ?>"><?php echo xlt('Chief Complaint'); ?> 2:
+                                        <b><span title="<?php echo xla("In the patient's words"); ?>"><?php echo xlt('Chief Complaint'); ?> 2:
                                         </span>  </b>
                                         <br />
                                         <textarea name="CC2" id="CC2" class="HPI_text CC_Box" tabindex="10"><?php echo text($CC2); ?></textarea>
@@ -417,7 +419,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                   <table class="CC_table" border="0" width="100%" cellspacing="0" cellpadding="0">
                                     <tr>
                                       <td class="top pad10" colspan="2">
-                                        <b><span title="<?php echo xla('In the patient\'s words'); ?>"><?php echo xlt('Chief Complaint'); ?> 3:
+                                        <b><span title="<?php echo xla("In the patient's words"); ?>"><?php echo xlt('Chief Complaint'); ?> 3:
                                         </span>  </b>
                                         <br />
                                         <textarea name="CC3" id="CC3" class="HPI_text CC_Box" tabindex="10"><?php echo text($CC3); ?></textarea>
@@ -437,8 +439,8 @@ if ($refresh and $refresh != 'fullscreen') {
                             </div>
                           </div>
 
-                        <?php (($HPI_VIEW ?? null) != 2) ? ($display_HPI_view = "wide_textarea") : ($display_HPI_view = "narrow_textarea");?>
-                        <?php ($display_HPI_view == "wide_textarea") ? ($marker = "fa-minus-square") : ($marker = "fa-plus-square");?>
+                        <?php $display_HPI_view = (($HPI_VIEW ?? null) != 2) ? ("wide_textarea") : ("narrow_textarea");?>
+                        <?php $marker = ($display_HPI_view === "wide_textarea") ? ("fa-minus-square") : ("fa-plus-square");?>
                       </div>
                     </div>
                     <!-- end    HPI Left -->
@@ -710,8 +712,8 @@ if ($refresh and $refresh != 'fullscreen') {
                         <i class="closeButton_5 fa fa-user-md" name="Shorthand_kb" title="<?php echo xla("Open/Close the Shorthand Window and display Shorthand Codes"); ?>"></i>
                           <i class="closeButton fa fa-minus-circle" title="<?php echo xla('Minimize this panel'); ?>" id="BUTTON_TAB_PMH" name="BUTTON_TAB_PMH"></i>
 
-                        <?php (($PMH_VIEW ?? null) != 2) ? ($display_PMH_view = "wide_textarea") : ($display_PMH_view = "narrow_textarea");?>
-                        <?php ($display_PMH_view == "wide_textarea") ? ($marker = "fa-minus-square") : ($marker = "fa-plus-square");?>
+                        <?php $display_PMH_view = (($PMH_VIEW ?? null) != 2) ? ("wide_textarea") : ("narrow_textarea");?>
+                        <?php $marker = ($display_PMH_view === "wide_textarea") ? ("fa-minus-square") : ("fa-plus-square");?>
                         <div id="PMSFH_sections" name="PMSFH_sections">
                           <div id="Enter_PMH" name="Enter_PMH" class="PMH_class">
                               <iframe id="iframe" name="iframe"
@@ -756,50 +758,50 @@ if ($refresh and $refresh != 'fullscreen') {
                 $wear = sqlStatement($query, array($pid,$form_id,$encounter));
                 while ($wearing = sqlFetchArray($wear)) {
                     if (!empty($count_rx)) {
-                        $count_rx++;
+                        ++$count_rx;
                     } else {
                         $count_rx = 1;
                     }
-                    ${"display_W_$count_rx"}        = '';
-                    ${"ODSPH_$count_rx"}            = $wearing['ODSPH'];
-                    ${"ODCYL_$count_rx"}            = $wearing['ODCYL'];
-                    ${"ODAXIS_$count_rx"}           = $wearing['ODAXIS'];
-                    ${"OSSPH_$count_rx"}            = $wearing['OSSPH'];
-                    ${"OSCYL_$count_rx"}            = $wearing['OSCYL'];
-                    ${"OSAXIS_$count_rx"}           = $wearing['OSAXIS'];
-                    ${"ODMIDADD_$count_rx"}         = $wearing['ODMIDADD'];
-                    ${"OSMIDADD_$count_rx"}         = $wearing['OSMIDADD'];
-                    ${"ODADD_$count_rx"}            = $wearing['ODADD'];
-                    ${"OSADD_$count_rx"}            = $wearing['OSADD'];
-                    ${"ODVA_$count_rx"}             = $wearing['ODVA'];
-                    ${"OSVA_$count_rx"}             = $wearing['OSVA'];
-                    ${"ODNEARVA_$count_rx"}         = $wearing['ODNEARVA'];
-                    ${"OSNEARVA_$count_rx"}         = $wearing['OSNEARVA'];
-                    ${"ODPRISM_$count_rx"}          = $wearing['ODPRISM'] ?? null;
-                    ${"OSPRISM_$count_rx"}          = $wearing['OSPRISM'] ?? null;
-                    ${"W_$count_rx"}                = '1';
-                    ${"RX_TYPE_$count_rx"}          = $wearing['RX_TYPE'];
-                    ${"ODHPD_$count_rx"}            = $wearing['ODHPD'];
-                    ${"ODHBASE_$count_rx"}          = $wearing['ODHBASE'];
-                    ${"ODVPD_$count_rx"}            = $wearing['ODVPD'];
-                    ${"ODVBASE_$count_rx"}          = $wearing['ODVBASE'];
-                    ${"ODSLABOFF_$count_rx"}        = $wearing['ODSLABOFF'];
-                    ${"ODVERTEXDIST_$count_rx"}     = $wearing['ODVERTEXDIST'];
-                    ${"OSHPD_$count_rx"}            = $wearing['OSHPD'];
-                    ${"OSHBASE_$count_rx"}          = $wearing['OSHBASE'];
-                    ${"OSVPD_$count_rx"}            = $wearing['OSVPD'];
-                    ${"OSVBASE_$count_rx"}          = $wearing['OSVBASE'];
-                    ${"OSSLABOFF_$count_rx"}        = $wearing['OSSLABOFF'];
-                    ${"OSVERTEXDIST_$count_rx"}     = $wearing['OSVERTEXDIST'];
-                    ${"ODMPDD_$count_rx"}           = $wearing['ODMPDD'];
-                    ${"ODMPDN_$count_rx"}           = $wearing['ODMPDN'];
-                    ${"OSMPDD_$count_rx"}           = $wearing['OSMPDD'];
-                    ${"OSMPDN_$count_rx"}           = $wearing['OSMPDN'];
-                    ${"BPDD_$count_rx"}             = $wearing['BPDD'];
-                    ${"BPDN_$count_rx"}             = $wearing['BPDN'];
-                    ${"LENS_MATERIAL_$count_rx"}    = $wearing['LENS_MATERIAL'];
-                    ${"LENS_TREATMENTS_$count_rx"}  = $wearing['LENS_TREATMENTS'];
-                    ${"COMMENTS_$count_rx"}         = $wearing['COMMENTS'];
+                    ${'display_W_' . $count_rx}        = '';
+                    ${'ODSPH_' . $count_rx}            = $wearing['ODSPH'];
+                    ${'ODCYL_' . $count_rx}            = $wearing['ODCYL'];
+                    ${'ODAXIS_' . $count_rx}           = $wearing['ODAXIS'];
+                    ${'OSSPH_' . $count_rx}            = $wearing['OSSPH'];
+                    ${'OSCYL_' . $count_rx}            = $wearing['OSCYL'];
+                    ${'OSAXIS_' . $count_rx}           = $wearing['OSAXIS'];
+                    ${'ODMIDADD_' . $count_rx}         = $wearing['ODMIDADD'];
+                    ${'OSMIDADD_' . $count_rx}         = $wearing['OSMIDADD'];
+                    ${'ODADD_' . $count_rx}            = $wearing['ODADD'];
+                    ${'OSADD_' . $count_rx}            = $wearing['OSADD'];
+                    ${'ODVA_' . $count_rx}             = $wearing['ODVA'];
+                    ${'OSVA_' . $count_rx}             = $wearing['OSVA'];
+                    ${'ODNEARVA_' . $count_rx}         = $wearing['ODNEARVA'];
+                    ${'OSNEARVA_' . $count_rx}         = $wearing['OSNEARVA'];
+                    ${'ODPRISM_' . $count_rx}          = $wearing['ODPRISM'] ?? null;
+                    ${'OSPRISM_' . $count_rx}          = $wearing['OSPRISM'] ?? null;
+                    ${'W_' . $count_rx}                = '1';
+                    ${'RX_TYPE_' . $count_rx}          = $wearing['RX_TYPE'];
+                    ${'ODHPD_' . $count_rx}            = $wearing['ODHPD'];
+                    ${'ODHBASE_' . $count_rx}          = $wearing['ODHBASE'];
+                    ${'ODVPD_' . $count_rx}            = $wearing['ODVPD'];
+                    ${'ODVBASE_' . $count_rx}          = $wearing['ODVBASE'];
+                    ${'ODSLABOFF_' . $count_rx}        = $wearing['ODSLABOFF'];
+                    ${'ODVERTEXDIST_' . $count_rx}     = $wearing['ODVERTEXDIST'];
+                    ${'OSHPD_' . $count_rx}            = $wearing['OSHPD'];
+                    ${'OSHBASE_' . $count_rx}          = $wearing['OSHBASE'];
+                    ${'OSVPD_' . $count_rx}            = $wearing['OSVPD'];
+                    ${'OSVBASE_' . $count_rx}          = $wearing['OSVBASE'];
+                    ${'OSSLABOFF_' . $count_rx}        = $wearing['OSSLABOFF'];
+                    ${'OSVERTEXDIST_' . $count_rx}     = $wearing['OSVERTEXDIST'];
+                    ${'ODMPDD_' . $count_rx}           = $wearing['ODMPDD'];
+                    ${'ODMPDN_' . $count_rx}           = $wearing['ODMPDN'];
+                    ${'OSMPDD_' . $count_rx}           = $wearing['OSMPDD'];
+                    ${'OSMPDN_' . $count_rx}           = $wearing['OSMPDN'];
+                    ${'BPDD_' . $count_rx}             = $wearing['BPDD'];
+                    ${'BPDN_' . $count_rx}             = $wearing['BPDN'];
+                    ${'LENS_MATERIAL_' . $count_rx}    = $wearing['LENS_MATERIAL'];
+                    ${'LENS_TREATMENTS_' . $count_rx}  = $wearing['LENS_TREATMENTS'];
+                    ${'COMMENTS_' . $count_rx}         = $wearing['COMMENTS'];
                 }
                 ?>
               <div class="loading" id="LayerTechnical_sections_loading" name="LayerTechnical_sections_loading"><i class="fa fa-spinner fa-spin"></i>
@@ -971,11 +973,7 @@ if ($refresh and $refresh != 'fullscreen') {
                         $AMSLEROS = "0";
                     }
 
-                    if ($AMSLEROD || $AMSLEROS) {
-                        $checked = 'value="0"';
-                    } else {
-                        $checked = 'value="1" checked';
-                    }
+                    $checked = $AMSLEROD || $AMSLEROS ? 'value="0"' : 'value="1" checked';
 
                     ?>
                     <input type="hidden" id="AMSLEROD" name="AMSLEROD" value='<?php echo attr($AMSLEROD); ?>'>
@@ -1030,11 +1028,11 @@ if ($refresh and $refresh != 'fullscreen') {
                             // if the VF zone is checked, display it
                             // if ODVF1 = 1 (true boolean) the value="0" checked="true"
                             $bad = 0;
-                        for ($z = 1; $z < 5; $z++) {
+                        for ($z = 1; $z < 5; ++$z) {
                             $ODzone = "ODVF" . $z;
                             if ($$ODzone == '1') {
                                 $ODVF[$z] = 'checked value=1';
-                                $bad++;
+                                ++$bad;
                             } else {
                                 $ODVF[$z] = 'value=0';
                             }
@@ -1042,13 +1040,13 @@ if ($refresh and $refresh != 'fullscreen') {
                             $OSzone = "OSVF" . $z;
                             if ($$OSzone == "1") {
                                 $OSVF[$z] = 'checked value=1';
-                                $bad++;
+                                ++$bad;
                             } else {
                                 $OSVF[$z] = 'value=0';
                             }
                         }
 
-                        if (!$bad) {
+                        if ($bad === 0) {
                             $VFFTCF = "checked";
                         }
                         ?>
@@ -1165,7 +1163,7 @@ if ($refresh and $refresh != 'fullscreen') {
                 <br />
 
                 <!-- start of slide down pupils_panel -->
-                <?php (($DIMODPUPILSIZE ?? '') != '') ? ($display_dim_pupils_panel = "display") : ($display_dim_pupils_panel = "nodisplay"); ?>
+                <?php $display_dim_pupils_panel = (($DIMODPUPILSIZE ?? '') != '') ? ("display") : ("nodisplay"); ?>
                 <div id="dim_pupils_panel" name="dim_pupils_panel" class="vitals <?php echo attr($display_dim_pupils_panel); ?>">
                   <span class="top_left"><b id="pupils_DIM"><?php echo xlt('Pupils') ?>: <?php echo xlt('Dim'); ?></b> </span>
                   <div id="Lyr71">
@@ -1204,7 +1202,7 @@ if ($refresh and $refresh != 'fullscreen') {
               <!-- end of the CLINICAL BOX -->
 
                 <!-- start IOP chart section -->
-                <?php (($IOP ?? null) == 1) ? ($display_IOP = "") : ($display_IOP = "nodisplay"); ?>
+                <?php $display_IOP = (($IOP ?? null) == 1) ? ("") : ("nodisplay"); ?>
               <div id="LayerVision_IOP" class="borderShadow <?php echo $display_IOP; ?>">
                     <?php echo display_GlaucomaFlowSheet($pid); ?>
               </div>
@@ -1215,7 +1213,7 @@ if ($refresh and $refresh != 'fullscreen') {
               <div class="loading" id="EXAM_sections_loading" name="REFRACTION_sections_loading"><i class="fa fa-spinner fa-spin"></i></div>
               <div id="REFRACTION_sections" name="REFRACTION_sections" class="row nodisplay clear_both">
                 <div id="LayerVision2">
-                    <?php (($RXHX ?? null) == 1) ? ($display_Add = "") : ($display_Add = "nodisplay"); ?>
+                    <?php $display_Add = (($RXHX ?? null) == 1) ? ("") : ("nodisplay"); ?>
                     <div id="LayerVision_RXHX" class="refraction borderShadow old_refractions ui-draggable ui-draggable-handle <?php echo $display_Add; ?>">
                         <span title="<?php echo attr('Close this panel and make this a Preference to stay closed'); ?>" class="closeButton fa  fa-times" id="Close_RXHX" name="Close_RXHX"></span>
                         <table class="GFS_table">
@@ -1249,8 +1247,8 @@ if ($refresh and $refresh != 'fullscreen') {
 
                     </div>
                     <?php
-                    (($W ?? null) == 1) ? ($display_W = "") : ($display_W = "nodisplay");
-                    (($W_width ?? null) == '1') ? ($display_W_width = "refraction_wide") : ($display_W_width = "");
+                    $display_W = (($W ?? null) == 1) ? ("") : ("nodisplay");
+                    $display_W_width = (($W_width ?? null) == '1') ? ("refraction_wide") : ("");
                     ?>
                   <div id="LayerVision_W" class="<?php echo $display_W; ?> ">
                     <input type="hidden" id="W_1" name="W_1" value="1">
@@ -1397,13 +1395,13 @@ if ($refresh and $refresh != 'fullscreen') {
                       </table>
                     </div>
                     <?php
-                    for ($i = 2; $i < 6; $i++) { //limit to a max of 5 pairs
+                    for ($i = 2; $i < 6; ++$i) { //limit to a max of 5 pairs
                         echo generate_specRx($i);
                     }
                     ?>
                   </div>
 
-                    <?php (($MR ?? null) == 1) ? ($display_AR = "") : ($display_AR = "nodisplay");?>
+                    <?php $display_AR = (($MR ?? null) == 1) ? ("") : ("nodisplay");?>
                   <div id="LayerVision_MR" class="refraction manifest borderShadow <?php echo $display_AR; ?>">
                     <i onclick="top.restoreSession();  dispensed('<?php echo attr($pid); ?>');return false;"
                      title="<?php echo xla("List of previously dispensed Spectacle and Contact Lens Rxs"); ?>" class="closeButton_3 fa fa-list-ul"></i>
@@ -1508,7 +1506,7 @@ if ($refresh and $refresh != 'fullscreen') {
                     </table>
                   </div>
 
-                    <?php (($CR ?? null) == 1)  ? ($display_Cyclo = "") : ($display_Cyclo = "nodisplay"); ?>
+                    <?php $display_Cyclo = (($CR ?? null) == 1)  ? ("") : ("nodisplay"); ?>
                   <div id="LayerVision_CR" class="refraction autoref borderShadow <?php echo $display_Cyclo; ?>">
                     <i title="<?php echo xla('Dispense this Rx'); ?>" class="closeButton_2 fa fa-print" onclick="top.restoreSession();doscript('AR',<?php echo attr($pid); ?>,<?php echo attr($encounter); ?>);return false;"></i>
                     <span title="<?php echo xla('Close this panel and make this a Preference to stay closed'); ?>" class="closeButton fa  fa-times" id="Close_CR" name="Close_CR"></span>
@@ -1554,7 +1552,7 @@ if ($refresh and $refresh != 'fullscreen') {
                     </table>
                   </div>
 
-                    <?php (($CTL ?? null) == 1) ? ($display_CTL = "") : ($display_CTL = "nodisplay"); ?>
+                    <?php $display_CTL = (($CTL ?? null) == 1) ? ("") : ("nodisplay"); ?>
                   <div id="LayerVision_CTL" class="refraction CTL borderShadow <?php echo $display_CTL; ?>">
                       <i onclick="top.restoreSession();  dispensed('<?php echo attr($pid); ?>');return false;"
                          title="<?php echo xla("List of previously dispensed Spectacle and Contact Lens Rxs"); ?>" class="closeButton_3 fa fa-list-ul"></i>
@@ -1795,7 +1793,7 @@ if ($refresh and $refresh != 'fullscreen') {
                     </table>
                   </div>
 
-                    <?php (($ADDITIONAL ?? null) == 1) ? ($display_Add = "") : ($display_Add = "nodisplay"); ?>
+                    <?php $display_Add = (($ADDITIONAL ?? null) == 1) ? ("") : ("nodisplay"); ?>
                   <div id="LayerVision_ADDITIONAL" class="refraction borderShadow <?php echo $display_Add; ?>">
                     <span title="<?php echo xla('Close and make this a Preference to stay closed'); ?>" class="closeButton fa  fa-times" id="Close_ADDITIONAL" name="Close_ADDITIONAL"></span>
 
@@ -1862,7 +1860,7 @@ if ($refresh and $refresh != 'fullscreen') {
                     </table>
                   </div>
 
-                    <?php (($VAX ?? null) == 1) ? ($display_Add = "") : ($display_Add = "nodisplay"); ?>
+                    <?php $display_Add = (($VAX ?? null) == 1) ? ("") : ("nodisplay"); ?>
                   <div id="LayerVision_VAX" class="refraction borderShadow <?php echo $display_Add; ?>">
                     <span title="<?php echo attr('Close this panel and make this a Preference to stay closed'); ?>" class="closeButton fa  fa-times" id="Close_VAX" name="Close_VAX"></span>
                     <table id="Additional_VA">
@@ -1943,7 +1941,7 @@ if ($refresh and $refresh != 'fullscreen') {
                     <?php
                   // output is defined above and if there are old visits, check for orders in eye_mag_functions:
                   // $output = priors_select("ALL",$id,$id,$pid);
-                    ($output_priors == '') ? ($title = "There are no prior visits documented to display for this patient.") : ($title = "Display old exam findings and copy forward if desired");?>
+                    $title = ($output_priors == '') ? ("There are no prior visits documented to display for this patient.") : ("Display old exam findings and copy forward if desired");?>
                   <span id="PRIORS_ALL_left_text" name="PRIORS_ALL_left_text"
                   class="btn btn-secondary"><i class="fa fa-paste" title="<?php echo xla($title); ?>"></i>
                     <?php
@@ -2069,8 +2067,8 @@ if ($refresh and $refresh != 'fullscreen') {
                             </table>
                           </div>
 
-                            <?php (($EXT_VIEW ?? null) == 1) ? ($display_EXT_view = "wide_textarea") : ($display_EXT_view = "narrow_textarea");?>
-                            <?php ($display_EXT_view == "wide_textarea") ? ($marker = "fa-minus-square") : ($marker = "fa-plus-square");?>
+                            <?php $display_EXT_view = (($EXT_VIEW ?? null) == 1) ? ("wide_textarea") : ("narrow_textarea");?>
+                            <?php $marker = ($display_EXT_view === "wide_textarea") ? ("fa-minus-square") : ("fa-plus-square");?>
                           <div id="EXT_text_list" name="EXT_text_list" class="borderShadow  <?php echo attr($display_EXT_view); ?>">
                               <span class="top_right far <?php echo attr($marker); ?>" name="EXT_text_view" id="EXT_text_view"></span>
                               <table cellspacing="0" cellpadding="0">
@@ -2340,8 +2338,8 @@ if ($refresh and $refresh != 'fullscreen') {
                         </table>
                       </div>
 
-                        <?php (($ANTSEG_VIEW ?? null) == '1') ? ($display_ANTSEG_view = "wide_textarea") : ($display_ANTSEG_view = "narrow_textarea");?>
-                        <?php ($display_ANTSEG_view == "wide_textarea") ? ($marker = "fa-minus-square") : ($marker = "fa-plus-square");?>
+                        <?php $display_ANTSEG_view = (($ANTSEG_VIEW ?? null) == '1') ? ("wide_textarea") : ("narrow_textarea");?>
+                        <?php $marker = ($display_ANTSEG_view === "wide_textarea") ? ("fa-minus-square") : ("fa-plus-square");?>
                       <div id="ANTSEG_text_list" name="ANTSEG_text_list" class="borderShadow <?php echo attr($display_ANTSEG_view); ?>" >
                               <span class="top_right far <?php echo attr($marker); ?>" name="ANTSEG_text_view" id="ANTSEG_text_view"></span>
                               <table cellspacing="0" cellpadding="0">
@@ -2561,8 +2559,8 @@ if ($refresh and $refresh != 'fullscreen') {
                             </table>
                         </div>
 
-                        <?php (($RETINA_VIEW ?? null) == 1) ? ($display_RETINA_view = "wide_textarea") : ($display_RETINA_view = "narrow_textarea");?>
-                        <?php ($display_RETINA_view == "wide_textarea") ? ($marker = "fa-minus-square") : ($marker = "fa-plus-square");?>
+                        <?php $display_RETINA_view = (($RETINA_VIEW ?? null) == 1) ? ("wide_textarea") : ("narrow_textarea");?>
+                        <?php $marker = ($display_RETINA_view === "wide_textarea") ? ("fa-minus-square") : ("fa-plus-square");?>
                       <div>
                         <div id="RETINA_text_list" name="RETINA_text_list" class="borderShadow  <?php echo attr($display_RETINA_view); ?>">
                               <span class="top_right far <?php echo attr($marker); ?>" name="RETINA_text_view" id="RETINA_text_view"></span>
@@ -2797,7 +2795,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                 <td>
                                     <span id="ACTNORMAL_CHECK" name="ACTNORMAL_CHECK">
                                     <label for="ACT" class="input-helper input-helper--checkbox"><?php echo xlt('Ortho{{orthophoric}}'); ?></label>
-                                    <input type="checkbox" name="ACT" id="ACT" <?php if ($ACT == 'on' or $ACT == '1') {
+                                    <input type="checkbox" name="ACT" id="ACT" <?php if ($ACT == 'on' || $ACT == '1') {
                                         echo "checked='checked'";
                                                                                } ?> /></span>
                                 </td>
@@ -3555,7 +3553,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                   echo '<li>' . xlt('Manually type into the New DX box above.') . '<br />' . xlt('The *Tab* key creates each entry.') . '</li>';
                                   echo '<span class"bold" style="margin-left:-5px;">' . xlt('or utilize the Impression/Plan Builder') . '</span>';
                                   echo '<li>' . xlt('Drag a DX over by its handle') . ':&nbsp;<i class="fas fa-arrows-alt"></i></li>';
-                                  echo '<li>' . xlt('Double click on a DX\'s handle') . ':&nbsp;<i class="fas fa-arrows-alt"></i></li>';
+                                  echo '<li>' . xlt("Double click on a DX's handle") . ':&nbsp;<i class="fas fa-arrows-alt"></i></li>';
                                   echo '<li>' . xlt('Multi-select desired DX(s) and click the') . ' <i class="fa fa-reply"></i> ' . xlt('icon') . '</li>';
                                   echo '</ol>';
                                 ?>
@@ -3632,7 +3630,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                   <ol id="build_DX_list" name="build_DX_list">
                                         <?php
                                           $i = 0;
-                                        if ($total_DX == '1') {
+                                        if ($total_DX === '1') {
                                             foreach ($PMSFH[0]['POH'] as $k => $v) {
                                                 $insert_code = '';
                                                 if ($v['diagnosis'] > '') {
@@ -3802,7 +3800,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                               <td style="padding-top:10px;" colspan="3">
                                                   <b><u><?php echo xlt('Tests Performed'); ?>:</u></b>&nbsp;
                                                   <a href="<?php echo $GLOBALS['webroot']; ?>/interface/super/edit_list.php?list_id=Eye_todo_done_<?php echo attr($provider_id); ?>" target="RTop"
-                                                     title="<?php echo xla('Click here to Edit this Doctor\'s Plan options') . ". \n" . xlt('Only entries with a Code are billable') . ". "; ?>"
+                                                     title="<?php echo xla("Click here to Edit this Doctor's Plan options") . ". \n" . xlt('Only entries with a Code are billable') . ". "; ?>"
                                                      name="provider_testing_codes" style="color:black;font-weight:600;"><i class="fa fa-pencil-alt fa-fw"></i> </a>
                                               </td>
                                           </tr>
@@ -3851,9 +3849,9 @@ if ($refresh and $refresh != 'fullscreen') {
                                                                    *  echo "<i class='far fa-file-word'></i>";
                                                                    */
                                                                 echo '<td class="' . $class1 . ' ">';
-                                                                echo "<input type='checkbox' class='TESTS indent20' id='TEST_$counter' data-codetext='" . attr($codetext) . "' data-title='" . attr($codetext) . "' name='TEST[]' $checked value='" . attr($row['codes']) . "'> ";
+                                                                echo sprintf("<input type='checkbox' class='TESTS indent20' id='TEST_%s' data-codetext='", $counter) . attr($codetext) . "' data-title='" . attr($codetext) . sprintf("' name='TEST[]' %s value='", $checked) . attr($row['codes']) . "'> ";
                                                                 $label = text(substr($row['title'], 0, 30));
-                                                                echo "<label for='TEST_$counter' class='input-helper input-helper--checkbox'>";
+                                                                echo sprintf("<label for='TEST_%s' class='input-helper input-helper--checkbox'>", $counter);
                                                                 echo $label . "</label>";
                                                                 echo '<div id="TEST_' . $counter . '_justmods" class="' . $class2 . ' indent20" style="margin-bottom: 5px;">' . xlt('Modifier(s)') . ': <input type="text" style="width:100px;" id="TEST_' . $counter . '_modifier" value="' . ($row['modifier'] ?? '') . '">';
                                                                 /*
@@ -3869,8 +3867,8 @@ if ($refresh and $refresh != 'fullscreen') {
                                       </div>
                                      ';
 
-                                                                $count++;
-                                                                $counter++;
+                                                                ++$count;
+                                                                ++$counter;
                                                                 if ($count == "3") {
                                                                     echo '</td><tr>';
                                                                     $count = '0';
@@ -3941,7 +3939,7 @@ if ($refresh and $refresh != 'fullscreen') {
                                             ";
                                         }
                                         $SQL_INSERT .= "('Eye_todo_done_" . add_escape_custom($provider_id) . "','" . add_escape_custom($TODO['option_id']) . "','" . add_escape_custom($TODO['title']) . "','" . add_escape_custom($TODO['seq']) . "','" . add_escape_custom($TODO['mapping']) . "','" . add_escape_custom($TODO['notes']) . "','" . add_escape_custom($TODO['codes']) . "','" . add_escape_custom($TODO['activity']) . "','" . add_escape_custom($TODO['subtype']) . "')";
-                                        $number_rows++;
+                                        ++$number_rows;
                                     }
                                     sqlStatement($SQL_INSERT . ";");
                                 }
@@ -3949,7 +3947,7 @@ if ($refresh and $refresh != 'fullscreen') {
                               <dt class="borderShadow">
                                   <span><?php echo xlt('Next Visit Orders'); ?></span>
                                   <a href="<?php echo $GLOBALS['webroot']; ?>/interface/super/edit_list.php?list_id=Eye_todo_done_<?php echo attr($provider_id); ?>" target="RTop"
-                                     title="<?php echo xla('Click here to Edit this Doctor\'s Plan options'); ?>"
+                                     title="<?php echo xla("Click here to Edit this Doctor's Plan options"); ?>"
                                      name="provider_todo" style="color:black;font-weight:600;"><i class="fa fa-pencil-alt fa-fw"></i> </a>
                               </dt>
                               <dd>
@@ -3981,15 +3979,15 @@ if ($refresh and $refresh != 'fullscreen') {
                                                     $title = $row['title'];
                                                     if ($here = in_array_r($title, ($PLAN_arr ?? ''))) {
                                                         $checked = "checked='yes'";
-                                                        $found++;
+                                                        ++$found;
                                                     }
                                                     // <!-- <i title="Build your plan." class="fa fa-mail-forward fa-flip-horizontal" id="make_blank_PLAN" name="make_blank_PLAN"></i>-->
-                                                    echo "<input type='checkbox' id='PLAN$counter' name='PLAN[]' $checked value='" . attr($row['title']) . "'> ";
+                                                    echo sprintf("<input type='checkbox' id='PLAN%d' name='PLAN[]' %s value='", $counter, $checked) . attr($row['title']) . "'> ";
                                                     $label = text(substr($row['title'], 0, 30));
-                                                    echo "<label for='PLAN$counter' class='input-helper input-helper--checkbox' title='" . attr($row['notes']) . "'>";
+                                                    echo sprintf("<label for='PLAN%d' class='input-helper input-helper--checkbox' title='", $counter) . attr($row['notes']) . "'>";
                                                     echo $label . "</label><br />";
-                                                    $count++;
-                                                    $counter++;
+                                                    ++$count;
+                                                    ++$counter;
                                                     if ($count == "3") {
                                                         echo '</td><tr><td style="padding-right:20px;padding-left:20px;">';
                                                         $count = '0';
@@ -4037,13 +4035,13 @@ if ($refresh and $refresh != 'fullscreen') {
                                                       while ($urow = sqlFetchArray($ures)) {
                                                           $uname = text($urow['lname'] . ' ' . $urow['fname']);
                                                           $optionId = attr($urow['id']);
-                                                          echo "<option value='$optionId'";
+                                                          echo sprintf("<option value='%s'", $optionId);
                                                           if ($urow['id'] == $pat_data['providerID']) {
                                                               echo " selected";
                                                               $got_selected = true;
                                                           }
 
-                                                          echo ">$uname</option>";
+                                                          echo sprintf('>%s</option>', $uname);
                                                       }
 
                                                       if (!$got_selected && ($currvalue ?? null)) {
@@ -4067,13 +4065,13 @@ if ($refresh and $refresh != 'fullscreen') {
                                                   while ($urow = sqlFetchArray($ures)) {
                                                       $uname = text($urow['lname'] . ' ' . $urow['fname']);
                                                       $optionId = attr($urow['id']);
-                                                      echo "<option value='$optionId'";
+                                                      echo sprintf("<option value='%s'", $optionId);
                                                       if ($urow['id'] == $pat_data['ref_providerID']) {
                                                           echo " selected";
                                                           $got_selected = true;
                                                       }
 
-                                                      echo ">$uname</option>";
+                                                      echo sprintf('>%s</option>', $uname);
                                                   }
 
                                                   if (!$got_selected && ($currvalue ?? '')) {
@@ -4347,7 +4345,7 @@ if ($refresh and $refresh != 'fullscreen') {
             }
             store_IMPPLAN(obj.IMPPLAN_items,'1');
         }
-        <?php require_once("$srcdir/restoreSession.php");
+        <?php require_once($srcdir . '/restoreSession.php');
         ?>
         function dopclick(id) {
             <?php if (($thisauth ?? '') != 'write') : ?>

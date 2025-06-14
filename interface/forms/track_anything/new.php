@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form to track any clinical parameter.
  *
@@ -13,8 +15,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -126,19 +128,19 @@ if ($formid) {
     #echo $thedate;
     //check if whole input is NULL
     $all_are_null = 0;
-    for ($i = 0; $i < $length; $i++) {
+    for ($i = 0; $i < $length; ++$i) {
         #echo "beep";
         $thisid = $mylist[$i];
         $thisvalue = $_POST[$thisid];
         if ($thisvalue != null && $thisvalue != '') {
-            $all_are_null++;
+            ++$all_are_null;
         }
     }
 
     // if all of the input is NULL, we do nothing
     // if at least one entrie is NOT NULL, we save all into db
     if ($all_are_null > 0) {
-        for ($i = 0; $i < $length; $i++) {
+        for ($i = 0; $i < $length; ++$i) {
             $thisid = $mylist[$i];
             $thisvalue = $_POST[$thisid];
 
@@ -162,10 +164,10 @@ if ($formid) {
 
     $how_many = count($old_time ?? []);
     // do this for each data row
-    for ($x = 0; $x <= $how_many; $x++) {
+    for ($x = 0; $x <= $how_many; ++$x) {
         // how many columns do we have
         $how_many_cols = count($old_value[$x] ?? []);
-        for ($y = 0; $y < $how_many_cols; $y++) {
+        for ($y = 0; $y < $how_many_cols; ++$y) {
                 // here goes the UPDATE sql-spruch
                 $insertspell  = "UPDATE form_track_anything_results ";
                 $insertspell .= "SET track_timestamp = ? , result = ? ";
@@ -227,7 +229,7 @@ if ($formid) {
     $main_counter = 0; // this counts 'number of rows'  of old entries
 while ($myrow = sqlFetchArray($query)) {
     $thistime = $myrow['track_timestamp'];
-    $shownameflag++;
+    ++$shownameflag;
 
     $spell  = "SELECT form_track_anything_results.id AS result_id, form_track_anything_results.itemid, form_track_anything_results.result, form_track_anything_type.name AS the_name ";
     $spell .= "FROM form_track_anything_results ";
@@ -247,7 +249,7 @@ while ($myrow = sqlFetchArray($query)) {
     }
 
     echo "<tr><td bgcolor=#eeeeec>";
-    $main_counter++; // next row
+    ++$main_counter; // next row
     echo "<input type='text' class='datetimepicker' size='16' name='old_time[" . attr($main_counter) . "]' value='" . attr($thistime) . "'></td>";
     $query2  = sqlStatement($spell, array($formid ,$thistime));
 
@@ -256,7 +258,7 @@ while ($myrow = sqlFetchArray($query)) {
         echo "<td>";
         echo "<input type='hidden' name='old_id[" . attr($main_counter) . "][" . attr($counter) . "]' value='" . attr($myrow2['result_id']) . "'>";
         echo "<input type='text' size='12' name='old_value[" . attr($main_counter) . "][" . attr($counter) . "]' value='" . attr($myrow2['result']) . "'></td>";
-        $counter++; // next cloumn
+        ++$counter; // next cloumn
     }
 
     echo "</tr>";

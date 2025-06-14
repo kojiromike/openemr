@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Contains all of the Weno global settings and configuration
  *
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2024 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule;
 
 use OpenEMR\Common\Acl\AclMain;
@@ -38,32 +39,19 @@ class Bootstrap
     /**
      * @var EventDispatcherInterface The object responsible for sending and subscribing to events through the OpenEMR system
      */
-    private $eventDispatcher;
-
-    private $moduleDirectoryName;
+    private \Symfony\Component\EventDispatcher\EventDispatcher $eventDispatcher;
 
     /**
      * The OpenEMR Twig Environment
      *
      * @var Environment
      */
-    private $twig;
+    private $environment;
 
-    /**
-     * @var WenoGlobalConfig
-     */
-    private $globalsConfig;
-
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Modules\WenoModule\WenoGlobalConfig $wenoGlobalConfig;
 
     private string $modulePath;
 
-    /**
-     * @var SelectedPatientPharmacy
-     */
     private SelectedPatientPharmacy $selectedPatientPharmacy;
     public string $installPath;
     /**
@@ -72,28 +60,23 @@ class Bootstrap
     public mixed $isWenoUser;
     public bool $isAuthorized;
 
-    public function __construct(EventDispatcher $dispatcher)
+    public function __construct(EventDispatcher $eventDispatcher)
     {
         $this->installPath = $GLOBALS['web_root'] . "/interface/modules/custom_modules/oe-module-weno";
-        $this->eventDispatcher = $dispatcher;
-        $this->globalsConfig = new WenoGlobalConfig();
-        $this->moduleDirectoryName = basename(dirname(__DIR__));
+        $this->eventDispatcher = $eventDispatcher;
+        $this->wenoGlobalConfig = new WenoGlobalConfig();
         $this->modulePath = dirname(__DIR__);
-        $this->logger = new SystemLogger();
         $this->selectedPatientPharmacy = new SelectedPatientPharmacy();
         $this->isWenoUser = !empty($this->isWenoUser());
         $this->isAuthorized = AclMain::aclCheckCore('patients', 'rx');
     }
 
-    /**
-     * @return void
-     */
     public function subscribeToEvents(): void
     {
-        $modService = new ModuleService();
+        $moduleService = new ModuleService();
         // let Admin configure Weno if module is not configured.
         $this->addGlobalSettings();
-        if (!$modService->isWenoConfigured()) {
+        if (!$moduleService->isWenoConfigured()) {
             return;
         }
         $this->registerMenuItems();
@@ -102,37 +85,30 @@ class Bootstrap
         $this->demographicsDisplaySelectedEvents();
         $this->patientSaveEvents();
         $this->patientUpdateEvents();
-        $modService::setModuleState('oe-module-weno', '1', '0');
+        $moduleService::setModuleState('oe-module-weno', '1', '0');
     }
 
-    /**
-     * @return \Twig\Environment
-     */
     public function getTwig(): Environment
     {
-        return $this->twig;
+        return $this->environment;
     }
 
-    /**
-     * @param GlobalsInitializedEvent $event
-     * @return void
-     */
-    public function addGlobalWenoSettings(GlobalsInitializedEvent $event): void
+    public function addGlobalWenoSettings(GlobalsInitializedEvent $globalsInitializedEvent): void
     {
         if (!$this->isWenoUser) {
             return;
         }
-        $settings = $this->globalsConfig->getGlobalSettingSectionConfiguration();
+        $settings = $this->wenoGlobalConfig->getGlobalSettingSectionConfiguration();
 
         $userMode = (array_key_exists('mode', $_GET) && $_GET['mode'] == 'user');
 
-        $service = $event->getGlobalsService();
-        $service->addUserSpecificTab(self::MODULE_MENU_NAME);
+        $globalsService = $globalsInitializedEvent->getGlobalsService();
+        $globalsService->addUserSpecificTab(self::MODULE_MENU_NAME);
 
         foreach ($settings as $key => $config) {
             $value = $GLOBALS[$key] ?? $config['default'];
             if ($userMode) {
-                $service->appendToSection(
+                $globalsService->appendToSection(
                     self::MODULE_MENU_NAME,
                     $key,
                     new GlobalSetting(
@@ -147,7 +123,7 @@ class Bootstrap
                 if ($config['user_setting']) {
                     continue;
                 }
-                $service->appendToSection(
+                $globalsService->appendToSection(
                     self::MODULE_MENU_NAME,
                     $key,
                     new GlobalSetting(
@@ -162,19 +138,12 @@ class Bootstrap
         }
     }
 
-    /**
-     * @return void
-     */
     public function registerDemographicsEvents(): void
     {
         $this->eventDispatcher->addListener(pRenderEvent::EVENT_SECTION_LIST_RENDER_BEFORE, [$this, 'renderWenoSection']);
     }
 
-    /**
-     * @param pRenderEvent $event
-     * @return void
-     */
-    public function renderWenoSection(pRenderEvent $event): void
+    public function renderWenoSection(pRenderEvent $pRenderEvent): void
     {
         if (!$this->isWenoUser || !$this->isAuthorized) {
             return;
@@ -182,7 +151,7 @@ class Bootstrap
 
         $path = __DIR__;
         $path = str_replace("src", "templates", $path);
-        $pid = $event->getPid();
+        $pid = $pRenderEvent->getPid();
         ?>
         <section class="card mb-2">
             <?php
@@ -217,29 +186,19 @@ class Bootstrap
         <?php
     }
 
-    /**
-     * @return void
-     */
     public function addGlobalSettings(): void
     {
         $this->eventDispatcher->addListener(GlobalsInitializedEvent::EVENT_HANDLE, [$this, 'addGlobalWenoSettings']);
     }
 
-    /**
-     * @return void
-     */
     public function registerMenuItems(): void
     {
         $this->eventDispatcher->addListener(MenuEvent::MENU_UPDATE, [$this, 'addCustomMenuItem']);
     }
 
-    /**
-     * @param MenuEvent $event
-     * @return MenuEvent
-     */
-    public function addCustomMenuItem(MenuEvent $event): MenuEvent
+    public function addCustomMenuItem(MenuEvent $menuEvent): MenuEvent
     {
-        $menu = $event->getMenu();
+        $menu = $menuEvent->getMenu();
         // Top level menu
         $topMenu = new \stdClass();
         $topMenu->requirement = 0;
@@ -316,22 +275,16 @@ class Bootstrap
             }
         }
 
-        $event->setMenu($menu);
+        $menuEvent->setMenu($menu);
 
-        return $event;
+        return $menuEvent;
     }
 
-    /**
-     * @return void
-     */
     public function demographicsSelectorEvents(): void
     {
         $this->eventDispatcher->addListener(RenderPharmacySectionEvent::RENDER_AFTER_PHARMACY_SECTION, [$this, 'renderWenoPharmacySelector']);
     }
 
-    /**
-     * @return void
-     */
     public function renderWenoPharmacySelector(): void
     {
         if (!$this->isWenoUser) {
@@ -341,56 +294,36 @@ class Bootstrap
         include_once($this->modulePath) . "/templates/pharmacy_list_form.php";
     }
 
-    /**
-     * @return void
-     */
     public function demographicsDisplaySelectedEvents(): void
     {
         $this->eventDispatcher->addListener(RenderPharmacySectionEvent::RENDER_AFTER_SELECTED_PHARMACY_SECTION, [$this, 'renderSelectedWenoPharmacies']);
     }
 
-    /**
-     * @return void
-     */
     public function renderSelectedWenoPharmacies(): void
     {
         echo "<br>";
         include_once($this->modulePath) . "/templates/pharmacy_list_display.php";
     }
 
-    /**
-     * @return void
-     */
     public function patientSaveEvents(): void
     {
         $this->eventDispatcher->addListener(PatientBeforeCreatedAuxEvent::EVENT_HANDLE, [$this, 'persistPatientWenoPharmacies']);
     }
 
-    /**
-     * @param PatientBeforeCreatedAuxEvent $event
-     * @return void
-     */
-    public function persistPatientWenoPharmacies(PatientBeforeCreatedAuxEvent $event): void
+    public function persistPatientWenoPharmacies(PatientBeforeCreatedAuxEvent $patientBeforeCreatedAuxEvent): void
     {
-        $patientData = $event->getPatientData();
+        $patientData = $patientBeforeCreatedAuxEvent->getPatientData();
         $this->selectedPatientPharmacy->prepSelectedPharmacy($patientData);
     }
 
-    /**
-     * @return void
-     */
     public function patientUpdateEvents(): void
     {
         $this->eventDispatcher->addListener(PatientUpdatedEventAux::EVENT_HANDLE, [$this, 'updatePatientWenoPharmacies']);
     }
 
-    /**
-     * @param PatientUpdatedEventAux $event
-     * @return void
-     */
-    public function updatePatientWenoPharmacies(PatientUpdatedEventAux $event): void
+    public function updatePatientWenoPharmacies(PatientUpdatedEventAux $patientUpdatedEventAux): void
     {
-        $updatedPatientData = $event->getUpdatedPatientData();
+        $updatedPatientData = $patientUpdatedEventAux->getUpdatedPatientData();
         $this->selectedPatientPharmacy->prepForUpdatePharmacy($updatedPatientData);
     }
 
@@ -415,10 +348,10 @@ class Bootstrap
             $sqlUpgradeService->setRenderOutputToScreen(false);
             $sqlUpgradeService->upgradeFromSqlFile($fileName, $dir);
             return true;
-        } catch (SqlQueryException $exception) {
+        } catch (SqlQueryException $sqlQueryException) {
             (new SystemLogger())->errorLogCaller(
-                "Error: " . $exception->getMessage(),
-                ['statement' => $exception->getSqlStatement(), 'trace' => $exception->getTraceAsString()]
+                "Error: " . $sqlQueryException->getMessage(),
+                ['statement' => $sqlQueryException->getSqlStatement(), 'trace' => $sqlQueryException->getTraceAsString()]
             );
             return false;
         }

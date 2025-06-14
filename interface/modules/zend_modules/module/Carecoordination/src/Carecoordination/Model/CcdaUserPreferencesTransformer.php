@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CcdaUserPreferencesTransformer transforms a ccda xml document using the user preferences provided.  It will truncate
  * and sort the ccda xml according to the preferences provided.
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 class CcdaUserPreferencesTransformer
@@ -28,7 +29,7 @@ class CcdaUserPreferencesTransformer
     /**
      * @var int the maximum number of clinical section contents to display in the ccda
      */
-    private $maxSections;
+    private int $maxSections;
 
     /**
      * CcdaUserPreferencesTransformer constructor.
@@ -53,85 +54,69 @@ class CcdaUserPreferencesTransformer
         */
     }
 
-    public function transform($content)
+    public function transform($content): string|false
     {
-        $ccdaDoc = new \DOMDocument();
-        $ccdaDoc->loadXML($content);
+        $domDocument = new \DOMDocument();
+        $domDocument->loadXML($content);
 
-        $xpath = new \DOMXPath($ccdaDoc);
-        $xpath->registerNamespace('n1', "urn:hl7-org:v3");
+        $domxPath = new \DOMXPath($domDocument);
+        $domxPath->registerNamespace('n1', "urn:hl7-org:v3");
+
         $maxChildren = $this->maxSections;
 
         // first we do our sort order here
-        $sortedSections = $this->getDocumentSortPreferencesForCcda($xpath, $this->sortPreferences);
+        $sortedSections = $this->getDocumentSortPreferencesForCcda($domxPath, $this->sortPreferences);
 
         // reverse sort as we are going to be prepending these
         $sortedSections = array_reverse($sortedSections);
 
         // first off we need to grab our structured bodies here... should only be one
         $query = "/n1:ClinicalDocument/n1:component/n1:structuredBody";
-        $structuredBodies = $xpath->query($query);
+        $structuredBodies = $domxPath->query($query);
 
-        foreach ($structuredBodies as $body) {
-            if (!empty($sortedSections)) {
-                foreach ($sortedSections as $section) {
-                    $foundSectionNodes = $xpath->query("n1:component[n1:section/n1:templateId/@root = '" . $section . "']", $body);
-                    if ($foundSectionNodes !== false && $foundSectionNodes->length > 0) {
-                        foreach ($foundSectionNodes as $node) {
-                            // if our found node is already the first child we will just leave it alone and skip over.
-                            if ($node !== $body->firstChild) {
-                                // if firstChild is empty it will just append
-                                $body->insertBefore($node, $body->firstChild);
-                            }
+        foreach ($structuredBodies as $structuredBody) {
+            foreach ($sortedSections as $sortedSection) {
+                $foundSectionNodes = $domxPath->query("n1:component[n1:section/n1:templateId/@root = '" . $sortedSection . "']", $structuredBody);
+                if ($foundSectionNodes !== false && $foundSectionNodes->length > 0) {
+                    foreach ($foundSectionNodes as $foundSectionNode) {
+                        // if our found node is already the first child we will just leave it alone and skip over.
+                        if ($foundSectionNode !== $structuredBody->firstChild) {
+                            // if firstChild is empty it will just append
+                            $structuredBody->insertBefore($foundSectionNode, $structuredBody->firstChild);
                         }
                     }
                 }
             }
+
             // anything 0 or less is treated as no limit.
-            if ($maxChildren > 0) {
-                // now that we've sorted everything, start at the end of our node list and just truncate our
-                // component sections until we get to our max number of nodes
-                if ($body->childElementCount && $body->childElementCount > $maxChildren) {
-                    for ($i = $body->childElementCount; $i > $maxChildren; --$i) {
-                        $body->removeChild($body->lastElementChild);
-                    }
+            // now that we've sorted everything, start at the end of our node list and just truncate our
+            // component sections until we get to our max number of nodes
+            if ($maxChildren > 0 && ($structuredBody->childElementCount && $structuredBody->childElementCount > $maxChildren)) {
+                for ($i = $structuredBody->childElementCount; $i > $maxChildren; --$i) {
+                    $structuredBody->removeChild($structuredBody->lastElementChild);
                 }
             }
         }
 
-        return $ccdaDoc->saveXML();
+        return $domDocument->saveXML();
     }
 
-    /**
-     * @return array
-     */
     public function getSortPreferences(): array
     {
         return $this->sortPreferences;
     }
 
-    /**
-     * @param array $sortPreferences
-     * @return CcdaUserPreferencesTransformer
-     */
     public function setSortPreferences(array $sortPreferences): CcdaUserPreferencesTransformer
     {
         $this->sortPreferences = $sortPreferences;
         return $this;
     }
 
-    /**
-     * @return int
-     */
     public function getMaxSections(): int
     {
         return $this->maxSections;
     }
 
-    /**
-     * @param int $maxSections
-     * @return CcdaUserPreferencesTransformer
-     */
     public function setMaxSections(int $maxSections): CcdaUserPreferencesTransformer
     {
         $this->maxSections = $maxSections;
@@ -142,19 +127,19 @@ class CcdaUserPreferencesTransformer
      * given an array of user preferences per document type we search through the given document and determine from
      * the templateId what type of document we are dealing with.  We can then grab our sorted section array values
      * that have been set by the user.
-     * @param \DOMXPath $xpath
      * @param array $sortedSections
      */
-    private function getDocumentSortPreferencesForCcda(&$xpath, $sortedSections)
+    private function getDocumentSortPreferencesForCcda(\DOMXPath &$domxPath, $sortedSections)
     {
         $baseQuery = "/n1:ClinicalDocument/n1:templateId";
         foreach ($sortedSections as $docTemplateOid => $sections) {
             $query = $baseQuery . "[@root='" . $docTemplateOid . "']";
-            $templateNodes = $xpath->query($query);
+            $templateNodes = $domxPath->query($query);
             if ($templateNodes !== false && $templateNodes->length > 0) {
                 return $sections;
             }
         }
+
         // if we couldn't find a single document then we will return our default sections if we have any
         if (!empty($this->defaultSortPreferences)) {
             return $this->defaultSortPreferences;

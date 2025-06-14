@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Command-line / Unattended document import utility.
  *
@@ -47,17 +49,18 @@ $arg = array(
 );
 
 foreach ($arg as $key => $def) {
-    if ($key == "path") {
+    if ($key === "path") {
         // do not let setting of path via GET for security reasons
         continue;
     }
+
     if (isset($_GET[$key])) {
         $arg[$key] = $_GET[$key];
     }
 }
 
 require_once(dirname(__FILE__, 2) . "/interface/globals.php");
-require_once("$srcdir/documents.php");
+require_once($srcdir . '/documents.php');
 
 if ($arg['category'] != 1) {
     $rec_cat = sqlQuery('SELECT id FROM categories WHERE name=?', array(urldecode($arg['category'])));
@@ -65,6 +68,7 @@ if ($arg['category'] != 1) {
         $arg['category'] = $rec_cat['id'];
     }
 }
+
 // Defined here as fallback
 $ext2mime = array(
     "pdf" => "application/pdf",
@@ -120,6 +124,7 @@ foreach ($docs as $doc) {
         if (isset($rec_doc['id'])) {
             continue;
         }
+
         // mdsupport - This should be a standard method with DocStore variations.  Until then,
         // Create a document record for file
         $objDoc = new Document();
@@ -137,6 +142,7 @@ foreach ($docs as $doc) {
         if (is_numeric($objDoc->get_id())) {
             sqlStatement("INSERT INTO categories_to_documents(category_id, document_id) VALUES(?,?)", array($arg['category'], $objDoc->get_id()));
         }
+
         printf('%s - %s%s', text($doc_pathname), (is_numeric($objDoc->get_id()) ? text($objDoc->get_url()) : xlt('Documents setup error')), "\n");
     } else {
         // Too many parameters for the function make the following setup necessary for readability.
@@ -153,7 +159,7 @@ foreach ($docs as $doc) {
             'path_depth' => '1',
             'skip_acl_check' => true
         );
-        $new_doc = call_user_func_array('addNewDocument', $doc_params);
+        $new_doc = addNewDocument(...$doc_params);
         printf('%s - %s%s', text($doc_pathname), (isset($new_doc) ? text($new_doc->get_url()) : xlt('Documents setup error')), "\n");
         if (!$new_doc) {
             die();
@@ -162,6 +168,7 @@ foreach ($docs as $doc) {
             die();
         }
     }
+
     if (--$arg['limit'] < 1) {
         break;
     }

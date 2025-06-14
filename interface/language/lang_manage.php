@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * lang_manage.php script
  *
@@ -75,7 +77,7 @@ if (!empty($_POST['check']) || !empty($_POST['synchronize'])) {
         }
 
         echo xlt('Following is a new custom language:') . " " . text($var) . "<br>";
-        if (!$checkOnly) {
+        if ($checkOnly === 0) {
             // add the new language (first collect the language code)
             $sql = "SELECT lang_code FROM lang_custom WHERE constant_name='' AND lang_description " . $case_sensitive_collation . " =? LIMIT 1";
             $res = SqlStatement($sql, array($var));
@@ -106,17 +108,17 @@ if (!empty($_POST['check']) || !empty($_POST['synchronize'])) {
     }
 
     $custom_constants = array_diff(array_unique($row_custom), array_unique($row_main));
-    foreach ($custom_constants as $var) {
-        if ($var == '') {
+    foreach ($custom_constants as $custom_constant) {
+        if ($custom_constant == '') {
             continue;
         }
 
-        echo xlt('Following is a new custom constant:') . " " . text($var) . "<br>";
-        if (!$checkOnly) {
+        echo xlt('Following is a new custom constant:') . " " . text($custom_constant) . "<br>";
+        if ($checkOnly === 0) {
             // add the new constant
             $sql = "INSERT INTO lang_constants SET constant_name=?";
-            SqlStatement($sql, array($var));
-            echo xlt('Synchronized new custom constant:') . " " . text($var) . "<br><br>";
+            SqlStatement($sql, array($custom_constant));
+            echo xlt('Synchronized new custom constant:') . " " . text($custom_constant) . "<br><br>";
         }
 
         $difference = 1;
@@ -159,7 +161,7 @@ if (!empty($_POST['check']) || !empty($_POST['synchronize'])) {
                 " " . text($row['lang_description']) .
                 " " . text($row['constant_name']) .
                 " " . text($row['definition']) . "<br>";
-                if (!$checkOnly) {
+                if ($checkOnly === 0) {
                     //add new definition
                     $sql = "UPDATE `lang_definitions` SET `definition`=? WHERE `def_id`=? LIMIT 1";
                     SqlStatement($sql, array($row['definition'], $def_id));
@@ -176,7 +178,7 @@ if (!empty($_POST['check']) || !empty($_POST['synchronize'])) {
             " " . text($row['lang_description']) .
             " " . text($row['constant_name']) .
             " " . text($row['definition']) . "<br>";
-            if (!$checkOnly) {
+            if ($checkOnly === 0) {
                 //add new definition
                 $sql = "INSERT INTO lang_definitions (cons_id,lang_id,definition) VALUES (?,?,?)";
                 SqlStatement($sql, array($constant_id, $language_id, $row['definition']));
@@ -190,7 +192,7 @@ if (!empty($_POST['check']) || !empty($_POST['synchronize'])) {
         }
     }
 
-    if (!$difference) {
+    if ($difference === 0) {
         echo xlt('The translation tables are synchronized.');
     }
 }

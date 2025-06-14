@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Questionnaire Assessment Encounters Template
  *
@@ -32,7 +34,7 @@ if ($isPortal) {
 $patientPortalOther = CoreFormToPortalUtility::isPatientPortalOther($_GET);
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/user.inc.php");
+require_once($srcdir . '/user.inc.php');
 
 $service = new QuestionnaireService();
 $responseService = new QuestionnaireResponseService();
@@ -52,7 +54,7 @@ $isAdmin = true;
 $is_authorized = true;
 if (!AclMain::aclCheckForm($_GET["formname"])) {
     $formLabel = xl_form_title(getRegistryEntryByDirectory($_GET["formname"], 'name')['name'] ?? '');
-    $formLabel = (!empty($formLabel)) ? $formLabel : $_GET["formname"];
+    $formLabel = (empty($formLabel)) ? $_GET["formname"] : $formLabel;
     echo (new TwigContainer(null, $GLOBALS['kernel']))->getTwig()->render('core/unauthorized.html.twig', ['pageTitle' => $formLabel]);
     exit;
 }
@@ -65,7 +67,7 @@ try {
 
         // Prevent grabbing wrong form due to currently selected pid and not portal pid!
         // This is Dashboard so ...
-        if (($_REQUEST["formOrigin"] ?? null) == 1 && empty($isPortal)) {
+        if (($_REQUEST["formOrigin"] ?? null) == 1 && $isPortal === false) {
             $form = sqlQuery("SELECT * FROM `form_questionnaire_assessments` Where id=? And activity = 1 Limit 1", [$formid]);
         } else {
             $form = formFetch("form_questionnaire_assessments", $formid);
@@ -76,7 +78,7 @@ try {
         CoreFormToPortalUtility::confirmFormBootstrapPatient($isPortal, $formid, 'questionnaire_assessments', $_SESSION['pid']);
         $qr = $responseService->fetchQuestionnaireResponse(null, $form["response_id"]);
         // if empty form will revert to the backup response stored with form.
-        if (!empty($qr)) {
+        if ($qr !== []) {
             // This is primary response.
             $form['questionnaire_response'] = $qr['questionnaire_response'];
             $form['response_id'] = $qr['response_id'];
@@ -104,7 +106,7 @@ try {
         $mode = 'new_form';
         $form_name = $q['name'] ?: '';
         if (empty($q_json) && empty($lform)) {
-            throw (new Exception(xl("Unable to find questionnaire form" . ' ' . $questionnaire_form)));
+            throw (new Exception(xl('Unable to find questionnaire form ' . $questionnaire_form)));
         }
     }
 // This is for newly selected questionnaire from repository dropdown.
@@ -121,8 +123,8 @@ try {
     if ($questionnaire_form == 'New Questionnaire') {
         $q_list = $service->getQuestionnaireList(true);
     }
-} catch (Exception $e) {
-    $msg = "<p style='color: red; font-size: 1.25rem;'>" . xlt("Can not continue") . ": " . text($e->getMessage()) . "</p>";
+} catch (Exception $exception) {
+    $msg = "<p style='color: red; font-size: 1.25rem;'>" . xlt("Can not continue") . ": " . text($exception->getMessage()) . "</p>";
     die($msg);
 }
 /* where to put the LOINC statement , and the statement itself */
@@ -142,25 +144,21 @@ if ($GLOBALS['questionnaire_display_LOINCnote'] ?? 0) {
             $top_note = false;
             break;
         case '2':
-            $top_note = $bottom_note = true;
+            $top_note = true;
+            $bottom_note = true;
             break;
         case '3':
-            $top_note = $bottom_note = false;
+            $top_note = false;
+            $bottom_note = false;
     }
 }
 
 if ($isPortal) {
-    if (stripos($GLOBALS['portal_css_header'], 'dark') !== false) {
-        $theme = 'dark';
-    } else {
-        $theme = 'light';
-    }
+    $theme = stripos($GLOBALS['portal_css_header'], 'dark') !== false ? 'dark' : 'light';
+} elseif (stripos($GLOBALS['css_header'], 'dark') !== false) {
+    $theme = 'dark';
 } else {
-    if (stripos($GLOBALS['css_header'], 'dark') !== false) {
-        $theme = 'dark';
-    } else {
-        $theme = 'light';
-    }
+    $theme = 'light';
 }
 
 if (($GLOBALS['questionnaire_display_style'] ?? 0) == 3) {
@@ -500,10 +498,10 @@ if ($isModule || $isDashboard || $isPortal) {
                             foreach ($q_list as $item) {
                                 $id = attr($item['id']);
                                 if ($id == $repository_item) {
-                                    echo "<option selected value='$id'>" . text($item['name']) . "</option>";
+                                    echo sprintf("<option selected value='%s'>", $id) . text($item['name']) . "</option>";
                                     continue;
                                 }
-                                echo "<option value='$id'>" . text($item['name']) . "</option>";
+                                echo sprintf("<option value='%s'>", $id) . text($item['name']) . "</option>";
                             }
                         }
                         ?>

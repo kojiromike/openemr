@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Care plan form report.php
  *
@@ -19,18 +21,17 @@ require_once($GLOBALS["srcdir"] . "/options.inc.php");
 
 function care_plan_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
-    $encounter = !empty($encounter) ? $encounter : $_SESSION["encounter"] ?? 0;
-    $pid = !empty($pid) ? $pid : $_SESSION["pid"] ?? 0;
+    $encounter = empty($encounter) ? $_SESSION["encounter"] ?? 0 : $encounter;
+    $pid = empty($pid) ? $_SESSION["pid"] ?? 0 : $pid;
 
     $sql = "SELECT * FROM `form_care_plan` WHERE id=? AND pid = ? AND encounter = ?";
-    $res = sqlStatement($sql, array($id, $pid, $encounter));
+    $recordset = sqlStatement($sql, array($id, $pid, $encounter));
 
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($recordset); ++$iter) {
         $data[$iter] = $row;
     }
 
-    if ($data) { ?>
+    if ($data !== []) { ?>
         <table class="table w-100">
             <thead>
             <tr>
@@ -44,7 +45,7 @@ function care_plan_report($pid, $encounter, $cols, $id): void
             </thead>
             <tbody>
             <?php
-            foreach ($data as $key => $value) { ?>
+            foreach ($data as $value) { ?>
                 <tr>
                     <td class="border p-1"><span class='text'><?php echo text($value['user']); ?></span></td>
                     <td class="border p-1"><span class='text'><?php echo text(getListItemTitle('Plan_of_Care_Type', $value['care_plan_type'])); ?></span></td>

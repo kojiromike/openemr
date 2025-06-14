@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * To be run by cron hourly, sending phone reminders
  *
@@ -43,7 +45,7 @@ if (empty($report_id) && !empty($GLOBALS['pat_rem_clin_nice'])) {
 </head>
 <body class="body_top container">
     <header class="row">
-        <?php require_once("batch_navigation.php");?>
+        <?php require_once(__DIR__ . "/batch_navigation.php");?>
         <h1 class="col-md-12">
             <a href="batchcom.php"><?php echo xlt('Batch Communication Tool'); ?></a>
             <small><?php echo xlt('Patient Reminder Batch Job'); ?></small>

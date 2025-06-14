@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Bootstrap for custom Fax SMS module.
  * Since this was our original example module,
@@ -55,7 +57,7 @@ $classLoader->registerNamespaceIfNotExists('OpenEMR\\Modules\\FaxSMS\\', __DIR__
 $dispatcher = $GLOBALS['kernel']->getEventDispatcher();
 
 // Add menu items
-function oe_module_faxsms_add_menu_item(MenuEvent $event): MenuEvent
+function oe_module_faxsms_add_menu_item(MenuEvent $menuEvent): MenuEvent
 {
     $allowFax = ($GLOBALS['oefax_enable_fax'] ?? null);
     $allowSMS = ($GLOBALS['oefax_enable_sms'] ?? null);
@@ -73,7 +75,7 @@ function oe_module_faxsms_add_menu_item(MenuEvent $event): MenuEvent
         default => xlt("FAX"),
     };
 
-    $menu = $event->getMenu();
+    $menu = $menuEvent->getMenu();
     // Our SMS menu
     $menuItem = new stdClass();
     $menuItem->requirement = 0;
@@ -162,11 +164,11 @@ function oe_module_faxsms_add_menu_item(MenuEvent $event): MenuEvent
     foreach ($menu as $item) {
         if ($item->menu_id == 'modimg') {
             $menu[++$i] = $topMenu;
-            $i++;
+            ++$i;
             continue;
         }
         $menu[$i] = $item;
-        $i++;
+        ++$i;
     }
         // Child of Services top menu.
     foreach ($menu as $item) {
@@ -187,9 +189,9 @@ function oe_module_faxsms_add_menu_item(MenuEvent $event): MenuEvent
             break;
         }
     }
-    $event->setMenu($menu);
+    $menuEvent->setMenu($menu);
 
-    return $event;
+    return $menuEvent;
 }
 
 $eventDispatcher->addListener(MenuEvent::MENU_UPDATE, 'oe_module_faxsms_add_menu_item');

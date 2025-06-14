@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS save.php
  *
@@ -13,9 +15,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("../../../library/api.inc.php");
-require_once("../../../library/forms.inc.php");
-require_once("./content_parser.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
+require_once(__DIR__ . "/../../../library/forms.inc.php");
+require_once(__DIR__ . "/content_parser.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -25,7 +27,7 @@ if ($_GET["mode"] == "delete") {
     }
 
     foreach ($_POST as $key => $val) {
-        if (substr($key, 0, 3) == 'ch_' and $val = 'on') {
+        if (substr($key, 0, 3) === 'ch_' && $val = 'on') {
             $id = substr($key, 3);
             if ($_POST['delete']) {
                 sqlStatement("delete from " . mitigateSqlTableUpperCase("form_CAMOS") . " where id=?", array($id));

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * view.php for the viewing of information from the misc_billing_form
  *
@@ -15,4 +17,4 @@
  * @copyright Copyright (C) 2017 Stephen Waite <stephen.waite@cmsvt.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-require("new.php");
+require(__DIR__ . "/new.php");

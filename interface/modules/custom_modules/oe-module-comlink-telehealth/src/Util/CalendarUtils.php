@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Contains Helper methods for working with the calendar
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2021 Comlink
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Util;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -19,11 +20,9 @@ class CalendarUtils
 {
     /**
      * Checks if the given date is within the two hour safe range for a TeleHealth appointment
-     * @param \DateTime $dateTime
-     * @return bool
      * @throws \Exception
      */
-    public static function isAppointmentDateTimeInSafeRange(\DateTime $dateTime)
+    public static function isAppointmentDateTimeInSafeRange(\DateTime $dateTime): bool
     {
         $beforeTime = (new \DateTime())->sub(new \DateInterval("PT2H"));
         $afterTime = (new \DateTime())->add(new \DateInterval("PT2H"));
@@ -36,7 +35,7 @@ class CalendarUtils
         return CalendarUtils::isUserLastSeenTimeInActiveRange($dateTime);
     }
 
-    public static function isUserLastSeenTimeInActiveRange(\DateTime $dateTime)
+    public static function isUserLastSeenTimeInActiveRange(\DateTime $dateTime): bool
     {
         $currentDateTime = new \DateTime();
         (new SystemLogger())->debug("checking time ", ['user_last_update_time' => $currentDateTime->format("Y-m-d H:i:s"), 'now' => $currentDateTime->format("Y-m-d H:i:s")]);
@@ -54,6 +53,7 @@ class CalendarUtils
         if (!empty($records)) {
             return $records[0];
         }
+
         return null;
     }
 }

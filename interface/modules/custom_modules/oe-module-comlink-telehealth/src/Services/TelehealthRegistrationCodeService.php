@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the generation and retrieval of registration codes for telehealth users and patients.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig;
@@ -20,20 +21,14 @@ use OpenEMR\Services\PatientService;
 
 class TelehealthRegistrationCodeService
 {
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $globalConfig;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig $telehealthGlobalConfig;
 
-    /**
-     * @var TeleHealthUserRepository
-     */
-    private $userRepository;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository $teleHealthUserRepository;
 
-    public function __construct(TelehealthGlobalConfig $config, TeleHealthUserRepository $userRepository)
+    public function __construct(TelehealthGlobalConfig $telehealthGlobalConfig, TeleHealthUserRepository $teleHealthUserRepository)
     {
-        $this->globalConfig = $config;
-        $this->userRepository = $userRepository;
+        $this->telehealthGlobalConfig = $telehealthGlobalConfig;
+        $this->teleHealthUserRepository = $teleHealthUserRepository;
     }
 
     public function getRegistrationCodeForPatient($pid)
@@ -46,21 +41,21 @@ class TelehealthRegistrationCodeService
         if (!empty($user)) {
             $registrationCode = $user->getRegistrationCode();
         }
+
         return $registrationCode;
     }
 
     public function generateRegistrationCode()
     {
         // generate a unique character string that will identify the patient with this installation
-        return RandomGenUtils::createUniqueToken($this->globalConfig->getAppRegistrationCodeLength());
+        return RandomGenUtils::createUniqueToken($this->telehealthGlobalConfig->getAppRegistrationCodeLength());
     }
 
     private function getTelehealthUserForPid($pid)
     {
         $patientService = new PatientService();
         $patient = $patientService->findByPid($pid);
-        $patientUsername = UuidRegistry::uuidToString($patient['uuid']);
-        $user = $this->userRepository->getUser($patientUsername);
-        return $user;
+        $the = UuidRegistry::uuidToString($patient['uuid']);
+        return $this->teleHealthUserRepository->getUser($the);
     }
 }

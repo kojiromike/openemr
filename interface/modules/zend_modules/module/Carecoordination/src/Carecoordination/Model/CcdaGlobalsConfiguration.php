@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CcdaGlobalsConfiguration.php  is responsible for creating and retrieving the Carecoordination globals that are used
  * by the module.
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 use OpenEMR\Services\CodeTypesService;
@@ -26,9 +27,13 @@ class CcdaGlobalsConfiguration
 
     // these are based on the four document types we allow
     const GLOBAL_KEY_CCDA_CCD_SORT_ORDER = 'ccda_ccd_section_sort_order';
+
     const GLOBAL_KEY_CCDA_REFERRAL_SORT_ORDER = 'ccda_referral_section_sort_order';
+
     const GLOBAL_KEY_CCDA_TOC_SORT_ORDER = 'ccda_toc_section_sort_order';
+
     const GLOBAL_KEY_CCDA_CAREPLAN_SORT_ORDER = 'ccda_careplan_section_sort_order';
+
     const GLOBAL_KEY_CCDA_DEFAULT_SORT_ORDER = "ccda_default_section_sort_order";
 
     /**
@@ -36,9 +41,9 @@ class CcdaGlobalsConfiguration
      */
     private $ccdaSections;
 
-    public function setupGlobalSections(GlobalsService $service)
+    public function setupGlobalSections(GlobalsService $globalsService): void
     {
-        $service->addUserSpecificTab(self::GLOBAL_SECTION_NAME);
+        $globalsService->addUserSpecificTab(self::GLOBAL_SECTION_NAME);
         $setting = new GlobalSetting(
             xl('Max Sections To Display'),
             GlobalSetting::DATA_TYPE_NUMBER,
@@ -46,12 +51,11 @@ class CcdaGlobalsConfiguration
             xl('Total number of clinical sections to display when viewing a CCD-A document (0 for unlimited)'),
             true
         );
-        $service->appendToSection(self::GLOBAL_SECTION_NAME, self::GLOBAL_KEY_CCDA_MAX_SECTIONS, $setting);
+        $globalsService->appendToSection(self::GLOBAL_SECTION_NAME, self::GLOBAL_KEY_CCDA_MAX_SECTIONS, $setting);
 
 
         $docTypeSortOrderSections = [
             xl("CCD Document Section Display Order") => self::GLOBAL_KEY_CCDA_CCD_SORT_ORDER
-            ,xl("Referral Document Section Display Order") => self::GLOBAL_KEY_CCDA_REFERRAL_SORT_ORDER
             ,xl("Transition of Care Document Section Display Order") => self::GLOBAL_KEY_CCDA_TOC_SORT_ORDER
             ,xl("Careplan Document Section Display Order") => self::GLOBAL_KEY_CCDA_CAREPLAN_SORT_ORDER
             ,xl("Referral Document Section Display Order") => self::GLOBAL_KEY_CCDA_REFERRAL_SORT_ORDER
@@ -65,7 +69,7 @@ class CcdaGlobalsConfiguration
                 true
             );
             $setting->addFieldOption(GlobalSetting::DATA_TYPE_OPTION_LIST_ID, 'ccda-sections');
-            $service->appendToSection(self::GLOBAL_SECTION_NAME, $globalKey, $setting);
+            $globalsService->appendToSection(self::GLOBAL_SECTION_NAME, $globalKey, $setting);
         }
 
         $setting = new GlobalSetting(
@@ -76,7 +80,8 @@ class CcdaGlobalsConfiguration
             true
         );
         $setting->addFieldOption(GlobalSetting::DATA_TYPE_OPTION_LIST_ID, 'ccda-sections');
-        $service->appendToSection(self::GLOBAL_SECTION_NAME, self::GLOBAL_KEY_CCDA_DEFAULT_SORT_ORDER, $setting);
+
+        $globalsService->appendToSection(self::GLOBAL_SECTION_NAME, self::GLOBAL_KEY_CCDA_DEFAULT_SORT_ORDER, $setting);
     }
 
     public function getMaxSections(): int
@@ -88,7 +93,6 @@ class CcdaGlobalsConfiguration
      * Retrieves an mapped array of sorted section oids where each key in the map is the oid of a document template in CCD-A
      * that we support inside of OpenEMR.  This will retrieve the global settings that users have configured for their
      * carecoordination document types.
-     * @return array
      */
     public function getSectionDisplayOrder(): array
     {
@@ -103,12 +107,10 @@ class CcdaGlobalsConfiguration
 
     /**
      * Retrieves an array of sorted section oids for the given global key we want to retrieve.
-     * @param string $key
-     * @return array
      */
-    private function getSectionDisplayOrderForType($key = self::GLOBAL_KEY_CCDA_CCD_SORT_ORDER)
+    private function getSectionDisplayOrderForType(string $key = self::GLOBAL_KEY_CCDA_CCD_SORT_ORDER): array
     {
-        $codeService = new CodeTypesService();
+        $codeTypesService = new CodeTypesService();
         $sortOrder = array();
         $sortOrderIndexesByKeys = [];
         if (!empty($GLOBALS[$key])) {
@@ -116,7 +118,8 @@ class CcdaGlobalsConfiguration
             $sortOrder = explode(";", $sortString);
             $sortOrderIndexesByKeys = array_combine($sortOrder, array_keys($sortOrder));
         }
-        if (!empty($sortOrder)) {
+
+        if ($sortOrder !== []) {
             // now we are going to grab our keys from the list service
             // should be less than 50 items, better to just use memory than try to hit the db off a search
             $sections = $this->getCcdaSections();
@@ -125,11 +128,12 @@ class CcdaGlobalsConfiguration
                 if (isset($sortOrderIndexesByKeys[$option_id])) {
                     $sortOrderIndex = $sortOrderIndexesByKeys[$option_id];
                     $oid = $section['codes'];
-                    $parsedCode = $codeService->parseCode($oid);
+                    $parsedCode = $codeTypesService->parseCode($oid);
                     $sortOrder[$sortOrderIndex] = $parsedCode['code'];
                 }
             }
         }
+
         return $sortOrder;
     }
 
@@ -139,6 +143,7 @@ class CcdaGlobalsConfiguration
             $listService = new ListService();
             $this->ccdaSections = $listService->getOptionsByListName('ccda-sections');
         }
+
         return $this->ccdaSections;
     }
 }

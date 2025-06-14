@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS ajax_save.php
  *
@@ -13,9 +15,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("../../../library/api.inc.php");
-require_once("../../../library/forms.inc.php");
-require_once("content_parser.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
+require_once(__DIR__ . "/../../../library/forms.inc.php");
+require_once(__DIR__ . "/content_parser.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -46,20 +48,20 @@ if (preg_match("/^[\s\\r\\n\\\\r\\\\n]*$/", $field_names['content']) == 0) { //m
 }
 
 //deal with embedded camos submissions here
-foreach ($camos_array as $val) {
-    if (preg_match("/^[\s\\r\\n\\\\r\\\\n]*$/", $val['content']) == 0) { //make sure blanks not submitted
-        foreach ($val as $k => $v) {
+foreach ($camos_array as $camo_array) {
+    if (preg_match("/^[\s\\r\\n\\\\r\\\\n]*$/", $camo_array['content']) == 0) { //make sure blanks not submitted
+        foreach ($camo_array as $k => $v) {
             // Replace the placeholders before saving the form. This was changed in version 4.0. Previous to this, placeholders
             //   were submitted into the database and converted when viewing. All new notes will now have placeholders converted
             //   before being submitted to the database. Will also continue to support placeholder conversion on report
             //   views to support notes within database that still contain placeholders (ie. notes that were created previous to
             //   version 4.0).
-            $val[$k] = trim(replace($pid, $encounter, $v));
+            $camo_array[$k] = trim(replace($pid, $encounter, $v));
         }
 
-        $CAMOS_form_name = "CAMOS-" . $val['category'] . '-' . $val['subcategory'] . '-' . $val['item'];
-        reset($val);
-        $newid = formSubmit("form_CAMOS", $val, $_GET["id"], $userauthorized);
+        $CAMOS_form_name = "CAMOS-" . $camo_array['category'] . '-' . $camo_array['subcategory'] . '-' . $camo_array['item'];
+        reset($camo_array);
+        $newid = formSubmit("form_CAMOS", $camo_array, $_GET["id"], $userauthorized);
         addForm($encounter, $CAMOS_form_name, $newid, "CAMOS", $pid, $userauthorized);
     }
 }

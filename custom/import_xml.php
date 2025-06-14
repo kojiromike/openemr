@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Imports patient demographics from our custom XML format.
  *
@@ -12,44 +14,44 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
 */
 
-require_once("../interface/globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../interface/globals.php");
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Header;
 
-function setInsurance($pid, $ainsurance, $asubscriber, $seq)
+function setInsurance($pid, $ainsurance, $asubscriber, string $seq): void
 {
-    $iwhich = $seq == '2' ? "secondary" : ($seq == '3' ? "tertiary" : "primary");
+    $iwhich = $seq === '2' ? "secondary" : ($seq === '3' ? "tertiary" : "primary");
     newInsuranceData(
         $pid,
         $iwhich,
-        ($ainsurance["provider$seq"] ?? ''),
-        ($ainsurance["policy$seq"] ?? ''),
-        ($ainsurance["group$seq"] ?? ''),
-        ($ainsurance["name$seq"] ?? ''),
-        ($asubscriber["lname$seq"] ?? ''),
-        ($asubscriber["mname$seq"] ?? ''),
-        ($asubscriber["fname$seq"] ?? ''),
-        ($asubscriber["relationship$seq"] ?? ''),
-        ($asubscriber["ss$seq"] ?? ''),
-        fixDate($asubscriber["dob$seq"] ?? null),
-        ($asubscriber["street$seq"] ?? ''),
-        ($asubscriber["zip$seq"] ?? ''),
-        ($asubscriber["city$seq"] ?? ''),
-        ($asubscriber["state$seq"] ?? ''),
-        ($asubscriber["country$seq"] ?? ''),
-        ($asubscriber["phone$seq"] ?? ''),
-        ($asubscriber["employer$seq"] ?? ''),
-        ($asubscriber["employer_street$seq"] ?? ''),
-        ($asubscriber["employer_city$seq"] ?? ''),
-        ($asubscriber["employer_zip$seq"] ?? ''),
-        ($asubscriber["employer_state$seq"] ?? ''),
-        ($asubscriber["employer_country$seq"] ?? ''),
-        ($ainsurance["copay$seq"] ?? ''),
-        ($asubscriber["sex$seq"] ?? '')
+        ($ainsurance['provider' . $seq] ?? ''),
+        ($ainsurance['policy' . $seq] ?? ''),
+        ($ainsurance['group' . $seq] ?? ''),
+        ($ainsurance['name' . $seq] ?? ''),
+        ($asubscriber['lname' . $seq] ?? ''),
+        ($asubscriber['mname' . $seq] ?? ''),
+        ($asubscriber['fname' . $seq] ?? ''),
+        ($asubscriber['relationship' . $seq] ?? ''),
+        ($asubscriber['ss' . $seq] ?? ''),
+        fixDate($asubscriber['dob' . $seq] ?? null),
+        ($asubscriber['street' . $seq] ?? ''),
+        ($asubscriber['zip' . $seq] ?? ''),
+        ($asubscriber['city' . $seq] ?? ''),
+        ($asubscriber['state' . $seq] ?? ''),
+        ($asubscriber['country' . $seq] ?? ''),
+        ($asubscriber['phone' . $seq] ?? ''),
+        ($asubscriber['employer' . $seq] ?? ''),
+        ($asubscriber['employer_street' . $seq] ?? ''),
+        ($asubscriber['employer_city' . $seq] ?? ''),
+        ($asubscriber['employer_zip' . $seq] ?? ''),
+        ($asubscriber['employer_state' . $seq] ?? ''),
+        ($asubscriber['employer_country' . $seq] ?? ''),
+        ($ainsurance['copay' . $seq] ?? ''),
+        ($asubscriber['sex' . $seq] ?? '')
     );
 }
 
@@ -99,7 +101,7 @@ if (!empty($_POST['form_import'])) {
             }
 
             if ($tagtype != 'complete') {
-                die("Invalid tag type '$tagtype'");
+                die(sprintf("Invalid tag type '%s'", $tagtype));
             }
 
             if ($probeix == 1 && $probearr[$probeix] == 'patient') {
@@ -109,15 +111,15 @@ if (!empty($_POST['form_import'])) {
             } elseif ($probeix == 2 && $probearr[$probeix] == 'employer') {
                 $aemployer[$tag] = $tagval;
             } elseif ($probeix == 2 && $probearr[$probeix] == 'insurance') {
-                if ($tag == 'priority') {
+                if ($tag === 'priority') {
                     $inspriority = $tagval;
                 } else {
-                    $ainsurance["$tag$inspriority"] = $tagval;
+                    $ainsurance[$tag . $inspriority] = $tagval;
                 }
             } elseif ($probeix == 3 && $probearr[$probeix] == 'subscriber') {
-                $asubscriber["$tag$inspriority"] = $tagval;
+                $asubscriber[$tag . $inspriority] = $tagval;
             } else {
-                $alertmsg = "Invalid tag \"" . $probearr[$probeix] . "\" at level $probeix";
+                $alertmsg = 'Invalid tag "' . $probearr[$probeix] . ('" at level ' . $probeix);
             }
         }
     } else {

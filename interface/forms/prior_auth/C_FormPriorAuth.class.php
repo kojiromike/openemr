@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * prior auth form
  *
@@ -11,18 +13,17 @@
  */
 
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormPriorAuth.class.php");
+require_once(__DIR__ . "/FormPriorAuth.class.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
 class C_FormPriorAuth extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $returnurl = 'encounter_top.php';
         $this->template_mod = $template_mod;
         $this->template_dir = dirname(__FILE__) . "/templates/prior_auth/";
         $this->assign("FORM_ACTION", $GLOBALS['web_root']);
@@ -31,27 +32,23 @@ class C_FormPriorAuth extends Controller
         $this->assign("CSRF_TOKEN_FORM", CsrfUtils::collectCsrfToken());
     }
 
-    function default_action()
+    public function default_action()
     {
-        $prior_auth = new FormPriorAuth();
-        $this->assign("prior_auth", $prior_auth);
+        $formPriorAuth = new FormPriorAuth();
+        $this->assign("prior_auth", $formPriorAuth);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
+    public function view_action($form_id)
     {
-        if (is_numeric($form_id)) {
-            $prior_auth = new FormPriorAuth($form_id);
-        } else {
-            $prior_auth = new FormPriorAuth();
-        }
+        $prior_auth = is_numeric($form_id) ? new FormPriorAuth($form_id) : new FormPriorAuth();
 
         $this->assign("VIEW", true);
         $this->assign("prior_auth", $prior_auth);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -70,6 +67,5 @@ class C_FormPriorAuth extends Controller
             addForm($GLOBALS['encounter'], "Prior Authorization", $this->form->id, "prior_auth", $GLOBALS['pid'], $_SESSION['userauthorized']);
             $_POST['process'] = "";
         }
-        return;
     }
 }

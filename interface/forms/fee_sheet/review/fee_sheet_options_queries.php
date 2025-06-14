@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Utility functions for retrieving fee sheet options.
  *
@@ -16,7 +18,7 @@
  */
 class fee_sheet_option
 {
-    function __construct($c, $ct, $desc, $price, $category)
+    public function __construct($c, $ct, $desc, $price, $category)
     {
         $this->code = $c;
         $this->code_type = $ct;
@@ -27,22 +29,28 @@ class fee_sheet_option
             $this->price = xl("Not Specified");
         }
     }
+
     public $code;
+
     public $code_type;
+
     public $description;
+
     public $price;
+
     public $fee_display;
+
     public $category;
 }
+
 /**
  * get a list of fee sheet options
  *
  * @param string $pricelevel which pricing level to retrieve
  * @return an array containing the options
  */
-function load_fee_sheet_options($pricelevel)
+function load_fee_sheet_options($pricelevel): array
 {
-    $clFSO_code_type = 'substring_index(fso.fs_codes,"|",1)';
     $clFSO_code = 'replace(substring_index(fso.fs_codes,"|",-2),"|","")';
 
     $sql = "SELECT codes.code,code_types.ct_key as code_type,codes.code_text,pr_price,fso.fs_category
@@ -53,10 +61,10 @@ function load_fee_sheet_options($pricelevel)
         AND codes.code_type=code_types.ct_id
         ORDER BY fso.fs_category,fso.fs_option";
 
-    $results = sqlStatement($sql, array($pricelevel, $clFSO_code, $clFSO_code));
+    $recordset = sqlStatement($sql, array($pricelevel, $clFSO_code, $clFSO_code));
 
     $retval = array();
-    while ($res = sqlFetchArray($results)) {
+    while ($res = sqlFetchArray($recordset)) {
         $fso = new fee_sheet_option($res['code'], $res['code_type'], $res['code_text'], $res['pr_price'], $res['fs_category']);
         $retval[] = $fso;
     }

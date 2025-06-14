@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRxXMLBuilder.php Functions for building NewCrop XML.
  *
@@ -16,17 +18,23 @@ require_once(__DIR__ . "/../library/patient.inc.php");
 class eRxXMLBuilder
 {
     private $globals;
+
     private $store;
 
-    private $document;
+    private ?\DOMDocument $domDocument = null;
+
     private $ncScript;
 
     private $sentAllergyIds = array();
+
     private $sentMedicationIds = array();
+
     private $sentPrescriptionIds = array();
 
     private $fieldEmptyMessages = array();
+
     private $demographicsCheckMessages = array();
+
     private $warningMessages = array();
 
     public function __construct($globals = null, $store = null)
@@ -45,7 +53,7 @@ class eRxXMLBuilder
      * @param  object  $globals The eRx Globals object to use for processing
      * @return eRxPage          This object is returned for method chaining
      */
-    public function setGlobals($globals)
+    public function setGlobals($globals): static
     {
         $this->globals = $globals;
 
@@ -66,7 +74,7 @@ class eRxXMLBuilder
      * @param  object  $store The eRx Store object to use for processing
      * @return eRxPage        This object is returned for method chaining
      */
-    public function setStore($store)
+    public function setStore($store): static
     {
         $this->store = $store;
 
@@ -82,7 +90,7 @@ class eRxXMLBuilder
         return $this->store;
     }
 
-    protected function trimData($string, $length)
+    protected function trimData($string, $length): string
     {
         return substr($string, 0, $length - 1);
     }
@@ -92,11 +100,10 @@ class eRxXMLBuilder
         return preg_replace('/[^a-zA-Z0-9 \'().,#:\/\-@_%]/', '', $string);
     }
 
-    public function checkError($xml)
+    public function checkError(string $xml)
     {
         $curlHandler = curl_init($xml);
         $sitePath = $this->getGlobals()->getOpenEMRSiteDirectory();
-        $data = array('RxInput' => $xml);
 
         curl_setopt($curlHandler, CURLOPT_URL, $this->getGlobals()->getPath());
         curl_setopt($curlHandler, CURLOPT_POST, 1);
@@ -117,7 +124,7 @@ class eRxXMLBuilder
         return $result;
     }
 
-    public function addSentAllergyIds($allergyIds)
+    public function addSentAllergyIds($allergyIds): void
     {
         if (is_array($allergyIds)) {
             foreach ($allergyIds as $allergyId) {
@@ -133,7 +140,7 @@ class eRxXMLBuilder
         return $this->sentAllergyIds;
     }
 
-    public function addSentMedicationIds($medicationIds)
+    public function addSentMedicationIds($medicationIds): void
     {
         if (is_array($medicationIds)) {
             foreach ($medicationIds as $medicationId) {
@@ -149,7 +156,7 @@ class eRxXMLBuilder
         return $this->sentMedicationIds;
     }
 
-    public function addSentPrescriptionId($prescriptionIds)
+    public function addSentPrescriptionId($prescriptionIds): void
     {
         if (is_array($prescriptionIds)) {
             foreach ($prescriptionIds as $prescriptionId) {
@@ -165,7 +172,7 @@ class eRxXMLBuilder
         return $this->sentPrescriptionIds;
     }
 
-    public function fieldEmpty($value, $message)
+    public function fieldEmpty($value, $message): void
     {
         if (empty($value)) {
             $this->fieldEmptyMessages[] = $message;
@@ -177,7 +184,7 @@ class eRxXMLBuilder
         return $this->fieldEmptyMessages;
     }
 
-    public function demographicsCheck($value, $message)
+    public function demographicsCheck($value, $message): void
     {
         if (empty($value)) {
             $this->demographicsCheckMessages[] = $message;
@@ -189,7 +196,7 @@ class eRxXMLBuilder
         return $this->demographicsCheckMessages;
     }
 
-    public function warningMessage($value, $message)
+    public function warningMessage($value, $message): void
     {
         if (empty($value)) {
             $this->warningMessages[] = $message;
@@ -223,7 +230,7 @@ class eRxXMLBuilder
         return $this->createElementText($name, $value);
     }
 
-    public function appendChildren($element, &$children)
+    public function appendChildren($element, &$children): void
     {
         if (is_a($element, 'DOMNode') && is_array($children) && count($children)) {
             foreach ($children as $child) {
@@ -237,12 +244,12 @@ class eRxXMLBuilder
 
     public function getDocument()
     {
-        if ($this->document === null) {
-            $this->document = new DOMDocument();
-            $this->document->formatOutput = true;
+        if ($this->domDocument === null) {
+            $this->domDocument = new DOMDocument();
+            $this->domDocument->formatOutput = true;
         }
 
-        return $this->document;
+        return $this->domDocument;
     }
 
     public function getNCScript()
@@ -342,7 +349,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getAccountAddress($facility)
+    public function getAccountAddress(array $facility)
     {
         $postalCode = preg_replace('/[^0-9]/', '', $facility['postal_code']);
         $postalCodePostfix = substr($postalCode, 5, 4);
@@ -372,14 +379,14 @@ class eRxXMLBuilder
             ->getFacilityPrimary();
 
         if (!$facility['federal_ein']) {
-            echo xlt('Please select a Primary Business Entity facility with \'Tax ID\' as your facility Tax ID. If you are an individual practitioner, use your tax id. This is used for identifying you in the NewCrop system.');
+            echo xlt("Please select a Primary Business Entity facility with 'Tax ID' as your facility Tax ID. If you are an individual practitioner, use your tax id. This is used for identifying you in the NewCrop system.");
             die;
         }
 
         $element = $this->getDocument()->createElement('Account');
         $element->setAttribute('ID', $this->getGlobals()->getAccountId());
         $element->appendChild($this->createElementTextFieldEmpty('accountName', $this->trimData($this->stripSpecialCharacter($facility['name']), 35), xl('Facility Name')));
-        $element->appendChild($this->createElementText('siteID', $facility['federal_ein'], 'Site ID'));
+        $element->appendChild($this->createElementText('siteID', $facility['federal_ein']));
         $element->appendChild($this->getAccountAddress($facility));
         $element->appendChild($this->createElementTextFieldEmpty('accountPrimaryPhoneNumber', preg_replace('/[^0-9]/', '', $facility['phone']), xl('Facility Phone')));
         $element->appendChild($this->createElementTextFieldEmpty('accountPrimaryFaxNumber', preg_replace('/[^0-9]/', '', $facility['fax']), xl('Facility Fax')));
@@ -387,7 +394,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getLocationAddress($facility)
+    public function getLocationAddress(array $facility)
     {
         $postalCode = preg_replace('/[^0-9]/', '', $facility['postal_code']);
         $postalCodePostfix = substr($postalCode, 5, 4);
@@ -465,7 +472,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getStaffName($user)
+    public function getStaffName(array $user)
     {
         $element = $this->getDocument()->createElement('StaffName');
         $element->appendChild($this->createElementText('last', $this->stripSpecialCharacter($user['lname'])));
@@ -488,7 +495,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getLicensedPrescriberName($user, $prescriberType, $prefix = false)
+    public function getLicensedPrescriberName(array $user, string $prescriberType, $prefix = false)
     {
         $element = $this->getDocument()->createElement('LicensedPrescriberName');
         $element->appendChild($this->createElementTextFieldEmpty('last', $this->stripSpecialCharacter($user['lname']), $prescriberType . ' ' . xl('Licensed Prescriber Last Name')));
@@ -539,7 +546,10 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getStaffElements($authUserId, $destination)
+    /**
+     * @return list
+     */
+    public function getStaffElements($authUserId, $destination): array
     {
         $userRole = $this->getStore()->getUserById($authUserId);
         $userRole = preg_replace('/erx/', '', $userRole['newcrop_user_role']);
@@ -565,7 +575,7 @@ class eRxXMLBuilder
         return $elements;
     }
 
-    public function getPatientName($patient)
+    public function getPatientName(array $patient)
     {
         $element = $this->getDocument()->createElement('PatientName');
         $element->appendChild($this->createElementTextDemographicsCheck('last', $this->trimData($this->stripSpecialCharacter($patient['lname']), 35), xl('Patient Last Name')));
@@ -575,13 +585,13 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getPatientAddress($patient)
+    public function getPatientAddress(array $patient)
     {
         $patient['street'] = $this->trimData($this->stripSpecialCharacter($patient['street']), 35);
         $this->warningMessage($patient['street'], xl('Patient Street Address'));
 
 
-        if (trim($patient['country_code']) == '') {
+        if (trim($patient['country_code']) === '') {
             $eRxDefaultPatientCountry = $this->getGlobals()->getDefaultPatientCountry();
 
             if ($eRxDefaultPatientCountry == '') {
@@ -609,7 +619,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getPatientContact($patient)
+    public function getPatientContact(array $patient)
     {
         $element = $this->getDocument()->createElement('PatientContact');
         if ($patient['phone_home']) {
@@ -619,9 +629,9 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getPatientCharacteristics($patient)
+    public function getPatientCharacteristics(array $patient)
     {
-        if (trim($patient['date_of_birth']) == '' || $patient['date_of_birth'] == '00000000') {
+        if (trim($patient['date_of_birth']) === '' || $patient['date_of_birth'] == '00000000') {
             $this->warningMessage('', xl('Patient Date Of Birth'));
         }
 
@@ -662,7 +672,10 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getPatientFreeformHealthplans($patientId)
+    /**
+     * @return list
+     */
+    public function getPatientFreeformHealthplans($patientId): array
     {
         $healthplans = $this->getStore()
             ->getPatientHealthplansByPatientId($patientId);
@@ -679,7 +692,10 @@ class eRxXMLBuilder
         return $elements;
     }
 
-    public function getPatientFreeformAllergy($patientId)
+    /**
+     * @return list
+     */
+    public function getPatientFreeformAllergy($patientId): array
     {
         $allergyData = $this->getStore()
             ->getPatientAllergiesByPatientId($patientId);
@@ -710,7 +726,10 @@ class eRxXMLBuilder
         return $elements;
     }
 
-    public function getPatientDiagnosis($patientId)
+    /**
+     * @return list
+     */
+    public function getPatientDiagnosis($patientId): array
     {
         $diagnosisData = $this->getStore()
             ->getPatientDiagnosisByPatientId($patientId);
@@ -727,8 +746,8 @@ class eRxXMLBuilder
                     $diagnosisId = $res[1];
                     // NewCrop only accepts ICD10 codes, so only add XML elements for diagnosis with ICD10 code types
                     if (
-                        $codeType == 'ICD10' &&
-                        !empty($diagnosisId) &&
+                        $codeType === 'ICD10' &&
+                        ($diagnosisId !== '' && $diagnosisId !== '0') &&
                         empty($diagnosis['enddate'])
                     ) {
                         $element = $this->getDocument()->createElement('PatientDiagnosis');
@@ -776,7 +795,7 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getOutsidePrescription($prescription)
+    public function getOutsidePrescription(array $prescription)
     {
         $element = $this->getDocument()->createElement('OutsidePrescription');
         $element->appendChild($this->createElementText('externalId', $prescription['externalId']));
@@ -791,7 +810,10 @@ class eRxXMLBuilder
         return $element;
     }
 
-    public function getPatientPrescriptions($prescriptionIds)
+    /**
+     * @return list
+     */
+    public function getPatientPrescriptions($prescriptionIds): array
     {
         $elements = array();
 
@@ -820,7 +842,10 @@ class eRxXMLBuilder
         return $elements;
     }
 
-    public function getPatientMedication($patientId, $uploadActive, $count)
+    /**
+     * @return list
+     */
+    public function getPatientMedication($patientId, $uploadActive, $count): array
     {
         $medications = $this->getStore()
             ->selectMedicationsNotUploadedByPatientId($patientId, $uploadActive, $count);
@@ -845,7 +870,10 @@ class eRxXMLBuilder
         return $elements;
     }
 
-    public function getPatientElements($patientId, $totalCount, $requestedPrescriptionIds)
+    /**
+     * @return mixed[]
+     */
+    public function getPatientElements($patientId, $totalCount, $requestedPrescriptionIds): array
     {
         $elements = array();
 
@@ -871,12 +899,12 @@ class eRxXMLBuilder
 
             if (
                 is_array($requestedPrescriptionIds) &&
-                count($requestedPrescriptionIds) > 0
+                $requestedPrescriptionIds !== []
             ) {
                 $elements = array_merge($elements, $this->getPatientPrescriptions($requestedPrescriptionIds));
             } elseif (
                 is_array($requestedPrescriptionIds) &&
-                count($prescriptionIds) > 0
+                $prescriptionIds !== []
             ) {
                 $elements = array_merge($elements, $this->getPatientPrescriptions($prescriptionIds));
             } else {

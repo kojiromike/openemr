@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file implements the database load processing when loading external
  * database files into openEMR
@@ -16,8 +18,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../interface/globals.php");
-require_once("$srcdir/standard_tables_capture.inc.php");
+require_once(__DIR__ . "/../../interface/globals.php");
+require_once($srcdir . '/standard_tables_capture.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -42,9 +44,9 @@ $files_array = scandir($mainPATH);
 array_shift($files_array); // get rid of "."
 array_shift($files_array); // get rid of ".."
 
-foreach ($files_array as $file) {
-    $this_file = $mainPATH . "/" . $file;
-    if (strpos($file, ".zip") === false) {
+foreach ($files_array as $file_array) {
+    $this_file = $mainPATH . "/" . $file_array;
+    if (strpos($file_array, ".zip") === false) {
         continue;
     }
 
@@ -79,15 +81,13 @@ if ($db == 'RXNORM') {
             drop_old_sct2();
             chg_ct_external_torf1();
         }
+    } elseif (!snomed_import(false)) {
+        echo htmlspecialchars(xl('ERROR: Unable to load the file into the database.'), ENT_NOQUOTES) . "<br />";
+        temp_dir_cleanup($db);
+        exit;
     } else {
-        if (!snomed_import(false)) {
-            echo htmlspecialchars(xl('ERROR: Unable to load the file into the database.'), ENT_NOQUOTES) . "<br />";
-            temp_dir_cleanup($db);
-            exit;
-        } else {
-            drop_old_sct2();
-            chg_ct_external_torf1();
-        }
+        drop_old_sct2();
+        chg_ct_external_torf1();
     }
 } elseif ($db == 'CQM_VALUESET') {
     if (!valueset_import($db)) {
@@ -95,12 +95,11 @@ if ($db == 'RXNORM') {
         temp_dir_cleanup($db);
         exit;
     }
-} else { //$db == 'ICD'
-    if (!icd_import($db)) {
-        echo htmlspecialchars(xl('ERROR: Unable to load the file into the database.'), ENT_NOQUOTES) . "<br />";
-        temp_dir_cleanup($db);
-        exit;
-    }
+} elseif (!icd_import($db)) {
+    //$db == 'ICD'
+    echo htmlspecialchars(xl('ERROR: Unable to load the file into the database.'), ENT_NOQUOTES) . "<br />";
+    temp_dir_cleanup($db);
+    exit;
 }
 
 // set the revision version in the database

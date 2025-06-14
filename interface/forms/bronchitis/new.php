@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * bronchitis new.php
  *
@@ -17,7 +19,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -67,7 +69,7 @@ $returnurl = 'encounter_top.php';
 <a href="javascript:top.restoreSession();document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link" style="color: #483D8B"
- onclick="top.restoreSession()">[<?php echo xlt('Don\'t Save'); ?>]</a>
+ onclick="top.restoreSession()">[<?php echo xlt("Don't Save"); ?>]</a>
 <br /><br />
 <span class="text" ><?php echo xlt('Onset of Illness:'); ?> </span><input type="text" name="bronchitis_date_of_illness" value=""></input>
 <br /><br />
@@ -135,7 +137,7 @@ $returnurl = 'encounter_top.php';
 
 <table>
 <tr>
-<td width="60"><?php echo xlt('TM\'S:'); ?></td>
+<td width="60"><?php echo xlt("TM'S:"); ?></td>
 <td align="right"><?php echo xlt('Normal Right:'); ?></td>
 <td><input type="checkbox" name="bronchitis_tms_normal_right"></input></td>
 <td align="right"><?php echo xlt('Left:'); ?></td>
@@ -445,7 +447,7 @@ $returnurl = 'encounter_top.php';
 <a href="javascript:top.restoreSession();document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link" style="color: #483D8B"
- onclick="top.restoreSession()">[<?php echo xlt('Don\'t Save'); ?>]</a>
+ onclick="top.restoreSession()">[<?php echo xlt("Don't Save"); ?>]</a>
 </form>
 
 <?php

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Carecoordination\Model;
 
 use Laminas\InputFilter\Factory as InputFactory;
@@ -35,7 +37,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     * Automatic Tranfer settings
     */
         $this->add(array(
-        'type' => 'Laminas\Form\Element\Checkbox',
+        'type' => \Laminas\Form\Element\Checkbox::class,
             'name' => 'hie_auto_send_id',
             'attributes'    => array(
                     'id'        => 'hie_auto_send_id'
@@ -52,7 +54,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_author_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -71,7 +73,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_data_enterer_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -90,7 +92,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_informant_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -123,7 +125,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_custodian_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -142,7 +144,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_recipient_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -161,7 +163,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_legal_authenticator_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -180,7 +182,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_authenticator_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -199,7 +201,7 @@ class Configuration extends Form implements InputFilterAwareInterface
     */
         $this->add(array(
             'name'  => 'hie_primary_care_provider_id',
-        'type'      => 'Laminas\Form\Element\Select',
+        'type'      => \Laminas\Form\Element\Select::class,
             'attributes' => array(
         'class'     => '',
         'data-options'  => 'required:true',
@@ -217,16 +219,18 @@ class Configuration extends Form implements InputFilterAwareInterface
     public function exchangeArray($data)
     {
     }
-    public function getArrayCopy()
+
+    public function getArrayCopy(): array
     {
         return get_object_vars($this);
     }
+
     public function setInputFilter(InputFilterInterface $inputFilter)
     {
         throw new \Exception("Not used");
     }
 
-    public function getInputFilter()
+    public function getInputFilter(): \Laminas\InputFilter\InputFilterInterface
     {
         if (!$this->inputFilter) {
             $inputFilter = new InputFilter();
@@ -239,7 +243,10 @@ class Configuration extends Form implements InputFilterAwareInterface
         return $this->inputFilter;
     }
 
-    public function getHookConfig()
+    /**
+     * @return list<array{name: 'send_to_hie', title: 'Send To HIE', path: 'encountermanager'}>
+     */
+    public function getHookConfig(): array
     {
     //SOECIFY HOOKS DETAILS OF A MODULE IN AN ARRAY, WITH MODULE NAME AS KEY
     //SHOULD SPECIFY THE CONTROLLER AND ITS ACTION IN THE PATH, INCLUDING INDEX ACTION
@@ -254,11 +261,14 @@ class Configuration extends Form implements InputFilterAwareInterface
         return $hooks;
     }
 
-    public function getUsers()
+    /**
+     * @return string[]
+     */
+    public function getUsers(): array
     {
         $users = array('0' => '');
-        $res = sqlStatement("SELECT id, fname, lname, street, city, state, zip  FROM users WHERE abook_type='ccda'");
-        while ($row = sqlFetchArray($res)) {
+        $recordset = sqlStatement("SELECT id, fname, lname, street, city, state, zip  FROM users WHERE abook_type='ccda'");
+        while ($row = sqlFetchArray($recordset)) {
             $users[$row['id']] = $row['fname'] . " " . $row['lname'];
         }
 
@@ -269,15 +279,14 @@ class Configuration extends Form implements InputFilterAwareInterface
     {
     }
 
-    public function getAclConfig()
+    public function getAclConfig(): array
     {
-        $acl = array(
+        return array(
         array(
         'section_id' => 'send_to_hie',
         'section_name' => 'Send To HIE',
         'parent_section' => 'carecoordination',
         ),
         );
-        return $acl;
     }
 }

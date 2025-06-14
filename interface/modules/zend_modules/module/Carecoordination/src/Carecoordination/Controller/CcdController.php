@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Controller/CcdController.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -27,16 +28,14 @@ use xmltoarray_parser_htmlfix;
 
 class CcdController extends AbstractActionController
 {
-    /**
-     * @var \Carecoordination\Model\CcdTable
-     */
-    protected $ccdTable;
+    protected \Carecoordination\Model\CcdTable $ccdTable;
 
-    protected $carecoordinationTable;
+    protected \Carecoordination\Model\CarecoordinationTable $carecoordinationTable;
 
-    protected $documentsTable;
+    protected \Documents\Model\DocumentsTable $documentsTable;
 
-    protected $listenerObject;
+    protected \Application\Listener\Listener $listenerObject;
+
     /**
      * @var Documents\Controller\DocumentsController
      */
@@ -59,7 +58,7 @@ class CcdController extends AbstractActionController
     /*
     * Upload CCD file
     */
-    public function uploadAction()
+    public function uploadAction(): \Laminas\View\Model\ViewModel
     {
         $request          = $this->getRequest();
         $upload           = $request->getPost('upload');
@@ -69,7 +68,6 @@ class CcdController extends AbstractActionController
             $time_start         = date('Y-m-d H:i:s');
             $obj_doc            = $this->documentsController;
             $cdoc               = $obj_doc->uploadAction($request);
-            $uploaded_documents = array();
             $uploaded_documents = $this->getCarecoordinationTable()->fetch_uploaded_documents(array('user' => $_SESSION['authUserID'], 'time_start' => $time_start, 'time_end' => date('Y-m-d H:i:s')));
             if ($uploaded_documents[0]['id'] > 0) {
                 $_REQUEST["document_id"]    = $uploaded_documents[0]['id'];
@@ -88,7 +86,7 @@ class CcdController extends AbstractActionController
         }
 
         $records = $this->getCarecoordinationTable()->document_fetch(array('cat_title' => 'CCD','type' => '13'));
-        $view = new ViewModel(array(
+        $viewModel = new ViewModel(array(
           'records'       => $records,
           'category_id'   => $category_details[0]['id'],
           'file_location' => basename($_FILES['file']['name'] ?? ''),
@@ -96,7 +94,7 @@ class CcdController extends AbstractActionController
           'listenerObject' => $this->listenerObject
         ));
         sleep(1);
-        return $view;
+        return $viewModel;
     }
 
     /*
@@ -105,7 +103,7 @@ class CcdController extends AbstractActionController
     * @param    document_id     integer value
     * @return   none
     */
-    public function importAction()
+    public function importAction(): \Laminas\View\Model\JsonModel
     {
         $request     = $this->getRequest();
         if ($request->getQuery('document_id')) {
@@ -117,16 +115,17 @@ class CcdController extends AbstractActionController
         $document_id                      =    $_REQUEST["document_id"];
         $xml_content                      =    $this->getCarecoordinationTable()->getDocument($document_id);
 
-        $xmltoarray                       =    new \Laminas\Config\Reader\Xml();
-        $array                            =    $xmltoarray->fromString((string) $xml_content);
+        $xml                       =    new \Laminas\Config\Reader\Xml();
+        $array                            =    $xml->fromString((string) $xml_content);
 
         $this->getCcdTable()->import($array, $document_id);
 
         // we return just empty Json, otherwise it triggers an error if we don't return some kind of HTTP response.
-        $view = new \Laminas\View\Model\JsonModel();
-        $view->setTerminal(true);
-        return $view;
+        $jsonModel = new \Laminas\View\Model\JsonModel();
+        $jsonModel->setTerminal(true);
+        return $jsonModel;
     }
+
     /**
     * Table gateway
     * @return \Carecoordination\Model\CcdTable
@@ -135,6 +134,7 @@ class CcdController extends AbstractActionController
     {
         return $this->ccdTable;
     }
+
     /**
      * Table gateway
      * @return object

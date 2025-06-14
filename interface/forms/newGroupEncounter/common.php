@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Common script for the encounter form (new and view) scripts for therapy groups.
  *
@@ -13,10 +15,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/group.inc.php");
-require_once("$srcdir/classes/POSRef.class.php");
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/group.inc.php');
+require_once($srcdir . '/classes/POSRef.class.php');
 
 use OpenEMR\Common\Acl\AclExtended;
 use OpenEMR\Common\Acl\AclMain;
@@ -39,7 +41,7 @@ if ($viewmode) {
 }
 
 // Sort comparison for sensitivities by their order attribute.
-function sensitivity_compare($a, $b)
+function sensitivity_compare($a, $b): int
 {
     return ($a[2] < $b[2]) ? -1 : 1;
 }
@@ -63,7 +65,7 @@ $ires = sqlStatement("SELECT id, type, title, begdate FROM lists WHERE " .
 $use_validate_js = 1;
 require_once($GLOBALS['srcdir'] . "/validation/validation_script.js.php"); ?>
 
-<?php include_once("{$GLOBALS['srcdir']}/ajax/facility_ajax_jav.inc.php"); ?>
+<?php include_once($GLOBALS['srcdir'] . '/ajax/facility_ajax_jav.inc.php'); ?>
 <script>
 
 /*
@@ -84,11 +86,7 @@ require_once($GLOBALS['srcdir'] . "/validation/validation_script.js.php"); ?>
     //Gets validation rules from Page Validation list.
     //Note that for technical reasons, we are bypassing the standard validateUsingPageRules() call.
     $collectthis = collectValidationPageRules("/interface/forms/newGroupEncounter/common.php");
-    if (empty($collectthis)) {
-         $collectthis = "undefined";
-    } else {
-         $collectthis = json_sanitize($collectthis["new-encounter-form"]["rules"]);
-    }
+    $collectthis = empty($collectthis) ? "undefined" : json_sanitize($collectthis["new-encounter-form"]["rules"]);
     ?>
  var collectvalidation = <?php echo $collectthis; ?>;
  $(function () {
@@ -127,7 +125,7 @@ function cancelClickedNew() {
 // Handler for cancel clicked when not creating a new encounter.
 // Just reload the view mode.
 function cancelClickedOld() {
-    location.href = '<?php echo "$rootdir/patient_file/encounter/forms.php"; ?>';
+    location.href = '<?php echo $rootdir . '/patient_file/encounter/forms.php'; ?>';
     return false;
 }
 
@@ -212,15 +210,15 @@ $help_icon = '';
                             <div class="col-sm-3">
                                 <select name='form_sensitivity' id='form_sensitivity' class='form-control'>
                                     <?php
-                                    foreach ($sensitivities as $value) {
+                                    foreach ($sensitivities as $sensitivity) {
                                         // Omit sensitivities to which this user does not have access.
-                                        if (AclMain::aclCheckCore('sensitivities', $value[1])) {
-                                            echo "       <option value='" . attr($value[1]) . "'";
-                                            if ($viewmode && $result['sensitivity'] == $value[1]) {
+                                        if (AclMain::aclCheckCore('sensitivities', $sensitivity[1])) {
+                                            echo "       <option value='" . attr($sensitivity[1]) . "'";
+                                            if ($viewmode && $result['sensitivity'] == $sensitivity[1]) {
                                                 echo " selected";
                                             }
 
-                                            echo ">" . xlt($value[3]) . "</option>\n";
+                                            echo ">" . xlt($sensitivity[3]) . "</option>\n";
                                         }
                                     }
 
@@ -291,7 +289,7 @@ $help_icon = '';
                                         <?php
                                         $pc = new POSRef();
                                         foreach ($pc->get_pos_ref() as $pos) {
-                                            echo "<option value=\"" . attr($pos["code"]) . "\" ";
+                                            echo '<option value="' . attr($pos["code"]) . '" ';
                                             if ($pos["code"] == $result['pos_code'] || $pos["code"] == $posCode) {
                                                 echo "selected";
                                             }
@@ -318,16 +316,16 @@ $help_icon = '';
                                     }
                                     $facilities = $facilityService->getAllServiceLocations();
                                     if ($facilities) {
-                                        foreach ($facilities as $iter) {
-                                            if ($iter['billing_location'] == 1) {
-                                                $posCode = $iter['pos_code'];
+                                        foreach ($facilities as $facility) {
+                                            if ($facility['billing_location'] == 1) {
+                                                $posCode = $facility['pos_code'];
                                             }
                                             ?>
-                                            <option value="<?php echo attr($iter['id']); ?>"
+                                            <option value="<?php echo attr($facility['id']); ?>"
                                                 <?php
-                                                if ($def_facility == $iter['id']) {
+                                                if ($def_facility == $facility['id']) {
                                                     echo "selected";
-                                                }?>><?php echo text($iter['name']); ?>
+                                                }?>><?php echo text($facility['name']); ?>
                                             </option>
                                             <?php
                                         }

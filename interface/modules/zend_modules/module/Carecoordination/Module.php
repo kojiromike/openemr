@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Module is responsible for setting up the configuration of the module and any events it listens to.
  *
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination;
 
 use Laminas\ModuleManager\ModuleManager;
@@ -27,13 +28,13 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Module
 {
-    public function getAutoloaderConfig()
+    public function getAutoloaderConfig(): array
     {
         return array(
-            'Laminas\Loader\ClassMapAutoloader' => array(
+            \Laminas\Loader\ClassMapAutoloader::class => array(
                 __DIR__ . '/autoload_classmap.php',
             ),
-            'Laminas\Loader\StandardAutoloader' => array(
+            \Laminas\Loader\StandardAutoloader::class => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
 
@@ -47,12 +48,13 @@ class Module
         return include __DIR__ . '/config/module.config.php';
     }
 
-    public function init(ModuleManager $moduleManager)
+    public function init(ModuleManager $moduleManager): void
     {
         $sharedEvents = $moduleManager->getEventManager()->getSharedManager();
-        $sharedEvents->attach(__NAMESPACE__, 'dispatch', function ($e) {
+        $sharedEvents->attach(__NAMESPACE__, 'dispatch', function ($e): void {
             $controller = $e->getTarget();
             $controller->layout('carecoordination/layout/layout');
+
                 $route = $controller->getEvent()->getRouteMatch();
                 $controller->getEvent()->getViewModel()->setVariables(array(
                     'current_controller' => $route->getParam('controller'),
@@ -61,14 +63,14 @@ class Module
         }, 100);
     }
 
-    public function onBootstrap(MvcEvent $e)
+    public function onBootstrap(MvcEvent $mvcEvent): void
     {
         // we grab the OpenEMR event listener (which is injected as Laminas has its own dispatcher)
-        $serviceManager = $e->getApplication()->getServiceManager();
-        $oemrDispatcher = $serviceManager->get(EventDispatcherInterface::class);
+        $serviceLocator = $mvcEvent->getApplication()->getServiceManager();
+        $oemrDispatcher = $serviceLocator->get(EventDispatcherInterface::class);
 
         // now we can listen to our module events
-        $menuSubscriber = $serviceManager->get(CCDAEventsSubscriber::class);
+        $menuSubscriber = $serviceLocator->get(CCDAEventsSubscriber::class);
         $oemrDispatcher->addSubscriber($menuSubscriber);
     }
 }

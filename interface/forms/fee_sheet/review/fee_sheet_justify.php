@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Controller for fee sheet justification AJAX requests
  *
@@ -10,8 +12,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../globals.php");
-require_once("fee_sheet_queries.php");
+require_once(__DIR__ . "/../../../globals.php");
+require_once(__DIR__ . "/fee_sheet_queries.php");
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -63,13 +65,13 @@ if ($task == 'update') {
         $json_diags = json_decode($_REQUEST['diags']);
     }
 
-    foreach ($json_diags as $diag) {
-        $new_diag = new code_info($diag->{'code'}, $diag->{'code_type'}, $diag->{'description'});
-        if (isset($diag->{'prob_id'})) {
-            $new_diag->db_id = $diag->{'prob_id'};
+    foreach ($json_diags as $json_diag) {
+        $new_diag = new code_info($json_diag->{'code'}, $json_diag->{'code_type'}, $json_diag->{'description'});
+        if (isset($json_diag->{'prob_id'})) {
+            $new_diag->db_id = $json_diag->{'prob_id'};
         } else {
             $new_diag->db_id = null;
-            $new_diag->create_problem = $diag->{'create_problem'};
+            $new_diag->create_problem = $json_diag->{'create_problem'};
         }
 
         $diags[] = $new_diag;

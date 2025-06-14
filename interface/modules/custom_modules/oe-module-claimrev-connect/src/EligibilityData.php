@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,17 +11,12 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+namespace OpenEMR\Modules\ClaimRevConnector;
 
-    namespace OpenEMR\Modules\ClaimRevConnector;
-
-    use OpenEMR\Modules\ClaimRevConnector\ValueMapping;
+use OpenEMR\Modules\ClaimRevConnector\ValueMapping;
 
 class EligibilityData
 {
-    public function __construct()
-    {
-    }
-
     public static function getPatientIdFromAppointment($eid)
     {
         $sql = "SELECT 
@@ -31,79 +28,86 @@ class EligibilityData
                 WHERE pc_eid = ? 
             LIMIT 1";
         $sqlarr = array($eid);
-        $result = sqlStatement($sql, $sqlarr);
-        if (sqlNumRows($result) == 1) {
-            foreach ($result as $row) {
+        $recordset = sqlStatement($sql, $sqlarr);
+        if (sqlNumRows($recordset) == 1) {
+            foreach ($recordset as $row) {
                 //return $row["pc_pid"];
                 return $row;
             }
         }
+
         return null;
     }
-    public static function removeEligibilityCheck($pid, $payer_responsibility)
+
+    public static function removeEligibilityCheck($pid, $payer_responsibility): void
     {
         $sql = "DELETE FROM mod_claimrev_eligibility WHERE pid = ? AND payer_responsibility = ? ";
         $sqlarr = array($pid,$payer_responsibility);
-        $result = sqlStatement($sql, $sqlarr);
+        sqlStatement($sql, $sqlarr);
     }
+
     public static function getEligibilityCheckByStatus($status)
     {
         $sql = "SELECT * FROM mod_claimrev_eligibility WHERE status = ?";
         $sqlarr = array($status);
-
-        $result = sqlStatement($sql, $sqlarr);
-        return $result;
+        return sqlStatement($sql, $sqlarr);
     }
+
     public static function getEligibilityResults($status, $minutes)
     {
         $sql = "SELECT * FROM mod_claimrev_eligibility WHERE status = ? AND TIMESTAMPDIFF(MINUTE,last_checked,NOW()) >= ?";
         $sqlarr = array($status,$minutes);
-        $result = sqlStatement($sql, $sqlarr);
-        return $result;
+        return sqlStatement($sql, $sqlarr);
     }
+
     public static function getEligibilityResult($pid, $payer_responsibility)
     {
         $pr = ValueMapping::mapPayerResponsibility($payer_responsibility);
         $sql = "SELECT status, coalesce(last_checked,create_date) as last_update,response_json,eligibility_json,individual_json,response_message  FROM mod_claimrev_eligibility WHERE pid = ? AND payer_responsibility = ? LIMIT 1";
-        $res = sqlStatement($sql, array($pid,$pr));
-        return $res;
+        return sqlStatement($sql, array($pid,$pr));
     }
 
-    public static function updateEligibilityRecord($id, $status, $request_json, $response_json, $updateLastChecked, $responseMessage, $raw271, $eligibility_json, $individual_json)
+    public static function updateEligibilityRecord($id, $status, $request_json, $response_json, $updateLastChecked, $responseMessage, $raw271, $eligibility_json, $individual_json): void
     {
         $sql = "UPDATE mod_claimrev_eligibility SET status = ? ";
 
         $sqlarr = array($status);
         if ($updateLastChecked) {
-            $sql = $sql . ",last_checked = NOW() ";
-        }
-        if ($response_json != null) {
-            $sql = $sql . " ,response_json = ?";
-            array_push($sqlarr, $response_json);
-        }
-        if ($request_json != null) {
-            $sql = $sql . " ,request_json = ?";
-            array_push($sqlarr, $request_json);
-        }
-        if ($responseMessage != null) {
-            $sql = $sql . " ,response_message = ?";
-            array_push($sqlarr, $responseMessage);
-        }
-        if ($raw271 != null) {
-                $sql = $sql . " ,raw271 = ? ";
-                array_push($sqlarr, $raw271);
-        }
-        if ($eligibility_json != null) {
-            $sql = $sql . " ,eligibility_json = ?";
-            array_push($sqlarr, $eligibility_json);
-        }
-        if ($individual_json != null) {
-            $sql = $sql . " ,individual_json = ?";
-            array_push($sqlarr, $individual_json);
+            $sql .= ",last_checked = NOW() ";
         }
 
-        $sql = $sql . " WHERE id = ?";
-        array_push($sqlarr, $id);
+        if ($response_json != null) {
+            $sql .= " ,response_json = ?";
+            $sqlarr[] = $response_json;
+        }
+
+        if ($request_json != null) {
+            $sql .= " ,request_json = ?";
+            $sqlarr[] = $request_json;
+        }
+
+        if ($responseMessage != null) {
+            $sql .= " ,response_message = ?";
+            $sqlarr[] = $responseMessage;
+        }
+
+        if ($raw271 != null) {
+                $sql .= " ,raw271 = ? ";
+                $sqlarr[] = $raw271;
+        }
+
+        if ($eligibility_json != null) {
+            $sql .= " ,eligibility_json = ?";
+            $sqlarr[] = $eligibility_json;
+        }
+
+        if ($individual_json != null) {
+            $sql .= " ,individual_json = ?";
+            $sqlarr[] = $individual_json;
+        }
+
+        $sql .= " WHERE id = ?";
+        $sqlarr[] = $id;
         sqlStatement($sql, $sqlarr);
     }
 
@@ -124,13 +128,12 @@ class EligibilityData
             $ary = array($pid);
 
         if ($pr != "") {
-            $query = $query . " AND i.type = ?";
-            array_push($ary, $pr);
+            $query .= " AND i.type = ?";
+            $ary[] = $pr;
         }
-            $query = $query . " order by i.date desc LIMIT 1";
 
-            $res = sqlStatement($query, $ary);
-            return $res;
+            $query .= " order by i.date desc LIMIT 1";
+            return sqlStatement($query, $ary);
     }
 
     public static function getRequiredInsuranceData($pid = 0)
@@ -169,10 +172,10 @@ class EligibilityData
                     LIMIT 1";
 
         $ary = array($pid);
-        $res = sqlStatement($query, $ary);
 
-        return $res;
+        return sqlStatement($query, $ary);
     }
+
     public static function getFacilityData($fid)
     {
         $query = "SELECT          
@@ -186,10 +189,10 @@ class EligibilityData
                     LIMIT 1";
 
         $ary = array($fid);
-        $result = sqlStatement($query, $ary);
+        $recordset = sqlStatement($query, $ary);
 
-        if (sqlNumRows($result) == 1) {
-            foreach ($result as $row) {
+        if (sqlNumRows($recordset) == 1) {
+            foreach ($recordset as $row) {
                 return $row;
             }
         }
@@ -224,10 +227,10 @@ class EligibilityData
                     LIMIT 1";
 
         $ary = array($pid);
-        $result = sqlStatement($query, $ary);
+        $recordset = sqlStatement($query, $ary);
 
-        if (sqlNumRows($result) == 1) {
-            foreach ($result as $row) {
+        if (sqlNumRows($recordset) == 1) {
+            foreach ($recordset as $row) {
                 return $row;
             }
         }
@@ -247,10 +250,10 @@ class EligibilityData
                     LIMIT 1";
 
         $ary = array($pid);
-        $result = sqlStatement($query, $ary);
+        $recordset = sqlStatement($query, $ary);
 
-        if (sqlNumRows($result) == 1) {
-            foreach ($result as $row) {
+        if (sqlNumRows($recordset) == 1) {
+            foreach ($recordset as $row) {
                 return $row;
             }
         }
@@ -267,11 +270,10 @@ class EligibilityData
         $ary = array($pid);
 
         if ($pr != "") {
-            $query = $query . " AND i.type = ?";
-            array_push($ary, $pr);
+            $query .= " AND i.type = ?";
+            $ary[] = $pr;
         }
-        $res = sqlStatement($query, $ary);
 
-        return $res;
+        return sqlStatement($query, $ary);
     }
 }

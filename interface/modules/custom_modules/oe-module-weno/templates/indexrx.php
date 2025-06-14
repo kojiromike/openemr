@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -12,8 +14,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../../globals.php");
-require_once("$srcdir/patient.inc");
+require_once(__DIR__ . "/../../../../globals.php");
+require_once($srcdir . '/patient.inc');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Crypto\CryptoGen;
@@ -71,7 +73,7 @@ $patient_name = $wenoProperties->getPatientName();
 $facility_name = $wenoProperties->getFacilityInfo();
 //set the url for the iframe
 $newRxUrl = "https://online.wenoexchange.com/en/NewRx/ComposeRx?useremail=";
-if ($urlParam == 'error') {   //check to make sure there were no errors
+if ($urlParam === 'error') {   //check to make sure there were no errors
     echo TransmitProperties::styleErrors(xlt("Cipher failure check encryption key"));
     exit;
 }
@@ -216,7 +218,7 @@ $urlOut = $newRxUrl . urlencode($provider_info['email']) . "&data=" . urlencode(
                 <?php } ?>
                 <div class="col">
                     <div><b><?php echo xlt("Primary Pharmacy"); ?> : </b><?php echo text($primary_pharmacy['business_name'] . " / " . $primary_pharmacy['address_line_1'] . " / " . $primary_pharmacy['city']); ?></div>
-                    <div><b><?php echo xlt("Weno Alt"); ?> : </b><?php echo text($alt_pharmacy['business_name'] ?? '' . " / " . $alt_pharmacy['address_line_1'] ?? '' . " / " . $alt_pharmacy['city'] ?? ''); ?></div>
+                    <div><b><?php echo xlt("Weno Alt"); ?> : </b><?php echo text($alt_pharmacy['business_name'] ?? ' / ' . $alt_pharmacy['address_line_1'] ?? ' / ' . $alt_pharmacy['city'] ?? ''); ?></div>
                 </div>
             </div>
         </div>

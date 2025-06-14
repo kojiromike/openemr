@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package    OpenEMR
  * @link       http://www.open-emr.org
@@ -39,6 +41,7 @@ if ($task == 'downloadStatusLog') {
         http_response_code(500);
         exit;
     }
+
     if ($result === true) {
         $wenoLog->insertWenoLog("log download", "Success");
         http_response_code(200);
@@ -49,13 +52,14 @@ if ($task == 'downloadStatusLog') {
 
     exit;
 }
+
 // Check if the task is to sync the log
 try {
     $result = $logProperties->logSync($task);
-} catch (Exception $e) {
+} catch (Exception $exception) {
     $result = false;
-    $wenoLog->insertWenoLog("Sync Report", $e->getMessage());
-    error_log('Error syncing log: ' . errorLogEscape($e->getMessage()));
+    $wenoLog->insertWenoLog("Sync Report", $exception->getMessage());
+    error_log('Error syncing log: ' . errorLogEscape($exception->getMessage()));
     http_response_code(500);
     exit;
 }
@@ -72,13 +76,15 @@ function downloadWenoLogCsv()
     if (headers_sent()) {
         return js_escape("Headers already sent, CSV download cannot proceed.");
     }
+
     ob_start();
     // Query to get the log data
     $sql = "SELECT `id`, `value`, `status`, `created_at` FROM `weno_download_log` ORDER BY `id` DESC";
-    $result = sqlStatement($sql);
-    if (!$result) {
+    $recordset = sqlStatement($sql);
+    if (!$recordset) {
         return js_escape("Failed to retrieve data from the database.");
     }
+
     // Set the headers for the CSV download
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment;filename="weno_download_log.csv"');
@@ -89,10 +95,11 @@ function downloadWenoLogCsv()
     if ($output === false) {
         return ("Failed to open output stream.");
     }
+
     // Write headers
     fputcsv($output, ['ID', 'Value', 'Status', 'Created At']);
     // Write the rows from the log
-    while ($row = sqlFetchArray($result)) {
+    while ($row = sqlFetchArray($recordset)) {
         fputcsv($output, $row);
     }
 
@@ -100,6 +107,7 @@ function downloadWenoLogCsv()
     ob_flush();
     return true;
 }
+
 function downloadWenoLogCsvAndZip()
 {
     if (headers_sent()) {
@@ -118,30 +126,34 @@ function downloadWenoLogCsvAndZip()
     if ($csvFile === false) {
         return js_escape("Failed to open temporary CSV file.");
     }
+
     // Query to get the log data
     $sql = "SELECT `id`, `value`, `status`, `created_at`, `data_in_context` FROM `weno_download_log` ORDER BY `id` DESC";
-    $result = sqlStatement($sql);
-    if (!$result) {
+    $recordset = sqlStatement($sql);
+    if (!$recordset) {
         fclose($csvFile);
         return js_escape("Failed to retrieve data from the database.");
     }
+
     fputcsv($csvFile, ['ID', 'Value', 'Status', 'Created At']);
-    while ($row = sqlFetchArray($result)) {
+    while ($row = sqlFetchArray($recordset)) {
         fputcsv($csvFile, $row);
     }
+
     fclose($csvFile);
 
     $zip = new ZipArchive();
     if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
         return js_escape("Failed to create ZIP archive.");
     }
+
     $zip->addFile($csvFilePath, $csvFileName);
     $files = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($wenoDirectory),
         RecursiveIteratorIterator::LEAVES_ONLY
     );
 
-    foreach ($files as $name => $file) {
+    foreach ($files as $file) {
         if (!$file->isDir()) {
             $filePath = $file->getRealPath();
             $relativePath = basename($filePath);

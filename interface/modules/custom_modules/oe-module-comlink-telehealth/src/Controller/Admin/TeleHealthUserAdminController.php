@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This controller class handles the hooks and connections for the patient administrative pages in the OpenEMR system.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Controller\Admin;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthPersonSettings;
@@ -27,70 +28,64 @@ use Twig\Environment;
 class TeleHealthUserAdminController
 {
     /**
-     * @var Environment
+     * @var \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig
      */
-    private $twig;
+    public $config;
+    private \Twig\Environment $twigEnvironment;
 
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $globalConfig;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthPersonSettingsRepository $teleHealthPersonSettingsRepository;
 
-    /**
-     * @var TeleHealthPersonSettingsRepository
-     */
-    private $personSettingsRepository;
-
-    public function __construct(TelehealthGlobalConfig $globalConfig, Environment $twig, TeleHealthPersonSettingsRepository $settingsRepository)
+    public function __construct(TelehealthGlobalConfig $telehealthGlobalConfig, Environment $twigEnvironment, TeleHealthPersonSettingsRepository $teleHealthPersonSettingsRepository)
     {
-        $this->config = $globalConfig;
-        $this->twig = $twig;
-        $this->personSettingsRepository = $settingsRepository;
+        $this->config = $telehealthGlobalConfig;
+        $this->twigEnvironment = $twigEnvironment;
+        $this->teleHealthPersonSettingsRepository = $teleHealthPersonSettingsRepository;
     }
 
-    public function subscribeToEvents(EventDispatcher $dispatcher)
+    public function subscribeToEvents(EventDispatcher $eventDispatcher): void
     {
 
-        $dispatcher->addListener(UserCreatedEvent::EVENT_HANDLE, [$this, 'saveTelehealthUserAction']);
-        $dispatcher->addListener(UserUpdatedEvent::EVENT_HANDLE, [$this, 'saveTelehealthUserAction']);
+        $eventDispatcher->addListener(UserCreatedEvent::EVENT_HANDLE, [$this, 'saveTelehealthUserAction']);
+        $eventDispatcher->addListener(UserUpdatedEvent::EVENT_HANDLE, [$this, 'saveTelehealthUserAction']);
 
         // add our user admin flags
-        $dispatcher->addListener(UserEditRenderEvent::EVENT_USER_EDIT_RENDER_AFTER, [$this, 'render']);
+        $eventDispatcher->addListener(UserEditRenderEvent::EVENT_USER_EDIT_RENDER_AFTER, [$this, 'render']);
     }
 
-    public function render(UserEditRenderEvent $event)
+    public function render(UserEditRenderEvent $userEditRenderEvent): void
     {
-        if (!$this->isTelehealthRenderEvent($event)) {
+        if (!$this->isTelehealthRenderEvent($userEditRenderEvent)) {
             throw new \InvalidArgumentException("render() called with invalid event object");
         }
+
         $userAdminTwigData = [
             'forceTelehealthEnabled' => $this->config->shouldAutoProvisionProviders()
             ,'userEnabled' => $this->config->shouldAutoProvisionProviders() // start off with our auto provisioning
             ,'userId' => null
         ];
         // grab our global setting and force the checkbox
-        $userId = $event->getUserId();
+        $userId = $userEditRenderEvent->getUserId();
         if (!empty($userId)) {
             $userAdminTwigData['userId'] = $userId;
             // grab the user, grab our telehealth enabled settings
             // set our checkbox
-            $repository = new TeleHealthPersonSettingsRepository(new SystemLogger());
-            $settings = $repository->getSettingsForUser($userId);
-            if (!empty($settings)) {
+            $teleHealthPersonSettingsRepository = new TeleHealthPersonSettingsRepository(new SystemLogger());
+            $settings = $teleHealthPersonSettingsRepository->getSettingsForUser($userId);
+            if ($settings instanceof \Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthPersonSettings) {
                 $userAdminTwigData['userEnabled'] = $userAdminTwigData['forceTelehealthEnabled'] ? true : $settings->getIsEnabled();
             }
         }
 
         // need to grab the current user's
-        echo $this->twig->render("comlink/admin/user_admin-extension.html.twig", $userAdminTwigData);
+        echo $this->twigEnvironment->render("comlink/admin/user_admin-extension.html.twig", $userAdminTwigData);
     }
 
-    public function isTelehealthRenderEvent($event)
+    public function isTelehealthRenderEvent($event): bool
     {
         return $event instanceof UserEditRenderEvent;
     }
 
-    public function isTelehealthUserEvent($event)
+    public function isTelehealthUserEvent($event): bool
     {
         return $event instanceof UserUpdatedEvent || $event instanceof UserCreatedEvent;
     }
@@ -99,21 +94,23 @@ class TeleHealthUserAdminController
     {
         if ($event instanceof UserUpdatedEvent) {
             return $event->getUserId();
-        } else if ($event instanceof UserCreatedEvent) {
+        } elseif ($event instanceof UserCreatedEvent) {
             $userData = $event->getUserData();
             // we have a uuid but we don't have an id
             $userService = new UserService();
             $user = $userService->getUserByUUID(UuidRegistry::uuidToString($userData['uuid']));
             return $user['id'] ?? null;
         }
+
         return null;
     }
 
-    public function saveTelehealthUserAction($event)
+    public function saveTelehealthUserAction($event): void
     {
         if (!$this->isTelehealthUserEvent($event)) {
             throw new \InvalidArgumentException("saveTelehealthUserAction called with invalid event object");
         }
+
         // need to check our global settings
 
         $isTelehealthEnabled = ($_POST['comlink-telehealth-user-enable'] ?? "0") == "1";
@@ -127,15 +124,16 @@ class TeleHealthUserAdminController
         }
 
         // we need to save our data that holds the user settings.
-        $settings = $this->personSettingsRepository->getSettingsForUser($userId);
+        $settings = $this->teleHealthPersonSettingsRepository->getSettingsForUser($userId);
         if (empty($settings)) {
             $settings = new TeleHealthPersonSettings();
             $settings->setIsPatient(false);
             $settings->setDbRecordId($userId);
         }
+
         $settings->setIsEnabled($isTelehealthEnabled);
 
         // save our configured telehealth settings
-        $this->personSettingsRepository->saveSettingsForPerson($settings);
+        $this->teleHealthPersonSettingsRepository->saveSettingsForPerson($settings);
     }
 }

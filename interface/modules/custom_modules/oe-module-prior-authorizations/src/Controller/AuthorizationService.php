@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  package OpenEMR
  *  link    https://www.open-emr.org
@@ -7,7 +9,6 @@
  *  Copyright (c) 2022.
  *  All Rights Reserved
  */
-
 namespace Juggernaut\OpenEMR\Modules\PriorAuthModule\Controller;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -15,13 +16,21 @@ use OpenEMR\Common\Database\QueryUtils;
 class AuthorizationService
 {
     private const MODULE_TABLE = 'module_prior_authorizations';
+
     private ?int $id = null;
+
     private ?int $pid = null;
+
     private ?string $auth_num = null;
+
     private ?string $start_date = null;
+
     private ?string $end_date = null;
+
     private ?string $cpt = null;
+
     private ?int $init_units = null;
+
     private ?int $remaining_units = null;
 
     public function storeAuthorizationInfo(): void
@@ -51,13 +60,11 @@ class AuthorizationService
         return sqlQuery($statement, $binds);
     }
 
-    public function setId($id): void
+    public function setId(?int $id): void
     {
         $this->id = $id;
     }
-    /**
-     * @return mixed
-     */
+
     public function getPid(): ?int
     {
         return $this->pid;
@@ -79,9 +86,6 @@ class AuthorizationService
         return $this->auth_num;
     }
 
-    /**
-     * @param string $auth_num
-     */
     public function setAuthNum(string $auth_num): void
     {
         $this->auth_num = $auth_num;
@@ -98,7 +102,7 @@ class AuthorizationService
     /**
      * @param $start_data
      */
-    public function setStartDate($start_data): void
+    public function setStartDate(?string $start_data): void
     {
         $this->start_date = $start_data;
     }
@@ -111,9 +115,6 @@ class AuthorizationService
         return $this->end_date;
     }
 
-    /**
-     * @param string $end_date
-     */
     public function setEndDate(string $end_date): void
     {
         $this->end_date = $end_date;
@@ -127,41 +128,26 @@ class AuthorizationService
         return $this->cpt;
     }
 
-    /**
-     * @param string $cpt
-     */
     public function setCpt(string $cpt): void
     {
         $this->cpt = $cpt;
     }
 
-    /**
-     * @return int|null
-     */
     public function getInitUnits(): ?int
     {
         return $this->init_units;
     }
 
-    /**
-     * @param int $init_units
-     */
     public function setInitUnits(int $init_units): void
     {
         $this->init_units = $init_units;
     }
 
-    /**
-     * @return int|null
-     */
     public function getRemainingUnits(): ?int
     {
         return $this->remaining_units;
     }
 
-    /**
-     * @param int $remaining_units
-     */
     public function setRemainingUnits(int $remaining_units): void
     {
         $this->remaining_units = $remaining_units;
@@ -183,7 +169,7 @@ class AuthorizationService
         return sqlQuery($sql);
     }
 
-    public static function registration($clinic): bool|string
+    public static function registration(array $clinic): bool|string
     {
         $curl = curl_init();
         curl_setopt_array($curl, array(

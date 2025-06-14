@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 //------------Forms generated from formsWiz
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-function hearingtest_report($pid, $encounter, $cols, $id)
+function hearingtest_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_hearingtest", $id);
@@ -20,7 +22,7 @@ function hearingtest_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td><span class=bold>" . text($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

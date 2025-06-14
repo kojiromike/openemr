@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * aftercare_plan save.php
  *
@@ -13,8 +15,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -47,9 +49,9 @@ $sets = "pid = ?,
     goal_c_relapse_potential_I =  ?";
 
 
-if (empty($id)) {
+if ($id === 0) {
     $newid = sqlInsert(
-        "INSERT INTO form_aftercare_plan SET $sets",
+        'INSERT INTO form_aftercare_plan SET ' . $sets,
         [
             $_SESSION["pid"],
             $_SESSION["authProvider"],
@@ -72,7 +74,7 @@ if (empty($id)) {
     addForm($encounter, "Aftercare Plan", $newid, "aftercare_plan", $pid, $userauthorized);
 } else {
     sqlStatement(
-        "UPDATE form_aftercare_plan SET $sets WHERE id = ?;",
+        sprintf('UPDATE form_aftercare_plan SET %s WHERE id = ?;', $sets),
         [
             $_SESSION["pid"],
             $_SESSION["authProvider"],

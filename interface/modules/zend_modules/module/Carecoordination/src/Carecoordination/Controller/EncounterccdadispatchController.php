@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Controller/EncounterccdadispatchController.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Controller;
 
 use Application\Listener\Listener;
@@ -39,11 +40,11 @@ class EncounterccdadispatchController extends AbstractActionController
 
     protected $sections;
 
-    protected $encounterccdadispatchTable;
+    protected \Carecoordination\Model\EncounterccdadispatchTable $encounterccdadispatchTable;
 
     protected $createdtime;
 
-    protected $listenerObject;
+    protected \Application\Listener\Listener $listenerObject;
 
     protected $recipients;
 
@@ -65,7 +66,7 @@ class EncounterccdadispatchController extends AbstractActionController
         $this->encounterccdadispatchTable = $encounterccdadispatchTable;
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
 
         global $assignedEntity;
@@ -101,8 +102,8 @@ class EncounterccdadispatchController extends AbstractActionController
         $this->document_type = $request->getPost('downloadformat_type') ?? $request->getQuery('downloadformat_type');
 
         // Date Range format.
-        $date_start = !empty($this->getRequest()->getPost('form_date_from') ?? null) ? date('Ymd', strtotime($this->getRequest()->getPost('form_date_from'))) : null;
-        $date_end = !empty($this->getRequest()->getPost('form_date_to') ?? null) ? date('Ymd', strtotime($this->getRequest()->getPost('form_date_to'))) : null;
+        $date_start = empty($this->getRequest()->getPost('form_date_from') ?? null) ? null : date('Ymd', strtotime($this->getRequest()->getPost('form_date_from')));
+        $date_end = empty($this->getRequest()->getPost('form_date_to') ?? null) ? null : date('Ymd', strtotime($this->getRequest()->getPost('form_date_to')));
         $filter_content = !empty($this->getRequest()->getPost('form_filter_content') ?? null);
         $this->date_options = [
             'date_start' => $date_start,
@@ -126,6 +127,7 @@ class EncounterccdadispatchController extends AbstractActionController
             EventAuditLogger::instance()->newEvent("qrda3-export", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "QRDA3 view");
             exit;
         }
+
         // QRDA I batch selected pids download as zip.
         if ($downloadqrda === 'download_qrda') {
             $xmlController = new QrdaReportController();
@@ -139,9 +141,11 @@ class EncounterccdadispatchController extends AbstractActionController
                     $measures = 'all'; // defaults to all current measures per patient.
                 }
             }
+
             $xmlController->downloadQrdaIAsZip($pids, $measures, 'xml');
             exit;
         }
+
         // QRDA III batch selected pids download as zip.
         if ($downloadqrda3 === 'download_qrda3') {
             $xmlController = new QrdaReportController();
@@ -155,6 +159,7 @@ class EncounterccdadispatchController extends AbstractActionController
                     $measures = 'all'; // defaults to all current measures per patient.
                 }
             }
+
             $xmlController->downloadQrdaIII($pids, $measures);
             exit;
         }
@@ -163,6 +168,7 @@ class EncounterccdadispatchController extends AbstractActionController
             $combination = $this->params('pids');
             $view = $this->params('view');
         }
+
         // Since called outside a route(api from cdaDocumentService) we haven't any route parameters
         // so we need to get necessary parameters from post request.
         if (!empty($_POST['sent_by_app'] ?? '')) {
@@ -186,6 +192,7 @@ class EncounterccdadispatchController extends AbstractActionController
                     if ($this->latest_ccda) {
                         $this->encounter_id = $this->getEncounterccdadispatchTable()->getLatestEncounter($this->patient_id);
                     }
+
                     $result = $ccdaGenerator->generate(
                         $this->patient_id,
                         $this->encounter_id,
@@ -222,20 +229,21 @@ class EncounterccdadispatchController extends AbstractActionController
 
                 if ($view && !$downloadccda) {
                     $xml = simplexml_load_string($content);
-                    $xsl = new DOMDocument();
+                    $domDocument = new DOMDocument();
                     // cda.xsl is self-contained with bootstrap and jquery.
                     // cda-web.xsl when used, is for referencing styles from internet.
-                    $xsl->load(__DIR__ . '/../../../../../public/xsl/cda.xsl');
-                    $proc = new XSLTProcessor();
-                    $proc->importStyleSheet($xsl); // attach the xsl rules
+                    $domDocument->load(__DIR__ . '/../../../../../public/xsl/cda.xsl');
+                    $xsltProcessor = new XSLTProcessor();
+                    $xsltProcessor->importStyleSheet($domDocument); // attach the xsl rules
                     $outputFile = sys_get_temp_dir() . '/out_' . time() . '.html';
-                    $proc->transformToURI($xml, $outputFile);
+                    $xsltProcessor->transformToURI($xml, $outputFile);
 
                     $htmlContent = file_get_contents($outputFile);
                     $result = unlink($outputFile); // remove the file so we don't have PHI left around on the filesystem
                     if (!$result) {
                         (new SystemLogger())->errorLogCaller("Failed to unlink temporary CDA output on hard drive. This could expose PHI and needs to be investigated.", ['filename' => $outputFile]);
                     }
+
                     echo $htmlContent;
                 }
 
@@ -271,10 +279,10 @@ class EncounterccdadispatchController extends AbstractActionController
                 echo $content;
                 die;
             }
-        } catch (CcdaServiceConnectionException $exception) {
+        } catch (CcdaServiceConnectionException $ccdaServiceConnectionException) {
             http_response_code(StatusCode::INTERNAL_SERVER_ERROR);
             echo xlt("Failed to connect to ccdaservice. Verify your environment is setup correctly by following the instructions in the ccdaservice's Readme file");
-            (new SystemLogger())->errorLogCaller("Connection error with ccda service", ['message' => $exception->getMessage(), 'trace' => $exception->getTraceAsString()]);
+            (new SystemLogger())->errorLogCaller("Connection error with ccda service", ['message' => $ccdaServiceConnectionException->getMessage(), 'trace' => $ccdaServiceConnectionException->getTraceAsString()]);
             die();
         }
 
@@ -284,8 +292,9 @@ class EncounterccdadispatchController extends AbstractActionController
                 echo $content;
                 exit;
             }
+
             if (empty($downloadccda)) {
-                $practice_filename = "CCDA_{$this->patient_id}.xml";
+                $practice_filename = sprintf('CCDA_%s.xml', $this->patient_id);
                 header("Cache-Control: public");
                 header("Content-Description: File Transfer");
                 header("Content-Disposition: attachment; filename=" . $practice_filename);
@@ -293,32 +302,30 @@ class EncounterccdadispatchController extends AbstractActionController
                 header("Content-Transfer-Encoding: binary");
                 echo $content;
             }
+
             exit;
-        } catch (Exception $e) {
-            die($e->getMessage());
+        } catch (Exception $exception) {
+            die($exception->getMessage());
         }
     }
 
-    public function get_file_name($dir_source)
+    public function get_file_name(string $dir_source): string
     {
         $tmpfile = '';
-        if (is_dir($dir_source)) {
-            if ($dh = opendir($dir_source)) {
-                while (($file = readdir($dh)) !== false) {
-                    if (filetype($dir_source . $file) == 'file') {
-                        $tmpfile = $dir_source . $file;
-                        chmod($tmpfile, 0777);
-                    }
+        if (is_dir($dir_source) && $dh = opendir($dir_source)) {
+            while (($file = readdir($dh)) !== false) {
+                if (filetype($dir_source . $file) == 'file') {
+                    $tmpfile = $dir_source . $file;
+                    chmod($tmpfile, 0777);
                 }
-
-                closedir($dh);
             }
+            closedir($dh);
         }
 
         return $tmpfile;
     }
 
-    public function download_file($tmpfile, $practice_filename, $file_size)
+    public function download_file($tmpfile, string $practice_filename, $file_size): void
     {
         ob_clean();
         header("Cache-Control: public");
@@ -349,14 +356,14 @@ class EncounterccdadispatchController extends AbstractActionController
     {
         $auto_send = $this->getEncounterccdadispatchTable()->getSettings('Carecoordination', 'hie_auto_send_id');
         if ($auto_send != 'yes') {
-            return;
+            return null;
         }
 
-        $view = new ViewModel(array(
+        $viewModel = new ViewModel(array(
             'combination' => $combination,
             'listenerObject' => $this->listenerObject,
         ));
-        $view->setTerminal(true);
+        $viewModel->setTerminal(true);
         return $this->forward()->dispatch('encounterccdadispatch', array('action' => 'index'));
     }
 
@@ -366,7 +373,7 @@ class EncounterccdadispatchController extends AbstractActionController
     * @param    None
     * @return   None
     */
-    public function autosignoffAction()
+    public function autosignoffAction(): \Laminas\View\Model\ViewModel
     {
         $auto_signoff_days = $this->getEncounterccdadispatchTable()->getSettings('Carecoordination', 'hie_auto_sign_off_id');
         $str_time = ((strtotime(date('Y-m-d'))) - ($auto_signoff_days * 60 * 60 * 24));
@@ -377,10 +384,10 @@ class EncounterccdadispatchController extends AbstractActionController
             $result = $this->getEncounterccdadispatchTable()->signOff($row['pid'], $row['encounter']);
         }
 
-        $view = new ViewModel(
+        $viewModel = new ViewModel(
             array('encounter' => $result, 'listenerObject' => $this->listenerObject)
         );
-        $view->setTerminal(true);
-        return $view;
+        $viewModel->setTerminal(true);
+        return $viewModel;
     }
 }

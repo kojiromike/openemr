@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Class to be called from Laminas Module Manager for reporting management actions.
  * Example is if the module is enabled, disabled or unregistered ect.
@@ -45,7 +47,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param        $methodName
      * @param        $modId
-     * @param string $currentActionStatus
      * @return string On method success a $currentAction status should be returned or error string.
      */
     public function moduleManagerAction($methodName, $modId, string $currentActionStatus = 'Success'): string
@@ -62,10 +63,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * Required method to return namespace
      * If namespace isn't provided return empty string
      * and register namespace at top of this script..
-     *
-     * @return string
      */
-    public static function getModuleNamespace(): string
+    protected static function getModuleNamespace(): string
     {
         // Module Manager will register this namespace.
         return 'OpenEMR\\Modules\\WenoModule\\';
@@ -74,10 +73,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * Required method to return this class object
      * so it will be instantiated in Laminas Manager.
-     *
-     * @return ModuleManagerListener
      */
-    public static function initListenerSelf(): ModuleManagerListener
+    protected static function initListenerSelf(): ModuleManagerListener
     {
         return new self();
     }
@@ -85,41 +82,39 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function install($modId, $currentActionStatus): mixed
     {
-        $modService = new ModuleService();
+        $moduleService = new ModuleService();
         /* setting the active ui flag here will allow the config button to show
          * before enable. This is a good thing because it allows the user to
          * configure the module before enabling it. However, if the module is disabled
          * this flag is reset by MM.
         */
-        $modService::setModuleState($modId, '0', '1');
+        $moduleService::setModuleState($modId, '0', '1');
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function help_requested($modId, $currentActionStatus): mixed
+    private function help_requested($currentActionStatus): mixed
     {
         // must call a script that implements a dialog to show help.
         // I can't find a way to override the Lamina's UI except using a dialog.
         if (file_exists(__DIR__ . '/show_help.php')) {
             include __DIR__ . '/show_help.php';
         }
+
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function preenable($modId, $currentActionStatus): mixed
+    private function preenable($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -127,23 +122,22 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function enable($modId, $currentActionStatus): mixed
     {
-        $modService = new ModuleService();
-        if ($modService->isWenoConfigured()) {
-            $modService::setModuleState($modId, '1', '0');
+        $moduleService = new ModuleService();
+        if ($moduleService->isWenoConfigured()) {
+            $moduleService::setModuleState($modId, '1', '0');
             return $currentActionStatus;
         }
-        $modService::setModuleState($modId, '1', '1');
+
+        $moduleService::setModuleState($modId, '1', '1');
         return xlt("Weno eRx Service is not configured. Please configure Weno eRx Service in the Weno Module Setup.");
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function disable($modId, $currentActionStatus): mixed
     {
@@ -155,9 +149,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function unregister($modId, $currentActionStatus): mixed
+    private function unregister($currentActionStatus): mixed
     {
         $sql = "DELETE FROM `background_services` WHERE `name` = ? OR `name` = ?";
         sqlQuery($sql, array('WenoExchange', 'WenoExchangePharmacies'));
@@ -167,15 +160,14 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function reset_module($modId, $currentActionStatus): mixed
+    private function reset_module($modId): mixed
     {
         $rtn = true;
-        $modService = new ModuleService();
+        $moduleService = new ModuleService();
         $logMessage = ''; // Initialize an empty string to store log messages
 
-        if (!$modService::getModuleState($modId)) {
+        if (!$moduleService::getModuleState($modId)) {
             $sql = "DELETE FROM `user_settings` WHERE `setting_label` LIKE 'global:weno%'";
             $rtn = sqlQuery($sql);
             $logMessage .= "DELETE FROM `user_settings`: " . (empty($rtn) ? "Success" : "Failed") . "\n";
@@ -206,9 +198,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function install_sql($modId, $currentActionStatus): mixed
+    private function install_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -216,9 +207,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function upgrade_sql($modId, $currentActionStatus): mixed
+    private function upgrade_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -228,12 +218,11 @@ class ModuleManagerListener extends AbstractModuleActionListener
      *
      * @param        $modId
      * @param string $col
-     * @return array
      */
-    function getModuleRegistry($modId, $col = '*'): array
+    public function getModuleRegistry($modId, $col = '*'): array
     {
         $registry = [];
-        $sql = "SELECT $col FROM modules WHERE mod_id = ?";
+        $sql = sprintf('SELECT %s FROM modules WHERE mod_id = ?', $col);
         $results = sqlQuery($sql, array($modId));
         foreach ($results as $k => $v) {
             $registry[$k] = trim((preg_replace('/\R/', '', $v)));

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/forms/group_attendance/view.php
  *
@@ -11,5 +13,4 @@
  * @copyright Copyright (c) 2016 Amiel Elboim <amielel@matrix.co.il>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-require_once("new.php");
+require_once(__DIR__ . "/new.php");

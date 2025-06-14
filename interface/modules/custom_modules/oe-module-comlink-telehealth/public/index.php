@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * API index page for receiving requests from the OpenEMR clinician requests.
  *
@@ -11,7 +13,7 @@
  */
 
 // since we are working inside the portal we have to use the portal session verification logic here...
-require_once "../../../../globals.php";
+require_once __DIR__ . "/../../../../globals.php";
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Bootstrap;
 
@@ -26,5 +28,6 @@ $queryVars['authUser'] = $_SESSION['authUser'] ?? null;
 if (!empty($_SERVER['HTTP_APICSRFTOKEN'])) {
     $queryVars['csrf_token'] = $_SERVER['HTTP_APICSRFTOKEN'];
 }
+
 $roomController->dispatch($action, $queryVars);
 exit;

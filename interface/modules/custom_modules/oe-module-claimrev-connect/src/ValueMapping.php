@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,18 +11,17 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 class ValueMapping
 {
-    public static function mapPayerResponsibility($payerResponsibility)
+    public static function mapPayerResponsibility($payerResponsibility): string
     {
-        if (strtolower($payerResponsibility) == "primary") {
+        if (strtolower($payerResponsibility) === "primary") {
             return "p";
-        } elseif (strtolower($payerResponsibility) == "secondary") {
+        } elseif (strtolower($payerResponsibility) === "secondary") {
             return "s";
-        } elseif (strtolower($payerResponsibility) == "tertiary") {
+        } elseif (strtolower($payerResponsibility) === "tertiary") {
             return"t";
         } else {
             return substr($payerResponsibility, 0, 1);

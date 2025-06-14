@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the creating and updating of the weno alternate and primary pharmacies.
  * Saving of these properties are handled by the scripts

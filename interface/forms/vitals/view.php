@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * vitals view.php
  *
@@ -11,8 +13,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once "C_FormVitals.class.php";
+require_once($srcdir . '/api.inc.php');
+require_once __DIR__ . "/C_FormVitals.class.php";
 
 $c = new C_FormVitals();
 $c->setFormId($_GET['id']);

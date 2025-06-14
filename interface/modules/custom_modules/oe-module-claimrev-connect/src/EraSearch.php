@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
@@ -20,15 +21,13 @@ class EraSearch
     public static function search($search)
     {
         $token = ClaimRevApi::getAccessToken();
-        $data = ClaimRevApi::searchDownloadableFiles($search, $token);
 
-        return $data;
+        return ClaimRevApi::searchDownloadableFiles($search, $token);
     }
 
     public static function downloadEra($objectId)
     {
         $token = ClaimRevApi::getAccessToken();
-        $data = ClaimRevApi::getFileForDownload($objectId, $token);
-        return $data;
+        return ClaimRevApi::getFileForDownload($objectId, $token);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Controller/ModuleconfigController.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -28,23 +29,23 @@ class ModuleconfigController extends AbstractActionController
     public function indexAction()
     {
         // TODO: how does this even work?? It's constructor expects an adapter class and it's not used...
-        $form = new ModuleconfigForm();
-        $form->get('hie_author_id')->setAttribute('options', array('user 1','user 2'));
-
-        $view =  new ViewModel(array(
-            'form' => $form,
+        $moduleconfigForm = new ModuleconfigForm();
+        $moduleconfigForm->get('hie_author_id')->setAttribute('options', array('user 1','user 2'));
+        return new ViewModel(array(
+            'form' => $moduleconfigForm,
         ));
-        return $view;
     }
 
     public function exchangeArray($data)
     {
     }
-    public function getArrayCopy()
+
+    public function getArrayCopy(): array
     {
         return get_object_vars($this);
     }
-    public function setInputFilter(InputFilterInterface $inputFilter)
+
+    public function setInputFilter(InputFilterInterface $inputFilter): never
     {
         throw new \Exception("Not used");
     }
@@ -53,7 +54,7 @@ class ModuleconfigController extends AbstractActionController
     {
         if (!$this->inputFilter) {
             $inputFilter = new InputFilter();
-            $factory     = new InputFactory();
+            $inputFactory     = new InputFactory();
 
 
             $this->inputFilter = $inputFilter;
@@ -62,7 +63,10 @@ class ModuleconfigController extends AbstractActionController
         return $this->inputFilter;
     }
 
-    public function getHookConfig()
+    /**
+     * @return list<array{name: 'send_to_hie', title: 'Send To HIE', path: 'encountermanager'}>
+     */
+    public function getHookConfig(): array
     {
     //SOECIFY HOOKS DETAILS OF A MODULE IN AN ARRAY, WITH MODULE NAME AS KEY
     //SHOULD SPECIFY THE CONTROLLER AND ITS ACTION IN THE PATH, INCLUDING INDEX ACTION
@@ -77,7 +81,7 @@ class ModuleconfigController extends AbstractActionController
         return $hooks;
     }
 
-    public function getDependedModulesConfig()
+    public function getDependedModulesConfig(): array
     {
         // these modules need to be activated before this module can be installed
         $dependedModules = array(
@@ -89,15 +93,14 @@ class ModuleconfigController extends AbstractActionController
         return $dependedModules;
     }
 
-    public function getAclConfig()
+    public function getAclConfig(): array
     {
-        $acl = array(
+        return array(
         array(
         'section_id' => 'send_to_hie',
         'section_name' => 'Send To HIE',
         'parent_section' => 'carecoordination',
         ),
         );
-        return $acl;
     }
 }

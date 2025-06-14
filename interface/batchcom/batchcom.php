@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Batch Communication Tool for selecting/communicating with subsets of patients
  *
@@ -13,9 +15,9 @@
  */
 
 //INCLUDES, DO ANY ACTIONS, THEN GET OUR DATA
-require_once("../globals.php");
-require_once("$srcdir/registry.inc.php");
-require_once("batchcom.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/registry.inc.php');
+require_once(__DIR__ . "/batchcom.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -96,42 +98,42 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
         $params = array();
 
         //appointment dates
-        if ($_POST['app_s'] != 0 and $_POST['app_s'] != '') {
+        if ($_POST['app_s'] != 0 && $_POST['app_s'] != '') {
             $sql .= " and cal_events.pc_eventDate >= ?";
-            array_push($params, $_POST['app_s']);
+            $params[] = $_POST['app_s'];
         }
 
-        if ($_POST['app_e'] != 0 and $_POST['app_e'] != '') {
+        if ($_POST['app_e'] != 0 && $_POST['app_e'] != '') {
             $sql .= " and cal_events.pc_endDate <= ?";
-            array_push($params, $_POST['app_e']);
+            $params[] = $_POST['app_e'];
         }
 
         // encounter dates
-        if ($_POST['seen_since'] != 0 and $_POST['seen_since'] != '') {
+        if ($_POST['seen_since'] != 0 && $_POST['seen_since'] != '') {
             $sql .= " and forms.date >= ?" ;
-            array_push($params, $_POST['seen_since']);
+            $params[] = $_POST['seen_since'];
         }
 
-        if ($_POST['seen_before'] != 0 and $_POST['seen_before'] != '') {
+        if ($_POST['seen_before'] != 0 && $_POST['seen_before'] != '') {
             $sql .= " and forms.date <= ?" ;
-            array_push($params, $_POST['seen_before']);
+            $params[] = $_POST['seen_before'];
         }
 
         // age
-        if ($_POST['age_from'] != 0 and $_POST['age_from'] != '') {
+        if ($_POST['age_from'] != 0 && $_POST['age_from'] != '') {
             $sql .= " and DATEDIFF( CURDATE( ), patient_data.DOB )/ 365.25 >= ?";
-            array_push($params, $_POST['age_from']);
+            $params[] = $_POST['age_from'];
         }
 
-        if ($_POST['age_upto'] != 0 and $_POST['age_upto'] != '') {
+        if ($_POST['age_upto'] != 0 && $_POST['age_upto'] != '') {
             $sql .= " and DATEDIFF( CURDATE( ), patient_data.DOB )/ 365.25 <= ?";
-            array_push($params, $_POST['age_upto']);
+            $params[] = $_POST['age_upto'];
         }
 
         // gender
         if ($_POST['gender'] != 'Any') {
             $sql .= " and patient_data.sex=?";
-            array_push($params, $_POST['gender']);
+            $params[] = $_POST['gender'];
         }
 
         // hipaa override
@@ -139,11 +141,10 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
             $sql .= " and patient_data.hipaa_mail='YES' ";
         }
 
-        switch ($_POST['process_type']) :
-            case $choices[1]: // Email
-                $sql .= " and patient_data.email IS NOT NULL ";
-                break;
-        endswitch;
+        if ($_POST['process_type'] === $choices[1]) {
+            // Email
+            $sql .= " and patient_data.email IS NOT NULL ";
+        }
 
         // sort by
         $sql .= ' ORDER BY ' . escape_identifier($_POST['sort_by'], array_values($sort_by_choices), true);
@@ -159,10 +160,10 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
                     generate_csv($res);
                     exit();
                 case $process_choices[1]: // Email
-                    require_once('batchEmail.php');
+                    require_once(__DIR__ . '/batchEmail.php');
                     exit();
                 case $process_choices[2]: // Phone list
-                    require_once('batchPhoneList.php');
+                    require_once(__DIR__ . '/batchPhoneList.php');
                     exit();
             endswitch;
         }
@@ -177,7 +178,7 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
 </head>
 <body class="body_top container">
 <header>
-    <?php require_once("batch_navigation.php");?>
+    <?php require_once(__DIR__ . "/batch_navigation.php");?>
     <h1 class="text-center"><?php echo xlt('Batch Communication Tool')?></h1>
 </header>
 <main class="mx-4">
@@ -214,7 +215,7 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
                 <select name="sort_by" class="form-control">
                     <?php
                     foreach ($sort_by_choices as $choice => $sorting_code) {
-                        echo "<option value=\"$sorting_code\">" . text($choice) . "</option>";
+                        echo sprintf('<option value="%s">', $sorting_code) . text($choice) . "</option>";
                     }
                     ?>
                 </select>

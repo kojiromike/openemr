@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the saving, retriving, and updating of ehi_export_job_tasks records.
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Services;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -22,6 +23,7 @@ use OpenEMR\Validators\ProcessingResult;
 class EhiExportJobTaskService extends BaseService
 {
     const TABLE_NAME = "ehi_export_job_tasks";
+
     const TABLE_NAME_PATIENT_JOIN_TABLE = "ehi_export_job_task_patients";
 
     public function __construct()
@@ -51,29 +53,31 @@ class EhiExportJobTaskService extends BaseService
                 $exportResult->fromJSON($exportedResult);
                 $ehiExportJobTask->exportedResult = $exportResult;
             }
+
             if ($loadPatients) {
                 $patientPids = $this->getPatientPidsForJobTaskId($ehiExportJobTask->getId());
                 $ehiExportJobTask->addPatientIdList($patientPids);
             }
         }
+
         return $ehiExportJobTask;
     }
 
-    public function insert(EhiExportJobTask $task)
+    public function insert(EhiExportJobTask $ehiExportJobTask): EhiExportJobTask
     {
         $sql = "INSERT INTO " . self::TABLE_NAME . " (`ehi_export_job_id`, `status`) "
             . " VALUES (?,?) ";
         $bind = [
-            $task->ehi_export_job_id
-            , $task->getStatus()
+            $ehiExportJobTask->ehi_export_job_id
+            , $ehiExportJobTask->getStatus()
         ];
         QueryUtils::startTransaction();
         try {
             $insertId = QueryUtils::sqlInsert($sql, $bind);
-            $task->setId($insertId);
+            $ehiExportJobTask->setId($insertId);
 
-            if ($task->hasPatientIds()) {
-                $patientIds = $task->getPatientIds();
+            if ($ehiExportJobTask->hasPatientIds()) {
+                $patientIds = $ehiExportJobTask->getPatientIds();
                 $patientJoinSql = "INSERT INTO " . self::TABLE_NAME_PATIENT_JOIN_TABLE . " (`ehi_task_id`, `pid`) "
                     . " SELECT ehi_task_id,pid FROM " . self::TABLE_NAME . " CROSS JOIN (SELECT pid FROM patient_data WHERE pid IN ( "
                     . str_repeat("?, ", count($patientIds) - 1) . "? ) ) pids WHERE ehi_task_id = ? ";
@@ -86,39 +90,43 @@ class EhiExportJobTaskService extends BaseService
             // roll it up
             throw $exception;
         }
-        return $task;
+
+        return $ehiExportJobTask;
     }
 
-    public function update(EhiExportJobTask $task)
+    public function update(EhiExportJobTask $ehiExportJobTask): EhiExportJobTask
     {
-        $sql = "UPDATE " . self::TABLE_NAME . " SET `status`= ?" . ($task->isCompleted() ? ",`completion_date`= NOW() " : "");
+        $sql = "UPDATE " . self::TABLE_NAME . " SET `status`= ?" . ($ehiExportJobTask->isCompleted() ? ",`completion_date`= NOW() " : "");
         $bind = [
-            $task->getStatus()
+            $ehiExportJobTask->getStatus()
         ];
-        if (isset($task->export_document_id)) {
+        if (isset($ehiExportJobTask->export_document_id)) {
             $sql .= ",export_document_id= ? ";
-            $bind[] = $task->export_document_id;
+            $bind[] = $ehiExportJobTask->export_document_id;
         } else {
             $sql .= ",export_document_id= NULL ";
         }
-        if ($task->getStatus() == "completed") {
+
+        if ($ehiExportJobTask->getStatus() === "completed") {
             $sql .= ",completion_date= NOW() ";
         }
-        if (isset($task->error_message)) {
+
+        if (isset($ehiExportJobTask->error_message)) {
             $sql .= ",error_message= ? ";
-            $bind[] = $task->error_message;
+            $bind[] = $ehiExportJobTask->error_message;
         } else {
             $sql .= ",error_message= NULL ";
         }
-        if (isset($task->exportedResult)) {
+
+        if (isset($ehiExportJobTask->exportedResult)) {
             $sql .= ",exported_result= ? ";
-            $bind[] = json_encode($task->exportedResult);
+            $bind[] = json_encode($ehiExportJobTask->exportedResult);
         } else {
             $sql .= ",exported_result= NULL ";
         }
 
         $sql .= " WHERE ehi_task_id = ? ";
-        $bind[] = $task->getId();
+        $bind[] = $ehiExportJobTask->getId();
 
         QueryUtils::startTransaction();
         try {
@@ -129,7 +137,8 @@ class EhiExportJobTaskService extends BaseService
             // roll it up
             throw $exception;
         }
-        return $task;
+
+        return $ehiExportJobTask;
     }
 
     private function getPatientPidsForJobTaskId(?int $taskId)

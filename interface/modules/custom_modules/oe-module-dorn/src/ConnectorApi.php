@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022-2025 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn;
 
 use DateTime;
@@ -30,42 +31,45 @@ class ConnectorApi
         if (!empty($originalOrderNumber)) {
             $params['originalOrderNumber'] = $originalOrderNumber;
         }
+
         if (!empty($primaryId)) {
             $params['primaryId'] = $primaryId;
         }
+
         if (!empty($startDateTime)) {
             $params['startDateTime'] = $startDateTime;
         }
+
         if (!empty($endDateTime)) {
             $params['endDateTime'] = $endDateTime;
         }
 
         $url = $url . '?' . http_build_query($params);
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
     public static function sendAck($resultsGuid, $isRejected, $msgs)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Orders/v1/AcknowledgeResult";
-        $data = new AckViewModel();
-        $data->resultsGuid = $resultsGuid;
-        $data->isRejected = $isRejected;
-        if (is_array($msgs) && !empty($msgs)) {
-            $data->errorMessages = $msgs;
+        $ackViewModel = new AckViewModel();
+        $ackViewModel->resultsGuid = $resultsGuid;
+        $ackViewModel->isRejected = $isRejected;
+        if (is_array($msgs) && $msgs !== []) {
+            $ackViewModel->errorMessages = $msgs;
         }
-        return ConnectorApi::postData($url, $data);
+
+        return ConnectorApi::postData($url, $ackViewModel);
     }
 
     public static function setCompendiumLastUpdate($labGuid)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Labs/v1/SetCompendiumInstallDate";
-        $data = new CompendiumInstallDateViewModel();
-        $data->installDate = (new DateTime())->format('Y-m-d\TH:i:s');
-        $data->labGuid = $labGuid;
-        return ConnectorApi::putData($url, $data);
+        $compendiumInstallDateViewModel = new CompendiumInstallDateViewModel();
+        $compendiumInstallDateViewModel->installDate = (new DateTime())->format('Y-m-d\TH:i:s');
+        $compendiumInstallDateViewModel->labGuid = $labGuid;
+        return ConnectorApi::putData($url, $compendiumInstallDateViewModel);
     }
 
     public static function searchPendingLabResults($labAccountNumber, $startDateTime, $endDateTime)
@@ -78,46 +82,45 @@ class ConnectorApi
         if (!empty($labAccountNumber)) {
             $params['labAccountNumber'] = $labAccountNumber;
         }
+
         if (!empty($startDateTime)) {
             $params['startDateTime'] = $startDateTime;
         }
+
         if (!empty($endDateTime)) {
             $params['endDateTime'] = $endDateTime;
         }
 
         $url = $url . '?' . http_build_query($params);
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
-    public static function getLabResults($resultsGuid)
+    public static function getLabResults(string $resultsGuid)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Orders/v1/GetResults/" . $resultsGuid;
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
-    public static function sendOrder($labGuid, $labAccountNumber, $orderNumber, $patientId, $hl7)
+    public static function sendOrder(string $labGuid, string $labAccountNumber, string $orderNumber, string $patientId, $hl7)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Orders/v1/SendLabOrder";
         $base64 = base64_encode($hl7);
-        $data = new LabOrderViewModel();
-        $data->labGuid = $labGuid . '';
-        $data->orderNumber = $orderNumber . '';
-        $data->patientId = $patientId . '';
-        $data->hl7Base64 = $base64;
-        $data->labAccountNumber = $labAccountNumber . '';
-        return ConnectorApi::postData($url, $data);
+        $labOrderViewModel = new LabOrderViewModel();
+        $labOrderViewModel->labGuid = $labGuid . '';
+        $labOrderViewModel->orderNumber = $orderNumber . '';
+        $labOrderViewModel->patientId = $patientId . '';
+        $labOrderViewModel->hl7Base64 = $base64;
+        $labOrderViewModel->labAccountNumber = $labAccountNumber . '';
+        return ConnectorApi::postData($url, $labOrderViewModel);
     }
 
-    public static function getCompendium($labGuid)
+    public static function getCompendium(string $labGuid)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Labs/v1/" . $labGuid . "/Compendium";
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
     public static function createRoute($data)
@@ -127,12 +130,11 @@ class ConnectorApi
         return ConnectorApi::postData($url, $data);
     }
 
-    public static function getLab($labGuid)
+    public static function getLab(string $labGuid)
     {
         $api_server = ConnectorApi::getServerInfo();
         $url = $api_server . "/api/Labs/v1/" . $labGuid;
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
     public static function searchLabs($labName, $phoneNumber, $faxNumber, $city, $state, $zipCode, $isActive, $isConnected)
@@ -145,21 +147,27 @@ class ConnectorApi
         if (!empty($labName)) {
             $params['labName'] = $labName;
         }
+
         if (!empty($phoneNumber)) {
             $params['phoneNumber'] = $phoneNumber;
         }
+
         if (!empty($faxNumber)) {
             $params['faxNumber'] = $faxNumber;
         }
+
         if (!empty($city)) {
             $params['city'] = $city;
         }
+
         if (!empty($state)) {
             $params['state'] = $state;
         }
+
         if (!empty($zipCode)) {
             $params['zipCode'] = $zipCode;
         }
+
         if (!empty($isActive)) {
             if ($isActive == "yes") {
                 $params['isActive'] = "true";
@@ -167,6 +175,7 @@ class ConnectorApi
                 $params['isActive'] = "false";
             }
         }
+
         if (!empty($isConnected)) {
             if ($isConnected == "yes") {
                 $params['isConnected'] = "true";
@@ -176,8 +185,7 @@ class ConnectorApi
         }
 
         $url = $url . '?' . http_build_query($params);
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
     public static function savePrimaryInfo($data)
@@ -195,9 +203,7 @@ class ConnectorApi
             $params = array('npi' => $npi);
             $url = $url . '?' . http_build_query($params);
         }
-
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
     public static function getPrimaryInfos($npi)
@@ -208,9 +214,7 @@ class ConnectorApi
             $params = array('npi' => $npi);
             $url = $url . '?' . http_build_query($params);
         }
-
-        $returnData = ConnectorApi::getData($url);
-        return $returnData;
+        return ConnectorApi::getData($url);
     }
 
 
@@ -225,10 +229,10 @@ class ConnectorApi
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpcode == 200 || $httpcode == 400) {
-            $responseJsonData = json_decode($result);
-            return $responseJsonData;
+            return json_decode($result);
         }
-        error_log("Error " . "Status Code" . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
+
+        error_log('Error Status Code' . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
         return "";
     }
 
@@ -249,15 +253,14 @@ class ConnectorApi
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpcode == 200 || $httpcode == 400) {
-            $responseJsonData = json_decode($result);
-            return $responseJsonData;
+            return json_decode($result);
         }
 
-        error_log("Error " . "Status Code" . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
-        $response = new ApiResponseViewModel();
-        $response->isSuccess = false;
-        $response->responseMessage = "Error Putting Data!";
-        return $response;
+        error_log('Error Status Code' . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
+        $apiResponseViewModel = new ApiResponseViewModel();
+        $apiResponseViewModel->isSuccess = false;
+        $apiResponseViewModel->responseMessage = "Error Putting Data!";
+        return $apiResponseViewModel;
     }
 
     public static function postData($url, $sendData)
@@ -274,55 +277,54 @@ class ConnectorApi
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpcode == 200 || $httpcode == 400) {
-            $responseJsonData = json_decode($result);
-            return $responseJsonData;
+            return json_decode($result);
         }
-        error_log("Error " . "Status Code" . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
-        $response = new ApiResponseViewModel();
-        $response->isSuccess = false;
-        $response->responseMessage = "Error Posting Data!";
-        return $response;
+
+        error_log('Error Status Code' . text($httpcode) . " sending in api " . text($url) . " Message " . text($result));
+        $apiResponseViewModel = new ApiResponseViewModel();
+        $apiResponseViewModel->isSuccess = false;
+        $apiResponseViewModel->responseMessage = "Error Posting Data!";
+        return $apiResponseViewModel;
     }
 
     public static function getServerInfo()
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
-        return $api_server;
+        $globalConfig = $bootstrap->getGlobalConfig();
+        return $globalConfig->getApiServer();
     }
 
-    public static function buildHeader()
+    public static function buildHeader(): array
     {
         $token = ConnectorApi::getAccessToken();
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
-        $headers = [
+        return [
             $content,
             $bearer
         ];
-        return $headers;
     }
 
 
-    public static function canConnectToClaimRev()
+    public static function canConnectToClaimRev(): string
     {
         $token = ClaimRevApi::GetAccessToken();
         if ($token == "") {
             return "No";
         }
+
         return "Yes";
     }
 
     public static function getAccessToken()
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $authority = $globalsConfig->getClientAuthority();
-        $clientId = $globalsConfig->getClientId();
-        $scope = $globalsConfig->getClientScope();
-        $client_secret = $globalsConfig->getClientSecret();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $authority = $globalConfig->getClientAuthority();
+        $clientId = $globalConfig->getClientId();
+        $scope = $globalConfig->getClientScope();
+        $client_secret = $globalConfig->getClientSecret();
+        $globalConfig->getApiServer();
         $headers = [
             'content-type: application/x-www-form-urlencoded'
         ];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Used for displaying dated reminders.
  *
@@ -14,7 +16,7 @@
 
 // removed as jquery is already called in messages page (if you need to use jQuery, uncomment it futher down)
 require_once(__DIR__ . '/../../globals.php');
-require_once("$srcdir/dated_reminder_functions.php");
+require_once($srcdir . '/dated_reminder_functions.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -30,7 +32,7 @@ $today = strtotime(date('Y/m/d'));
 $hasAlerts = false;
 
 // mulitply $updateDelay by 1000 to get miliseconds
-$updateDelay = $updateDelay * 1000;
+$updateDelay *= 1000;
 
 //-----------------------------------------------------------------------------
 // HANDLE AJAX TO MARK REMINDERS AS READ

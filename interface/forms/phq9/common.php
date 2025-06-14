@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * phq-9 form using forms api     new.php    create a new form
  *
@@ -12,17 +14,13 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("phq9.inc.php"); //common strings
-require_once("$srcdir/api.inc.php");
+require_once(__DIR__ . "/phq9.inc.php"); //common strings
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
-if ($viewmode == 'update') {
-    $obj = formFetch("form_phq9", $_GET["id"]);
-} else {
-    $obj = null;
-}
+$obj = $viewmode == 'update' ? formFetch("form_phq9", $_GET["id"]) : null;
 ?>
 <html>
 <head>

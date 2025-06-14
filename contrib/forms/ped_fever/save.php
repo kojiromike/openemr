@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 //
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 if ($encounter == "") {
     $encounter = date("Ymd");

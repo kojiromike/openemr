@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * careplan_actions.php is a template file for the action buttons displayed in the careplan form
  * @package openemr

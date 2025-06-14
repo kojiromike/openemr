@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * forms/eye_mag/taskman.php
  *
@@ -30,24 +32,25 @@ if (!$_SERVER['HTTP_HOST']) {
 }
 
 // Check if running as a cronjob
-if (php_sapi_name() === 'cli') {
+if (PHP_SAPI === 'cli') {
     $ignoreAuth = 1;
     // Since from command line, set $sessionAllowWrite since need to set site_id session and no benefit to set to false
     $sessionAllowWrite = true;
 }
+
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 require_once("php/" . $form_name . "_functions.php");
 require_once($srcdir . "/../controllers/C_Document.class.php");
 require_once($srcdir . "/documents.php");
 
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/lists.inc.php");
-require_once("$srcdir/report.inc.php");
-require_once("php/taskman_functions.php");
-require_once("report.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/lists.inc.php');
+require_once($srcdir . '/report.inc.php');
+require_once(__DIR__ . "/php/taskman_functions.php");
+require_once(__DIR__ . "/report.php");
 
 
 

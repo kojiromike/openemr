@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This script creates an export file and sends it to the users's
  * browser for download.
@@ -13,8 +15,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -37,32 +39,28 @@ $out = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n";
 $indent = 0;
 
 // Add a string to output with some basic sanitizing.
-function Add($tag, $text)
+function Add($tag, $text): void
 {
     global $out, $indent;
     $text = trim(str_replace(array("\r", "\n", "\t"), " ", $text));
     $text = substr(text($text), 0, 50);
-    if (/* $text */ true) {
-        if ($text === 'NULL') {
-            $text = '';
-        }
-
-        for ($i = 0; $i < $indent; ++$i) {
-            $out .= "\t";
-        }
-
-        $out .= "<$tag>$text</$tag>\n";
+    if ($text === 'NULL') {
+        $text = '';
     }
+    for ($i = 0; $i < $indent; ++$i) {
+        $out .= "\t";
+    }
+    $out .= "<{$tag}>{$text}</{$tag}>\n";
 }
 
-function AddIfPresent($tag, $text)
+function AddIfPresent($tag, $text): void
 {
     if (isset($text) && $text !== '') {
         Add($tag, $text);
     }
 }
 
-function OpenTag($tag)
+function OpenTag($tag): void
 {
     global $out, $indent;
     for ($i = 0; $i < $indent; ++$i) {
@@ -70,10 +68,10 @@ function OpenTag($tag)
     }
 
     ++$indent;
-    $out .= "<$tag>\n";
+    $out .= "<{$tag}>\n";
 }
 
-function CloseTag($tag)
+function CloseTag($tag): void
 {
     global $out, $indent;
     --$indent;
@@ -81,7 +79,7 @@ function CloseTag($tag)
         $out .= "\t";
     }
 
-    $out .= "</$tag>\n";
+    $out .= "</{$tag}>\n";
 }
 
 // Remove all non-digits from a string.
@@ -107,13 +105,13 @@ function LWDate($field)
     return fixDate($field);
 }
 
-function xmlTime($str, $default = '9999-12-31T23:59:59')
+function xmlTime($str, $default = '9999-12-31T23:59:59'): array|string|null
 {
     if (empty($default)) {
         $default = '1800-01-01T00:00:00';
     }
 
-    if (strlen($str) < 10 || substr($str, 0, 4) == '0000') {
+    if (strlen($str) < 10 || substr($str, 0, 4) === '0000') {
         $str = $default;
     } elseif (strlen($str) > 10) {
         $str = substr($str, 0, 10) . 'T' . substr($str, 11);
@@ -131,14 +129,12 @@ function xmlTime($str, $default = '9999-12-31T23:59:59')
 // Utility function to get the value for a specified key from a string
 // whose format is key:value|key:value|...
 //
-function getTextListValue($string, $key)
+function getTextListValue($string, $key): string
 {
     $tmp = explode('|', $string);
     foreach ($tmp as $value) {
-        if (preg_match('/^(\w+?):(.*)$/', $value, $matches)) {
-            if ($matches[1] == $key) {
-                return $matches[2];
-            }
+        if (preg_match('/^(\w+?):(.*)$/', $value, $matches) && $matches[1] == $key) {
+            return $matches[2];
         }
     }
 
@@ -202,7 +198,7 @@ function mappedFieldOption($form_id, $field_id, $option_id)
     return ($maparr[0] === '') ? $option_id : $maparr[0];
 }
 
-function exportEncounter($pid, $encounter, $date)
+function exportEncounter($pid, $encounter, $date): void
 {
   // Starting a new visit (encounter).
     OpenTag('IMS_eMRUpload_Visit');
@@ -215,16 +211,16 @@ function exportEncounter($pid, $encounter, $date)
     "b.pid = ? AND b.encounter = ? AND " .
     "b.activity = 1 AND " .
     "c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier ";
-    $bres = sqlStatement($query, array($pid, $encounter));
-    while ($brow = sqlFetchArray($bres)) {
+    $recordset = sqlStatement($query, array($pid, $encounter));
+    while ($brow = sqlFetchArray($recordset)) {
         if (!empty($brow['related_code'])) {
             $relcodes = explode(';', $brow['related_code']);
-            foreach ($relcodes as $codestring) {
-                if ($codestring === '') {
+            foreach ($relcodes as $relcode) {
+                if ($relcode === '') {
                     continue;
                 }
 
-                list($codetype, $code) = explode(':', $codestring);
+                list($codetype, $code) = explode(':', $relcode);
                 if ($codetype !== 'IPPF') {
                     continue;
                 }
@@ -280,13 +276,13 @@ function exportEncounter($pid, $encounter, $date)
     $tres = sqlStatement($query, array($pid, $date));
     while ($trow = sqlFetchArray($tres)) {
         $relcodes = explode(';', $trow['refer_related_code']);
-        foreach ($relcodes as $codestring) {
-            if ($codestring === '') {
+        foreach ($relcodes as $relcode) {
+            if ($relcode === '') {
                 continue;
             }
 
-            list($codetype, $code) = explode(':', $codestring);
-            if ($codetype == 'REF') {
+            list($codetype, $code) = explode(':', $relcode);
+            if ($codetype === 'REF') {
                 // This is the expected case; a direct IPPF code is obsolete.
                 $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
                 "code_type = '16' AND code = ? AND active = 1 " .
@@ -313,10 +309,10 @@ function exportEncounter($pid, $encounter, $date)
     CloseTag('IMS_eMRUpload_Visit');
 }
 
-function endClient($pid, &$encarray)
+function endClient($pid, &$encarray): void
 {
   // Output issues.
-    $ires = sqlStatement("SELECT " .
+    $recordset = sqlStatement("SELECT " .
     "l.id, l.type, l.begdate, l.enddate, l.title, l.diagnosis, " .
     "c.prev_method, c.new_method, c.reason_chg, c.reason_term, " .
     "c.hor_history, c.hor_lmp, c.hor_flow, c.hor_bleeding, c.hor_contra, " .
@@ -333,7 +329,7 @@ function endClient($pid, &$encarray)
     "WHERE l.pid = ? " .
     "ORDER BY l.begdate", array($pid));
 
-    while ($irow = sqlFetchArray($ires)) {
+    while ($irow = sqlFetchArray($recordset)) {
         OpenTag('IMS_eMRUpload_Issue');
         Add('IssueType', substr($irow['type'], 0, 15)); // per email 2009-03-20
         Add('emrIssueId', $irow['id']);
@@ -355,12 +351,12 @@ function endClient($pid, &$encarray)
             }
 
             $avalues = explode('|', $value);
-            foreach ($avalues as $tmp) {
+            foreach ($avalues as $avalue) {
                   OpenTag('IMS_eMRUpload_IssueData');
                   // TBD: Add IssueCodeGroup to identify the list, if any???
                   Add('IssueCodeGroup', '?');
                   Add('IssueCode', $key);
-                  Add('IssueCodeValue', mappedFieldOption($form_id, $key, $tmp));
+                  Add('IssueCodeValue', mappedFieldOption($form_id, $key, $avalue));
                   CloseTag('IMS_eMRUpload_IssueData');
             }
         }
@@ -410,11 +406,11 @@ function endClient($pid, &$encarray)
                 }
 
                     $avalues = explode('|', $value);
-                foreach ($avalues as $tmp) {
+                foreach ($avalues as $avalue) {
                     OpenTag('IMS_eMRUpload_IssueData');
                     Add('IssueCodeGroup', '?');
                     Add('IssueCode', $key);
-                    Add('IssueCodeValue', mappedFieldOption('LBFgcac', $key, $tmp));
+                    Add('IssueCodeValue', mappedFieldOption('LBFgcac', $key, $avalue));
                     CloseTag('IMS_eMRUpload_IssueData');
                 }
             }
@@ -430,7 +426,7 @@ function endClient($pid, &$encarray)
     CloseTag('IMS_eMRUpload_Client');
 }
 
-function endFacility()
+function endFacility(): void
 {
     global $beg_year, $beg_month;
     OpenTag('IMS_eMRUpload_Version');
@@ -633,13 +629,9 @@ if (!empty($form_submit)) {
         "FROM form_encounter WHERE " .
         // "pid = '$last_pid' AND facility_id = '$last_facility' " .
         "pid = '" . add_escape_custom($last_pid) . "' ";
-        if (true) {
-              // The new logic here is to restrict to the given date range.
-              // Set the above to false if all visits are wanted.
-              $query .= "AND " .
-              sprintf("date >= '%04u-%02u-01 00:00:00' AND ", add_escape_custom($beg_year), add_escape_custom($beg_month)) .
-              sprintf("date < '%04u-%02u-01 00:00:00' ", add_escape_custom($end_year), add_escape_custom($end_month));
-        }
+        $query .= "AND " .
+        sprintf("date >= '%04u-%02u-01 00:00:00' AND ", add_escape_custom($beg_year), add_escape_custom($beg_month)) .
+        sprintf("date < '%04u-%02u-01 00:00:00' ", add_escape_custom($end_year), add_escape_custom($end_month));
 
         $query .= "ORDER BY encounter";
 

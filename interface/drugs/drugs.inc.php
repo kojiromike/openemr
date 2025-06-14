@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -22,7 +24,7 @@ $GLOBALS['SELL_FROM_ONE_WAREHOUSE'] = true;
 
 $substitute_array = array('', xl('Allowed'), xl('Not Allowed'));
 
-function send_drug_email($subject, $body)
+function send_drug_email($subject, $body): void
 {
     $recipient = $GLOBALS['practice_return_email_path'];
     if (empty($recipient)) {
@@ -81,7 +83,7 @@ function sellDrug(
             array($patient_id, $encounter_id)
         );
         if (empty($tmp['count'])) {
-            die(xlt('Internal error: the referenced encounter no longer exists.') . text(" $patient_id $encounter_id"));
+            die(xlt('Internal error: the referenced encounter no longer exists.') . text(sprintf(' %s %s', $patient_id, $encounter_id)));
         }
     }
 
@@ -102,15 +104,13 @@ function sellDrug(
         if ($testonly) {
             return true;
         }
-
-        $sale_id = sqlInsert(
+        return sqlInsert(
             "INSERT INTO drug_sales ( " .
             "drug_id, inventory_id, prescription_id, pid, encounter, user, " .
             "sale_date, quantity, fee ) VALUES ( " .
             "?, 0, ?, ?, ?, ?, ?, ?, ?)",
             array($drug_id, $prescription_id, $patient_id, $encounter_id, $user, $sale_date, $quantity, $fee)
         );
-        return $sale_id;
     }
 
   // Combining is never allowed for prescriptions and will not work with
@@ -128,7 +128,7 @@ function sellDrug(
 
   // If the user has a default warehouse, sort those lots first.
     $orderby = ($default_warehouse === '') ?
-    "" : "di.warehouse_id != '$default_warehouse', ";
+    "" : sprintf("di.warehouse_id != '%s', ", $default_warehouse);
     $orderby .= "lo.seq, di.expiration, di.lot_number, di.inventory_id";
 
   // Retrieve lots in order of expiration date within warehouse preference.
@@ -144,12 +144,12 @@ function sellDrug(
         $sqlarr[] = $default_warehouse;
     }
 
-    $query .= "ORDER BY $orderby";
-    $res = sqlStatement($query, $sqlarr);
+    $query .= 'ORDER BY ' . $orderby;
+    $recordset = sqlStatement($query, $sqlarr);
 
   // First pass.  Pick out lots to be used in filling this order, figure out
   // if there is enough quantity on hand and check for lots to be destroyed.
-    while ($row = sqlFetchArray($res)) {
+    while ($row = sqlFetchArray($recordset)) {
         if ($row['warehouse_id'] != $default_warehouse) {
             // Warehouses with seq > 99 are not available.
             $seq = empty($row['seq']) ? 0 : $row['seq'] + 0;
@@ -166,7 +166,7 @@ function sellDrug(
                 $tmp = '[missing lot number]';
             }
 
-            if ($bad_lot_list) {
+            if ($bad_lot_list !== '' && $bad_lot_list !== '0') {
                 $bad_lot_list .= ', ';
             }
 
@@ -202,11 +202,11 @@ function sellDrug(
         return $qty_left <= 0;
     }
 
-    if ($bad_lot_list) {
+    if ($bad_lot_list !== '' && $bad_lot_list !== '0') {
         send_drug_email(
             "Possible lot destruction needed",
             "The following lot(s) are expired or were too small to fill the " .
-            "order for patient $patient_id: $bad_lot_list\n"
+            sprintf('order for patient %s: %s%s', $patient_id, $bad_lot_list, PHP_EOL)
         );
     }
 
@@ -251,11 +251,7 @@ function sellDrug(
 
         // Compute the proportional fee for this line item.  For the last line
         // item take the remaining unallocated fee to avoid round-off error.
-        if ($qty_final) {
-            $thisfee = sprintf('%0.2f', $fee * $thisqty / $quantity);
-        } else {
-            $thisfee = sprintf('%0.2f', $fee_final);
-        }
+        $thisfee = $qty_final ? sprintf('%0.2f', $fee * $thisqty / $quantity) : sprintf('%0.2f', $fee_final);
 
         $fee_final -= $thisfee;
 
@@ -281,7 +277,7 @@ function sellDrug(
                   "UPDATE drug_inventory SET " .
                   "destroy_date = ?, destroy_method = ?, destroy_witness = ?, destroy_notes = ? "  .
                   "WHERE drug_id = ? AND inventory_id = ?",
-                  array($sale_date, xl('Automatic from sale'), $user, "sale_id = $sale_id",
+                  array($sale_date, xl('Automatic from sale'), $user, 'sale_id = ' . $sale_id,
                   $drug_id,
                   $inventory_id)
               );
@@ -305,7 +301,7 @@ function sellDrug(
 }
 
 // Determine if facility and warehouse restrictions are applicable for this user.
-function isUserRestricted($userid = 0)
+function isUserRestricted($userid = 0): bool
 {
     if (!$userid) {
         $userid = $_SESSION['authUserID'];
@@ -369,10 +365,10 @@ function isWarehouseAllowed($facid, $whid, $userid = 0)
 
 // Determine if this product is one that we have on hand and that the user has permission for.
 //
-function isProductSelectable($drug_id)
+function isProductSelectable($drug_id): bool
 {
     $is_user_restricted = isUserRestricted();
-    $wfres = sqlStatement(
+    $recordset = sqlStatement(
         "SELECT di.warehouse_id, lo.option_value AS facid " .
         "FROM drug_inventory AS di " .
         "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
@@ -381,11 +377,13 @@ function isProductSelectable($drug_id)
         "(di.expiration IS NULL OR di.expiration > NOW())",
         array($drug_id)
     );
-    while ($wfrow = sqlFetchArray($wfres)) {
+    while ($wfrow = sqlFetchArray($recordset)) {
         if ($is_user_restricted && !isWarehouseAllowed($wfrow['facid'], $wfrow['warehouse_id'])) {
             continue;
         }
+
         return true;
     }
+
     return false;
 }

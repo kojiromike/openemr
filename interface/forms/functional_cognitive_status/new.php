@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
 * Functional cognitive status form.
 *
@@ -14,9 +16,9 @@
 */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 require_once($GLOBALS['srcdir'] . '/csv_like_join.php');
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
@@ -25,18 +27,18 @@ use OpenEMR\Core\Header;
 
 $returnurl = 'encounter_top.php';
 $formid = (int) (isset($_GET['id']) ? $_GET['id'] : 0);
-if ($formid) {
+if ($formid !== 0) {
     $sql = "SELECT * FROM `form_functional_cognitive_status` WHERE id=? AND pid = ? AND encounter = ?";
     $res = sqlStatement($sql, array($formid,$_SESSION["pid"], $_SESSION["encounter"]));
 
     $all = [];
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $all[$iter] = $row;
     }
     $check_res = $all;
 }
 
-$check_res = $formid ? $check_res : array();
+$check_res = $formid !== 0 ? $check_res : array();
 ?>
 <html>
 <head>

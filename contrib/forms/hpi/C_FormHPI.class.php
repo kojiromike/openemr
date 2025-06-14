@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -7,13 +9,13 @@
 // as published by the Free Software Foundation; either version 2
 
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormHPI.class.php");
+require_once(__DIR__ . "/FormHPI.class.php");
 
 class C_FormHPI extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -23,27 +25,21 @@ class C_FormHPI extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
-        $form = new FormHPI();
+        $formHPI = new FormHPI();
+        $this->assign("data", $formHPI);
+        return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
+    }
+
+    public function view_action($form_id)
+    {
+        $form = is_numeric($form_id) ? new FormHPI($form_id) : new FormHPI();
         $this->assign("data", $form);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
-    {
-        if (is_numeric($form_id)) {
-            $form = new FormHPI($form_id);
-        } else {
-            $form = new FormHPI();
-        }
-
-        $dbconn = $GLOBALS['adodb']['db'];
-        $this->assign("data", $form);
-        return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
-    }
-
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -67,7 +63,5 @@ class C_FormHPI extends Controller
             );
             $_POST['process'] = "";
         }
-
-        return;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Ccr/src/Ccr/Controller/CcrController.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Ccr\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -22,9 +23,11 @@ use Ccr\Model\CcrTable;
 
 class CcrController extends AbstractActionController
 {
-    protected $ccrTable;
-    protected $listenerObject;
-    private $documentsController;
+    protected \Ccr\Model\CcrTable $ccrTable;
+
+    protected \Application\Listener\Listener $listenerObject;
+
+    private \Documents\Controller\DocumentsController $documentsController;
 
     public function __construct(CcrTable $ccrTable, DocumentsController $documentsController)
     {
@@ -48,8 +51,7 @@ class CcrController extends AbstractActionController
         $category_details = $this->getCcrTable()->fetch_cat_id('CCR');
 
         $time_start     = date('Y-m-d H:i:s');
-        $docid          = $this->documentsController->uploadAction($request);
-        $uploaded_documents     = array();
+        $this->documentsController->uploadAction($request);
         $uploaded_documents     = $this->getCcrTable()->fetch_uploaded_documents(array('user' => $_SESSION['authUserID'], 'time_start' => $time_start, 'time_end' => date('Y-m-d H:i:s')));
 
         if (!empty($uploaded_documents[0]['id']) && $uploaded_documents[0]['id'] > 0) {
@@ -70,7 +72,7 @@ class CcrController extends AbstractActionController
         }
 
         $records = $this->getCcrTable()->document_fetch(array('cat_title' => 'CCR'));
-        $view = new ViewModel(array(
+        return new ViewModel(array(
             'records'       => $records,
             'category_id'   => $category_details[0]['id'],
             'file_location' => basename($_FILES['file']['name'] ?? ''),
@@ -78,7 +80,6 @@ class CcrController extends AbstractActionController
             'listenerObject' => $this->listenerObject,
             'commonplugin'  => $this->CommonPlugin(),
         ));
-        return $view;
     }
 
     /*
@@ -86,7 +87,7 @@ class CcrController extends AbstractActionController
     *
     * @param    document_id     documents table ID to fetch the CCR XML file to import the data
     */
-    public function importAction()
+    public function importAction(): void
     {
         $request     = $this->getRequest();
         if ($request->getQuery('document_id')) {
@@ -179,11 +180,11 @@ class CcrController extends AbstractActionController
                                 $var['field_name_value_array']['misc_address_book'][$cnt]['phone'] = $val;
                             } elseif ($key == 'abname') {
                                 $values = explode(' ', $val);
-                                if ($values[0]) {
+                                if ($values[0] !== '' && $values[0] !== '0') {
                                     $var['field_name_value_array']['misc_address_book'][$cnt]['lname'] = $values[0];
                                 }
 
-                                if ($values[1]) {
+                                if ($values[1] !== '' && $values[1] !== '0') {
                                     $var['field_name_value_array']['misc_address_book'][$cnt]['fname'] = $values[1];
                                 }
                             } else {
@@ -193,11 +194,7 @@ class CcrController extends AbstractActionController
                             $var['entry_identification_array']['misc_address_book'][$cnt] = $cnt;
                         } else {
                             if ($sections == 'lists1' && $key == 'activity') {
-                                if ($val == 'Active') {
-                                    $val = 1;
-                                } else {
-                                    $val = 0;
-                                }
+                                $val = $val == 'Active' ? 1 : 0;
                             }
 
                             if ($sections == 'lists2' && $key == 'type') {
@@ -210,11 +207,7 @@ class CcrController extends AbstractActionController
                             }
 
                             if ($sections == 'prescriptions' && $key == 'active') {
-                                if ($val == 'Active') {
-                                    $val = 1;
-                                } else {
-                                    $val = 0;
-                                }
+                                $val = $val == 'Active' ? 1 : 0;
                             }
 
                             $var['field_name_value_array'][$sections][$cnt][$key] = $val;
@@ -284,8 +277,7 @@ class CcrController extends AbstractActionController
 
         $lab_results        = $this->getCcrTable()->getLabResults(array('pid' => $pid));
         $lab_results_audit  = $this->getCcrTable()->createAuditArray($audit_master_id, 'procedure_result,procedure_type');
-
-        $view = new ViewModel(array(
+        return new ViewModel(array(
             'demographics'      => $demographics,
             'demographics_old'  => $demographics_old,
             'problems'          => $problems,
@@ -305,7 +297,6 @@ class CcrController extends AbstractActionController
             'commonplugin'      => $this->CommonPlugin(),
 
         ));
-        return $view;
     }
 
     /**

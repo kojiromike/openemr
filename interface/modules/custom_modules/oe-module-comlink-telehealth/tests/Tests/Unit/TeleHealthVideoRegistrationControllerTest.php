@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the TeleHealthVideoRegistrationController Unit Tests
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthVideoRegistrationController;
@@ -23,41 +24,33 @@ use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Uuid\UuidRegistry;
 use PHPUnit\Framework\TestCase;
 
-class TeleHealthVideoRegistrationControllerTest extends TestCase
+final class TeleHealthVideoRegistrationControllerTest extends TestCase
 {
-    /**
-     * @var TeleHealthVideoRegistrationController
-     */
-    private $controller;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthVideoRegistrationController $teleHealthVideoRegistrationController;
 
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $telehealthConfig;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig $telehealthGlobalConfig;
 
-    /**
-     * @var TelehealthRegistrationCodeService
-     */
-    private $registrationCodeService;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TelehealthRegistrationCodeService $telehealthRegistrationCodeService;
 
     protected function setUp(): void
     {
         global $GLOBALS;
         parent::setUp();
-        $globalsConfig = new TelehealthGlobalConfig();
-        $this->telehealthConfig = $globalsConfig;
-        $providerRepo = new TeleHealthProviderRepository(new SystemLogger(), $globalsConfig);
-        $userRepo = new TeleHealthUserRepository();
-        $this->registrationCodeService = new TelehealthRegistrationCodeService($globalsConfig, $userRepo);
-        $remoteRepo = new TeleHealthRemoteRegistrationService($globalsConfig, $this->registrationCodeService);
+        $telehealthGlobalConfig = new TelehealthGlobalConfig();
+        $this->telehealthGlobalConfig = $telehealthGlobalConfig;
 
-        $this->controller = new TeleHealthVideoRegistrationController($remoteRepo, $providerRepo);
+        $teleHealthProviderRepository = new TeleHealthProviderRepository(new SystemLogger(), $telehealthGlobalConfig);
+        $teleHealthUserRepository = new TeleHealthUserRepository();
+        $this->telehealthRegistrationCodeService = new TelehealthRegistrationCodeService($telehealthGlobalConfig, $teleHealthUserRepository);
+        $teleHealthRemoteRegistrationService = new TeleHealthRemoteRegistrationService($telehealthGlobalConfig, $this->telehealthRegistrationCodeService);
+
+        $this->teleHealthVideoRegistrationController = new TeleHealthVideoRegistrationController($teleHealthRemoteRegistrationService, $teleHealthProviderRepository);
     }
 
-    public function testAddNewUser()
+    public function testAddNewUser(): void
     {
 
-        $userRequest = $this->getCreateUserRequest();
+        $userVideoRegistrationRequest = $this->getCreateUserRequest();
 
         $mock = $this->createMock(TeleHealthUserRepository::class);
 
@@ -67,88 +60,88 @@ class TeleHealthVideoRegistrationControllerTest extends TestCase
 
         $mock->expects($this->once())
             ->method('decryptPassword')
-            ->willReturn($userRequest->getPassword());
+            ->willReturn($userVideoRegistrationRequest->getPassword());
 
-        $this->controller->setTelehealthUserRepository($mock);
-        $savedTelehealthUserId = $this->controller->addNewUser($userRequest);
+        $this->teleHealthVideoRegistrationController->setTelehealthUserRepository($mock);
+        $savedTelehealthUserId = $this->teleHealthVideoRegistrationController->addNewUser($userVideoRegistrationRequest);
         $this->assertEquals(1, $savedTelehealthUserId, "Request was made and saved user id was returned");
     }
 
-    public function testSuspendUser()
+    public function testSuspendUser(): void
     {
-        $controller = $this->controller;
-        $userRequest = $this->getCreateUserRequest();
+        $controller = $this->teleHealthVideoRegistrationController;
+        $userVideoRegistrationRequest = $this->getCreateUserRequest();
 
         $mock = $this->createMock(TeleHealthUserRepository::class);
         $mock->method('saveUser')
             ->willReturn(1);
         $mock->method('getUser')
-            ->willReturn($this->getMockUser(1, $userRequest->getUsername()));
+            ->willReturn($this->getMockUser(1, $userVideoRegistrationRequest->getUsername()));
         $mock->expects($this->once())
             ->method('decryptPassword')
-            ->willReturn($userRequest->getPassword());
+            ->willReturn($userVideoRegistrationRequest->getPassword());
 
         $controller->setTelehealthUserRepository($mock);
-        $savedTelehealthUserId = $controller->addNewUser($userRequest);
+        $savedTelehealthUserId = $controller->addNewUser($userVideoRegistrationRequest);
         $this->assertNotFalse($savedTelehealthUserId, "failed to provision new user before update");
 
-        $result = $controller->suspendUser($userRequest->getUsername(), $userRequest->getPassword());
+        $result = $controller->suspendUser($userVideoRegistrationRequest->getUsername(), $userVideoRegistrationRequest->getPassword());
         $this->assertEquals(true, $result, "Request was made and user was suspended");
     }
 
-    public function testDeactivateUser()
+    public function testDeactivateUser(): void
     {
         $this->markTestIncomplete("skipping test as we don't have a use for deactivation at this point");
     }
 
-    public function testResumeUser()
+    public function testResumeUser(): void
     {
-        $controller = $this->controller;
-        $userRequest = $this->getCreateUserRequest();
+        $controller = $this->teleHealthVideoRegistrationController;
+        $userVideoRegistrationRequest = $this->getCreateUserRequest();
 
         $mock = $this->createMock(TeleHealthUserRepository::class);
         $mock->method('saveUser')
             ->willReturn(1);
         $mock->method('getUser')
-            ->willReturn($this->getMockUser(1, $userRequest->getUsername()));
+            ->willReturn($this->getMockUser(1, $userVideoRegistrationRequest->getUsername()));
         $mock->expects($this->once())
             ->method('decryptPassword')
-            ->willReturn($userRequest->getPassword());
+            ->willReturn($userVideoRegistrationRequest->getPassword());
 
         $controller->setTelehealthUserRepository($mock);
-        $savedTelehealthUserId = $controller->addNewUser($userRequest);
+        $savedTelehealthUserId = $controller->addNewUser($userVideoRegistrationRequest);
         $this->assertNotFalse($savedTelehealthUserId, "failed to provision new user before update");
 
-        $result = $controller->suspendUser($userRequest->getUsername(), $userRequest->getPassword());
+        $result = $controller->suspendUser($userVideoRegistrationRequest->getUsername(), $userVideoRegistrationRequest->getPassword());
         $this->assertEquals(true, $result, "Request was made and user was suspended");
 
         // now resume the user and make sure that works
-        $result = $controller->resumeUser($userRequest->getUsername(), $userRequest->getPassword());
+        $result = $controller->resumeUser($userVideoRegistrationRequest->getUsername(), $userVideoRegistrationRequest->getPassword());
         $this->assertEquals(true, $result, "Request was made and user status was resumed");
     }
 
-    public function testUpdateUser()
+    public function testUpdateUser(): void
     {
-        $controller = $this->controller;
-        $userRequest = $this->getCreateUserRequest();
+        $controller = $this->teleHealthVideoRegistrationController;
+        $userVideoRegistrationRequest = $this->getCreateUserRequest();
 
         $mock = $this->createMock(TeleHealthUserRepository::class);
         $mock->method('saveUser')
             ->willReturn(1);
         $mock->method('getUser')
-            ->willReturn($this->getMockUser(1, $userRequest->getUsername()));
+            ->willReturn($this->getMockUser(1, $userVideoRegistrationRequest->getUsername()));
         $mock->expects($this->once())
             ->method('decryptPassword')
-            ->willReturn($userRequest->getPassword());
+            ->willReturn($userVideoRegistrationRequest->getPassword());
 
         $controller->setTelehealthUserRepository($mock);
-        $savedTelehealthUserId = $controller->addNewUser($userRequest);
+        $savedTelehealthUserId = $controller->addNewUser($userVideoRegistrationRequest);
         $this->assertNotFalse($savedTelehealthUserId, "failed to provision new user before update");
 
         // now attempt to update the user
-        $userRequest->setLastName("Test 2 first name " . $userRequest->getUsername())
-            ->setPassword(sha1($userRequest->getUsername() . " random password"));
-        $result = $controller->updateUser($userRequest);
+        $userVideoRegistrationRequest->setLastName("Test 2 first name " . $userVideoRegistrationRequest->getUsername())
+            ->setPassword(sha1($userVideoRegistrationRequest->getUsername() . " random password"));
+        $result = $controller->updateUser($userVideoRegistrationRequest);
         $this->assertEquals(1, $result, "Request was made and saved user id was returned");
     }
 
@@ -156,24 +149,24 @@ class TeleHealthVideoRegistrationControllerTest extends TestCase
     {
         $uuid = UuidRegistry::getRegistryForTable("users")->createUuid();
 
-        $userRepository = new TeleHealthUserRepository();
-        $password = $userRepository->createUniquePassword();
+        $teleHealthUserRepository = new TeleHealthUserRepository();
+        $password = $teleHealthUserRepository->createUniquePassword();
 
-        $userRequest = new UserVideoRegistrationRequest();
-        $userRequest->setUsername(UuidRegistry::uuidToString($uuid))
+        $userVideoRegistrationRequest = new UserVideoRegistrationRequest();
+        $userVideoRegistrationRequest->setUsername(UuidRegistry::uuidToString($uuid))
             ->setPassword($password)
-            ->setFirstName("Test First Name " . $userRequest->getUsername())
-            ->setLastName("Test Last Name " . $userRequest->getUsername())
-            ->setInstituationId($this->telehealthConfig->getInstitutionId())
-            ->setInstitutionName($this->telehealthConfig->getInstitutionName())
+            ->setFirstName("Test First Name " . $userVideoRegistrationRequest->getUsername())
+            ->setLastName("Test Last Name " . $userVideoRegistrationRequest->getUsername())
+            ->setInstituationId($this->telehealthGlobalConfig->getInstitutionId())
+            ->setInstitutionName($this->telehealthGlobalConfig->getInstitutionName())
             ->setDbRecordId(1)
-            ->setRegistrationCode($this->registrationCodeService->generateRegistrationCode());
-        return $userRequest;
+            ->setRegistrationCode($this->telehealthRegistrationCodeService->generateRegistrationCode());
+        return $userVideoRegistrationRequest;
     }
 
-    private function getMockUser($id, $username, $dbRecordId = null): TeleHealthUser
+    private function getMockUser(int $id, string $username, $dbRecordId = null): TeleHealthUser
     {
-        $user = new TeleHealthUser();
-        return $user->setId($id)->setUsername($username)->setDbRecordId($dbRecordId);
+        $teleHealthUser = new TeleHealthUser();
+        return $teleHealthUser->setId($id)->setUsername($username)->setDbRecordId($dbRecordId);
     }
 }

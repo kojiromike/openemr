@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Clinical Notes form save.php
  *
@@ -16,8 +18,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Services\ClinicalNotesService;
@@ -45,7 +47,7 @@ $note_relations = "";
 
 $clinicalNotesService = new ClinicalNotesService();
 
-if (!empty($form_id)) {
+if ($form_id !== 0) {
     $existingIds  = $clinicalNotesService->getClinicalNoteIdsForPatientForm($form_id, $_SESSION['pid'], $_SESSION['encounter']);
 
     // in order to find the ids that are unique we have to operate on the same type system, we'll convert everything into
@@ -57,9 +59,9 @@ if (!empty($form_id)) {
     // now grab all of the ids that exist that were not submitted so we can mark them as inactive.  This does a
     // mathmatical set substraction.  We don't really delete the records as we need an audit trail here.
     $recordsIdsToDelete = array_diff($existingIdInts, $submittedIdInts);
-    foreach ($recordsIdsToDelete as $recordId) {
+    foreach ($recordsIdsToDelete as $recordIdToDelete) {
         $clinicalNotesService->setActivityForClinicalRecord(
-            $recordId,
+            $recordIdToDelete,
             $_SESSION['pid'],
             $_SESSION['encounter'],
             ClinicalNotesService::ACTIVITY_INACTIVE
@@ -73,8 +75,8 @@ if (!empty($form_id)) {
 $note_records = [];
 
 $count = array_filter($count);
-if (!empty($count)) {
-    foreach ($count as $key => $codeval) {
+if ($count !== []) {
+    foreach (array_keys($count) as $key) {
         $record = [];
         $record['id'] = $ids[$key] ?? null; // new records we don't set an id
         $record['form_id'] = $form_id;
@@ -89,6 +91,7 @@ if (!empty($count)) {
             // the note).
             $record['user'] = $_SESSION["authUser"];
         }
+
         // this is for related issues to the note
         $record['note_related_to'] = parse_note($record['description']);
         //$record['note_related_to'] = $record['description'];
@@ -109,6 +112,6 @@ formJump();
 formFooter();
 function parse_note($note)
 {
-    $result = preg_match_all("/\{\|([^\]]*)\|}/", $note, $matches);
+    preg_match_all("/\{\|([^\]]*)\|}/", $note, $matches);
     return json_encode($matches[1]);
 }

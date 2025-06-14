@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * will display the couchdb log
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Crypto\CryptoGen;
 
@@ -28,7 +30,7 @@ if ($cryptoGen->cryptCheckStandard($fh)) {
     $fh = $cryptoGen->decryptStandard($fh, null, 'database');
 }
 
-if (!empty($fh)) {
+if (!($fh === '' || $fh === '0' || $fh === false)) {
     echo nl2br(text($fh));
 } else {
     echo xlt("CouchDB error log is empty");

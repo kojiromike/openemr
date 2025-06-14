@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * fax_view.php
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -36,7 +38,7 @@ if ($jobid) {
 
     while (!feof($jfhandle)) {
         $line = trim(fgets($jfhandle));
-        if (substr($line, 0, 12) == '!postscript:') {
+        if (substr($line, 0, 12) === '!postscript:') {
             $ffname = $GLOBALS['hylafax_basedir'] . '/' .
                 substr($line, strrpos($line, ':') + 1);
             break;
@@ -44,7 +46,7 @@ if ($jobid) {
     }
 
     fclose($jfhandle);
-    if (!$ffname) {
+    if ($ffname === '' || $ffname === '0') {
         die(xlt("Cannot find postscript document reference in ") . text($jfname));
     }
 } elseif ($_GET['scan']) {
@@ -64,9 +66,9 @@ if (!is_readable($ffname)) {
 ob_start();
 
 $ext = substr($ffname, strrpos($ffname, '.'));
-if ($ext == '.ps') {
+if ($ext === '.ps') {
     passthru("TMPDIR=/tmp ps2pdf '" . escapeshellarg($ffname) . "' -");
-} elseif ($ext == '.pdf' || $ext == '.PDF') {
+} elseif ($ext === '.pdf' || $ext === '.PDF') {
     readfile($ffname);
 } else {
     passthru("tiff2pdf '" . escapeshellarg($ffname) . "'");

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Modules\ClaimRevConnector\ClaimSearch;
@@ -24,13 +25,11 @@ class ClaimsPage
         $startDate = $_POST['startDate'];
         $endDate = $_POST['endDate'];
 
-        $model = new ClaimSearchModel();
-        $model->patientFirstName = $firstName;
-        $model->patientLastName = $lastName;
-        $model->receivedDateStart = $startDate;
-        $model->receivedDateEnd = $endDate;
-
-        $data = ClaimSearch::search($model);
-        return $data;
+        $claimSearchModel = new ClaimSearchModel();
+        $claimSearchModel->patientFirstName = $firstName;
+        $claimSearchModel->patientLastName = $lastName;
+        $claimSearchModel->receivedDateStart = $startDate;
+        $claimSearchModel->receivedDateEnd = $endDate;
+        return ClaimSearch::search($claimSearchModel);
     }
 }

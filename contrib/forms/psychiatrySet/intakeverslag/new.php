@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Intakeverslag
  * Report of First visit - Dutch specific form
@@ -22,8 +24,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -103,11 +105,7 @@ if ($tmpDate && $tmpDate != '0000-00-00 00:00:00') {
 
 <?php
 
-if ($vectAutosave['id']) {
-    $intakeverslag_id = $vectAutosave['id'];
-} else {
-    $intakeverslag_id = "0";
-}
+$intakeverslag_id = $vectAutosave['id'] ? $vectAutosave['id'] : "0";
 
 ?>
 <script>
@@ -279,7 +277,7 @@ function autosave( )
 <br /><br />
 <a href="javascript:document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
-<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt('Don\'t Save'); ?>]</a>
+<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt("Don't Save"); ?>]</a>
 </form>
 
 <div id="timestamp"></div>

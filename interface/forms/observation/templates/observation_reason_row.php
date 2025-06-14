@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * observation_reason_row.php is a template file for the observation reason data elements.
  * @package openemr
@@ -10,7 +12,7 @@
  */
 
 ?>
-<div class="form-row reasonCodeContainer reason_code <?php echo !empty($obj['ob_reason_code']) ? "" : "d-none"; ?>" id="reason_code_<?php echo attr($key); ?>">
+<div class="form-row reasonCodeContainer reason_code <?php echo empty($obj['ob_reason_code']) ? "d-none" : ""; ?>" id="reason_code_<?php echo attr($key); ?>">
     <div class="card mt-2 mb-4">
         <div class="card-header">
             <?php echo xlt("Observation Reason Information"); ?>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2006 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -7,9 +9,9 @@
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
-require_once("../globals.php");
-require_once("drugs.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/drugs.inc.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -18,7 +20,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 $facilityService = new FacilityService();
 
-function send_email($subject, $body)
+function send_email($subject, $body): void
 {
     $recipient = $GLOBALS['practice_return_email_path'];
     if (empty($recipient)) {
@@ -35,7 +37,7 @@ function send_email($subject, $body)
     $mail->Subject = $subject;
     $mail->AddAddress($recipient);
     if (!$mail->Send()) {
-        error_log('There has been a mail error sending to' . " " . errorLogEscape($recipient .
+        error_log('There has been a mail error sending to ' . errorLogEscape($recipient .
         " " . $mail->ErrorInfo));
     }
 }

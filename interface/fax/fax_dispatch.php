@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * fax dispatch
  *
@@ -12,12 +14,12 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/pnotes.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/gprelations.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/pnotes.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/gprelations.inc.php');
 
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -52,34 +54,34 @@ if ($_GET['file']) {
 }
 
 $ext = substr($filename, strrpos($filename, '.'));
-$filebase = basename("/$filename", $ext);
-$faxcache = $GLOBALS['OE_SITE_DIR'] . "/faxcache/$mode/$filebase";
+$filebase = basename('/' . $filename, $ext);
+$faxcache = $GLOBALS['OE_SITE_DIR'] . sprintf('/faxcache/%s/%s', $mode, $filebase);
 
 $info_msg = "";
 
 // This function builds an array of document categories recursively.
 // Kittens are the children of cats, you know.  :-)getKittens
 //
-function getKittens($catid, $catstring, &$categories)
+function getKittens($catid, ?string $catstring, array &$categories): void
 {
-    $cres = sqlStatement("SELECT id, name FROM categories " .
+    $recordset = sqlStatement("SELECT id, name FROM categories " .
     "WHERE parent = ? ORDER BY name", array($catid));
     $childcount = 0;
-    while ($crow = sqlFetchArray($cres)) {
+    while ($crow = sqlFetchArray($recordset)) {
         ++$childcount;
-        getKittens($crow['id'], ($catstring ? "$catstring / " : "") .
+        getKittens($crow['id'], ($catstring ? $catstring . ' / ' : "") .
         ($catid ? $crow['name'] : ''), $categories);
     }
 
   // If no kitties, then this is a leaf node and should be listed.
-    if (!$childcount) {
+    if ($childcount === 0) {
         $categories[$catid] = $catstring;
     }
 }
 
 // This merges the tiff files for the selected pages into one tiff file.
 //
-function mergeTiffs()
+function mergeTiffs(): string
 {
     global $faxcache;
     $msg = '';
@@ -89,16 +91,16 @@ function mergeTiffs()
   // form_images are the checkboxes to the right of the images.
     foreach ($_POST['form_images'] as $inbase) {
         check_file_dir_name($inbase);
-        $inames .= ' ' . escapeshellarg("$inbase.tif");
+        $inames .= ' ' . escapeshellarg($inbase . '.tif');
     }
 
-    if (!$inames) {
+    if ($inames === '' || $inames === '0') {
         die(xlt("Internal error - no pages were selected!"));
     }
 
-    $tmp0 = exec("cd " . escapeshellarg($faxcache) . "; tiffcp $inames temp.tif", $tmp1, $tmp2);
-    if ($tmp2) {
-        $msg .= "tiffcp returned $tmp2: $tmp0 ";
+    $tmp0 = exec("cd " . escapeshellarg($faxcache) . sprintf('; tiffcp %s temp.tif', $inames), $tmp1, $tmp2);
+    if ($tmp2 !== 0) {
+        $msg .= sprintf('tiffcp returned %s: %s ', $tmp2, $tmp0);
     }
 
     return $msg;
@@ -117,7 +119,7 @@ if ($_POST['form_save']) {
 
     if ($_POST['form_cb_copy']) {
         $patient_id = (int) $_POST['form_pid'];
-        if (!$patient_id) {
+        if ($patient_id === 0) {
             die(xlt('Internal error - patient ID was not provided!'));
         }
 
@@ -143,12 +145,12 @@ if ($_POST['form_save']) {
             $ffsuff = '.pdf';
             // If the target filename exists, modify it until it doesn't.
             $count = 0;
-            while (is_file("$docdir/$ffname$ffmod$ffsuff")) {
+            while (is_file(sprintf('%s/%s%s%s', $docdir, $ffname, $ffmod, $ffsuff))) {
                 ++$count;
-                $ffmod = "_$count";
+                $ffmod = '_' . $count;
             }
 
-            $target = "$docdir/$ffname$ffmod$ffsuff";
+            $target = sprintf('%s/%s%s%s', $docdir, $ffname, $ffmod, $ffsuff);
             $docdate = fixDate($_POST['form_docdate']);
 
             // Create the target PDF.  Note that we are relying on the .tif files for
@@ -159,8 +161,8 @@ if ($_POST['form_save']) {
             // It could be omitted, but the output PDFs would then be quite large.
             $tmp0 = exec("tiff2pdf -j -p letter -o " . escapeshellarg($target) . " " . escapeshellarg($faxcache . '/temp.tif'), $tmp1, $tmp2);
 
-            if ($tmp2) {
-                $info_msg .= "tiff2pdf returned $tmp2: $tmp0 ";
+            if ($tmp2 !== 0) {
+                $info_msg .= sprintf('tiff2pdf returned %s: %s ', $tmp2, $tmp0);
             } else {
                 $newid = generate_id();
                 $fsize = filesize($target);
@@ -185,16 +187,16 @@ if ($_POST['form_save']) {
             if ($_POST['form_cb_note'] && !$info_msg) {
                 // Build note text in a way that identifies the new document.
                 // See pnotes_full.php which uses this to auto-display the document.
-                $note = "$ffname$ffmod$ffsuff";
+                $note = $ffname . $ffmod . $ffsuff;
                 for ($tmp = $catid; $tmp;) {
                     $catrow = sqlQuery("SELECT name, parent FROM categories WHERE id = ?", array($tmp));
-                    $note = $catrow['name'] . "/$note";
+                    $note = $catrow['name'] . ('/' . $note);
                     $tmp = $catrow['parent'];
                 }
 
-                $note = "New scanned document $newid: $note";
+                $note = sprintf('New scanned document %s: %s', $newid, $note);
                 $form_note_message = trim($_POST['form_note_message']);
-                if ($form_note_message) {
+                if ($form_note_message !== '' && $form_note_message !== '0') {
                     $note .= "\n" . $form_note_message;
                 }
 
@@ -219,13 +221,13 @@ if ($_POST['form_save']) {
                 $encounter_id = (int) $_POST['form_copy_sn_visit'];
             }
 
-            if (!$info_msg) {
+            if ($info_msg === '' || $info_msg === '0') {
                 // Merge the selected pages.
                 $info_msg .= mergeTiffs();
-                $tmp_name = "$faxcache/temp.tif";
+                $tmp_name = $faxcache . '/temp.tif';
             }
 
-            if (!$info_msg) {
+            if ($info_msg === '' || $info_msg === '0') {
                 // The following is cloned from contrib/forms/scanned_notes/new.php:
                 //
                 $query = "INSERT INTO form_scanned_notes ( notes ) VALUES ( ? )";
@@ -240,10 +242,10 @@ if ($_POST['form_save']) {
                 );
                 //
                 $imagedir = $GLOBALS['OE_SITE_DIR'] . "/documents/" . check_file_dir_name($patient_id) . "/encounters";
-                $imagepath = "$imagedir/" . check_file_dir_name($encounter_id) . "_" . check_file_dir_name($formid) . ".jpg";
+                $imagepath = $imagedir . '/' . check_file_dir_name($encounter_id) . "_" . check_file_dir_name($formid) . ".jpg";
                 if (! is_dir($imagedir)) {
                         $tmp0 = exec('mkdir -p ' . escapeshellarg($imagedir), $tmp1, $tmp2);
-                    if ($tmp2) {
+                    if ($tmp2 !== 0) {
                         die("mkdir returned " . text($tmp2) . ": " . text($tmp0));
                     }
 
@@ -258,8 +260,8 @@ if ($_POST['form_save']) {
                 // we already have a jpeg for each page in faxcache.
                 $cmd = "convert -resize 800 -density 96 " . escapeshellarg($tmp_name) . " -append " . escapeshellarg($imagepath);
                 $tmp0 = exec($cmd, $tmp1, $tmp2);
-                if ($tmp2) {
-                    die("\"" . text($cmd) . "\" returned " . text($tmp2) . ": " . text($tmp0));
+                if ($tmp2 !== 0) {
+                    die('"' . text($cmd) . '" returned ' . text($tmp2) . ": " . text($tmp0));
                 }
             }
 
@@ -267,7 +269,7 @@ if ($_POST['form_save']) {
             if ($_POST['form_cb_note'] && !$info_msg) {
                 $note = "New scanned encounter note for visit on " . substr($erow['date'], 0, 10);
                 $form_note_message = trim($_POST['form_note_message']);
-                if ($form_note_message) {
+                if ($form_note_message !== '' && $form_note_message !== '0') {
                     $note .= "\n" . $form_note_message;
                 }
 
@@ -316,8 +318,8 @@ if ($_POST['form_save']) {
         fclose($tmph);
         $tmp0 = exec("cd " . escapeshellarg($webserver_root . '/custom') . "; " . escapeshellcmd((new CryptoGen())->decryptStandard($GLOBALS['more_secure']['hylafax_enscript'])) .
         " -o " . escapeshellarg($tmpfn2) . " " . escapeshellarg($tmpfn1), $tmp1, $tmp2);
-        if ($tmp2) {
-              $info_msg .= "enscript returned $tmp2: $tmp0 ";
+        if ($tmp2 !== 0) {
+              $info_msg .= sprintf('enscript returned %s: %s ', $tmp2, $tmp0);
         }
 
         unlink($tmpfn1);
@@ -330,8 +332,8 @@ if ($_POST['form_save']) {
             $tmp1,
             $tmp2
         );
-        if ($tmp2) {
-              $info_msg .= "sendfax returned $tmp2: $tmp0 ";
+        if ($tmp2 !== 0) {
+              $info_msg .= sprintf('sendfax returned %s: %s ', $tmp2, $tmp0);
         }
 
         unlink($tmpfn2);
@@ -369,7 +371,7 @@ if ($_POST['form_save']) {
 
     if ($form_cb_delete == '2' && !$info_msg) {
         // Delete the tiff file, with archiving if desired.
-        if ($GLOBALS['hylafax_archdir'] && $mode == 'fax') {
+        if ($GLOBALS['hylafax_archdir'] && $mode === 'fax') {
             rename($filepath, $GLOBALS['hylafax_archdir'] . '/' . $filename);
         } else {
             unlink($filepath);
@@ -379,8 +381,8 @@ if ($_POST['form_save']) {
         if (is_dir($faxcache)) {
             $dh = opendir($faxcache);
             while (($tmp = readdir($dh)) !== false) {
-                if (is_file("$faxcache/$tmp")) {
-                    unlink("$faxcache/$tmp");
+                if (is_file(sprintf('%s/%s', $faxcache, $tmp))) {
+                    unlink(sprintf('%s/%s', $faxcache, $tmp));
                 }
             }
 
@@ -422,32 +424,32 @@ $using_scanned_notes = $tmp['count'];
 //
 if (! is_dir($faxcache)) {
     $tmp0 = exec('mkdir -p ' . escapeshellarg($faxcache), $tmp1, $tmp2);
-    if ($tmp2) {
+    if ($tmp2 !== 0) {
         die("mkdir returned " . text($tmp2) . ": " . text($tmp0));
     }
 
-    if (strtolower($ext) != '.tif') {
+    if (strtolower($ext) !== '.tif') {
         // convert's default density for PDF-to-TIFF conversion is 72 dpi which is
         // not very good, so we upgrade it to "fine mode" fax quality.  It's really
         // better and faster if the scanner produces TIFFs instead of PDFs.
         $tmp0 = exec("convert -density 203x196 " . escapeshellarg($filepath) . " " . escapeshellarg($faxcache . '/deleteme.tif'), $tmp1, $tmp2);
-        if ($tmp2) {
+        if ($tmp2 !== 0) {
             die("convert returned " . text($tmp2) . ": " . text($tmp0));
         }
 
         $tmp0 = exec("cd " . escapeshellarg($faxcache) . "; tiffsplit 'deleteme.tif'; rm -f 'deleteme.tif'", $tmp1, $tmp2);
-        if ($tmp2) {
+        if ($tmp2 !== 0) {
             die("tiffsplit/rm returned " . text($tmp2) . ": " . text($tmp0));
         }
     } else {
         $tmp0 = exec("cd " . escapeshellarg($faxcache) . "; tiffsplit " . escapeshellarg($filepath), $tmp1, $tmp2);
-        if ($tmp2) {
+        if ($tmp2 !== 0) {
             die("tiffsplit returned " . text($tmp2) . ": " . text($tmp0));
         }
     }
 
     $tmp0 = exec("cd " . escapeshellarg($faxcache) . "; mogrify -resize 750x970 -format jpg *.tif", $tmp1, $tmp2);
-    if ($tmp2) {
+    if ($tmp2 !== 0) {
         die("mogrify returned " . text($tmp2) . ": " . text($tmp0) . "; ext is '" . text($ext) . "'; filepath is '" . text($filepath) . "'");
     }
 }
@@ -598,7 +600,7 @@ $ures = sqlStatement("SELECT username, fname, lname FROM users " .
 <h2 class="text-center"><?php echo xlt('Dispatch Received Document'); ?></h2>
 
 <form method='post' name='theform'
- action='fax_dispatch.php?<?php echo ($mode == 'fax') ? 'file' : 'scan'; ?>=<?php echo attr_url($filename); ?>&csrf_token_form=<?php echo attr_url(CsrfUtils::collectCsrfToken()); ?>' onsubmit='return validate()'>
+ action='fax_dispatch.php?<?php echo ($mode === 'fax') ? 'file' : 'scan'; ?>=<?php echo attr_url($filename); ?>&csrf_token_form=<?php echo attr_url(CsrfUtils::collectCsrfToken()); ?>' onsubmit='return validate()'>
 <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
 
 <p><input type='checkbox' name='form_cb_copy' value='1'

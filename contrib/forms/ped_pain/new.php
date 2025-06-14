@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // file new.php
 
 // presents a blank form for evaluating pediatric pain
@@ -14,7 +16,7 @@
 
 require_once(__DIR__ . "/../../globals.php");
 
-require_once("../../../library/api.inc.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
 
 use OpenEMR\Core\Header;
 
@@ -50,7 +52,7 @@ formHeader("Pediatric Pain Evaluation");
 
     $obj = array(); // just to avoid undeclared var warning
 
-    require('form.php'); // to use a single file for both, empty and editing
+    require(__DIR__ . '/form.php'); // to use a single file for both, empty and editing
 
 ?>
 

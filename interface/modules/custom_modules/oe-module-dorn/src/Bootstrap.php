@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -11,12 +13,11 @@
  * @copyright Copyright (c) 2024-2025 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
- namespace OpenEMR\Modules\Dorn;
+namespace OpenEMR\Modules\Dorn;
 
 /**
- * Note the below use statements are importing classes from the OpenEMR core codebase
- */
+* Note the below use statements are importing classes from the OpenEMR core codebase
+*/
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Kernel;
@@ -37,60 +38,52 @@ use Twig\Loader\FilesystemLoader;
 class Bootstrap
 {
     const MODULE_INSTALLATION_PATH = "/interface/modules/custom_modules/";
+
     const MODULE_NAME = "oe-module-dorn";
+
     /**
      * @var EventDispatcherInterface The object responsible for sending and subscribing to events through the OpenEMR system
      */
-    private $eventDispatcher;
+    private \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher;
 
     /**
      * @var GlobalConfig Holds our module global configuration values that can be used throughout the module.
      */
-    private $globalsConfig;
-
-    /**
-     * @var string The folder name of the module.  Set dynamically from searching the filesystem.
-     */
-    private $moduleDirectoryName;
+    private \OpenEMR\Modules\Dorn\GlobalConfig $globalConfig;
 
     /**
      * @var \Twig\Environment The twig rendering environment
      */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Common\Logging\SystemLogger $systemLogger;
 
     public function __construct(EventDispatcherInterface $eventDispatcher, ?Kernel $kernel = null)
     {
         global $GLOBALS;
 
-        if (empty($kernel)) {
+        if (!$kernel instanceof \OpenEMR\Core\Kernel) {
             $kernel = new Kernel();
         }
 
         // NOTE: eventually you will be able to pull the twig container directly from the kernel instead of instantiating
         // it here.
-        $twig = new TwigContainer($this->getTemplatePath(), $kernel);
-        $twigEnv = $twig->getTwig();
-        $this->twig = $twigEnv;
-
-        $this->moduleDirectoryName = basename(dirname(__DIR__));
+        $twigContainer = new TwigContainer($this->getTemplatePath(), $kernel);
+        $twigEnvironment = $twigContainer->getTwig();
+        $this->twigEnvironment = $twigEnvironment;
         $this->eventDispatcher = $eventDispatcher;
 
         // we inject our globals value.
-        $this->globalsConfig = new GlobalConfig($GLOBALS);
-        $this->logger = new SystemLogger();
+        $this->globalConfig = new GlobalConfig($GLOBALS);
+        $this->systemLogger = new SystemLogger();
     }
 
-    public function subscribeToEvents()
+    public function subscribeToEvents(): void
     {
         $this->addGlobalSettings();
 
         // we only add the rest of our event listeners and configuration if we have been fully setup and configured
-        if ($this->globalsConfig->isConfigured()) {
+        if ($this->globalConfig->isConfigured()) {
             $this->registerMenuItems();
             $this->registerTemplateEvents();
             $this->subscribeToApiEvents();
@@ -104,28 +97,29 @@ class Bootstrap
      */
     public function getGlobalConfig()
     {
-        return $this->globalsConfig;
+        return $this->globalConfig;
     }
 
-    public function addGlobalSettings()
+    public function addGlobalSettings(): void
     {
         $this->eventDispatcher->addListener(GlobalsInitializedEvent::EVENT_HANDLE, [$this, 'addGlobalSettingsSection']);
     }
-    public function addGlobalSettingsSection(GlobalsInitializedEvent $event)
+
+    public function addGlobalSettingsSection(GlobalsInitializedEvent $globalsInitializedEvent): void
     {
         // If globals are properly included elsewhere this should not be needed.
         //  Will leave this here for now to avoid breaking anything.
         global $GLOBALS;
 
-        $service = $event->getGlobalsService();
+        $globalsService = $globalsInitializedEvent->getGlobalsService();
         $section = xlt("DORN Lab Integration");
-        $service->createSection($section, 'Portal');
+        $globalsService->createSection($section, 'Portal');
 
-        $settings = $this->globalsConfig->getGlobalSettingSectionConfiguration();
+        $settings = $this->globalConfig->getGlobalSettingSectionConfiguration();
 
         foreach ($settings as $key => $config) {
             $value = $GLOBALS[$key] ?? $config['default'];
-            $service->appendToSection(
+            $globalsService->appendToSection(
                 $section,
                 $key,
                 new GlobalSetting(
@@ -142,47 +136,41 @@ class Bootstrap
     /**
      * We tie into any events dealing with the templates / page rendering of the system here
      */
-    public function registerTemplateEvents()
+    public function registerTemplateEvents(): void
     {
         $this->eventDispatcher->addListener(TwigEnvironmentEvent::EVENT_CREATED, [$this, 'addTemplateOverrideLoader']);
     }
 
     /**
      * Add our javascript and css file for the module to the main tabs page of the system
-     *
-     * @param RenderEvent $event
      */
-    public function renderMainBodyScripts(RenderEvent $event)
+    public function renderMainBodyScripts(RenderEvent $renderEvent)
     {
     }
 
-    /**
-     * @param TwigEnvironmentEvent $event
-     */
-    public function addTemplateOverrideLoader(TwigEnvironmentEvent $event)
+    public function addTemplateOverrideLoader(TwigEnvironmentEvent $twigEnvironmentEvent): void
     {
         try {
-            $twig = $event->getTwigEnvironment();
-            if ($twig === $this->twig) {
+            $twig = $twigEnvironmentEvent->getTwigEnvironment();
+            if ($twig === $this->twigEnvironment) {
                 // we do nothing if its our own twig environment instantiated that we already setup
                 return;
             }
+
             // we make sure we can override our file system directory here.
             $loader = $twig->getLoader();
             if ($loader instanceof FilesystemLoader) {
                 $loader->prependPath($this->getTemplatePath());
             }
-        } catch (LoaderError $error) {
-            $this->logger->errorLogCaller("Failed to create template loader", ['innerMessage' => $error->getMessage(), 'trace' => $error->getTraceAsString()]);
+        } catch (LoaderError $loaderError) {
+            $this->systemLogger->errorLogCaller("Failed to create template loader", ['innerMessage' => $loaderError->getMessage(), 'trace' => $loaderError->getTraceAsString()]);
         }
     }
 
-    public function registerMenuItems()
+    public function registerMenuItems(): void
     {
         if ($this->getGlobalConfig()->getGlobalSetting(GlobalConfig::CONFIG_ENABLE_MENU)) {
             /**
-             * @var    EventDispatcherInterface $eventDispatcher
-             * @var    array $module
              * @global $eventDispatcher @see ModulesApplication::loadCustomModule
              * @global $module @see ModulesApplication::loadCustomModule
              */
@@ -190,9 +178,9 @@ class Bootstrap
         }
     }
 
-    public function addCustomModuleMenuItem(MenuEvent $event)
+    public function addCustomModuleMenuItem(MenuEvent $menuEvent): MenuEvent
     {
-        $menu = $event->getMenu();
+        $menu = $menuEvent->getMenu();
 
         $menuItem = new \stdClass();
         $menuItem->requirement = 0;
@@ -241,9 +229,9 @@ class Bootstrap
             }
         }
 
-        $event->setMenu($menu);
+        $menuEvent->setMenu($menu);
 
-        return $event;
+        return $menuEvent;
     }
 
     public function subscribeToApiEvents()
@@ -251,23 +239,13 @@ class Bootstrap
     }
 
 
-    public function addMetadataConformance(RestApiResourceServiceEvent $event)
+    public function addMetadataConformance(RestApiResourceServiceEvent $restApiResourceServiceEvent): RestApiResourceServiceEvent
     {
-        $event->setServiceClass(CustomSkeletonFHIRResourceService::class);
-        return $event;
+        $restApiResourceServiceEvent->setServiceClass(CustomSkeletonFHIRResourceService::class);
+        return $restApiResourceServiceEvent;
     }
 
-    private function getPublicPath()
-    {
-        return self::MODULE_INSTALLATION_PATH . ($this->moduleDirectoryName ?? '') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR;
-    }
-
-    private function getAssetPath()
-    {
-        return $this->getPublicPath() . 'assets' . DIRECTORY_SEPARATOR;
-    }
-
-    public function getTemplatePath()
+    public function getTemplatePath(): string
     {
         return \dirname(__DIR__) . DIRECTORY_SEPARATOR . "templates" . DIRECTORY_SEPARATOR;
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
 * Review of Systems Checks form
 *
@@ -15,7 +17,7 @@
 */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -370,7 +372,7 @@ $returnurl = 'encounter_top.php';
                                             </div>
                                             <div class="form-check">
                                                 <input type="checkbox" class="form-check-input" id="crohns_disease" name='crohns_disease' />
-                                                <label class="form-check-label" for="crohns_disease"><?php echo xlt('Crohn\'s Disease');?></label>
+                                                <label class="form-check-label" for="crohns_disease"><?php echo xlt("Crohn's Disease");?></label>
                                             </div>
                                         </div>
                                         <div class="form-group">

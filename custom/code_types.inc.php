@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Library and data structure to manage Code Types and code type lookups.
  *
@@ -120,7 +122,7 @@ define('SKIP_TOTAL_TABLE_COUNT', 'skip_total_table_count');
  * @param type $joins               An array which describes additional tables to join as part of a code search.
  * @param array $extraColumns       An array of extra columns to be included in the table definition
  */
-function define_external_table(&$results, int $index, $table_name, $col_code, $col_description, $col_description_brief, $filter_clauses = array(), $version_order = "", $joins = array(), $display_desc = "", $extraColumns = array())
+function define_external_table(array &$results, int $index, $table_name, $col_code, $col_description, $col_description_brief, $filter_clauses = array(), $version_order = "", $joins = array(), $display_desc = "", $extraColumns = array()): void
 {
     $results[$index] = array(EXT_TABLE_NAME => $table_name,
                            EXT_COL_CODE => $col_code,
@@ -141,6 +143,7 @@ function define_external_table(&$results, int $index, $table_name, $col_code, $c
         $results[$index][$key] = $value;
     }
 }
+
 // In order to treat all the code types the same for lookup_code_descriptions, we include metadata for the original codes table
 define_external_table($code_external_tables, 0, 'codes', 'code', 'code_text', 'code_text_short', array(), 'id');
 
@@ -162,12 +165,12 @@ $SNOMED_joins = array(JOIN_TABLE => "sct_concepts",JOIN_FIELDS => array("sct_des
 // For disorders, use the preferred term (DescriptionType=1)
 define_external_table($code_external_tables, 2, 'sct_descriptions', 'ConceptId', 'Term', 'Term', array("DescriptionStatus=0","DescriptionType=1"), "", array($SNOMED_joins));
 // Add the filter to choose only disorders. This filter happens as part of the join with the sct_concepts table
-array_push($code_external_tables[2][EXT_JOINS][0][JOIN_FIELDS], "FullySpecifiedName like '%(disorder)'");
+$code_external_tables[2][EXT_JOINS][0][JOIN_FIELDS][] = "FullySpecifiedName like '%(disorder)'";
 
 // SNOMED-PR definition
 define_external_table($code_external_tables, 9, 'sct_descriptions', 'ConceptId', 'Term', 'Term', array("DescriptionStatus=0","DescriptionType=1"), "", array($SNOMED_joins));
 // Add the filter to choose only procedures. This filter happens as part of the join with the sct_concepts table
-array_push($code_external_tables[9][EXT_JOINS][0][JOIN_FIELDS], "FullySpecifiedName like '%(procedure)'");
+$code_external_tables[9][EXT_JOINS][0][JOIN_FIELDS][] = "FullySpecifiedName like '%(procedure)'";
 
 // SNOMED RF2 definitions
 define_external_table($code_external_tables, 11, 'sct2_description', 'conceptId', 'term', 'term', array("active=1"), "", [], "", [CODE_COLUMN_TYPE => CODE_COLUMN_TYPE_NUMERIC, SKIP_TOTAL_TABLE_COUNT => true]);
@@ -224,26 +227,21 @@ $ct_external_options = $externalCodesEvent->getExternalCodeData();
 /**
  *  Checks to see if using spanish snomed
  */
-function isSnomedSpanish()
+function isSnomedSpanish(): bool
 {
     // See if most recent SNOMED entry is International:Spanish
     $sql = sqlQuery("SELECT `revision_version` FROM `standardized_tables_track` WHERE `name` = 'SNOMED' ORDER BY `id` DESC");
-    if ((!empty($sql)) && ($sql['revision_version'] == "International:Spanish")) {
-        return true;
-    }
-    return false;
+    return (!empty($sql)) && ($sql['revision_version'] == "International:Spanish");
 }
 
 /**
  * Checks is fee are applicable to any of the code types.
- *
- * @return boolean
  */
-function fees_are_used()
+function fees_are_used(): bool
 {
     global $code_types;
-    foreach ($code_types as $value) {
-        if ($value['fee'] && $value['active']) {
+    foreach ($code_types as $code_type) {
+        if ($code_type['fee'] && $code_type['active']) {
             return true;
         }
     }
@@ -256,17 +254,16 @@ function fees_are_used()
  * (If a code type is not set to show in the fee sheet, then is ignored)
  *
  * @param  boolean $fee_sheet Will ignore code types that are not shown in the fee sheet
- * @return boolean
  */
-function modifiers_are_used($fee_sheet = false)
+function modifiers_are_used($fee_sheet = false): bool
 {
     global $code_types;
-    foreach ($code_types as $value) {
-        if ($fee_sheet && !empty($value['nofs'])) {
+    foreach ($code_types as $code_type) {
+        if ($fee_sheet && !empty($code_type['nofs'])) {
             continue;
         }
 
-        if ($value['mod'] && $value['active']) {
+        if ($code_type['mod'] && $code_type['active']) {
             return true;
         }
     }
@@ -276,14 +273,12 @@ function modifiers_are_used($fee_sheet = false)
 
 /**
  * Checks if justifiers are applicable to any of the code types.
- *
- * @return boolean
  */
-function justifiers_are_used()
+function justifiers_are_used(): bool
 {
     global $code_types;
-    foreach ($code_types as $value) {
-        if (!empty($value['just']) && $value['active']) {
+    foreach ($code_types as $code_type) {
+        if (!empty($code_type['just']) && $code_type['active']) {
             return true;
         }
     }
@@ -293,14 +288,12 @@ function justifiers_are_used()
 
 /**
  * Checks is related codes are applicable to any of the code types.
- *
- * @return boolean
  */
-function related_codes_are_used()
+function related_codes_are_used(): bool
 {
     global $code_types;
-    foreach ($code_types as $value) {
-        if ($value['rel'] && $value['active']) {
+    foreach ($code_types as $code_type) {
+        if ($code_type['rel'] && $code_type['active']) {
             return true;
         }
     }
@@ -322,15 +315,15 @@ function convert_type_id_to_key($id)
             return $key;
         }
     }
+    return null;
 }
 
 /**
  * Checks to see if code allows justification (ct_just)
  *
  * @param   string   $key
- * @return  boolean
  */
-function check_is_code_type_justify($key)
+function check_is_code_type_justify($key): bool
 {
     global $code_types;
 
@@ -346,9 +339,8 @@ function check_is_code_type_justify($key)
  *
  * @param   string   $key
  * @param   array    $filter (array of elements that can include 'active','fee','rel','nofs','diag','claim','proc','term','problem')
- * @return  boolean
  */
-function check_code_set_filters($key, $filters = array())
+function check_code_set_filters($key, $filters = array()): bool
 {
     global $code_types;
 
@@ -357,10 +349,8 @@ function check_code_set_filters($key, $filters = array())
     }
 
     foreach ($filters as $filter) {
-        if (array_key_exists($key, $code_types)) {
-            if ($code_types[$key][$filter] != 1) {
-                return false;
-            }
+        if (array_key_exists($key, $code_types) && $code_types[$key][$filter] != 1) {
+            return false;
         }
     }
 
@@ -489,6 +479,7 @@ function main_code_set_search($form_code_type, $search_term, $limit = null, $cat
         // run the non-multiple code set search
         return sequential_code_set_search($form_code_type, $search_term, $limit, $modes, $count, $active, $start, $number, $filter_elements);
     }
+    return null;
 }
 
 /**
@@ -511,7 +502,7 @@ function main_code_set_search($form_code_type, $search_term, $limit = null, $cat
  * @param  array     $return_query    This is a mode that will only return the query (everything except for the LIMIT is included) (returned as an array to include the query string and binding array)
  * @return mixed recordset/integer/array
  */
-function code_set_search($form_code_type, $search_term = "", $count = false, $active = true, $return_only_one = false, $start = null, $number = null, $filter_elements = array(), $limit = null, $mode = 'default', $return_query = false)
+function code_set_search($form_code_type, string $search_term = "", $count = false, $active = true, $return_only_one = false, $start = null, $number = null, $filter_elements = array(), $limit = null, $mode = 'default', $return_query = false)
 {
     global $code_types, $code_external_tables;
 
@@ -519,6 +510,7 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
     if ($limit === null) {
         $limit = 250;
     }
+
   // Figure out the appropriate limit clause
     $limit_query = limit_query_string($limit, $start, $number, $return_only_one);
 
@@ -530,18 +522,14 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
         }
     }
 
-    if ($form_code_type == 'PROD') { // Search for products/drugs
-        if ($count) {
-            $query = "SELECT count(dt.drug_id) as count ";
-        } else {
-            $query = "SELECT dt.drug_id, dt.selector, d.name ";
-        }
-
-         $query .= "FROM drug_templates AS dt, drugs AS d WHERE " .
-                 "( d.name LIKE ? OR " .
-                 "dt.selector LIKE ? ) " .
-                 "AND d.drug_id = dt.drug_id " .
-                 "ORDER BY d.name, dt.selector, dt.drug_id $limit_query";
+    if ($form_code_type == 'PROD') {
+        // Search for products/drugs
+        $query = $count ? "SELECT count(dt.drug_id) as count " : "SELECT dt.drug_id, dt.selector, d.name ";
+        $query .= "FROM drug_templates AS dt, drugs AS d WHERE " .
+                "( d.name LIKE ? OR " .
+                "dt.selector LIKE ? ) " .
+                "AND d.drug_id = dt.drug_id " .
+                ('ORDER BY d.name, dt.selector, dt.drug_id ' . $limit_query);
         $res = sqlStatement($query, array("%" . $search_term . "%", "%" . $search_term . "%"));
     } else { // Start a codes search
         // We are looking up the external table id here.  An "unset" value gets treated as 0(zero) without this test.  This way we can differentiate between "unset" and explicitly zero.
@@ -609,6 +597,7 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
                 if ($table_dot === 'valueset.') {
                     $substitute = 'valueset.code_type as valueset_code_type, ';
                 }
+
                 $query = "SELECT '" . $code_external . "' as code_external, " .
                     $table_dot . $code_col . " as code, " .
                     $display_description . " as code_text, " .
@@ -682,12 +671,12 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
                             $sql_bind_array[] = '"' . $search_term . '*"'; // Add wildcard for partial matches
                         }
                     } else {
-                        foreach ($description_keywords as $keyword) {
+                        foreach ($description_keywords as $description_keyword) {
                             $query .= " AND " . $table_dot . $code_text_col . " LIKE ? ";
-                            $sql_bind_array[] = "%" . $keyword . "%";
+                            $sql_bind_array[] = "%" . $description_keyword . "%";
                         }
                     }
-                } else if (!empty($code_text_col)) {
+                } elseif (!empty($code_text_col)) {
                     // do only a prefix search on small character codes
                     $query .= " AND " . $table_dot . $code_text_col . " LIKE ? ";
                     $sql_bind_array[] = $search_term . "%";
@@ -696,7 +685,8 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
                 $query .= ")";
             } else { // $mode == "default"
                   $query .= "(" . $table_dot . $code_text_col . " LIKE ? OR " . $table_dot . $code_col . " LIKE ?) ";
-                  array_push($sql_bind_array, "%" . $search_term . "%", "%" . $search_term . "%");
+                  $sql_bind_array[] = "%" . $search_term . "%";
+                  $sql_bind_array[] = "%" . $search_term . "%";
             }
 
         // Done setting up the where clause by mode
@@ -739,9 +729,11 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
             $ret = sqlFetchArray($res);
             return $ret['count'];
         }
+
         // return the data
         return $res;
     }
+    return null;
 }
 
 /**
@@ -754,7 +746,7 @@ function code_set_search($form_code_type, $search_term = "", $count = false, $ac
  * @param  string $desc_detail Can choose either the normal description('code_text') or the brief description('code_text_short').
  * @return string         Is of the form "description;description; etc.".
  */
-function lookup_code_descriptions($codes, $desc_detail = "code_text")
+function lookup_code_descriptions($codes, $desc_detail = "code_text"): string
 {
     global $code_types, $code_external_tables;
 
@@ -766,13 +758,13 @@ function lookup_code_descriptions($codes, $desc_detail = "code_text")
     $code_text = '';
     if (!empty($codes)) {
         $relcodes = explode(';', $codes);
-        foreach ($relcodes as $codestring) {
-            if ($codestring === '') {
+        foreach ($relcodes as $relcode) {
+            if ($relcode === '') {
                 continue;
             }
 
             // added $modifier for HCPCS and other internal codesets so can grab exact entry in codes table
-            $code_parts = explode(':', $codestring);
+            $code_parts = explode(':', $relcode);
             $codetype = $code_parts[0] ?? null;
             $code = $code_parts[1] ?? null;
             $modifier = $code_parts[2] ?? null;
@@ -854,7 +846,7 @@ function lookup_code_descriptions($codes, $desc_detail = "code_text")
             $sql .= " LIMIT 1";
             $crow = sqlQuery($sql, $sqlArray);
             if (!empty($crow[$desc_detail])) {
-                if ($code_text) {
+                if ($code_text !== '' && $code_text !== '0') {
                     $code_text .= '; ';
                 }
 
@@ -907,6 +899,7 @@ function sequential_code_set_search($form_code_type, $search_term, $limit = null
             }
         }
     }
+    return null;
 }
 
 /**
@@ -929,7 +922,7 @@ function sequential_code_set_search($form_code_type, $search_term, $limit = null
 function multiple_code_set_search(?array $form_code_types, $search_term, $limit = null, $modes = null, $count = false, $active = true, $start = null, $number = null, $filter_elements = array())
 {
 
-    if (empty($form_code_types)) {
+    if ($form_code_types === null || $form_code_types === []) {
         // Collect the active code types
         $form_code_types = collect_codetypes("active", "array");
     }
@@ -952,8 +945,6 @@ function multiple_code_set_search(?array $form_code_types, $search_term, $limit 
     $flag_first = true;
     $flag_hit = false; //ensure there is a hit to avoid trying an empty query
     foreach ($form_code_types as $form_code_type) {
-        // see if there is a hit
-        $mode_hit = null;
         // only use the count method here, since it's much more efficient than doing the actual query
         $mode_hit = sequential_code_set_search($form_code_type, $search_term, null, $modes, true, $active, null, null, $filter_elements, true);
         if ($mode_hit) {
@@ -988,13 +979,14 @@ function multiple_code_set_search(?array $form_code_types, $search_term, $limit 
         return $counter;
     } else {
         // Finish the query string
-        $query .= ")) as atari $limit_query";
+        $query .= ')) as atari ' . $limit_query;
 
         // Process and return the query (if there was a hit)
         if ($flag_hit) {
             return sqlStatement($query, $sql_bind_array);
         }
     }
+    return null;
 }
 
 /**
@@ -1006,7 +998,7 @@ function multiple_code_set_search(?array $form_code_types, $search_term, $limit 
 * @param  boolean  $return_only_one  if true, then will only return one perfect matching item
 * @return mixed recordset/integer
 */
-function limit_query_string($limit = null, $start = null, $number = null, $return_only_one = false)
+function limit_query_string($limit = null, $start = null, $number = null, $return_only_one = false): string
 {
     if (!is_null($start) && !is_null($number)) {
         // For pagination of results
@@ -1037,16 +1029,19 @@ function recursive_related_code($related_code, $typewanted = 'IPPF2', $depth = 0
     if (++$depth > 4 || empty($related_code)) {
         return false; // protects against relation loops
     }
+
     $relcodes = explode(';', $related_code);
-    foreach ($relcodes as $codestring) {
-        if ($codestring === '') {
+    foreach ($relcodes as $relcode) {
+        if ($relcode === '') {
             continue;
         }
-        list($codetype, $code) = explode(':', $codestring);
+
+        list($codetype, $code) = explode(':', $relcode);
         if ($codetype === $typewanted) {
             // echo "<!-- returning '$code' -->\n"; // debugging
             return $code;
         }
+
         $row = sqlQuery(
             "SELECT related_code FROM codes WHERE " .
             "code_type = ? AND code = ? AND active = 1 " .
@@ -1058,5 +1053,6 @@ function recursive_related_code($related_code, $typewanted = 'IPPF2', $depth = 0
             return $tmp;
         }
     }
+
     return false;
 }

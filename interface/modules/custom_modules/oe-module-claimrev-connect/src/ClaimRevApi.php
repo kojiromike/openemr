@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Common\Http\HttpRestRequest;
@@ -18,24 +19,26 @@ use OpenEMR\Modules\ClaimRevConnector\Bootstrap;
 
 class ClaimRevApi
 {
-    public static function canConnectToClaimRev()
+    public static function canConnectToClaimRev(): string
     {
         $token = ClaimRevApi::GetAccessToken();
         if ($token == "") {
             return "No";
         }
+
         return "Yes";
     }
+
     public static function getAccessToken()
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
+        $globalConfig = $bootstrap->getGlobalConfig();
 
-        $authority = $globalsConfig->getClientAuthority();
-        $clientId = $globalsConfig->getClientId();
-        $scope = $globalsConfig->getClientScope();
-        $client_secret = $globalsConfig->getClientSecret();
-        $api_server = $globalsConfig->getApiServer();
+        $authority = $globalConfig->getClientAuthority();
+        $clientId = $globalConfig->getClientId();
+        $scope = $globalConfig->getClientScope();
+        $client_secret = $globalConfig->getClientSecret();
+        $globalConfig->getApiServer();
 
         $headers = [
            'content-type: application/x-www-form-urlencoded'
@@ -58,14 +61,15 @@ class ClaimRevApi
         if (property_exists($data, 'access_token')) {
             $token = $data->access_token;
         }
+
         return $token;
     }
 
-    public static function uploadClaimFile($ediContents, $fileName, $token)
+    public static function uploadClaimFile($ediContents, $fileName, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -76,8 +80,8 @@ class ClaimRevApi
 
         $url = $api_server . "/api/InputFile/v1";
 
-        $model = new UploadEdiFileContentModel("", $ediContents, $fileName);
-        $payload = json_encode($model, JSON_UNESCAPED_SLASHES);
+        $uploadEdiFileContentModel = new UploadEdiFileContentModel("", $ediContents, $fileName);
+        $payload = json_encode($uploadEdiFileContentModel, JSON_UNESCAPED_SLASHES);
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -94,19 +98,14 @@ class ClaimRevApi
         if ($httpcode != 200) {
             return false;
         }
-
-        if ($data->isError) {
-            return false;
-        }
-
-        return true;
+        return !$data->isError;
     }
 
-    public static function getReportFiles($reportType, $token)
+    public static function getReportFiles($reportType, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -131,15 +130,15 @@ class ClaimRevApi
         if ($httpcode != 200) {
             return "";
         }
-        $data = json_decode($result);
 
-        return $data;
+        return json_decode($result);
     }
-    public static function getDefaultAccount($token)
+
+    public static function getDefaultAccount(string $token): bool|string
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -166,11 +165,12 @@ class ClaimRevApi
 
         return $result;
     }
-    public static function searchClaims($claimSearch, $token)
+
+    public static function searchClaims($claimSearch, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -201,11 +201,12 @@ class ClaimRevApi
 
         return $data;
     }
-    public static function searchDownloadableFiles($downloadSearch, $token)
+
+    public static function searchDownloadableFiles($downloadSearch, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -235,11 +236,12 @@ class ClaimRevApi
 
         return $data;
     }
-    public static function getFileForDownload($objectId, $token)
+
+    public static function getFileForDownload($objectId, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -263,14 +265,14 @@ class ClaimRevApi
         if ($httpcode != 200) {
             return false;
         }
-        $data = json_decode($result);
-        return $data;
+        return json_decode($result);
     }
-    public static function getEligibilityResult($originatingSystemId, $token)
+
+    public static function getEligibilityResult($originatingSystemId, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;
@@ -294,16 +296,15 @@ class ClaimRevApi
         if ($httpcode != 200) {
             return false;
         }
-        $data = json_decode($result);
 
-        return $data;
+        return json_decode($result);
     }
 
-    public static function uploadEligibility($eligibility, $token)
+    public static function uploadEligibility($eligibility, string $token)
     {
         $bootstrap = new Bootstrap($GLOBALS['kernel']->getEventDispatcher());
-        $globalsConfig = $bootstrap->getGlobalConfig();
-        $api_server = $globalsConfig->getApiServer();
+        $globalConfig = $bootstrap->getGlobalConfig();
+        $api_server = $globalConfig->getApiServer();
 
         $content = 'content-type: application/json';
         $bearer = 'authorization: Bearer ' . $token;

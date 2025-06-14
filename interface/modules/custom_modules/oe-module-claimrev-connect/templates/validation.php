@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -17,6 +19,7 @@ if (property_exists($data, 'requestValidations')) {
     $validations = $data->requestValidations;
     PrintProperty::printValidation("Primary Validations", $validations);
 }
+
 if (property_exists($data, 'informationSourceName')) {
     $informationSourceName = $data->informationSourceName;
 

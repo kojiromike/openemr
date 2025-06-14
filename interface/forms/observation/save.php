@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functional cognitive status form.
  *
@@ -14,8 +16,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -53,19 +55,15 @@ if ($id && $id != 0) {
 } else {
     $res2 = sqlStatement("SELECT MAX(id) as largestId FROM `form_observation`");
     $getMaxid = sqlFetchArray($res2);
-    if ($getMaxid['largestId']) {
-        $newid = $getMaxid['largestId'] + 1;
-    } else {
-        $newid = 1;
-    }
+    $newid = $getMaxid['largestId'] ? $getMaxid['largestId'] + 1 : 1;
 
     addForm($encounter, "Observation Form", $newid, "observation", $_SESSION["pid"], $userauthorized);
 }
 
 
 $code_desc = array_filter($code_desc);
-if (!empty($code_desc)) {
-    foreach ($code_desc as $key => $codeval) :
+if ($code_desc !== []) {
+    foreach (array_keys($code_desc) as $key) :
         $ob_unit_value = $ob_unit[$key];
         if ($code[$key] == 'SS003') {
             $ob_value[$key] = $ob_value_phin[$key];
@@ -77,10 +75,8 @@ if (!empty($code_desc)) {
                 foreach ($ob_unit as $key1 => $val) :
                     if ($key1 == 0) {
                         $ob_unit_value = $ob_unit[$key1];
-                    } else {
-                        if ($key1 == $key) {
-                            $ob_unit_value = $ob_unit[$key1];
-                        }
+                    } elseif ($key1 == $key) {
+                        $ob_unit_value = $ob_unit[$key1];
                     }
                 endforeach;
             }
@@ -107,7 +103,7 @@ if (!empty($code_desc)) {
             ob_reason_text = ?,
             date_end    = ?";
         sqlStatement(
-            "INSERT INTO form_observation SET $sets",
+            'INSERT INTO form_observation SET ' . $sets,
             [
                 $newid,
                 $_SESSION["pid"],

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * initialize_code_choice.php
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("templates/code_choices.php");
+require_once(__DIR__ . "/templates/code_choices.php");
 ?>
 
 <script src="<?php echo $web_root;?>/interface/forms/fee_sheet/code_choice/js/view_model.js"></script>

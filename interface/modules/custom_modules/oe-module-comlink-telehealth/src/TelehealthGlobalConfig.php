@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Contains all of the TeleHealth global settings and configuration
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule;
 
 use Comlink\OpenEMR\Module\GlobalConfig;
@@ -27,18 +28,28 @@ class TelehealthGlobalConfig
     public const MODULE_INSTALLATION_PATH = "/interface/modules/custom_modules/";
 
     public const COMLINK_VIDEO_TELEHEALTH_API = 'comlink_telehealth_video_uri';
+
     public const COMLINK_VIDEO_REGISTRATION_API = 'comlink_telehealth_registration_uri';
+
     public const COMLINK_VIDEO_API_USER_ID = 'comlink_telehealth_user_id';
+
     public const COMLINK_VIDEO_API_USER_PASSWORD = 'comlink_telehealth_user_password';
+
     public const COMLINK_VIDEO_TELEHEALTH_CMS_ID = 'comlink_telehealth_cms_id';
+
     // note patients always auto provision
     public const COMLINK_AUTO_PROVISION_PROVIDER = 'comlink_autoprovision_provider';
+
     public const COMLINK_ENABLE_THIRDPARTY_INVITATIONS = "comlink_telehealth_thirdparty_enabled";
+
     public const UNIQUE_INSTALLATION_ID = "unique_installation_id";
+
     public const INSTALLATION_NAME  = "openemr_name";
+
     public const DEBUG_MODE_FLAG = "comlink_telehealth_debug";
 
     public const COMLINK_MINIMIZED_SESSION_POSITION_DEFAULT = "comlink_telehealth_minimized_position_default";
+
     public const DEFAULT_MINIMIZED_SESSION_POSITION_DEFAULT = 'bottom-left';
 
 
@@ -62,30 +73,26 @@ class TelehealthGlobalConfig
     public const COMLINK_TELEHEALTH_PAYMENT_SUBSCRIPTION_ID = "comlink_telehealth_payment_subscription_id";
 
     public const MAX_LOGIN_LIMIT_TIME = 30;
+
     const LOCALE_TIMEZONE_DEFAULT = "Unassigned";
+
     const LOCALE_TIMEZONE = "gbl_time_zone";
 
-    /**
-     * @var CryptoGen
-     */
-    private $cryptoGen;
+    private \OpenEMR\Common\Crypto\CryptoGen $cryptoGen;
 
     /**
      * @var publicWebPath
      */
     private $publicWebPath;
 
-    /**
-     * @var Environment $twig
-     */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
 
-    public function __construct($publicWebPath, $moduleDirectoryName, Environment $twig)
+    public function __construct($publicWebPath, $moduleDirectoryName, Environment $twigEnvironment)
     {
         $this->cryptoGen = new CryptoGen();
         $this->publicWebPath = $publicWebPath;
-        $this->twig = $twig;
+        $this->twigEnvironment = $twigEnvironment;
     }
 
     public function getPortalTimeout()
@@ -120,10 +127,12 @@ class TelehealthGlobalConfig
                 if (stripos($site_addr, "index.php") !== false) {
                     $site_addr = dirname($site_addr);
                 }
-                if (substr($site_addr, -1) == '/') {
+
+                if (substr($site_addr, -1) === '/') {
                     $site_addr = substr($site_addr, 0, -1);
                 }
             }
+
             return $site_addr;
         }
     }
@@ -143,23 +152,19 @@ class TelehealthGlobalConfig
         }
     }
 
-    public function isThirdPartyInvitationsEnabled()
+    public function isThirdPartyInvitationsEnabled(): bool
     {
         return $this->getGlobalSetting(self::COMLINK_ENABLE_THIRDPARTY_INVITATIONS) == '1';
     }
 
-    public function getFHIRPath()
+    public function getFHIRPath(): string
     {
         // this is the internal fhir path not the one accessible from the globals config
         $webroot = $this->getGlobalSetting('webroot');
-        $path = ($webroot ?? "") . '/apis/fhir/';
-        return $path;
+        return ($webroot ?? "") . '/apis/fhir/';
     }
 
-    /**
-     * @return string
-     */
-    public function getAppTitle()
+    public function getAppTitle(): string
     {
         return self::COMLINK_MOBILE_APP_TITLE;
     }
@@ -168,7 +173,7 @@ class TelehealthGlobalConfig
      * Checks if the core telehealth configuration settings are properly setup.
      * @return false|void
      */
-    public function isTelehealthCoreSettingsConfigured()
+    public function isTelehealthCoreSettingsConfigured(): bool
     {
         $config = $this->getGlobalSettingSectionConfiguration();
         $keys = array_keys($config);
@@ -176,6 +181,7 @@ class TelehealthGlobalConfig
             if ($key == $this->isOptionalSetting($key)) {
                 continue;
             }
+
             $value = $this->getGlobalSetting($key);
 
             if (empty($value)) {
@@ -183,8 +189,10 @@ class TelehealthGlobalConfig
                 return false;
             }
         }
+
         return true;
     }
+
     /**
      * Returns true if all of the telehealth settings have been configured.  Otherwise it returns false.
      * @return bool
@@ -199,23 +207,20 @@ class TelehealthGlobalConfig
         if ($this->isThirdPartyInvitationsEnabled()) {
             return $this->isThirdPartyConfigurationSetup();
         }
+
         return true;
     }
 
     /**
      * Checks to determine if the mail server email notifications is setup properly
-     * @return bool
      */
-    public function isEmailNotificationsConfigured()
+    public function isEmailNotificationsConfigured(): int
     {
         $myMailerSetup = MyMailer::isConfigured();
-        if ($myMailerSetup & !empty($this->getPatientReminderName())) {
-            return true;
-        }
-        return false;
+        return $myMailerSetup & !empty($this->getPatientReminderName());
     }
 
-    private function isThirdPartyConfigurationSetup()
+    private function isThirdPartyConfigurationSetup(): bool
     {
         // check to make sure the dependent portal settings are setup correctly
         $enabled = $this->getGlobalSetting('portal_onsite_two_enable') == '1';
@@ -224,6 +229,7 @@ class TelehealthGlobalConfig
             (new SystemLogger())->debug("Telehealth is missing portal_onsite_two_enable enabled");
             return false;
         }
+
         if (!$useBasePath) {
             // check to make sure the portal url is not the default
             $defaultValue = $this->getGlobalSetting('portal_onsite_two_address');
@@ -233,15 +239,17 @@ class TelehealthGlobalConfig
                 return false;
             }
         }
+
         // have to have the qualified site address for our full email link
         if (empty($this->getQualifiedSiteAddress())) {
             (new SystemLogger())->debug("Telehealth is missing qualified site address");
             return false;
         }
+
         return true;
     }
 
-    public function isDebugModeEnabled()
+    public function isDebugModeEnabled(): bool
     {
         $setting = $this->getGlobalSetting(self::DEBUG_MODE_FLAG);
         return $setting !== "";
@@ -283,10 +291,11 @@ class TelehealthGlobalConfig
         if (empty($setting)) {
             $setting = self::DEFAULT_MINIMIZED_SESSION_POSITION_DEFAULT;
         }
+
         return $setting;
     }
 
-    public function getRegistrationAPIPassword()
+    public function getRegistrationAPIPassword(): string|false
     {
         $encryptedValue = $this->getGlobalSetting(self::COMLINK_VIDEO_API_USER_PASSWORD);
         return $this->cryptoGen->decryptStandard($encryptedValue);
@@ -310,14 +319,14 @@ class TelehealthGlobalConfig
         return $GLOBALS[$settingKey] ?? null;
     }
 
-    public function getAppRegistrationCodeLength()
+    public function getAppRegistrationCodeLength(): int
     {
         return self::APP_REGISTRATION_CODE_LENGTH;
     }
 
-    public function getGlobalSettingSectionConfiguration()
+    public function getGlobalSettingSectionConfiguration(): array
     {
-        $settings = [
+        return [
             self::COMLINK_VIDEO_REGISTRATION_API => [
                 'title' => 'Telehealth Registration URI'
                 ,'description' => 'Registration endpoint URI'
@@ -415,7 +424,6 @@ class TelehealthGlobalConfig
 //                ]
 //            ]
         ];
-        return $settings;
     }
 
     public function renderFooterBox($fldid, $fldarray)
@@ -447,10 +455,10 @@ class TelehealthGlobalConfig
             ,'isLocaleConfigured' => $isLocaleConfigured
         ];
 
-        return $this->twig->render("comlink/admin/telehealth_footer_box.html.twig", $dataArray);
+        return $this->twigEnvironment->render("comlink/admin/telehealth_footer_box.html.twig", $dataArray);
     }
 
-    private function isLocaleConfigured()
+    private function isLocaleConfigured(): bool
     {
         // timezone is not set in the $GLOBALS array oddly, not sure why, check against the database
         $record = QueryUtils::fetchRecords("SELECT gl_name, gl_index, gl_value FROM globals WHERE gl_name=?", [self::LOCALE_TIMEZONE]);
@@ -458,18 +466,19 @@ class TelehealthGlobalConfig
             if (empty($record[0]['gl_value'])) {
                 return false;
                 // default can get translated so we need to go with that
-            } else if ($record[0]['gl_value'] == xl(self::LOCALE_TIMEZONE_DEFAULT)) {
+            } elseif ($record[0]['gl_value'] == xl(self::LOCALE_TIMEZONE_DEFAULT)) {
                 return false;
             }
         }
+
         return true;
     }
 
-    public function setupConfiguration(GlobalsService $service)
+    public function setupConfiguration(GlobalsService $globalsService): void
     {
         global $GLOBALS;
         $section = xlt("TeleHealth");
-        $service->createSection($section, 'Portal');
+        $globalsService->createSection($section, 'Portal');
 
         $settings = $this->getGlobalSettingSectionConfiguration();
 
@@ -487,7 +496,8 @@ class TelehealthGlobalConfig
                     $setting->addFieldOption($key, $option);
                 }
             }
-            $service->appendToSection(
+
+            $globalsService->appendToSection(
                 $section,
                 $key,
                 $setting
@@ -495,7 +505,7 @@ class TelehealthGlobalConfig
         }
     }
 
-    private function isOptionalSetting($key)
+    private function isOptionalSetting(int|string $key): bool
     {
         return $key == self::COMLINK_AUTO_PROVISION_PROVIDER
             || $key == self::VERIFY_SETTINGS_BUTTON
@@ -511,16 +521,17 @@ class TelehealthGlobalConfig
     /**
      * Returns the One Time Password Timeout Setting in PHP DatePeriod format IE PT{minutes}M
      * If the setting exceeds
-     * @return string
      */
-    public function getOneTimePasswordTimeoutSetting()
+    public function getOneTimePasswordTimeoutSetting(): string
     {
         $setting = intval($this->getGlobalSetting(self::COMLINK_ONETIME_PASSWORD_LOGIN_TIME_LIMIT));
         if ($setting > self::MAX_LOGIN_LIMIT_TIME) {
             $setting = self::MAX_LOGIN_LIMIT_TIME;
-        } else if ($setting <= 0) { // set it to the default setting
+        } elseif ($setting <= 0) {
+            // set it to the default setting
             $setting = 15;
         }
-        return "PT{$setting}M";
+
+        return sprintf('PT%dM', $setting);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * MainMenuRole class.
  *
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2019 Stephen Nielson <stephen@nielson.org>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Listener;
 
 use OpenEMR\Common\Acl\AclMain;
@@ -30,10 +31,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class ModuleMenuSubscriber implements EventSubscriberInterface
 {
-    public function __construct()
-    {
-    }
-
     public static function getSubscribedEvents()
     {
         return [
@@ -46,13 +43,10 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
      * We inject our module system menu updates when the OpenEMR menu system has been updated.
      * In this case we add any modules that have registered as 'hook's to the Modules sub menu
      * and the reports sub menu.
-     *
-     * @param MenuEvent $menu
-     * @return MenuEvent
      */
-    public function onMenuUpdate(MenuEvent $menu)
+    public function onMenuUpdate(MenuEvent $menuEvent): MenuEvent
     {
-        $menuItems = $menu->getMenu();
+        $menuItems = $menuEvent->getMenu();
         // we are working with objects so this will modify the objects in memory
         foreach ($menuItems as $menuItem) {
             // We don't use the label as the menu's have been translated at this point
@@ -63,16 +57,17 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                 $this->updateModulesReportsMenu($menuItem);
             }
         }
-        return $menu;
+
+        return $menuEvent;
     }
 
     /**
      * If we need to adjust anything in the menu's permissions for the modules
      * we can do that work here..
      */
-    public function onMenuRestrict(MenuEvent $menu)
+    public function onMenuRestrict(MenuEvent $menuEvent): MenuEvent
     {
-        return $menu;
+        return $menuEvent;
     }
 
     /**
@@ -80,13 +75,13 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
      * module system as it really deals with module code.
      * @param $menu_list
      */
-    private function updateModulesModulesMenu(&$menu_list)
+    private function updateModulesModulesMenu(&$menu_list): void
     {
         // TODO: there's a lot of globals here.. these really need to be injected or extracted
         // out so we can test these things...
-        $module_query = sqlStatement("select mod_id,mod_directory,mod_name,mod_nick_name,mod_relative_link,type from modules where mod_active = 1 AND sql_run= 1 order by mod_ui_order asc");
-        if (sqlNumRows($module_query)) {
-            while ($modulerow = sqlFetchArray($module_query)) {
+        $recordset = sqlStatement("select mod_id,mod_directory,mod_name,mod_nick_name,mod_relative_link,type from modules where mod_active = 1 AND sql_run= 1 order by mod_ui_order asc");
+        if (sqlNumRows($recordset)) {
+            while ($modulerow = sqlFetchArray($recordset)) {
                 $module_hooks =  sqlStatement("SELECT msh.*,ms.obj_name,ms.menu_name,ms.path,m.mod_ui_name,m.type, m.mod_relative_link FROM modules_hooks_settings AS msh LEFT OUTER JOIN modules_settings AS ms ON
                                     obj_name=enabled_hooks AND ms.mod_id=msh.mod_id LEFT OUTER JOIN modules AS m ON m.mod_id=ms.mod_id
                                     WHERE m.mod_id = ? AND fld_type=3 AND mod_active=1 AND sql_run=1 AND attached_to='modules' ORDER BY m.mod_id", array($modulerow['mod_id']));
@@ -107,7 +102,7 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                 if (sqlNumRows($module_hooks) == 0) {
                     // module without hooks in module section
                     $acl_section = strtolower($modulerow['mod_directory']);
-                    if (AclMain::zhAclCheck($_SESSION['authUserID'], $acl_section) ?  "" : "1") {
+                    if (AclMain::zhAclCheck($_SESSION['authUserID'], $acl_section) ?  "" : "1" !== '' && AclMain::zhAclCheck($_SESSION['authUserID'], $acl_section) ?  "" : "1" !== '0') {
                         continue;
                     }
 
@@ -116,7 +111,7 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                     $newEntry->url = $relative_link;
                     $newEntry->requirement = 0;
                     $newEntry->target = 'mod';
-                    array_push($menu_list->children, $newEntry);
+                    $menu_list->children[] = $newEntry;
                 } else {
                     // module with hooks in module section
                     $newEntry = new \stdClass();
@@ -127,7 +122,7 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                     $jid = 0;
                     $modid = '';
                     while ($hookrow = sqlFetchArray($module_hooks)) {
-                        if (AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1") {
+                        if (AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1" !== '' && AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1" !== '0') {
                             continue;
                         }
 
@@ -144,10 +139,10 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                             $newEntry->children[] = $subEntry;
                         }
 
-                        $jid++;
+                        ++$jid;
                     }
 
-                    array_push($menu_list->children, $newEntry);
+                    $menu_list->children[] = $newEntry;
                 }
             }
         }
@@ -157,17 +152,17 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
      * load reports created by modules system
      * @param $menu_list  A tree of stdClass objects that represent a menu.
      */
-    private function updateModulesReportsMenu(&$menu_list)
+    private function updateModulesReportsMenu(&$menu_list): void
     {
-        $module_query = sqlStatement("SELECT msh.*,ms.obj_name,ms.menu_name,ms.path,m.mod_ui_name,m.type FROM modules_hooks_settings AS msh LEFT OUTER JOIN modules_settings AS ms ON
+        $recordset = sqlStatement("SELECT msh.*,ms.obj_name,ms.menu_name,ms.path,m.mod_ui_name,m.type FROM modules_hooks_settings AS msh LEFT OUTER JOIN modules_settings AS ms ON
                                     obj_name=enabled_hooks AND ms.mod_id=msh.mod_id LEFT OUTER JOIN modules AS m ON m.mod_id=ms.mod_id
                                     WHERE fld_type=3 AND mod_active=1 AND sql_run=1 AND attached_to='reports' ORDER BY mod_id");
         $reportsHooks = array();
-        if (sqlNumRows($module_query)) {
+        if (sqlNumRows($recordset)) {
             $jid = 0;
             $modid = '';
 
-            while ($hookrow = sqlFetchArray($module_query)) {
+            while ($hookrow = sqlFetchArray($recordset)) {
                 if ($hookrow['type'] == 0) {
                     $modulePath = $GLOBALS['customModDir'];
                     $added = "";
@@ -188,7 +183,7 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
                     array_unshift($menu_list->children, $newEntry);
                 }
 
-                if (AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1") {
+                if (AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1" !== '' && AclMain::zhAclCheck($_SESSION['authUserID'], $hookrow['obj_name']) ?  "" : "1" !== '0') {
                     continue;
                 }
 
@@ -204,7 +199,7 @@ class ModuleMenuSubscriber implements EventSubscriberInterface
 
                 $reportsHooks[count($reportsHooks) - 1]->children[] = $subEntry;
 
-                $jid++;
+                ++$jid;
                 $modid = $hookrow['mod_id'];
             }
         }

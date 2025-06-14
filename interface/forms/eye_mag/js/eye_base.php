@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+    
+    /**
  * forms/eye_mag/js/eye_base.php
  *
  * JS Functions for eye_mag form(s), built with php features for run-time options and translations
@@ -12,10 +14,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-    require_once("../../../globals.php");
-    require_once("$srcdir/api.inc.php");
-    require_once("$srcdir/forms.inc.php");
-    require_once("$srcdir/patient.inc.php");
+    require_once(__DIR__ . "/../../../globals.php");
+    require_once($srcdir . '/api.inc.php');
+    require_once($srcdir . '/forms.inc.php');
+    require_once($srcdir . '/patient.inc.php');
 
     $providerID = $_REQUEST['providerID'];
 
@@ -3419,7 +3421,7 @@ $("body").on("click","[name^='old_canvas']", function() {
                                             <?php
                                             // This query is specific to the provider.
                                             $query  = "select seq from list_options where option_id=?";
-                                            $result = sqlStatement($query, array("Eye_defaults_$providerID"));
+                                            $result = sqlStatement($query, array('Eye_defaults_' . $providerID));
 
                                             $list = sqlFetchArray($result);
                                             $SEQ = $list['seq'] ?? '';
@@ -3437,7 +3439,12 @@ $("body").on("click","[name^='old_canvas']", function() {
                                                 $parameters = '';
                                                 while ($val = sqlFetchArray($start)) {
                                                     $parameters .= "(?, ?, ?, ?, ?, ?),";
-                                                    array_push($add_fields, "Eye_defaults_" . $providerID, $val['option_id'], $val['title'], $val['notes'], '1', $val['seq']);
+                                                    $add_fields[] = "Eye_defaults_" . $providerID;
+                                                    $add_fields[] = $val['option_id'];
+                                                    $add_fields[] = $val['title'];
+                                                    $add_fields[] = $val['notes'];
+                                                    $add_fields[] = '1';
+                                                    $add_fields[] = $val['seq'];
                                                 }
                                                 $parameters = rtrim($parameters, ",");
                                                 $query = "SELECT max(seq) as maxseq FROM list_options WHERE list_id= 'lists'";
@@ -3450,14 +3457,14 @@ $("body").on("click","[name^='old_canvas']", function() {
                                                     ('lists', ?, ?, ?, '1', '0', '', '', '')";
                                                 $providerNAME = getProviderName($providerID);
 
-                                                sqlStatement($query, array("Eye_defaults_$providerID","Eye Exam Defaults $providerNAME ",$seq));
+                                                sqlStatement($query, array('Eye_defaults_' . $providerID,sprintf('Eye Exam Defaults %s ', $providerNAME),$seq));
                                                 $query = "INSERT INTO `list_options` (`list_id`, `option_id`, `title`,`notes`,`activity`,`seq`) VALUES " . $parameters;
                                                 sqlStatement($query, $add_fields);
                                             }
 
                                             $query = "select * from list_options where list_id =? and activity='1' order by seq";
 
-                                            $DEFAULT_data = sqlStatement($query, array("Eye_defaults_$providerID"));
+                                            $DEFAULT_data = sqlStatement($query, array('Eye_defaults_' . $providerID));
                                             while ($row = sqlFetchArray($DEFAULT_data)) {
                                             //$row['notes'] is the clinical zone (EXT,ANTSEG,RETINA,NEURO)
                                             //$row['option_id'] is the field name
@@ -3466,7 +3473,7 @@ $("body").on("click","[name^='old_canvas']", function() {
                                                 echo '$("#' . $row['option_id'] . '").val("' . $row['title'] . '").css("background-color","beige");
                                             ';
                                             }
-                                            function startsWith($str, $needle)
+                                            function startsWith($str, $needle): bool
                                             {
                                                 return substr($str, 0, strlen($needle)) === $needle;
                                             }

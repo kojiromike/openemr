@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CcdaServiceConnectionException is thrown when there is an error in talking to the node ccda service.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 class CcdaServiceConnectionException extends \Exception

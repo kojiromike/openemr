@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -28,7 +30,7 @@ $tab = "home";
     <div class="row">
         <div class="col">
             <?php
-            require '../templates/navbar.php';
+            require __DIR__ . '/../templates/navbar.php';
             ?>
         </div>
     </div>
@@ -40,7 +42,7 @@ $tab = "home";
     <div class="row">
         <div class="col">
             <?php
-            require '../templates/contact.php';
+            require __DIR__ . '/../templates/contact.php';
             ?>
         </div>
     </div>

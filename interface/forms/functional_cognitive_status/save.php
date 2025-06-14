@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functional cognitive status form save.php.
  *
@@ -14,8 +16,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -40,19 +42,15 @@ if ($id && $id != 0) {
 } else {
     $res2 = sqlStatement("SELECT MAX(id) as largestId FROM `form_functional_cognitive_status`");
     $getMaxid = sqlFetchArray($res2);
-    if ($getMaxid['largestId']) {
-        $newid = $getMaxid['largestId'] + 1;
-    } else {
-        $newid = 1;
-    }
+    $newid = $getMaxid['largestId'] ? $getMaxid['largestId'] + 1 : 1;
 
     addForm($encounter, "Functional and Cognitive Status Form", $newid, "functional_cognitive_status", $_SESSION["pid"], $userauthorized);
 }
 
 $code_text = array_filter($code_text);
 
-if (!empty($code_text)) {
-    foreach ($code_text as $key => $codeval) :
+if ($code_text !== []) {
+    foreach (array_keys($code_text) as $key) :
         $sets = "id = ?,
             pid = ?,
             groupname = ?,
@@ -65,7 +63,7 @@ if (!empty($code_text)) {
             description= ?,
             date = ?";
         sqlStatement(
-            "INSERT INTO form_functional_cognitive_status SET $sets",
+            'INSERT INTO form_functional_cognitive_status SET ' . $sets,
             [
                 $newid,
                 $_SESSION["pid"],

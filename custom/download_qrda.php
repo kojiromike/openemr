@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * QRDA Download
  *
@@ -12,10 +14,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../interface/globals.php");
-require_once "$srcdir/report_database.inc.php";
-require_once("$srcdir/options.inc.php");
-require_once("qrda_category1.inc.php");
+require_once(__DIR__ . "/../interface/globals.php");
+require_once $srcdir . '/report_database.inc.php';
+require_once($srcdir . '/options.inc.php');
+require_once(__DIR__ . "/qrda_category1.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -194,7 +196,7 @@ $type_report = (($type_report == "amc") || ($type_report == "amc_2011") || ($typ
                         }
                     }
 
-                    if (!empty($tempCqmAmcString)) {
+                    if ($tempCqmAmcString !== '' && $tempCqmAmcString !== '0') {
                         echo "(" . text($tempCqmAmcString) . ")";
                     }
                 } else {
@@ -218,7 +220,7 @@ $type_report = (($type_report == "amc") || ($type_report == "amc_2011") || ($typ
                 echo "</div>";
                 echo "</td>";
                 echo "</tr>";
-                $counter++;
+                ++$counter;
             }
         } ?>
     </tbody>

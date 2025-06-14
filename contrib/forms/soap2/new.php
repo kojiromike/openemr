@@ -1,9 +1,11 @@
 <?php
 
-require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+declare(strict_types=1);
 
-require("C_FormSOAP.class.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/api.inc.php');
+
+require(__DIR__ . "/C_FormSOAP.class.php");
 
 $c = new C_FormSOAP();
 echo $c->default_action();

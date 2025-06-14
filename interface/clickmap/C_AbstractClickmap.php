@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Copyright Medical Information Integration,LLC info@mi-squared.com
  * This program is free software; you can redistribute it and/or
@@ -34,7 +36,7 @@ abstract class C_AbstractClickmap extends Controller
      *
      * @var template_dir
      */
-    var $template_dir;
+    public $template_dir;
 
     /**
      * @brief Initialize a newly created object belonging to this class
@@ -42,13 +44,13 @@ abstract class C_AbstractClickmap extends Controller
      * @param template_mod
      *  template module name, passed to Controller's initializer.
      */
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $returnurl = 'encounter_top.php';
         $this->template_mod = $template_mod;
         $this->template_dir = $GLOBALS['fileroot'] . "/interface/clickmap/template/";
-        $this->assign("DONT_SAVE_LINK", $GLOBALS['webroot'] . "/interface/patient_file/encounter/$returnurl");
+        $this->assign("DONT_SAVE_LINK", $GLOBALS['webroot'] . ('/interface/patient_file/encounter/' . $returnurl));
         $this->assign("FORM_ACTION", $GLOBALS['webroot']);
         $this->assign("STYLE", $GLOBALS['style']);
     }
@@ -69,31 +71,32 @@ abstract class C_AbstractClickmap extends Controller
      *
      * @return The path to the image backing this form relative to the webroot.
      */
-    abstract function getImage();
+    abstract public function getImage();
 
     /**
      * @brief Override this abstract function to return the label of the optionlists on this form.
      *
      * @return The label used for all dropdown boxes on this form.
      */
-    abstract function getOptionsLabel();
+    abstract public function getOptionsLabel();
 
     /**
      * @brief Override this abstract functon to return a hash of the optionlist (key=>value pairs).
      *
      * @return A hash of key=>value pairs, representing all the possible options in the dropdown boxes on this form.
      */
-    abstract function getOptionList();
+    abstract public function getOptionList();
 
     /**
      * @brief set up the passed in Model object to model the form.
      */
-    private function set_context($model)
+    private function set_context($model): void
     {
         $root = $GLOBALS['webroot'] . "/interface/clickmap";
         $model->saveAction = $GLOBALS['webroot'] . "/interface/forms/" . $model->getCode() . "/save.php";
         $model->template_dir = $root . "/template";
         $model->image = $this->getImage();
+
         $optionList = $this->getOptionList();
         $model->optionList = $optionList != null ? json_encode($optionList) : "null";
         $optionsLabel = $this->getOptionsLabel();
@@ -109,7 +112,7 @@ abstract class C_AbstractClickmap extends Controller
      *
      * @return the result of smarty's fetch() operation.
      */
-    function default_action()
+    public function default_action()
     {
         $model = $this->createModel();
         $this->assign("form", $model);
@@ -125,7 +128,7 @@ abstract class C_AbstractClickmap extends Controller
      *
      * @return the result of smarty's fetch() operation.
      */
-    function view_action($form_id)
+    public function view_action($form_id)
     {
         $model = $this->createModel($form_id);
         $this->assign("form", $model);
@@ -141,7 +144,7 @@ abstract class C_AbstractClickmap extends Controller
      *
      * @return the result of smarty's fetch() operation.
      */
-    function report_action($form_id)
+    public function report_action($form_id)
     {
         $model = $this->createModel($form_id);
         $this->assign("form", $model);
@@ -154,7 +157,7 @@ abstract class C_AbstractClickmap extends Controller
      /**
      * @brief called to store the submitted form's contents to the database, adding the form to the encounter if necissary.
      */
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;

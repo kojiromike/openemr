@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Exception\TelehealthProvisioningServiceRequestException;
@@ -14,21 +16,15 @@ use OpenEMR\Common\Logging\SystemLogger;
 
 class TelehealthConfigurationVerifier
 {
-    private Client $httpClient;
-
-    /**
-     * @var TeleHealthRemoteRegistrationService $telehealthRegistration
-     */
-    private TeleHealthRemoteRegistrationService $telehealthRegistration;
+    private TeleHealthRemoteRegistrationService $teleHealthRemoteRegistrationService;
 
 
-    public function __construct(private SystemLogger $logger, private TeleHealthProvisioningService $provisioningService, private TeleHealthUserRepository $userRepository, private TelehealthGlobalConfig $config)
+    public function __construct(private SystemLogger $systemLogger, private TeleHealthProvisioningService $teleHealthProvisioningService, private TeleHealthUserRepository $teleHealthUserRepository, private TelehealthGlobalConfig $telehealthGlobalConfig)
     {
-        $this->httpClient = new Client();
-        $this->telehealthRegistration = $this->provisioningService->getRemoteRegistrationService();
+        $this->teleHealthRemoteRegistrationService = $this->teleHealthProvisioningService->getRemoteRegistrationService();
     }
 
-    public function verifyInstallationSettings($user)
+    public function verifyInstallationSettings($user): void
     {
         // using a json object so we can add additional checks / messages later
         $resultObject = [
@@ -36,7 +32,7 @@ class TelehealthConfigurationVerifier
             ,'message' => xlt('Could not verify settings')
         ];
 
-        $config = $this->config;
+        $config = $this->telehealthGlobalConfig;
         if (!$config->isTelehealthCoreSettingsConfigured()) { // no settings saved, means we can't continue.
             $resultObject['message'] = xlt('Telehealth settings must be saved to verify configuration');
         } elseif (!$config->isTelehealthConfigured()) {
@@ -50,39 +46,38 @@ class TelehealthConfigurationVerifier
                     $provider = $this->suspendAndActivateUser($user);
                 } else {
                     // provision the user through the normal process
-                    $provider = $this->provisioningService->getOrCreateTelehealthProvider($user);
+                    $provider = $this->teleHealthProvisioningService->getOrCreateTelehealthProvider($user);
                 }
+
                 $bridgeSettings = $this->getVerifyBridgeSettings($provider);
                 http_response_code(200);
                 $resultObject['message'] = xlt('Settings verified');
                 $resultObject['status'] = 'success';
                 $resultObject['bridgeSettings'] = $bridgeSettings;
             } catch (\Exception $exception) {
-                $this->logger->errorLogCaller(
+                $this->systemLogger->errorLogCaller(
                     "Failed to verify telehealth connection settings" . $exception->getMessage(),
                     ['trace' => $exception->getTraceAsString()]
                 );
                 $resultObject["message"] = xlt("Could not successfully communicate with telehealth servers.  Check that your Telehealth configuration settings are valid.");
             }
         }
+
         echo json_encode($resultObject);
     }
 
     private function isProvisionedUser(array $user): bool
     {
-        $providerTelehealthSettings = $this->userRepository->getUser($user['uuid']);
-        if (empty($providerTelehealthSettings)) {
-            return false;
-        }
-        return true;
+        $providerTelehealthSettings = $this->teleHealthUserRepository->getUser($user['uuid']);
+        return !empty($providerTelehealthSettings);
     }
 
     private function suspendAndActivateUser(array $user)
     {
-        $providerTelehealthSettings = $this->userRepository->getUser($user['uuid']);
-        $didSuspend = $this->telehealthRegistration->suspendUser($providerTelehealthSettings->getUsername(), $providerTelehealthSettings->getAuthToken());
+        $providerTelehealthSettings = $this->teleHealthUserRepository->getUser($user['uuid']);
+        $didSuspend = $this->teleHealthRemoteRegistrationService->suspendUser($providerTelehealthSettings->getUsername(), $providerTelehealthSettings->getAuthToken());
         if ($didSuspend) {
-            $didActivate = $this->telehealthRegistration->resumeUser($providerTelehealthSettings->getUsername(), $providerTelehealthSettings->getAuthToken());
+            $didActivate = $this->teleHealthRemoteRegistrationService->resumeUser($providerTelehealthSettings->getUsername(), $providerTelehealthSettings->getAuthToken());
             if ($didActivate) {
                 return $providerTelehealthSettings;
             } else {
@@ -93,16 +88,15 @@ class TelehealthConfigurationVerifier
         }
     }
 
-    private function getVerifyBridgeSettings(TeleHealthUser $user)
+    private function getVerifyBridgeSettings(TeleHealthUser $teleHealthUser): array
     {
-        $password = $this->userRepository->decryptPassword($user->getAuthToken());
+        $password = $this->teleHealthUserRepository->decryptPassword($teleHealthUser->getAuthToken());
         $hashedPassword = TelehealthAuthUtils::getFormattedPassword($password);
-        $data = ["userId" => $user->getUsername(), "passwordHash" => $hashedPassword
+        return ["userId" => $teleHealthUser->getUsername(), "passwordHash" => $hashedPassword
             , "type" => "normal"
-            , 'telehealthApiUrl' => $this->config->getTelehealthAPIURI()
+            , 'telehealthApiUrl' => $this->telehealthGlobalConfig->getTelehealthAPIURI()
             , 'successMessage' => xlj("Successfully verified settings")
             , 'errorMessage' => xlj("Telehealth Video API URI is invalid")
         ];
-        return $data;
     }
 }

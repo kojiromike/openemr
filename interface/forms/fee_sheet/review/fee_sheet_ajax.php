@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Controller for fee sheet related AJAX requests
  *
@@ -10,8 +12,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../globals.php");
-require_once("fee_sheet_queries.php");
+require_once(__DIR__ . "/../../../globals.php");
+require_once(__DIR__ . "/fee_sheet_queries.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -44,10 +46,8 @@ if ($task == 'retrieve') {
         $encounters = select_encounters($req_pid, $req_encounter);
         if (isset($_REQUEST['prev_encounter'])) {
             $prev_enc = $_REQUEST['prev_encounter'];
-        } else {
-            if (count($encounters) > 0) {
-                $prev_enc = $encounters[0]->getID();
-            }
+        } elseif (count($encounters) > 0) {
+            $prev_enc = $encounters[0]->getID();
         }
 
         $issues = array();
@@ -77,8 +77,8 @@ if ($task == 'add_diags') {
     }
 
     $diags = array();
-    foreach ($json_diags as $diag) {
-        $diags[] = new code_info($diag->code, $diag->code_type, $diag->description);
+    foreach ($json_diags as $json_diag) {
+        $diags[] = new code_info($json_diag->code, $json_diag->code_type, $json_diag->description);
     }
 
     $procs = array();
@@ -86,15 +86,15 @@ if ($task == 'add_diags') {
         $json_procs = json_decode($_REQUEST['procs']);
     }
 
-    foreach ($json_procs as $proc) {
+    foreach ($json_procs as $json_proc) {
         $procs[] = new procedure(
-            $proc->code,
-            $proc->code_type,
-            $proc->description,
-            $proc->fee,
-            $proc->justify,
-            $proc->modifiers,
-            $proc->units,
+            $json_proc->code,
+            $json_proc->code_type,
+            $json_proc->description,
+            $json_proc->fee,
+            $json_proc->justify,
+            $json_proc->modifiers,
+            $json_proc->units,
             0
         );
     }

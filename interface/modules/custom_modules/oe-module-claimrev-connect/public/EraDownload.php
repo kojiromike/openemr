@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+    /**
  *
  * @package OpenEMR
  * @link    http://www.open-emr.org
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-    require_once "../../../../globals.php";
+    require_once __DIR__ . "/../../../../globals.php";
 
     use OpenEMR\Modules\ClaimRevConnector\EraPage;
     use OpenEMR\Common\Acl\AclMain;

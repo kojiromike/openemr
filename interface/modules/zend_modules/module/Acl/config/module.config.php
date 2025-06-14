@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Acl/config/module.config.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Acl;
 
 use Laminas\ServiceManager\Factory\InvokableFactory;
@@ -20,7 +21,7 @@ use Interop\Container\ContainerInterface;
 return array(
     'controllers' => array(
         'factories' => [
-            Controller\AclController::class => function (ContainerInterface $container, $requestedName) {
+            Controller\AclController::class => function (ContainerInterface $container, $requestedName): \Acl\Controller\AclController {
                 /**
                  * @see https://stackoverflow.com/a/49275531/7884612 on tips for getting the view helpers from zf2 to zf3
                  * @see https://github.com/zendframework/zend-view/blob/master/src/Helper/EscapeHtml.php
@@ -65,10 +66,9 @@ return array(
     ),
     'service_manager' => [
         'factories' => [
-            Model\AclTable::class =>  function (ContainerInterface $container, $requestedName) {
+            Model\AclTable::class =>  function (ContainerInterface $container, $requestedName): \Acl\Model\AclTable {
                 $dbAdapter = $container->get(\Laminas\Db\Adapter\Adapter::class);
-                $table = new Model\AclTable($dbAdapter);
-                return $table;
+                return new Model\AclTable($dbAdapter);
             },
         ]
     ]

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This script creates a backup tarball, emr_backup.tar, and sends
  * it to the user's browser for download.  The tarball includes:
@@ -32,9 +34,9 @@
  */
 
 set_time_limit(0);
-require_once("../globals.php");
-require_once("$srcdir/layout.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/layout.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -42,10 +44,8 @@ use OpenEMR\Common\Logging\EventAuditLogger;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Header;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 if (!extension_loaded('zlib')) {
@@ -263,7 +263,7 @@ if ($form_step == 102.2) {
                     $xtitle = '';
                 }
                 $xdesc = $row['description'];
-                if (substr($xdesc, 0, 1) != '<') {
+                if (substr($xdesc, 0, 1) !== '<') {
                     $xdesc = xl_layout_label($xdesc);
                 }
                 if ($xdesc === $row['description']) {
@@ -301,7 +301,7 @@ if ($form_step == 402) {
     if (!empty($_POST['form_end_date'])) {
         $end_date = DateToYYYYMMDD($_POST['form_end_date']);
         // This is the "filename" for the Content-Disposition header.
-        $filename = "log_archive_{$end_date}.csv";
+        $filename = sprintf('log_archive_%s.csv', $end_date);
 
         $outfile = tempnam($GLOBALS['temporary_files_dir'], 'OET');
         if ($outfile === false) {
@@ -335,7 +335,7 @@ if ($form_step == 402) {
         while (true) {
             $res = sqlStatementNoLog(
                 "SELECT * FROM `log` WHERE `date` <= ? AND `id` > ? ORDER BY `id` LIMIT 50000",
-                array("$end_date 23:59:59", $lastid)
+                array($end_date . ' 23:59:59', $lastid)
             );
             if (!sqlNumRows($res)) {
                 break;
@@ -361,31 +361,28 @@ if ($form_step == 402) {
         }
 
         fclose($hout);
-
         // Do compression if requested (it is!)
-        if (true) {
-            $zip = new ZipArchive();
-            $zippedoutfile = tempnam($GLOBALS['temporary_files_dir'], 'OEZ');
-            if ($zippedoutfile === false) {
-                die("tempnam('" . text($GLOBALS['temporary_files_dir']) . "','OEZ') failed.\n");
-            }
-            if ($zip->open($zippedoutfile, ZIPARCHIVE::OVERWRITE) !== true) {
-                die(xlt('Cannot create file') . " '$zipname'\n");
-            }
-            if (!$zip->addFile($outfile, $filename)) {
-                die(xlt('Cannot add to archive') . " '$zipname'\n");
-            }
-            $zip->close();
-            $filename .= '.zip';
-            unlink($outfile);
-            $outfile = $zippedoutfile;
+        $zip = new ZipArchive();
+        $zippedoutfile = tempnam($GLOBALS['temporary_files_dir'], 'OEZ');
+        if ($zippedoutfile === false) {
+            die("tempnam('" . text($GLOBALS['temporary_files_dir']) . "','OEZ') failed.\n");
         }
+        if ($zip->open($zippedoutfile, ZIPARCHIVE::OVERWRITE) !== true) {
+            die(xlt('Cannot create file') . " '{$zipname}'\n");
+        }
+        if (!$zip->addFile($outfile, $filename)) {
+            die(xlt('Cannot add to archive') . " '{$zipname}'\n");
+        }
+        $zip->close();
+        $filename .= '.zip';
+        unlink($outfile);
+        $outfile = $zippedoutfile;
 
         header("Pragma: public");
         header("Expires: 0");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         header("Content-Type: application/force-download; charset=utf-8");
-        header("Content-Disposition: attachment; filename=$filename");
+        header('Content-Disposition: attachment; filename=' . $filename);
         header("Content-Description: File Transfer");
         header("Content-Length: " . filesize($outfile));
         readfile($outfile);
@@ -502,10 +499,8 @@ if ($form_step == 0) {
 if ($form_step == 1) {
     $form_status .= xl('Dumping OpenEMR database') . "...||br-placeholder||";
     echo brCustomPlaceholder(text($form_status));
-    if (file_exists($TAR_FILE_PATH)) {
-        if (! unlink($TAR_FILE_PATH)) {
-            die(xlt("Couldn't remove old backup file:") . " " . text($TAR_FILE_PATH));
-        }
+    if (file_exists($TAR_FILE_PATH) && ! unlink($TAR_FILE_PATH)) {
+        die(xlt("Couldn't remove old backup file:") . " " . text($TAR_FILE_PATH));
     }
 
     if (! obliterate_dir($TMP_BASE)) {
@@ -516,7 +511,7 @@ if ($form_step == 1) {
         die(xlt("Couldn't create backup dir:") . " " . text($BACKUP_DIR));
     }
 
-    $file_to_compress = "$BACKUP_DIR/openemr.sql";   // gzip this file after creation
+    $file_to_compress = $BACKUP_DIR . '/openemr.sql';   // gzip this file after creation
 
     if ($GLOBALS['include_de_identification'] == 1) {
         //include routines during backup when de-identification is enabled
@@ -526,7 +521,7 @@ if ($form_step == 1) {
         " --port=" . escapeshellarg($sqlconf["port"]) .
         " --routines" .
         " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
-        " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($file_to_compress) . " $mysql_ssl " .
+        " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($file_to_compress) . sprintf(' %s ', $mysql_ssl) .
         escapeshellarg($sqlconf["dbase"]);
     } else {
         $cmd = escapeshellcmd($mysql_dump_cmd) . " -u " . escapeshellarg($sqlconf["login"]) .
@@ -534,7 +529,7 @@ if ($form_step == 1) {
         " -h " . escapeshellarg($sqlconf["host"]) .
         " --port=" . escapeshellarg($sqlconf["port"]) .
         " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
-        " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($file_to_compress) . " $mysql_ssl " .
+        " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($file_to_compress) . sprintf(' %s ', $mysql_ssl) .
         escapeshellarg($sqlconf["dbase"]);
     }
 
@@ -560,13 +555,13 @@ if ($form_step == 3) {
     }
 
     while (false !== ($filename = readdir($dh))) {
-        if ($filename == '.' || $filename == '..') {
+        if ($filename === '.' || $filename === '..') {
             continue;
         }
 
-        if ($filename == 'sites') {
+        if ($filename === 'sites') {
             // Omit other sites.
-            $file_list[] = "$filename/" . $_SESSION['site_id'];
+            $file_list[] = $filename . '/' . $_SESSION['site_id'];
         } else {
             $file_list[] = $filename;
         }
@@ -695,10 +690,8 @@ if ($form_step == 102) {
     if ($tables || is_array($_POST['form_sel_lists'] ?? '') || is_array($_POST['form_sel_layouts'] ?? '')) {
         $form_status .= xl('Creating export file') . "...||br-placeholder||";
         echo brCustomPlaceholder(text($form_status));
-        if (file_exists($EXPORT_FILE)) {
-            if (! unlink($EXPORT_FILE)) {
-                die(xlt("Couldn't remove old export file: ") . text($EXPORT_FILE));
-            }
+        if (file_exists($EXPORT_FILE) && ! unlink($EXPORT_FILE)) {
+            die(xlt("Couldn't remove old export file: ") . text($EXPORT_FILE));
         }
 
         // The substitutions below use perl because sed's not usually on windows systems.
@@ -714,27 +707,27 @@ if ($form_step == 102) {
             $cmd = "echo 'SET character_set_client = utf8;' > " . escapeshellarg($EXPORT_FILE) . ";";
         }
 
-        if ($tables) {
+        if ($tables !== '' && $tables !== '0') {
             if (IS_WINDOWS) {
                 $cmd .= escapeshellcmd('"' . $mysql_dump_cmd . '"') . " -u " . escapeshellarg($sqlconf["login"]) .
                     " -p" . escapeshellarg($sqlconf["pass"]) .
                     " -h " . escapeshellarg($sqlconf["host"]) .
                     " --port=" . escapeshellarg($sqlconf["port"]) .
                     " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
-                    " --hex-blob --opt --quote-names --skip-comments --no-tablespaces $mysql_ssl " .
-                    escapeshellarg($sqlconf["dbase"]) . " $tables";
+                    sprintf(' --hex-blob --opt --quote-names --skip-comments --no-tablespaces %s ', $mysql_ssl) .
+                    escapeshellarg($sqlconf["dbase"]) . (' ' . $tables);
             } else {
                 $cmd .= escapeshellcmd($mysql_dump_cmd) . " -u " . escapeshellarg($sqlconf["login"]) .
                     " -p" . escapeshellarg($sqlconf["pass"]) .
                     " -h " . escapeshellarg($sqlconf["host"]) .
                     " --port=" . escapeshellarg($sqlconf["port"]) .
                     " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
-                    " --hex-blob --opt --quote-names --skip-comments --no-tablespaces $mysql_ssl " .
-                    escapeshellarg($sqlconf["dbase"]) . " $tables";
+                    sprintf(' --hex-blob --opt --quote-names --skip-comments --no-tablespaces %s ', $mysql_ssl) .
+                    escapeshellarg($sqlconf["dbase"]) . (' ' . $tables);
             }
             if (IS_WINDOWS) {
                 # The Perl script differs in windows also.
-                $cmd .= " | " . escapeshellcmd('"' . $perl . '"') . " -pe \"s/ DEFAULT CHARSET=[A-Za-z0-9]*//i; s/ collate[ =][^ ;,]*//i;\"" .
+                $cmd .= " | " . escapeshellcmd('"' . $perl . '"') . ' -pe "s/ DEFAULT CHARSET=[A-Za-z0-9]*//i; s/ collate[ =][^ ;,]*//i;"' .
                     " >> " . escapeshellarg($EXPORT_FILE) . " & ";
             } else {
                 $cmd .= " | " . escapeshellcmd($perl) . " -pe 's/ DEFAULT CHARSET=[A-Za-z0-9]*//i; s/ collate[ =][^ ;,]*//i;'" .
@@ -748,7 +741,7 @@ if ($form_step == 102) {
                  " --port=" . escapeshellarg($sqlconf["port"]) .
                  " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
                  " --hex-blob --skip-opt --quote-names --no-tablespaces --complete-insert" .
-                 " --no-create-info --skip-comments $mysql_ssl";
+                 (' --no-create-info --skip-comments ' . $mysql_ssl);
 
         // Individual lists.
         $form_sel_lists = is_array($_POST['form_sel_lists'] ?? '') ? $_POST['form_sel_lists'] : array();
@@ -769,39 +762,37 @@ if ($form_step == 102) {
                 }
             }
         }
-        if (!empty($form_sel_lists)) {
-            foreach ($form_sel_lists as $listid) {
-                // skip if have backtic(s)
-                if (strpos($listid, '`') !== false) {
-                    echo xlt("Skipping illegal list name") . ": " . text($listid) . "<br>";
-                    continue;
-                }
-                // whitelist the $listid
-                $listid_check = sqlQuery("SELECT `list_id` FROM `list_options` WHERE `list_id` = ? OR `option_id` = ?", [$listid, $listid]);
-                if (empty($listid_check['list_id'])) {
-                    echo xlt("Skipping missing list name") . ": " . text($listid) . "<br>";
-                    continue;
-                }
-                if (IS_WINDOWS) {
-                    # windows will place the quotes in the outputted code if they are there. we removed them here.
-                    $cmd .= " echo 'DELETE FROM list_options WHERE list_id = \"" . add_escape_custom($listid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . " & ";
-                    $cmd .= " echo 'DELETE FROM list_options WHERE list_id = 'lists' AND option_id = \"" . add_escape_custom($listid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . " & ";
-                    # windows uses the & to join statements.
-                    $cmd .= $dumppfx . " --where=\"list_id = 'lists' AND option_id = '$listid' OR list_id = '$listid' " .
-                        "ORDER BY list_id != 'lists', seq, title\" " .
-                        escapeshellarg($sqlconf["dbase"]) . " list_options";
-                    $cmd .=  " >> " . escapeshellarg($EXPORT_FILE) . " & ";
-                } else {
-                    $cmdarr[] = "echo 'DELETE FROM list_options WHERE list_id = \"" .
-                        add_escape_custom($listid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";" .
-                        "echo 'DELETE FROM list_options WHERE list_id = \"lists\" AND option_id = \"" .
-                        add_escape_custom($listid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";" .
-                        $dumppfx . " --where='list_id = \"lists\" AND option_id = \"" .
-                        add_escape_custom($listid) . "\" OR list_id = \"" .
-                        add_escape_custom($listid) . "\" " . "ORDER BY list_id != \"lists\", seq, title' " .
-                        escapeshellarg($sqlconf["dbase"]) . " list_options" .
-                        " >> " . escapeshellarg($EXPORT_FILE) . ";";
-                }
+        foreach ($form_sel_lists as $form_sel_list) {
+            // skip if have backtic(s)
+            if (strpos($form_sel_list, '`') !== false) {
+                echo xlt("Skipping illegal list name") . ": " . text($form_sel_list) . "<br>";
+                continue;
+            }
+            // whitelist the $listid
+            $listid_check = sqlQuery("SELECT `list_id` FROM `list_options` WHERE `list_id` = ? OR `option_id` = ?", [$form_sel_list, $form_sel_list]);
+            if (empty($listid_check['list_id'])) {
+                echo xlt("Skipping missing list name") . ": " . text($form_sel_list) . "<br>";
+                continue;
+            }
+            if (IS_WINDOWS) {
+                # windows will place the quotes in the outputted code if they are there. we removed them here.
+                $cmd .= " echo 'DELETE FROM list_options WHERE list_id = \"" . add_escape_custom($form_sel_list) . "\";' >> " . escapeshellarg($EXPORT_FILE) . " & ";
+                $cmd .= " echo 'DELETE FROM list_options WHERE list_id = 'lists' AND option_id = \"" . add_escape_custom($form_sel_list) . "\";' >> " . escapeshellarg($EXPORT_FILE) . " & ";
+                # windows uses the & to join statements.
+                $cmd .= $dumppfx . sprintf(" --where=\"list_id = 'lists' AND option_id = '%s' OR list_id = '%s' ", $form_sel_list, $form_sel_list) .
+                    "ORDER BY list_id != 'lists', seq, title\" " .
+                    escapeshellarg($sqlconf["dbase"]) . " list_options";
+                $cmd .=  " >> " . escapeshellarg($EXPORT_FILE) . " & ";
+            } else {
+                $cmdarr[] = "echo 'DELETE FROM list_options WHERE list_id = \"" .
+                    add_escape_custom($form_sel_list) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";" .
+                    "echo 'DELETE FROM list_options WHERE list_id = \"lists\" AND option_id = \"" .
+                    add_escape_custom($form_sel_list) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";" .
+                    $dumppfx . " --where='list_id = \"lists\" AND option_id = \"" .
+                    add_escape_custom($form_sel_list) . '" OR list_id = "' .
+                    add_escape_custom($form_sel_list) . '" ' . "ORDER BY list_id != \"lists\", seq, title' " .
+                    escapeshellarg($sqlconf["dbase"]) . " list_options" .
+                    " >> " . escapeshellarg($EXPORT_FILE) . ";";
             }
         }
 
@@ -825,13 +816,13 @@ if ($form_step == 102) {
                 // Beware and keep in mind that Windows requires double quotes around arguments.
                 if (IS_WINDOWS) {
                     # windows will place the quotes in the outputted code if they are there. we removed them here.
-                    $cmd .= " echo DELETE FROM layout_options WHERE form_id = \"" . add_escape_custom($layoutid) . "\"; >> " . escapeshellarg($EXPORT_FILE) . " & ";
+                    $cmd .= ' echo DELETE FROM layout_options WHERE form_id = "' . add_escape_custom($layoutid) . '"; >> ' . escapeshellarg($EXPORT_FILE) . " & ";
                 } else {
                     $cmd .= "echo 'DELETE FROM layout_options WHERE form_id = \"" . add_escape_custom($layoutid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";";
                 }
                 if (IS_WINDOWS) {
                     # windows will place the quotes in the outputted code if they are there. we removed them here.
-                    $cmd .= "echo DELETE FROM layout_group_properties WHERE grp_form_id = \"" . add_escape_custom($layoutid) . "\"; >> " . escapeshellarg($EXPORT_FILE) . " &;";
+                    $cmd .= 'echo DELETE FROM layout_group_properties WHERE grp_form_id = "' . add_escape_custom($layoutid) . '"; >> ' . escapeshellarg($EXPORT_FILE) . " &;";
                 } else {
                     $cmd .= "echo 'DELETE FROM layout_group_properties WHERE grp_form_id = \"" . add_escape_custom($layoutid) . "\";' >> " . escapeshellarg($EXPORT_FILE) . ";";
                 }
@@ -852,10 +843,10 @@ if ($form_step == 102) {
                     $cmd .= " >> " . escapeshellarg($EXPORT_FILE) . ";";
                 }
                 // History and demographics exports will get special treatment.
-                if (substr($layoutid, 0, 3) == 'HIS') {
+                if (substr($layoutid, 0, 3) === 'HIS') {
                     $do_history_repair = true;
                 }
-                if (substr($layoutid, 0, 3) == 'DEM') {
+                if (substr($layoutid, 0, 3) === 'DEM') {
                     $do_demographics_repair = true;
                 }
             }
@@ -863,32 +854,32 @@ if ($form_step == 102) {
             if (!IS_WINDOWS) {
                 if ($do_history_repair) {
                     $cmd .= "echo \"SET sql_mode = '';\"                  >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"SET group_concat_max_len = 1000000;\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"SELECT CONCAT(\"                      >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "SET group_concat_max_len = 1000000;" >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "SELECT CONCAT("                      >> ' . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"'ALTER TABLE history_data ',\"        >> " . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"COALESCE(GROUP_CONCAT(DISTINCT ' ADD \`', lo.field_id, '\` TEXT NOT NULL' ORDER BY lo.field_id), '')\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \")\"                                   >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"FROM layout_options AS lo WHERE\"     >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo ")"                                   >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "FROM layout_options AS lo WHERE"     >> ' . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"(lo.form_id LIKE 'HIS%' OR lo.source = 'H') AND lo.field_id NOT IN\" >> " . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"(SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'history_data')\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"INTO @sql;\"                          >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"PREPARE stmt FROM @sql;\"             >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"EXECUTE stmt;\"                       >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "INTO @sql;"                          >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "PREPARE stmt FROM @sql;"             >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "EXECUTE stmt;"                       >> ' . escapeshellarg($EXPORT_FILE) . ";";
                 }
                 // If the DEM layout was exported then also write SQL to add missing patient_data columns.
                 if ($do_demographics_repair) {
                     $cmd .= "echo \"SET sql_mode = '';\"                  >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"SET group_concat_max_len = 1000000;\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"SELECT CONCAT(\"                      >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "SET group_concat_max_len = 1000000;" >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "SELECT CONCAT("                      >> ' . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"'ALTER TABLE patient_data ',\"        >> " . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"COALESCE(GROUP_CONCAT(DISTINCT ' ADD \`', lo.field_id, '\` TEXT NOT NULL' ORDER BY lo.field_id), '')\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \")\"                                   >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"FROM layout_options AS lo WHERE\"     >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo ")"                                   >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "FROM layout_options AS lo WHERE"     >> ' . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"(lo.form_id LIKE 'DEM%' OR lo.source = 'D') AND lo.field_id NOT IN\" >> " . escapeshellarg($EXPORT_FILE) . ";";
                     $cmd .= "echo \"(SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'patient_data')\" >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"INTO @sql;\"                          >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"PREPARE stmt FROM @sql;\"             >> " . escapeshellarg($EXPORT_FILE) . ";";
-                    $cmd .= "echo \"EXECUTE stmt;\"                       >> " . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "INTO @sql;"                          >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "PREPARE stmt FROM @sql;"             >> ' . escapeshellarg($EXPORT_FILE) . ";";
+                    $cmd .= 'echo "EXECUTE stmt;"                       >> ' . escapeshellarg($EXPORT_FILE) . ";";
                 }
             } else {
                 if ($do_history_repair) {
@@ -957,7 +948,7 @@ if ($form_step == 202) {
             " -p" . escapeshellarg($sqlconf["pass"]) .
             " -h " . escapeshellarg($sqlconf["host"]) .
             " --port=" . escapeshellarg($sqlconf["port"]) .
-            " $mysql_ssl " .
+            sprintf(' %s ', $mysql_ssl) .
             escapeshellarg($sqlconf["dbase"]) .
             " < " . escapeshellarg($EXPORT_FILE);
         } else {
@@ -1005,7 +996,7 @@ if ($form_step == 301) {
     " -h " . escapeshellarg($sqlconf["host"]) .
     " --port=" . escapeshellarg($sqlconf["port"]) .
     " --ignore-table=" . escapeshellarg($sqlconf["dbase"] . ".onsite_activity_view") .
-    " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($BACKUP_EVENTLOG_FILE) . " $mysql_ssl " .
+    " --hex-blob --opt --quote-names --no-tablespaces -r " . escapeshellarg($BACKUP_EVENTLOG_FILE) . sprintf(' %s ', $mysql_ssl) .
     escapeshellarg($sqlconf["dbase"]) . " --tables log_comment_encrypt_backup log_backup api_log_backup";
 # Set Eventlog Flag when it is done
     $eventlog = 1;
@@ -1040,7 +1031,7 @@ if ($form_step == 405) {
             "LEFT JOIN log_comment_encrypt AS lce ON lce.log_id = log.id " .
             "LEFT JOIN api_log AS al ON al.log_id = log.id " .
             "WHERE log.date <= ?",
-            array("$end_date 23:59:59")
+            array($end_date . ' 23:59:59')
         );
         sqlStatement("OPTIMIZE TABLE log");
     } else {
@@ -1065,10 +1056,10 @@ if ($form_step == 405) {
 <?php
 ob_flush();
 flush();
-if ($cmd) {
+if ($cmd !== '' && $cmd !== '0') {
     $tmp0 = exec($cmd, $tmp1, $tmp2);
 
-    if ($tmp2) {
+    if ($tmp2 !== 0) {
         if ($eventlog == 1) {
           // ViSolve : Restore previous state, if backup fails.
              $res = sqlStatement("drop table if exists log_comment_encrypt");
@@ -1101,16 +1092,14 @@ if ($cmd) {
 // Note eventlog stuff does not apply here.
 foreach ($cmdarr as $acmd) {
     $tmp0 = exec($acmd, $tmp1, $tmp2);
-    if ($tmp2) {
-        die("Error $tmp2 in: " . text($acmd));
+    if ($tmp2 !== 0) {
+        die(sprintf('Error %s in: ', $tmp2) . text($acmd));
     }
 }
 
 // If a file was flagged to be gzip-compressed after this cmd, do it.
-if ($file_to_compress) {
-    if (!gz_compress_file($file_to_compress)) {
-        die(xlt("Error in gzip compression of file: ") . text($file_to_compress));
-    }
+if ($file_to_compress !== '' && $file_to_compress !== '0' && !gz_compress_file($file_to_compress)) {
+    die(xlt("Error in gzip compression of file: ") . text($file_to_compress));
 }
 ?>
 
@@ -1130,7 +1119,7 @@ function brCustomPlaceholder(string $str): string
 }
 
 // Recursive directory remove (like an O/S insensitive "rm -rf dirname")
-function obliterate_dir($dir)
+function obliterate_dir(string $dir)
 {
     if (!file_exists($dir)) {
         return true;
@@ -1141,15 +1130,13 @@ function obliterate_dir($dir)
     }
 
     foreach (scandir($dir) as $item) {
-        if ($item == '.' || $item == '..') {
+        if ($item === '.' || $item === '..') {
             continue;
         }
 
         if (!obliterate_dir($dir . DIRECTORY_SEPARATOR . $item)) {
             chmod($dir . DIRECTORY_SEPARATOR . $item, 0777);
-            if (!obliterate_dir($dir . DIRECTORY_SEPARATOR . $item)) {
-                return false;
-            }
+            return false;
         };
     }
 
@@ -1162,16 +1149,12 @@ function create_tar_archive($archiveName, $compressMethod, $itemArray)
 {
     // Create a tar object using the pear library
     $tar = new Archive_Tar($archiveName, $compressMethod);
-    if ($tar->create($itemArray)) {
-        return true;
-    }
-
-    return false;
+    return $tar->create($itemArray);
 }
 
 // Compress a file using gzip. Source file removed, leaving only the compressed
 // *.gz file, just like gzip command line would behave.
-function gz_compress_file($source)
+function gz_compress_file(string $source): false|string
 {
     $dest = $source . '.gz';
     $error = false;

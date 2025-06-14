@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -11,9 +13,9 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function dap_report($pid, $encounter, $cols, $id)
+function dap_report($pid, $encounter, $cols, $id): void
 {
-    $cols = 1; // force always 1 column
+    // force always 1 column
     $count = 0;
     $data = formFetch("form_dap", $id);
     if ($data) {
@@ -22,17 +24,18 @@ function dap_report($pid, $encounter, $cols, $id)
             if ($key == "id" || $key == "pid" || $key == "user" || $key == "groupname" || $key == "authorized" || $key == "activity" || $key == "date" || $value == "" || $value == "0000-00-00 00:00:00") {
                 continue;
             }
+
             if ($value == "on") {
                 $value = "yes";
             }
+
             $key = ucwords(str_replace("_", " ", $key));
             print "<td><span class=bold>" . xlt($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
-            if ($count == $cols) {
-                $count = 0;
-                print "</tr><tr>\n";
-            }
+            ++$count;
+            $count = 0;
+            print "</tr><tr>\n";
         }
     }
+
     print "</tr></table>";
 }

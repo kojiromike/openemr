@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Weno users id.
  *
@@ -24,10 +26,8 @@ if (!AclMain::aclCheckCore('admin', 'super')) {
     echo (new TwigContainer(null, $GLOBALS['kernel']))->getTwig()->render('core/unauthorized.html.twig', ['pageTitle' => xl("Must be an Admin")]);
     exit;
 }
-if ($_POST) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if ($_POST !== [] && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 $wenoLog = new WenoLogService();
@@ -104,18 +104,18 @@ if (($_POST['save'] ?? false) == 'true') {
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($usersData as $user) {
-                    if (empty($user['facility'])) {
-                        $user['facility'] = xlt("Please add Users Default Facility");
+                <?php foreach ($usersData as $userData) {
+                    if (empty($userData['facility'])) {
+                        $userData['facility'] = xlt("Please add Users Default Facility");
                     }
                     ?>
-                    <td><?php echo text($user['id']); ?></td>
-                    <td><?php echo text($user['username']); ?></td>
-                    <td><?php echo text($user['lname']); ?></td>
-                    <td><?php echo text($user['fname']); ?></td>
-                    <td><input class="persist-uid" type="text" name="weno_provider_id[<?php echo attr($user['id']); ?>]" placeholder="<?php echo xla("Weno User id Uxxxx"); ?>" value="<?php echo attr($user['weno_prov_id']); ?>"></td>
-                    <td><?php echo text($user['facility']); ?></td>
-                    <td><i onclick='renderDialog("users", <?php echo attr_js($user['id']); ?>, event)' role='button' class='fas fa-pen text-warning'></i></td>
+                    <td><?php echo text($userData['id']); ?></td>
+                    <td><?php echo text($userData['username']); ?></td>
+                    <td><?php echo text($userData['lname']); ?></td>
+                    <td><?php echo text($userData['fname']); ?></td>
+                    <td><input class="persist-uid" type="text" name="weno_provider_id[<?php echo attr($userData['id']); ?>]" placeholder="<?php echo xla("Weno User id Uxxxx"); ?>" value="<?php echo attr($userData['weno_prov_id']); ?>"></td>
+                    <td><?php echo text($userData['facility']); ?></td>
+                    <td><i onclick='renderDialog("users", <?php echo attr_js($userData['id']); ?>, event)' role='button' class='fas fa-pen text-warning'></i></td>
                     </tr>
                 <?php } ?>
                 </tbody>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *
  * @package      OpenEMR
@@ -21,9 +23,9 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-function oe_module_priorauth_add_menu_item(MenuEvent $event)
+function oe_module_priorauth_add_menu_item(MenuEvent $menuEvent): MenuEvent
 {
-    $menu = $event->getMenu();
+    $menu = $menuEvent->getMenu();
 
     $menuItem = new stdClass();
     $menuItem->requirement = 0;
@@ -42,18 +44,19 @@ function oe_module_priorauth_add_menu_item(MenuEvent $event)
         }
     }
 
-    $event->setMenu($menu);
+    $menuEvent->setMenu($menu);
 
-    return $event;
+    return $menuEvent;
 }
 
-function oe_module_priorauth_patient_menu_item(PatientMenuEvent $menuEvent)
+function oe_module_priorauth_patient_menu_item(PatientMenuEvent $patientMenuEvent): PatientMenuEvent
 {
     $menu = file_get_contents(__DIR__ . '/public/patient_menu/custom_patient_menu.json');
     $menu_parsed = json_decode($menu);
     $menu_parsed = (new PatientMenuRole())->setPatientMenuUrl($menu_parsed);
-    $menuEvent->setMenu($menu_parsed);
-    return $menuEvent;
+
+    $patientMenuEvent->setMenu($menu_parsed);
+    return $patientMenuEvent;
 }
 
 /**

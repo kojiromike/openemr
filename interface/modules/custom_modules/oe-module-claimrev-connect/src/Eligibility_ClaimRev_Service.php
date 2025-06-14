@@ -1,5 +1,7 @@
 <?php
 
+    declare(strict_types=1);
+
     /**
      * Executes the background service for billing, which sends EDI claims
      * directly to claimRev if enabled
@@ -15,7 +17,7 @@
     use OpenEMR\Common\Crypto\CryptoGen;
     use OpenEMR\Modules\ClaimRevConnector\EligibilityTransfer;
 
-function start_send_eligibility()
+function start_send_eligibility(): void
 {
     $autoSend = $GLOBALS['oe_claimrev_send_eligibility'] ?? null;
     if ($autoSend) {

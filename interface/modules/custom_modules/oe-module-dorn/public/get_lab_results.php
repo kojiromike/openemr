@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+    
+    /**
  *
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -20,16 +22,12 @@
     use OpenEMR\Core\Header;
     use OpenEMR\Modules\Dorn\ReceiveHl7Results;
 
-if (!empty($_GET)) {
-    if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_GET === []) && !CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 if (!AclMain::aclCheckCore('admin', 'users')) {
@@ -66,7 +64,7 @@ if ($resultsGuid) {
 
         foreach ($response as $resultModel) {
             echo '<div class="alert ' . ($resultModel->isSuccess ? 'alert-success' : 'alert-danger') . '" role="alert">';
-            echo '<strong>' . ($resultModel->isSuccess ? xlt('Success') : xlt('Error')) . ':</strong> ' . text("$resultModel->message");
+            echo '<strong>' . ($resultModel->isSuccess ? xlt('Success') : xlt('Error')) . ':</strong> ' . text($resultModel->message);
             echo '</div>';
         }
     } else {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // +-----------------------------------------------------------------------------+
 // Copyright (C) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
 //
@@ -42,11 +44,13 @@ class Moduleconfig extends AbstractTableGateway
     public function exchangeArray($data)
     {
     }
-    public function getArrayCopy()
+
+    public function getArrayCopy(): array
     {
         return get_object_vars($this);
     }
-    public function setInputFilter(InputFilterInterface $inputFilter)
+
+    public function setInputFilter(InputFilterInterface $inputFilter): never
     {
         throw new \Exception("Not used");
     }

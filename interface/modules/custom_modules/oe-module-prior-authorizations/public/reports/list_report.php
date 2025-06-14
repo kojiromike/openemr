@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  package OpenEMR
  *  link    https://www.open-emr.org
@@ -54,11 +56,7 @@ $patients = $data->listPatientAuths();
                 $count = 0;
                 $name = '';
                 while ($iter = sqlFetchArray($patients)) {
-                    if (!empty($iter['pid'])) {
-                        $pid = $iter['pid'];
-                    } else {
-                        $pid = $iter['mrn'];
-                    }
+                    $pid = empty($iter['pid']) ? $iter['mrn'] : $iter['pid'];
                     $requireAuth = AuthorizationService::requiresAuthorization($iter['pid']);
                     $status = AuthorizationService::patientInactive($pid);
 
@@ -100,7 +98,7 @@ $patients = $data->listPatientAuths();
 
                     print "</tr>";
                     $name = $iter['fname'] . " " . $iter['lname'];
-                    $count++;
+                    ++$count;
                 }
                 ?>
             </table>

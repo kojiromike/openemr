@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handwritten Notes Form
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  **/
 
-require_once("../../globals.php");
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -19,10 +21,8 @@ if (!$encounter) {
     die(xlt("Internal Error: We do not seem to be in an encounter!"));
 }
 
-if ($_POST) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if ($_POST !== [] && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 if (!empty($_POST['hw-notes'])) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Multi select patient.
  *
@@ -14,8 +16,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once('../../globals.php');
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . '/../../globals.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -141,7 +143,7 @@ if (isset($_GET['patients'])) {
             <tbody id="searchResults">
             <?php
             if (isset($_GET['patients'])) {
-                foreach ($results as $index => $result) {
+                foreach ($results as $result) {
                     echo '<tr id="row' . attr($result['pid']) . '">' .
                             '<td>' . text($result['lname']) . ', ' . text($result['fname']) . '</td>' .
                             '<td>' . text($result['phone_home']) . '</td>' .

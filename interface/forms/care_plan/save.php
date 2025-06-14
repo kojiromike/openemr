@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Care plan form save.php
  *
@@ -14,8 +16,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -48,18 +50,14 @@ if ($id && $id != 0) {
 } else {
     $res2 = sqlStatement("SELECT MAX(id) as largestId FROM `form_care_plan`");
     $getMaxid = sqlFetchArray($res2);
-    if ($getMaxid['largestId']) {
-        $newid = $getMaxid['largestId'] + 1;
-    } else {
-        $newid = 1;
-    }
+    $newid = $getMaxid['largestId'] ? $getMaxid['largestId'] + 1 : 1;
 
     addForm($encounter, "Care Plan Form", $newid, "care_plan", $_SESSION["pid"], $userauthorized);
 }
 
 $count = array_filter($count);
-if (!empty($count)) {
-    foreach ($count as $key => $codeval) :
+if ($count !== []) {
+    foreach (array_keys($count) as $key) :
         $code_val = $code[$key] ?: '';
         $codetext_val = $code_text[$key] ?: '';
         $description_val = $code_des[$key] ?: '';
@@ -129,6 +127,6 @@ formFooter();
 
 function parse_note($note)
 {
-    $result = preg_match_all("/\{\|([^\]]*)\|}/", $note, $matches);
+    preg_match_all("/\{\|([^\]]*)\|}/", $note, $matches);
     return json_encode($matches[1]);
 }

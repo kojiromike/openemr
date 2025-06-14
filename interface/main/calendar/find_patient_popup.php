@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /* Copyright (C) 2005-2007 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -14,8 +16,8 @@
  *
  */
 
-require_once('../../globals.php');
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . '/../../globals.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Core\Header;
@@ -30,15 +32,15 @@ if (!empty($_REQUEST['searchby']) && !empty($_REQUEST['searchparm'])) {
     $searchparm = trim($_REQUEST['searchparm']);
 
     if ($searchby == "Last") {
-        $result = getPatientLnames("$searchparm", "*");
+        $result = getPatientLnames($searchparm, "*");
     } elseif ($searchby == "Phone") {                  //(CHEMED) Search by phone number
-        $result = getPatientPhone("$searchparm", "*");
+        $result = getPatientPhone($searchparm, "*");
     } elseif ($searchby == "ID") {
-        $result = getPatientId("$searchparm", "*");
+        $result = getPatientId($searchparm, "*");
     } elseif ($searchby == "DOB") {
         $result = getPatientDOB(DateToYYYYMMDD($searchparm), "*");
     } elseif ($searchby == "SSN") {
-        $result = getPatientSSN("$searchparm", "*");
+        $result = getPatientSSN($searchparm, "*");
     }
 }
 ?>

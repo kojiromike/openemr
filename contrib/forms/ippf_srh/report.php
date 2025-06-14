@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -14,7 +16,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 // when viewing a "comprehensive patient report".  Also from
 // interface/patient_file/encounter/forms.php.
 //
-function ippf_srh_report($pid, $encounter, $cols, $id)
+function ippf_srh_report($pid, $encounter, $cols, $id): void
 {
     require_once($GLOBALS["srcdir"] . "/options.inc.php");
     echo "<table>\n";

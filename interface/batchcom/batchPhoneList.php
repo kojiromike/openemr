@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Batch list processor, included from batchcom
  *
@@ -13,7 +15,7 @@
  * @todo menu for fields could be added in the future
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -30,7 +32,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
 </head>
 <body class="body_top container">
     <header class="row">
-        <?php require_once("batch_navigation.php");?>
+        <?php require_once(__DIR__ . "/batch_navigation.php");?>
         <h1 class="col-md-12">
             <a href="batchcom.php"><?php echo xlt('Batch Communication Tool'); ?></a>
             <small><?php echo xlt('Phone Call List report'); ?></small>
@@ -42,7 +44,7 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
                 <thead>
                     <?php
                     foreach ([xlt('Name'),xlt('DOB'),xlt('Home'),xlt('Work'),xlt('Contact'),xlt('Cell')] as $header) {
-                        echo "<th>$header</th>";
+                        echo sprintf('<th>%s</th>', $header);
                     }
                     ?>
                 </thead>

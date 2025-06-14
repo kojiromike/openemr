@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * package   OpenEMR
  *  link      http://www.open-emr.org
@@ -172,8 +174,7 @@ $isCoreConfigured = $globalConfig->isTelehealthCoreSettingsConfigured() === true
                 <h2><?php echo xlt("Step 2 - Credentials Signup"); ?></h2>
                 <p><h3><a id='signupLink' href="https://credentials.affordablecustomehr.com/customer"><?php echo xlt("Click Here to get credentials after subscribing"); ?></a></h3></p>
             </div>
-            <div class="<?php if (!$isCoreConfigured) {
-                echo 'd-none';} ?>">
+            <div class="<?php echo 'd-none'; ?>">
                 <h2><?php echo xlt("Step 2 - Credentials Signup"); ?> - <span class="text-success"><?php echo xlt("Complete"); ?></span></h2>
                 <p><?php echo xlt("Your credentials have been setup and saved in the Telehealth configuration"); ?></p>
             </div>

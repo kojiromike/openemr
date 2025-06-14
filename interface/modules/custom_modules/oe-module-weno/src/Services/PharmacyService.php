@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * WenoPharmacyService
  *
@@ -11,18 +13,13 @@
  * @copyright Copyright (c) 2023 Omega Systems Group International. <info@omegasystemsgroup.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 use Exception;
 
 class PharmacyService
 {
-    public function __construct()
-    {
-    }
-
-    public function createWenoPharmaciesForPatient($pid, $data)
+    public function createWenoPharmaciesForPatient($pid, array $data): ?string
     {
         $sql = "INSERT INTO weno_assigned_pharmacy SET ";
         $sql .= "pid = ?,";
@@ -37,17 +34,19 @@ class PharmacyService
                 $data['alternate_pharmacy'],
                 $data['search_persist'],
             ]);
-        } catch (Exception $e) {
-            return $e->getMessage();
+        } catch (Exception $exception) {
+            return $exception->getMessage();
         }
+        return null;
     }
 
-    public function updatePatientWenoPharmacy($pid, $data)
+    public function updatePatientWenoPharmacy($pid, array $data)
     {
         // check if pharmacies already exist for patient
         if (!$this->getWenoPharmacy($pid)) {
             return $this->createWenoPharmaciesForPatient($pid, $data);
         }
+
         $sql = "UPDATE weno_assigned_pharmacy SET ";
         $sql .= "primary_ncpdp = ?, ";
         $sql .= "alternate_ncpdp = ?, ";
@@ -61,12 +60,13 @@ class PharmacyService
                 $data['search_persist'],
                 $pid
             ]);
-        } catch (Exception $e) {
-            return $e->getMessage();
+        } catch (Exception $exception) {
+            return $exception->getMessage();
         }
+        return null;
     }
 
-    public function getWenoLastSearch($pid)
+    public function getWenoLastSearch($pid): mixed
     {
         $sql = "SELECT `search_persist` FROM weno_assigned_pharmacy WHERE pid = ?";
         return json_decode(sqlQuery($sql, array($pid))['search_persist'] ?? '');
@@ -78,9 +78,8 @@ class PharmacyService
         $sql .= "wp.city, wp.address_line_1, wp.ncpdp_safe, wp.state FROM weno_assigned_pharmacy wap ";
         $sql .= "INNER JOIN weno_pharmacy wp ON wap.primary_ncpdp = wp.ncpdp_safe ";
         $sql .= "WHERE wap.pid = ?";
-        $result = sqlQuery($sql, array($pid));
 
-        return $result;
+        return sqlQuery($sql, array($pid));
     }
 
     public function getWenoAlternatePharm($pid): false|array|null
@@ -90,9 +89,7 @@ class PharmacyService
         $sql .= "INNER JOIN weno_pharmacy wp ON wap.alternate_ncpdp = wp.ncpdp_safe ";
         $sql .= "WHERE wap.pid = ?";
 
-        $result = sqlQuery($sql, array($pid));
-
-        return $result;
+        return sqlQuery($sql, array($pid));
     }
 
     public function removeWenoPharmacies(): void
@@ -115,12 +112,12 @@ class PharmacyService
     {
         $sql = "SELECT * FROM weno_assigned_pharmacy WHERE pid = ?";
 
-        $result = sqlStatement($sql, [$pid]);
+        $recordset = sqlStatement($sql, [$pid]);
 
-        if (sqlNumRows($result) <= 0) {
+        if (sqlNumRows($recordset) <= 0) {
             return false;
         } else {
-            return $result;
+            return $recordset;
         }
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 //////////////////////////////////////////////////////////////////////
 // ------------------ DO NOT MODIFY VIEW.PHP !!! ---------------------
 // View.php is an exact duplicate of new.php.  If you wish to make
@@ -21,4 +23,4 @@
 
 $spreadsheet_form_name = 'treatment_protocols';
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/spreadsheet.inc.php");
+require_once($srcdir . '/spreadsheet.inc.php');

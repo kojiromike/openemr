@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * dupecheck mergerecords.php
  *
@@ -10,16 +12,16 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../interface/globals.php");
-require_once("../../../library/pnotes.inc.php");
-require_once("./Utils.php");
+require_once(__DIR__ . "/../../../interface/globals.php");
+require_once(__DIR__ . "/../../../library/pnotes.inc.php");
+require_once(__DIR__ . "/Utils.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Logging\EventAuditLogger;
 use OpenEMR\Common\Twig\TwigContainer;
 
-if (!empty($_POST)) {
+if ($_POST !== []) {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
@@ -28,7 +30,7 @@ if (!empty($_POST)) {
     }
 }
 
-if (!empty($_GET)) {
+if ($_GET !== []) {
     if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
@@ -155,7 +157,7 @@ foreach ($parameters['otherid'] as $otherID) {
     echo "<br /><br />";
 } // end of otherID loop
 
-function UpdateTable($tablename, $pid_col, $oldvalue, $newvalue)
+function UpdateTable(string $tablename, string $pid_col, string $oldvalue, $newvalue): void
 {
     global $commitchanges;
 
@@ -189,7 +191,7 @@ Do you wish to commit these changes to the database?
 <input type="hidden" name="dupecount" value="<?php echo attr($parameters['dupecount']); ?>">
     <?php
     foreach ($parameters['otherid'] as $otherID) {
-        echo "<input type='hidden' name='otherid[]' value='<?php echo attr($otherID); ?>'>";
+        echo sprintf("<input type='hidden' name='otherid[]' value='<?php echo attr(%s); ?>'>", $otherID);
     }
     ?>
 <input type="submit" name="confirm" value="yes">

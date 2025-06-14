@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Bootstrap file for the exporter
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter;
 
 /**
@@ -41,53 +42,44 @@ use OpenEMR\Modules\CustomModuleSkeleton\TaskRestController;
 class Bootstrap
 {
     const MODULE_INSTALLATION_PATH = "/interface/modules/custom_modules/";
+
     const MODULE_NAME = "oe-module-ehi-exporter";
+
     const CERTIFIED_RELEASE_VERSION = "7.0.2";
+
     /**
      * @var EventDispatcherInterface The object responsible for sending and subscribing to events through the OpenEMR system
      */
-    private $eventDispatcher;
+    private \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher;
 
     /**
      * @var GlobalConfig Holds our module global configuration values that can be used throughout the module.
      */
-    private $globalsConfig;
+    private \OpenEMR\Modules\EhiExporter\GlobalConfig $globalConfig;
 
     /**
      * @var string The folder name of the module.  Set dynamically from searching the filesystem.
      */
-    private $moduleDirectoryName;
-
-    /**
-     * @var \Twig\Environment The twig rendering environment
-     */
-    private $twig;
-
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private string $moduleDirectoryName;
 
     private static self $instance;
 
     public function __construct(EventDispatcherInterface $eventDispatcher, ?Kernel $kernel = null)
     {
-        if (empty($kernel)) {
+        if (!$kernel instanceof \OpenEMR\Core\Kernel) {
             $kernel = new Kernel();
         }
 
         // NOTE: eventually you will be able to pull the twig container directly from the kernel instead of instantiating
         // it here.
-        $twig = new TwigContainer($this->getTemplatePath(), $kernel);
-        $twigEnv = $twig->getTwig();
-        $this->twig = $twigEnv;
+        $twigContainer = new TwigContainer($this->getTemplatePath(), $kernel);
+        $twigContainer->getTwig();
 
         $this->moduleDirectoryName = basename(dirname(__DIR__));
         $this->eventDispatcher = $eventDispatcher;
 
         // we inject our globals value.
-        $this->globalsConfig = new GlobalConfig($GLOBALS);
-        $this->logger = new SystemLogger();
+        $this->globalConfig = new GlobalConfig($GLOBALS);
     }
 
     public static function instantiate(EventDispatcher $eventDispatcher, Kernel $kernel): self
@@ -96,20 +88,21 @@ class Bootstrap
             self::$instance = new Bootstrap($eventDispatcher, $kernel);
             self::$instance->subscribeToEvents();
         }
+
         return self::$instance;
     }
 
-    public function getAssetPath()
+    public function getAssetPath(): string
     {
         return $GLOBALS['webroot'] . self::MODULE_INSTALLATION_PATH . $this->moduleDirectoryName . "/public/assets/";
     }
 
-    public function getLogger()
+    public function getLogger(): \OpenEMR\Common\Logging\SystemLogger
     {
         return new SystemLogger();
     }
 
-    public function getExporter()
+    public function getExporter(): \OpenEMR\Modules\EhiExporter\Services\EhiExporter
     {
         $xmlConfigPath = $GLOBALS['webserver_root'] . DIRECTORY_SEPARATOR . 'Documentation' . DIRECTORY_SEPARATOR . 'EHI_Export';
         // . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'openemr.openemr.xml';
@@ -121,21 +114,21 @@ class Bootstrap
         );
     }
 
-    public function getTwig()
+    public function getTwig(): \Twig\Environment
     {
-        $container = new TwigContainer($this->getTemplatePath(), $GLOBALS['kernel']);
-        return $container->getTwig();
+        $twigContainer = new TwigContainer($this->getTemplatePath(), $GLOBALS['kernel']);
+        return $twigContainer->getTwig();
     }
 
-    public function subscribeToEvents()
+    public function subscribeToEvents(): void
     {
 //        $this->addGlobalSettings();
         $this->eventDispatcher->addListener(MenuEvent::MENU_UPDATE, [$this, 'addCustomModuleMenuItem']);
     }
 
-    public function addCustomModuleMenuItem(MenuEvent $event)
+    public function addCustomModuleMenuItem(MenuEvent $menuEvent): MenuEvent
     {
-        $menu = $event->getMenu();
+        $menu = $menuEvent->getMenu();
 
         $menuItem = new \stdClass();
         $menuItem->requirement = 0;
@@ -162,9 +155,9 @@ class Bootstrap
             }
         }
 
-        $event->setMenu($menu);
+        $menuEvent->setMenu($menu);
 
-        return $event;
+        return $menuEvent;
     }
 
     /**
@@ -172,15 +165,15 @@ class Bootstrap
      */
     public function getGlobalConfig()
     {
-        return $this->globalsConfig;
+        return $this->globalConfig;
     }
 
-    public function addGlobalSettings()
+    public function addGlobalSettings(): void
     {
         $this->eventDispatcher->addListener(GlobalsInitializedEvent::EVENT_HANDLE, [$this, 'addGlobalSettingsSection']);
     }
 
-    public function addGlobalSettingsSection(GlobalsInitializedEvent $event)
+    public function addGlobalSettingsSection(GlobalsInitializedEvent $globalsInitializedEvent): void
     {
         // when we add more configuration we can add this here...
 //        $service = $event->getGlobalsService();
@@ -205,12 +198,12 @@ class Bootstrap
 //        }
     }
 
-    private function getPublicPath()
+    private function getPublicPath(): string
     {
         return self::MODULE_INSTALLATION_PATH . ($this->moduleDirectoryName ?? '') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR;
     }
 
-    public function getTemplatePath()
+    public function getTemplatePath(): string
     {
         return \dirname(__DIR__) . DIRECTORY_SEPARATOR . "templates" . DIRECTORY_SEPARATOR;
     }

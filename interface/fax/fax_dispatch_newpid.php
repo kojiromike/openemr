@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2008, 2010 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -13,7 +15,7 @@
 // is just the caller's selection list of recent encounters.
 
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 

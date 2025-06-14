@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Config Module.
  *
@@ -96,7 +98,7 @@ $vendors = $boot->getVendorGlobals();
     <title><?php echo xlt("Weno Config") ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php
-    if (count($vendors ?? []) === 0) {
+    if ($vendors ?? [] === []) {
         $vendors = $boot->getVendorGlobals();
     }
     Header::setupHeader();

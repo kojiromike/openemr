@@ -1,4 +1,6 @@
 <?php
 
+declare(strict_types=1);
+
 $viewmode = false;
-require("common.php");
+require(__DIR__ . "/common.php");

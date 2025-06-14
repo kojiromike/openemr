@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Controller for getting information about fee sheet options
  *
@@ -10,8 +12,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../globals.php");
-require_once("fee_sheet_options_queries.php");
+require_once(__DIR__ . "/../../../globals.php");
+require_once(__DIR__ . "/fee_sheet_options_queries.php");
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -21,11 +23,7 @@ if (!AclMain::aclCheckCore('acct', 'bill')) {
     return false;
 }
 
-if (isset($_REQUEST['pricelevel'])) {
-    $pricelevel = $_REQUEST['pricelevel'];
-} else {
-    $pricelevel = 'standard';
-}
+$pricelevel = isset($_REQUEST['pricelevel']) ? $_REQUEST['pricelevel'] : 'standard';
 
 $fso = load_fee_sheet_options($pricelevel);
 $retval = array();

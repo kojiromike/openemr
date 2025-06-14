@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * lang_constant.php script
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("language.inc.php");
+require_once(__DIR__ . "/language.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;

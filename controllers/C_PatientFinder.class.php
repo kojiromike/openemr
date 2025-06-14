@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 class C_PatientFinder extends Controller
 {
-    var $template_mod;
+    public $template_mod;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -17,7 +19,7 @@ class C_PatientFinder extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action($form_id = '', $form_name = '', $pid = '')
+    public function default_action($form_id = '', $form_name = '', $pid = '')
     {
         return $this->find_action($form_id, $form_name, $pid);
     }
@@ -26,7 +28,7 @@ class C_PatientFinder extends Controller
     * Function that will display a patient finder widget, allowing
     *   the user to input search parameters to find a patient id.
     */
-    function find_action($form_id, $form_name, $pid = null)
+    public function find_action($form_id, $form_name, $pid = null)
     {
         $isPid = false;
 
@@ -45,7 +47,7 @@ class C_PatientFinder extends Controller
     * Function that will take a search string, parse it out and return all patients from the db matching.
     * @param string $search_string - String from html form giving us our search parameters
     */
-    function find_action_process()
+    public function find_action_process(): void
     {
 
         if ($_POST['process'] != "true") {
@@ -85,19 +87,20 @@ class C_PatientFinder extends Controller
     }
 
     /**
-    *   Function that returns an array containing the
-    *   Results of a LastName search
-    *   @-param string $sql base sql query
-    *   @-param string $search_string parsed for last name
-    */
-    function search_by_lName($sql, $search_string)
+     *   Function that returns an array containing the
+     *   Results of a LastName search
+     *   @-param string $sql base sql query
+     *   @-param string $search_string parsed for last name
+     * @return list<mixed>
+     */
+    public function search_by_lName(string $sql, $search_string): array
     {
         $lName = add_escape_custom($search_string);
-        $sql .= " WHERE lname LIKE '$lName%' ORDER BY lname, fname";
-        $results = sqlStatement($sql);
+        $sql .= sprintf(" WHERE lname LIKE '%s%%' ORDER BY lname, fname", $lName);
+        $recordset = sqlStatement($sql);
 
         $result_array = [];
-        while ($result = sqlFetchArray($results)) {
+        while ($result = sqlFetchArray($recordset)) {
             $result_array[] = $result;
         }
 
@@ -105,20 +108,21 @@ class C_PatientFinder extends Controller
     }
 
     /**
-    *   Function that returns an array containing the
-    *   Results of a FirstName search
-    *   @param string $sql base sql query
-    *   @param string $search_string parsed for first name
-    */
-    function search_by_fName($sql, $search_string)
+     *   Function that returns an array containing the
+     *   Results of a FirstName search
+     *   @param string $sql base sql query
+     *   @param string $search_string parsed for first name
+     * @return list<mixed>
+     */
+    public function search_by_fName(string $sql, $search_string): array
     {
         $name_array = explode(",", $search_string);
         $fName = add_escape_custom(trim($name_array[1]));
-        $sql .= " WHERE fname LIKE '$fName%' ORDER BY lname, fname";
-        $results = sqlStatement($sql);
+        $sql .= sprintf(" WHERE fname LIKE '%s%%' ORDER BY lname, fname", $fName);
+        $recordset = sqlStatement($sql);
 
         $result_array = [];
-        while ($result = sqlFetchArray($results)) {
+        while ($result = sqlFetchArray($recordset)) {
             $result_array[] = $result;
         }
 
@@ -126,21 +130,22 @@ class C_PatientFinder extends Controller
     }
 
     /**
-    *   Function that returns an array containing the
-    *   Results of a Full Name search
-    *   @param string $sql base sql query
-    *   @param string $search_string parsed for first, last and middle name
-    */
-    function search_by_FullName($sql, $search_string)
+     *   Function that returns an array containing the
+     *   Results of a Full Name search
+     *   @param string $sql base sql query
+     *   @param string $search_string parsed for first, last and middle name
+     * @return list<mixed>
+     */
+    public function search_by_FullName(string $sql, $search_string): array
     {
         $name_array = explode(",", $search_string);
         $lName = add_escape_custom($name_array[0]);
         $fName = add_escape_custom(trim($name_array[1]));
-        $sql .= " WHERE fname LIKE '%$fName%' AND lname LIKE '$lName%' ORDER BY lname, fname";
-        $results = sqlStatement($sql);
+        $sql .= sprintf(" WHERE fname LIKE '%%%s%%' AND lname LIKE '%s%%' ORDER BY lname, fname", $fName, $lName);
+        $recordset = sqlStatement($sql);
 
         $result_array = [];
-        while ($result = sqlFetchArray($results)) {
+        while ($result = sqlFetchArray($recordset)) {
             $result_array[] = $result;
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * get_claim_file.php
  *
@@ -74,7 +76,7 @@ if ($claim_file_found === false) {
 
 $fname = $claim_file_dir . $fname;
 
-if (strtolower(substr($fname, (strlen($fname) - 4))) == ".pdf") {
+if (strtolower(substr($fname, (strlen($fname) - 4))) === ".pdf") {
     $content_type = "application/pdf";
 }
 
@@ -86,7 +88,7 @@ if (!file_exists($fname)) {
     header("Pragma: public");
     header("Expires: 0");
     header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-    header("Content-Type: $content_type");
+    header('Content-Type: ' . $content_type);
     header("Content-Length: " . filesize($fname));
     header("Content-Disposition: attachment; filename=" . basename($fname));
 

@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2005 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
-
 // This class exports billing information to an external billing
 // system.  In this case we are writing a custom CSV format, but
 // it would be easy and more generally useful to write X12 (837p)
@@ -14,44 +15,47 @@
 // HCFA 1500, UB-92, etc.
 //
 // To implement this feature, rename this file to BillingExport.php.
-
-
 class BillingExport
 {
   // You should customize these paths.  They must share the same
   // physical disk partition so that the final rename will be an
   // atomic operation.
-    var $TMP_DIR    = "/home/billing/tmp";
-    var $TARGET_DIR = "/home/billing/ftp";
+    public $TMP_DIR    = "/home/billing/tmp";
 
-    var $tmpname; // output filename including path
-    var $tmpfh;   // output file handle
+    public $TARGET_DIR = "/home/billing/ftp";
 
-    function fixString($string)
+    /**
+     * @var string
+     */
+    public $tmpname;
+     // output filename including path
+    public $tmpfh;   // output file handle
+
+    public function fixString($string): string
     {
         return addslashes(trim($string));
     }
 
-    function fixMI($string)
+    public function fixMI($string): string
     {
         return addslashes(substr(trim($string), 0, 1));
     }
 
-    function fixSex($sex)
+    public function fixSex($sex): string
     {
         $sex = substr(strtoupper(trim($sex)), 0, 1);
-        if ($sex == 'M') {
+        if ($sex === 'M') {
             return 'Male';
         }
 
-        if ($sex == 'F') {
+        if ($sex === 'F') {
             return 'Female';
         }
 
         return '';
     }
 
-    function fixPhone($phone)
+    public function fixPhone($phone): string
     {
         $tmparr = array();
         if (preg_match("/(\d\d\d)\D*(\d\d\d)\D*(\d\d\d\d)/", $phone, $tmparr)) {
@@ -61,7 +65,7 @@ class BillingExport
         return '';
     }
 
-    function fixSSN($ssn)
+    public function fixSSN($ssn): string
     {
         $tmparr = array();
         if (preg_match("/(\d\d\d)\D*(\d\d)\D*(\d\d\d\d)/", $ssn, $tmparr)) {
@@ -71,51 +75,51 @@ class BillingExport
         return '';
     }
 
-    function fixMStatus($status)
+    public function fixMStatus($status): string
     {
         return ucfirst(trim($status));
     }
 
-    function fixEStatus($employer)
+    public function fixEStatus($employer): string
     {
         $status = strtoupper(trim($employer));
-        if (! $status) {
+        if ($status === '' || $status === '0') {
             return '';
         }
 
-        if ($status == 'STUDENT') {
+        if ($status === 'STUDENT') {
             return 'Student';
         }
 
-        if ($status == 'RETIRED') {
+        if ($status === 'RETIRED') {
             return 'Retired';
         }
 
         return 'Full-time';
     }
 
-    function fixRelation($rel)
+    public function fixRelation($rel): string
     {
         return ucfirst(trim($rel));
     }
 
-    function fixCPT($code, $mod)
+    public function fixCPT($code, $mod): string
     {
         $code = trim($code);
         $mod = trim($mod);
-        if ($mod) {
+        if ($mod !== '' && $mod !== '0') {
             $code .= '-' . $mod;
         }
 
         return addslashes($code);
     }
 
-    function fixJust($str)
+    public function fixJust($str): string
     {
         return addslashes(trim(str_replace(':', ' ', $str)));
     }
 
-    function fixDate($date)
+    public function fixDate($date): string
     {
         return substr($date, 0, 10);
     }
@@ -123,7 +127,7 @@ class BillingExport
   // Creating a BillingExport object opens the output file.
   // Filename format is "transYYYYMMDDHHMMSS.txt".
   //
-    function __construct()
+    public function __construct()
     {
         $this->tmpname = $this->TMP_DIR . '/trans' . date("YmdHis") . '.txt';
         $this->tmpfh = fopen($this->tmpname, 'w');
@@ -131,7 +135,7 @@ class BillingExport
 
   // Call this once for each claim to be processed.
   //
-    function addClaim($patient_id, $encounter)
+    public function addClaim($patient_id, $encounter): void
     {
 
         // Patient information:
@@ -210,10 +214,10 @@ class BillingExport
           "AND n.insurance_company_id = c.id " .
           "WHERE d.pid = ? AND d.provider != '' " .
           "ORDER BY d.type ASC, d.date DESC";
-        $ires = sqlStatement($query, array($erow['id'], $patient_id));
+        $recordset = sqlStatement($query, array($erow['id'], $patient_id));
 
         $prev_type = '?';
-        while ($irow = sqlFetchArray($ires)) {
+        while ($irow = sqlFetchArray($recordset)) {
             if (strcmp($irow['type'], $prev_type) == 0) {
                 continue;
             }
@@ -272,7 +276,7 @@ class BillingExport
 
   // Close the output file and move it to the ftp download area.
   //
-    function close()
+    public function close(): void
     {
         fclose($this->tmpfh);
         chmod($this->tmpname, 0666);

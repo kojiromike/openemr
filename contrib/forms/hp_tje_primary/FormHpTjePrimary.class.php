@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\Common\ORDataObject\ORDataObject;
 
 define("EVENT_VEHICLE", 1);
@@ -24,39 +26,67 @@ class FormHpTjePrimary extends ORDataObject
      *
      * static
      */
-    var $event_array = array("","Vehicular Accident","Work Related Accident","Slip & Fall","Other");
+    public $event_array = array("","Vehicular Accident","Work Related Accident","Slip & Fall","Other");
 
     /**
      *
      * @access private
      */
 
-    var $id;
-    var $referred_by;
-    var $complaints;
-    var $date_of_onset;
-    var $event;
-    var $event_description;
-    var $prior_symptoms;
-    var $aggravated_symptoms;
-    var $comments;
-    var $date;
-    var $teeth_sore_number;
-    var $teeth_mobile_number;
-    var $teeth_fractured_number;
-    var $teeth_avulsed_number;
-    var $precipitating_factors_other_text;
-    var $checks;
-    var $pid;
-    var $activity;
-    var $history;
-    var $previous_accidents;
+    public $id;
+
+    public $referred_by;
+
+    public $complaints;
+
+    /**
+     * @var string
+     */
+    public $date_of_onset;
+
+    public $event;
+
+    public $event_description;
+
+    public $prior_symptoms;
+
+    public $aggravated_symptoms;
+
+    public $comments;
+
+    /**
+     * @var string
+     */
+    public $date;
+
+    public $teeth_sore_number;
+
+    public $teeth_mobile_number;
+
+    public $teeth_fractured_number;
+
+    public $teeth_avulsed_number;
+
+    public $precipitating_factors_other_text;
+
+    /**
+     * @var array{}
+     */
+    public $checks;
+
+    public $pid;
+
+    public $activity;
+
+    public $history;
+
+    public $previous_accidents;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -76,7 +106,8 @@ class FormHpTjePrimary extends ORDataObject
             $this->populate();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
 
@@ -103,49 +134,55 @@ class FormHpTjePrimary extends ORDataObject
         }
     }
 
-    function toString($html = false)
+    public function toString($html = false): string
     {
         $string = "\n" . "ID: " . $this->id . "\n";
         return $html ? nl2br($string) : $string;
     }
-    function set_id($id)
+
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date_of_onset_y()
+    public function get_date_of_onset_y(): string
     {
         $ymd = explode("-", $this->date_of_onset);
         return $ymd[0];
     }
 
-    function set_date_of_onset_y($year)
+    public function set_date_of_onset_y($year): void
     {
         if (is_numeric($year)) {
             $ymd = explode("-", $this->date_of_onset);
@@ -154,13 +191,13 @@ class FormHpTjePrimary extends ORDataObject
         }
     }
 
-    function get_date_of_onset_m()
+    public function get_date_of_onset_m(): string
     {
         $ymd = explode("-", $this->date_of_onset);
         return $ymd[1];
     }
 
-    function set_date_of_onset_m($month)
+    public function set_date_of_onset_m($month): void
     {
         if (is_numeric($month)) {
             $ymd = explode("-", $this->date_of_onset);
@@ -169,13 +206,13 @@ class FormHpTjePrimary extends ORDataObject
         }
     }
 
-    function get_date_of_onset_d()
+    public function get_date_of_onset_d(): string
     {
         $ymd = explode("-", $this->date_of_onset);
         return $ymd[2];
     }
 
-    function set_date_of_onset_d($day)
+    public function set_date_of_onset_d($day): void
     {
         if (is_numeric($day)) {
             $ymd = explode("-", $this->date_of_onset);
@@ -184,17 +221,17 @@ class FormHpTjePrimary extends ORDataObject
         }
     }
 
-    function get_date_of_onset()
+    public function get_date_of_onset()
     {
         return $this->date_of_onset;
     }
 
-    function set_date_of_onset($date)
+    public function set_date_of_onset($date)
     {
         return $this->date_of_onset = $date;
     }
 
-    function set_event($event)
+    public function set_event($event): void
     {
         if (!is_numeric) {
             return;
@@ -203,161 +240,162 @@ class FormHpTjePrimary extends ORDataObject
         $this->event = $event;
     }
 
-    function get_event()
+    public function get_event()
     {
         return $this->event;
     }
 
-    function set_referred_by($string)
+    public function set_referred_by($string): void
     {
         $this->referred_by = $string;
     }
 
-    function get_referred_by()
+    public function get_referred_by()
     {
         return $this->referred_by;
     }
 
-    function set_complaints($string)
+    public function set_complaints($string): void
     {
         $this->complaints = $string;
     }
 
-    function get_complaints()
+    public function get_complaints()
     {
         return $this->complaints;
     }
 
-    function set_prior_symptoms($string)
+    public function set_prior_symptoms($string): void
     {
         $this->prior_symptoms = $string;
     }
 
-    function get_prior_symptoms()
+    public function get_prior_symptoms()
     {
         return $this->prior_symptoms;
     }
 
-    function set_aggravated_symptoms($string)
+    public function set_aggravated_symptoms($string): void
     {
         $this->aggravated_symptoms = $string;
     }
 
-    function get_aggravated_symptoms()
+    public function get_aggravated_symptoms()
     {
         return $this->aggravated_symptoms;
     }
 
-    function set_comments($string)
+    public function set_comments($string): void
     {
         $this->comments = $string;
     }
 
-    function get_comments()
+    public function get_comments()
     {
         return $this->comments;
     }
 
-    function set_event_description($description)
+    public function set_event_description($description): void
     {
         $this->event_description = $description;
     }
 
-    function get_event_description()
+    public function get_event_description()
     {
         return $this->event_description;
     }
-    function get_teeth_sore_number()
+
+    public function get_teeth_sore_number()
     {
         return $this->teeth_sore_number;
     }
 
-    function set_teeth_sore_number($num)
+    public function set_teeth_sore_number($num): void
     {
         $this->teeth_sore_number = $num;
     }
 
-    function get_teeth_mobile_number()
+    public function get_teeth_mobile_number()
     {
         return $this->teeth_mobile_number;
     }
 
-    function set_teeth_mobile_number($num)
+    public function set_teeth_mobile_number($num): void
     {
         $this->teeth_mobile_number = $num;
     }
 
-    function get_teeth_fractured_number()
+    public function get_teeth_fractured_number()
     {
         return $this->teeth_fractured_number;
     }
 
-    function set_teeth_fractured_number($num)
+    public function set_teeth_fractured_number($num): void
     {
         $this->teeth_fractured_number = $num;
     }
 
-    function get_teeth_avulsed_number()
+    public function get_teeth_avulsed_number()
     {
         return $this->teeth_avulsed_number;
     }
 
-    function set_teeth_avulsed_number($num)
+    public function set_teeth_avulsed_number($num): void
     {
         $this->teeth_avulsed_number = $num;
     }
 
-    function get_precipitating_factors_other_text()
+    public function get_precipitating_factors_other_text()
     {
         return $this->precipitating_factors_other_text;
     }
 
-    function set_precipitating_factors_other_text($string)
+    public function set_precipitating_factors_other_text($string): void
     {
         $this->precipitating_factors_other_text = $string;
     }
 
-    function get_checks()
+    public function get_checks()
     {
         return $this->checks;
     }
 
-    function set_checks($check_array)
+    public function set_checks($check_array): void
     {
         $this->checks = $check_array;
     }
 
-    function get_history()
+    public function get_history()
     {
         return $this->history;
     }
 
-    function set_history($array)
+    public function set_history($array): void
     {
         $this->history = $array;
     }
 
-    function get_previous_accidents()
+    public function get_previous_accidents()
     {
         return $this->previous_accidents;
     }
 
-    function set_previous_accidents($array)
+    public function set_previous_accidents($array): void
     {
         $this->previous_accidents = $array;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
 
-    function persist()
+    public function persist(): void
     {
 
         parent::persist();
-        if (is_numeric($this->id) and !empty($this->checks)) {
+        if (is_numeric($this->id) && !empty($this->checks)) {
             $sql = "delete FROM form_hp_tje_checks where foreign_id = ?";
             sqlQuery($sql, [$this->id]);
             foreach ($this->checks as $check) {
@@ -369,7 +407,7 @@ class FormHpTjePrimary extends ORDataObject
             }
         }
 
-        if (is_numeric($this->id) and !empty($this->history)) {
+        if (is_numeric($this->id) && !empty($this->history)) {
             $sql = "delete FROM form_hp_tje_history where foreign_id = ?";
             sqlQuery($sql, [$this->id]);
             foreach ($this->history as $history) {
@@ -396,12 +434,12 @@ class FormHpTjePrimary extends ORDataObject
             }
         }
 
-        if (is_numeric($this->id) and !empty($this->previous_accidents)) {
+        if (is_numeric($this->id) && !empty($this->previous_accidents)) {
             $sql = "delete FROM form_hp_tje_previous_accidents where foreign_id = ?";
             sqlQuery($sql, [$this->id]);
 
-            foreach ($this->previous_accidents as $pa) {
-                if (!empty($pa)) {
+            foreach ($this->previous_accidents as $previou_accident) {
+                if (!empty($previou_accident)) {
                     $sql = "INSERT INTO form_hp_tje_previous_accidents set foreign_id=?" .
                     ", nature_of_accident = ?"
                     . ", injuries = ?"
@@ -411,9 +449,9 @@ class FormHpTjePrimary extends ORDataObject
                         $sql,
                         [
                             $this->id,
-                            $pa['nature_of_accident'],
-                            $pa['injuries'],
-                            $pa['date']
+                            $previou_accident['nature_of_accident'],
+                            $previou_accident['injuries'],
+                            $previou_accident['date']
                         ]
                     );
                     //echo "$sql<br />";
@@ -422,7 +460,7 @@ class FormHpTjePrimary extends ORDataObject
         }
     }
 
-    function _form_layout()
+    public function _form_layout(): array
     {
         $a = array();
 
@@ -633,7 +671,7 @@ class FormHpTjePrimary extends ORDataObject
         $at[1]['neuralgia_numbness_l']  =  "L";
         $at[1]['neuralgia_numbness_r']  =  "R";
 
-        $at[2]['neuralgia_cold_spots']  =  "\"Cold Spots\"";
+        $at[2]['neuralgia_cold_spots']  =  '"Cold Spots"';
         $at[2]['neuralgia_cold_spots_l']    =  "L";
         $at[2]['neuralgia_cold_spots_r']    =  "R";
         $at[2]['neuralgia_burning_tungue_lips_mouth']   =  "Burning Lips/Tongue/Mouth";
@@ -673,7 +711,6 @@ class FormHpTjePrimary extends ORDataObject
         $a['Precipitating Factors'] = $at;
 
         $at = array();
-        $a_bottom = array();
         $at[1]['predisposing_factors_previous_injury_problem']  =  "Previous Injury/Problem";
         $at[1]['predisposing_factors_ligament_laxity']  =  "Ligament Laxity";
         $at[1]['predisposing_factors_deep_bite']    =  "Deep Bite";
@@ -687,7 +724,6 @@ class FormHpTjePrimary extends ORDataObject
         $a['Predisposing Factors'] = $at;
 
         $at = array();
-        $a_bottom = array();
         $at[1]['perpetuating_factors_previous_injury_problem']  =  "Previous Injury/Problem";
         $at[1]['perpetuating_factors_ligament_laxity']  =  "Ligament Laxity";
         $at[1]['perpetuating_factors_deep_bite']    =  "Deep Bite";
@@ -703,7 +739,10 @@ class FormHpTjePrimary extends ORDataObject
         return $a;
     }
 
-    function _name_rows($name, $row_array)
+    /**
+     * @return array{}|array{Occurance?: non-empty-array<non-falsy-string, ('At Walking' | 'Evening' | 'Mid Day' | 'Variable')>, Aggravation?: non-empty-array<non-falsy-string, ('Chewing' | 'Clenching' | 'Physical Activity' | 'Speaking')>, 'Quality of Pain'?: non-empty-array<non-falsy-string, ('Aching' | 'Deep' | 'Dull' | 'Triggered')>, Frequency?: non-empty-array<non-falsy-string, ('1/Week' | '2-3/Week' | 'Daily' | 'No Pattern')>, Duration?: non-empty-array<non-falsy-string, ('Constant' | 'Days' | 'Hours' | 'Minutes')>, Intensity?: non-empty-array<non-falsy-string, ('Mild' | 'Moderate' | 'Moderately Severe' | 'Severe')>, Onset?: non-empty-array<non-falsy-string, ('Aggravated By Accident' | 'Other' | 'Pre-existing' | 'Precipitated By Accident')>}
+     */
+    public function _name_rows(string $name, $row_array): array
     {
         $a = array();
         foreach ($row_array as $row) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Model/EncountermanagerTable.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 // TODO: we need to refactor all of this so it can go into a class for this functionality
@@ -55,6 +56,7 @@ class EncountermanagerTable extends AbstractTableGateway
         if ($data['status'] == "unsigned") {
             $query .= " AND (cf.encounter IS  NULL OR cf.encounter ='')";
         }
+
         if ($data['from_date'] && $data['to_date']) {
             if ($data['search_type_date'] == 'date_patient_creation') {
                 $query .= " AND pd.date BETWEEN ? AND ? ";
@@ -62,9 +64,11 @@ class EncountermanagerTable extends AbstractTableGateway
                 // default is encounter date
                 $query .= " AND fe.date BETWEEN ? AND ? ";
             }
+
             $query_data[] = $data['from_date'];
             $query_data[] = $data['to_date'];
         }
+
         if (!empty($data['provider_id'])) {
             $query .= " AND (`fe`.`provider_id` = ? OR `fe`.`supervisor_id` = ?) ";
             $query_data[] = $data['provider_id'];
@@ -94,32 +98,30 @@ class EncountermanagerTable extends AbstractTableGateway
 
         $query .= " ORDER BY fe.pid, fe.date ";
 
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
 
         if ($getCount) {
-            $res = $appTable->zQuery($query, $query_data);
-            $resCount = $res->count();
-            return $resCount;
+            $res = $applicationTable->zQuery($query, $query_data);
+            return $res->count();
         }
 
         $query .= " LIMIT " . CommonPlugin::escapeLimit($data['limit_start']) . "," . CommonPlugin::escapeLimit($data['results']);
-        $resDetails = $appTable->zQuery($query, $query_data);
 
-        return $resDetails;
+        return $applicationTable->zQuery($query, $query_data);
     }
 
     public function getStatus($data)
     {
         $pid = '';
         foreach ($data as $row) {
-            if (!empty($pid)) {
+            if ($pid !== '' && $pid !== '0') {
                 $pid .= ',';
             }
 
             $pid .= ($row['pid'] ?? '');
         }
 
-        if (empty($pid)) {
+        if ($pid === '' || $pid === '0') {
             $pid = "''";
         }
 
@@ -127,17 +129,15 @@ class EncountermanagerTable extends AbstractTableGateway
 				LEFT JOIN form_encounter AS fe ON fe. pid = cc.pid AND fe.encounter = cc.encounter
 				LEFT JOIN users AS u ON u.id = cc.user_id
 				WHERE cc.pid in (?) ORDER BY cc.pid, cc.time desc";
-        $appTable = new ApplicationTable();
-        $result = $appTable->zQuery($query, array($pid));
-        return $result;
+        $applicationTable = new ApplicationTable();
+        return $applicationTable->zQuery($query, array($pid));
     }
 
-    public function convert_to_yyyymmdd($date)
+    public function convert_to_yyyymmdd($date): string
     {
         $date = str_replace('/', '-', $date);
         $arr = explode('-', $date);
-        $formatted_date = $arr[2] . "-" . $arr[0] . "-" . $arr[1];
-        return $formatted_date;
+        return $arr[2] . "-" . $arr[0] . "-" . $arr[1];
     }
 
     /*
@@ -148,32 +148,31 @@ class EncountermanagerTable extends AbstractTableGateway
     *
     * @return   String      $formatted_date New formatted date
     */
-    public function date_format($date, $format)
+    public function date_format($date, $format): ?string
     {
         if (!$date) {
-            return;
+            return null;
         }
 
         $format = $format ? $format : 'm/d/y';
         $temp = explode(' ', $date); //split using space and consider the first portion, incase of date with time
         $date = $temp[0];
         $date = str_replace('/', '-', $date);
+
         $arr = explode('-', $date);
 
         if ($format == 'm/d/y') {
             $formatted_date = $arr[1] . "/" . $arr[2] . "/" . $arr[0];
-        }
-
-        $formatted_date = $temp[1] ? $formatted_date . " " . $temp[1] : $formatted_date; //append the time, if exists, with the new formatted date
-        return $formatted_date;
+        } //append the time, if exists, with the new formatted date
+        return $temp[1] !== '' && $temp[1] !== '0' ? $formatted_date . " " . $temp[1] : $formatted_date;
     }
 
-    public function getFile($id)
+    public function getFile($id): string|false|null
     {
         $query = "select couch_docid, couch_revid, ccda_data, encrypted from ccda where id=?";
-        $appTable = new ApplicationTable();
-        $result = $appTable->zQuery($query, array($id));
-        foreach ($result as $row) {
+        $applicationTable = new ApplicationTable();
+        $type = $applicationTable->zQuery($query, array($id));
+        foreach ($type as $row) {
             if ($row['couch_docid'] != '') {
                 $couch = new CouchDB();
                 $resp = $couch->retrieve_doc($row['couch_docid']);
@@ -187,6 +186,7 @@ class EncountermanagerTable extends AbstractTableGateway
                 if (!filesize($row['ccda_data'])) {
                     continue;
                 }
+
                 $fccda = fopen($row['ccda_data'], "r");
                 if ($row['encrypted']) {
                     $cryptoGen = new CryptoGen();
@@ -194,6 +194,7 @@ class EncountermanagerTable extends AbstractTableGateway
                 } else {
                     $content = fread($fccda, filesize($row['ccda_data']));
                 }
+
                 fclose($fccda);
             } else {
                 $content = $row['ccda_data'];
@@ -201,6 +202,7 @@ class EncountermanagerTable extends AbstractTableGateway
 
             return $content;
         }
+        return null;
     }
 
     private function getCcdaAsPdf($ccda)
@@ -211,19 +213,21 @@ class EncountermanagerTable extends AbstractTableGateway
         return $dompdf->output();
     }
 
-    public function getCcdaAsHTML($ccda)
+    public function getCcdaAsHTML($ccda): string|false
     {
         $xml = simplexml_load_string($ccda);
-        $xsl = new DOMDocument();
+        $domDocument = new DOMDocument();
         // cda.xsl is self contained with bootstrap and jquery.
         // cda-web.xsl is used when referencing styles from internet.
-        $xsl->load(__DIR__ . '/../../../../../public/xsl/cda.xsl');
-        $proc = new XSLTProcessor();
-        if (!$proc->importStyleSheet($xsl)) { // attach the xsl rules
+        $domDocument->load(__DIR__ . '/../../../../../public/xsl/cda.xsl');
+
+        $xsltProcessor = new XSLTProcessor();
+        if (!$xsltProcessor->importStyleSheet($domDocument)) { // attach the xsl rules
             throw new \RuntimeException("CDA Stylesheet could not be found");
         }
+
         $outputFile = sys_get_temp_dir() . '/out_' . time() . '.html';
-        $proc->transformToURI($xml, $outputFile);
+        $xsltProcessor->transformToURI($xml, $outputFile);
 
         return file_get_contents($outputFile);
     }
@@ -237,9 +241,9 @@ class EncountermanagerTable extends AbstractTableGateway
      * @param string requested_by user | patient
      * @return string result of operation
      */
-    public function transmitCcdToRecipients($data = array())
+    public function transmitCcdToRecipients($data = array()): string
     {
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
         $ccda_combination = $data['ccda_combination'];
         $recipients = $data['recipients'];
         $xml_type = strtolower($data['xml_type'] ?? '');
@@ -248,14 +252,10 @@ class EncountermanagerTable extends AbstractTableGateway
         // no point in continuing if we are not setup here
         $config_err = xl(ErrorConstants::MESSAGING_DISABLED) . " " . ErrorConstants::ERROR_CODE_ABBREVIATION . ":";
         if ($GLOBALS['phimail_enable'] == false) {
-            return ("$config_err " . ErrorConstants::ERROR_CODE_MESSAGING_DISABLED);
+            return ($config_err . ' ' . ErrorConstants::ERROR_CODE_MESSAGING_DISABLED);
         }
 
-        if ($GLOBALS['phimail_verifyrecipientreceived_enable'] == '1') {
-            $verifyMessageReceivedChecked = true;
-        } else {
-            $verifyMessageReceivedChecked = false;
-        }
+        $verifyMessageReceivedChecked = $GLOBALS['phimail_verifyrecipientreceived_enable'] == '1';
 
         try {
             foreach ($rec_arr as $recipient) {
@@ -263,7 +263,7 @@ class EncountermanagerTable extends AbstractTableGateway
                 $arr = explode('|', $ccda_combination);
                 foreach ($arr as $value) {
                     $query = "SELECT id,transaction_id FROM  ccda WHERE pid = ? ORDER BY id DESC LIMIT 1";
-                    $result = $appTable->zQuery($query, array($value));
+                    $result = $applicationTable->zQuery($query, array($value));
                     // wierd foreach loop considering the limit 1 up above?
                     foreach ($result as $val) {
                         $ccda_id = $val['id'];
@@ -277,6 +277,7 @@ class EncountermanagerTable extends AbstractTableGateway
                     if (empty($documents[0])) {
                         throw new \RuntimeException("Cannot send document as document was not generated for ccda with ccda id " . $ccda_id);
                     }
+
                     $document = $documents[0];
                     $ccda = $document->get_data();
                     // use the filename that exists in the document for what is sent
@@ -286,14 +287,15 @@ class EncountermanagerTable extends AbstractTableGateway
                             . $document->get_id());
                     }
 
-                    if ($xml_type == 'html') {
+                    if ($xml_type === 'html') {
                         $ccda_file = $this->getCcdaAsHTML($ccda);
-                    } elseif ($xml_type == 'pdf') {
+                    } elseif ($xml_type === 'pdf') {
                         $ccda_file = $this->getCcdaAsPdf($ccda);
-                    } elseif ($xml_type == 'xml') {
+                    } elseif ($xml_type === 'xml') {
                         $xml = simplexml_load_string($ccda);
                         $ccda_file = $xml->saveXML();
                     }
+
                     $replaceExt = "." . $xml_type;
                     $extpos = strrpos($fileName, ".xml");
                     if ($extpos !== false) {
@@ -313,7 +315,7 @@ class EncountermanagerTable extends AbstractTableGateway
             return ("Delivery failed to send");
         }
 
-        if ($d_Address == '') {
+        if ($d_Address === '') {
             foreach ($elec_sent as $elec) {
                 // check to make sure its a valid ccda
                 $collect = amcCollect('send_sum_valid_ccda', $elec['pid'], 'transactions', $elec['map_id']);
@@ -335,13 +337,13 @@ class EncountermanagerTable extends AbstractTableGateway
     public function getFileID($pid, $limit = 1)
     {
         $limit = CommonPlugin::escapeLimit($limit);
-        $appTable = new ApplicationTable();
-        $query = "SELECT cc.id, pd.fname, pd.lname, pd.pid FROM ccda AS cc
+        $applicationTable = new ApplicationTable();
+        $query = 'SELECT cc.id, pd.fname, pd.lname, pd.pid FROM ccda AS cc
 		    LEFT JOIN patient_data AS pd ON pd.pid=cc.pid
 		    WHERE cc.pid = ?
-		    ORDER BY cc.id DESC LIMIT $limit";
-        $res = $appTable->zQuery($query, array($pid));
-        foreach ($res as $row) {
+		    ORDER BY cc.id DESC LIMIT ' . $limit;
+        $type = $applicationTable->zQuery($query, array($pid));
+        foreach ($type as $row) {
             $res_cur[] = $row;
         }
 
@@ -356,13 +358,13 @@ class EncountermanagerTable extends AbstractTableGateway
     * @param    String      direct address
     *
     */
-    public function AddNewUSer($data = array())
+    public function AddNewUSer(array $data = array()): void
     {
         $fname = $data['fname'];
         $lname = $data['lname'];
         $direct_address = $data['direct_address'];
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
         $query = "INSERT INTO users SET username = ? ,password = ? ,authorized = ?,fname = ?,lname = ?,email = ?,active = ?,abook_type = ?";
-        $appTable->zQuery($query, array('', '', 0, $fname, $lname, $direct_address, 1, 'emr_direct'));
+        $applicationTable->zQuery($query, array('', '', 0, $fname, $lname, $direct_address, 1, 'emr_direct'));
     }
 }

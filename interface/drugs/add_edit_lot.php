@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * add and edit lot
  *
@@ -15,9 +17,9 @@
  // TODO: Replace tables with BS4 grid classes for GSoC
 
 
-require_once("../globals.php");
-require_once("drugs.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/drugs.inc.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -63,14 +65,14 @@ function areVendorsUsed()
 // Returns the number of warehouses allowed.
 // For these purposes the "unassigned" option is considered a warehouse.
 //
-function genWarehouseList($tag_name, $currvalue, $title, $class = '')
+function genWarehouseList($tag_name, $currvalue, $title, $class = ''): int
 {
     global $drug_id, $is_user_restricted;
 
     $drow = sqlQuery("SELECT allow_multiple FROM drugs WHERE drug_id = ?", array($drug_id));
     $allow_multiple = $drow['allow_multiple'];
 
-    $lres = sqlStatement("SELECT * FROM list_options " .
+    $recordset = sqlStatement("SELECT * FROM list_options " .
     "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
 
     echo "<select name='" . attr($tag_name) . "' id='" . attr($tag_name) . "'";
@@ -88,7 +90,7 @@ function genWarehouseList($tag_name, $currvalue, $title, $class = '')
         ++$count;
     }
 
-    while ($lrow = sqlFetchArray($lres)) {
+    while ($lrow = sqlFetchArray($recordset)) {
         $whid = $lrow['option_id'];
         $facid = (int) ($lrow['option_value'] ?? null);
         if ($whid != $currvalue) {
@@ -100,7 +102,7 @@ function genWarehouseList($tag_name, $currvalue, $title, $class = '')
             }
         }
         // Value identifies both warehouse and facility to support validation.
-        echo "<option value='" . attr("$whid|$facid") . "'";
+        echo "<option value='" . attr(sprintf('%s|%d', $whid, $facid)) . "'";
 
         if (
             (strlen($currvalue) == 0 && $lrow['is_default']) ||
@@ -137,13 +139,13 @@ $form_trans_type = intval(isset($_POST['form_trans_type']) ? $_POST['form_trans_
 // Note if user is restricted to any facilities and/or warehouses.
 $is_user_restricted = isUserRestricted();
 
-if (!$drug_id) {
+if ($drug_id === 0) {
     die(xlt('Drug ID missing!'));
 }
 ?>
 <html>
 <head>
-<title><?php echo $lot_id ? xlt("Edit") : xlt("Add New");
+<title><?php echo $lot_id !== 0 ? xlt("Edit") : xlt("Add New");
 echo " " . xlt('Lot'); ?></title>
 
 <?php Header::setupHeader(['datetime-picker', 'opener']); ?>
@@ -257,7 +259,7 @@ td {
     roManufacturer = false;
     roLotNumber    = false;
     roExpiration   = false;
-<?php if (!$lot_id) { // target lot is not known yet ?>
+<?php if ($lot_id === 0) { // target lot is not known yet ?>
     showOnHand     = false;
 <?php } ?>
   }
@@ -272,7 +274,7 @@ td {
     showVendor       = false;
     showLotNumber    = false;
     showExpiration   = false;
-<?php if ($lot_id) { // disallow warehouse change on xfer to existing lot ?>
+<?php if ($lot_id !== 0) { // disallow warehouse change on xfer to existing lot ?>
     showWarehouse    = false;
 <?php } else { // target lot is not known yet ?>
     showOnHand       = false;
@@ -336,7 +338,7 @@ td {
 
 <body class="body_top">
 <?php
-if ($lot_id) {
+if ($lot_id !== 0) {
     $row = sqlQuery("SELECT * FROM drug_inventory WHERE drug_id = ? " .
     "AND inventory_id = ?", array($drug_id,$lot_id));
 }
@@ -380,12 +382,12 @@ if (!empty($_POST['form_save'])) {
 
       // Some fixups depending on transaction type.
     if ($form_trans_type == 3) { // return
-        $form_quantity = 0 - $form_quantity;
+        $form_quantity = -$form_quantity;
         $form_cost = 0 - $form_cost;
     } elseif ($form_trans_type == 5) { // adjustment
         $form_cost = 0;
     } elseif ($form_trans_type == 7) { // consumption
-        $form_quantity = 0 - $form_quantity;
+        $form_quantity = -$form_quantity;
         $form_cost = 0;
     } elseif ($form_trans_type == 0) { // no transaction
         $form_quantity = 0;
@@ -397,7 +399,7 @@ if (!empty($_POST['form_save'])) {
 
     // If a transfer, make sure there is sufficient quantity in the source lot
     // and apply some default values from it.
-    if ($form_source_lot) {
+    if ($form_source_lot !== 0) {
         $srow = sqlQuery(
             "SELECT lot_number, expiration, manufacturer, vendor_id, on_hand " .
             "FROM drug_inventory WHERE drug_id = ? AND inventory_id = ?",
@@ -476,49 +478,48 @@ if (!empty($_POST['form_save'])) {
                 sqlStatement("DELETE FROM drug_inventory WHERE drug_id = ? " .
                 "AND inventory_id = ?", array($drug_id,$lot_id));
             }
-        } else { // Destination lot will be created.
-            if ($form_quantity < 0) {
-                $info_msg = xl('Transaction failed, quantity is less than zero');
+        } elseif ($form_quantity < 0) {
+            // Destination lot will be created.
+            $info_msg = xl('Transaction failed, quantity is less than zero');
+        } else {
+            $exptest = $form_expiration ?
+                ("expiration = '" . add_escape_custom($form_expiration) . "'") : "expiration IS NULL";
+            $crow = sqlQuery(
+                "SELECT count(*) AS count from drug_inventory " .
+                "WHERE lot_number = ? " .
+                "AND drug_id = ? " .
+                "AND warehouse_id = ? " .
+                sprintf('AND %s ', $exptest) .
+                "AND on_hand != 0 " .
+                "AND destroy_date IS NULL",
+                array($form_lot_number, $drug_id, $form_warehouse_id)
+            );
+            if ($crow['count']) {
+                $info_msg = xl('Transaction failed, duplicate lot');
             } else {
-                $exptest = $form_expiration ?
-                    ("expiration = '" . add_escape_custom($form_expiration) . "'") : "expiration IS NULL";
-                $crow = sqlQuery(
-                    "SELECT count(*) AS count from drug_inventory " .
-                    "WHERE lot_number = ? " .
-                    "AND drug_id = ? " .
-                    "AND warehouse_id = ? " .
-                    "AND $exptest " .
-                    "AND on_hand != 0 " .
-                    "AND destroy_date IS NULL",
-                    array($form_lot_number, $drug_id, $form_warehouse_id)
+                $lot_id = sqlInsert(
+                    "INSERT INTO drug_inventory ( " .
+                    "drug_id, lot_number, manufacturer, expiration, " .
+                    "vendor_id, warehouse_id, on_hand " .
+                    ") VALUES ( " .
+                    "?, "                            .
+                    "?, " .
+                    "?, " .
+                    "?, "  .
+                    "?, " .
+                    "?, " .
+                    "? "  .
+                    ")",
+                    array(
+                        $drug_id,
+                        $form_lot_number,
+                        $form_manufacturer,
+                        (empty($form_expiration) ? "NULL" : $form_expiration),
+                        $form_vendor_id,
+                        $form_warehouse_id,
+                        $form_quantity
+                    )
                 );
-                if ($crow['count']) {
-                    $info_msg = xl('Transaction failed, duplicate lot');
-                } else {
-                    $lot_id = sqlInsert(
-                        "INSERT INTO drug_inventory ( " .
-                        "drug_id, lot_number, manufacturer, expiration, " .
-                        "vendor_id, warehouse_id, on_hand " .
-                        ") VALUES ( " .
-                        "?, "                            .
-                        "?, " .
-                        "?, " .
-                        "?, "  .
-                        "?, " .
-                        "?, " .
-                        "? "  .
-                        ")",
-                        array(
-                            $drug_id,
-                            $form_lot_number,
-                            $form_manufacturer,
-                            (empty($form_expiration) ? "NULL" : $form_expiration),
-                            $form_vendor_id,
-                            $form_warehouse_id,
-                            $form_quantity
-                        )
-                    );
-                }
             }
         }
 
@@ -550,7 +551,7 @@ if (!empty($_POST['form_save'])) {
                     $lot_id,
                     $_SESSION['authUser'],
                     $form_sale_date,
-                    (0 - $form_quantity),
+                    (-$form_quantity),
                     (0 - $form_cost),
                     $form_source_lot,
                     0,
@@ -560,7 +561,7 @@ if (!empty($_POST['form_save'])) {
             );
 
             // If this is a transfer then reduce source QOH.
-            if ($form_source_lot) {
+            if ($form_source_lot !== 0) {
                 sqlStatement(
                     "UPDATE drug_inventory SET " .
                     "on_hand = on_hand - ? " .
@@ -583,7 +584,7 @@ if (!empty($_POST['form_save'])) {
     echo "</script></body></html>\n";
     exit();
 }
-$title = $lot_id ? xl("Update Lot") : xl("Add Lot");
+$title = $lot_id !== 0 ? xl("Update Lot") : xl("Add Lot");
 ?>
 <h3 class="ml-1"><?php echo text($title);?></h3>
 <form method='post' name='theform' action='add_edit_lot.php?drug=<?php echo attr_url($drug_id); ?>&lot=<?php echo attr_url($lot_id); ?>' onsubmit='return validate()'>
@@ -616,26 +617,20 @@ foreach (
     ) as $key => $value
 ) {
     echo "<option value='" . attr($key) . "'";
-    if (
-        !$auth_admin && (
-        $key == 2 && !AclMain::aclCheckCore('inventory', 'purchases') ||
-        $key == 3 && !AclMain::aclCheckCore('inventory', 'purchases') ||
-        $key == 4 && !AclMain::aclCheckCore('inventory', 'transfers') ||
-        $key == 5 && !AclMain::aclCheckCore('inventory', 'adjustments') ||
-        $key == 7 && !AclMain::aclCheckCore('inventory', 'consumption')
-        )
-    ) {
+    if (!$auth_admin && (
+    $key == 2 && !AclMain::aclCheckCore('inventory', 'purchases') ||
+    $key == 3 && !AclMain::aclCheckCore('inventory', 'purchases') ||
+    $key == 4 && !AclMain::aclCheckCore('inventory', 'transfers') ||
+    $key == 5 && !AclMain::aclCheckCore('inventory', 'adjustments') ||
+    $key == 7 && !AclMain::aclCheckCore('inventory', 'consumption')
+    )) {
         echo " disabled";
-    } else if (
-        $lot_id  && in_array($key, array('2', '4'     )) ||
-        // $lot_id  && in_array($key, array('2')) ||
-        !$lot_id && in_array($key, array('0', '3', '5', '7'))
-    ) {
+    } elseif ($lot_id  && in_array($key, array('2', '4'     )) ||
+    // $lot_id  && in_array($key, array('2')) ||
+    !$lot_id && in_array($key, array('0', '3', '5', '7'))) {
         echo " disabled";
-    } else {
-        if (isset($_POST['form_trans_type']) && $key == $form_trans_type) {
-            echo " selected";
-        }
+    } elseif (isset($_POST['form_trans_type']) && $key == $form_trans_type) {
+        echo " selected";
     }
     echo ">" . text($value) . "</option>\n";
 }
@@ -768,7 +763,7 @@ if (
 </table>
 
 <div class="btn-group mt-3">
-<input type='submit' class="btn btn-primary" name='form_save' value='<?php echo $lot_id ? xla('Update') : xla('Add') ?>' />
+<input type='submit' class="btn btn-primary" name='form_save' value='<?php echo $lot_id !== 0 ? xla('Update') : xla('Add') ?>' />
 
 <?php if ($lot_id && ($auth_admin || AclMain::aclCheckCore('inventory', 'destruction'))) { ?>
 <input type='button' class="btn btn-danger" value='<?php echo xla('Destroy'); ?>'

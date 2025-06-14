@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Controller/SoapController.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -20,8 +21,9 @@ use Laminas\Soap\Server;
 
 class SoapController extends AbstractActionController
 {
-    protected $listenerObject;
-    protected $encounterCCDADispatchController;
+    protected \Application\Listener\Listener $listenerObject;
+
+    protected \Carecoordination\Controller\EncounterccdadispatchController $encounterCCDADispatchController;
 
     // TODO: verify that a single object instance (ie singleton) that is injected here is ok
     // as the prior codebase instantiated a new $encounterController on each call to indexAction...
@@ -33,7 +35,7 @@ class SoapController extends AbstractActionController
     }
 
 
-    public function indexAction()
+    public function indexAction(): void
     {
 
         // What we are doing is taking all of the public methods of EncounterccdadispatchController and exposing it as

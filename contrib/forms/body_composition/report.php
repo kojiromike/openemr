@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * body_composition report.php
  *
@@ -13,7 +15,7 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function body_composition_report($pid, $encounter, $cols, $id)
+function body_composition_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = sqlQuery("SELECT * " .
@@ -36,7 +38,7 @@ function body_composition_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td valign='top'><span class='bold'>" . text($key) . ": </span><span class='text'>" . text($value) . " &nbsp;</span></td>\n";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr>\n<tr>\n";

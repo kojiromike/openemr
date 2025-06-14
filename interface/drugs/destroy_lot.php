@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * destroy lot
  *
@@ -12,8 +14,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("drugs.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/drugs.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -101,7 +103,7 @@ if ($_POST['form_save']) {
   // Close this window and redisplay the updated list of drugs.
   //
     echo "<script>\n";
-    if ($info_msg) {
+    if ($info_msg !== '') {
         echo " alert('" . addslashes($info_msg) . "');\n";
     }
 

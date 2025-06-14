@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Generated DocBlock
  *
@@ -30,7 +32,7 @@ use OpenEMR\Core\Header;
 <body class="body_top">
 
 <?php
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 $obj = formFetch("form_ped_fever", $_GET["id"]);
 ?>
 
@@ -45,7 +47,7 @@ $obj = formFetch("form_ped_fever", $_GET["id"]);
 <!-- Form goes here -->
 
 <?php
-    include('form.php');
+    include(__DIR__ . '/form.php');
 ?>
 
 <!-- Form ends here -->

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * QRDA Ajax Download
@@ -13,12 +15,12 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../interface/globals.php");
-require_once("$srcdir/report_database.inc.php");
-require_once("../ccr/uuid.php");
-require_once("qrda_category1_functions.php");
-require_once("qrda_category1.inc.php");
-require_once("qrda_functions.php");
+require_once(__DIR__ . "/../interface/globals.php");
+require_once($srcdir . '/report_database.inc.php');
+require_once(__DIR__ . "/../ccr/uuid.php");
+require_once(__DIR__ . "/qrda_category1_functions.php");
+require_once(__DIR__ . "/qrda_category1.inc.php");
+require_once(__DIR__ . "/qrda_functions.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -83,7 +85,7 @@ $patients = $criteriaPatients[$ruleID];
 $from_date = date('Y', strtotime($target_date)) . "-01-01";
 $to_date =  date('Y', strtotime($target_date)) . "-12-31";
 
-if (count($patients)) {
+if (count($patients) > 0) {
     $zip = new ZipArchive();
     global $qrda_file_path;
     $currentTime = date("Y-m-d-H-i-s");
@@ -110,8 +112,8 @@ if (count($patients)) {
 
     $zip->close();
     //Deleting the files after closing the zip
-    foreach ($files as $eachFile) {
-        $filePath = $qrda_file_path . $eachFile;
+    foreach ($files as $file) {
+        $filePath = $qrda_file_path . $file;
         unlink($filePath);
     }
 

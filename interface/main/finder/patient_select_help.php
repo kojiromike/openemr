@@ -1,6 +1,8 @@
 <?php
 
-require_once("../../globals.php");
+declare(strict_types=1);
+
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Core\Header;
 

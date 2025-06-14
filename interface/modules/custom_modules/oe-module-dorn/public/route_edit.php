@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -32,53 +34,41 @@ if (!AclMain::aclCheckCore('admin', 'users')) {
 $labGuid = "";
 $message = "";
 
-if (!empty($_GET)) {
-    if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_GET === []) && !CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
-if (!empty($_POST)) {
+if ($_POST !== []) {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
     //lets lookup the lab information we want to add a route for!
     $routeData = CreateRouteFromPrimaryViewModel::loadByPost($_POST);
-    $apiResponse =  ConnectorApi::createRoute($routeData);//create the route on dorn, we have all we need to do so
+    $apiResponse =  ConnectorApi::createRoute($routeData);
+    //create the route on dorn, we have all we need to do so
     if ($apiResponse->isSuccess) {
         $ppid = 0;
         $uid = 0;
         $labData = ConnectorApi::getLab($routeData->labGuid);
         $note = "labGuid:" . $labData->labGuid;
-
         $setupRouteInfo = LabRouteSetup::getRouteSetup($apiResponse->labGuid, $apiResponse->routeGuid);
         if ($setupRouteInfo != null) {
             $ppid = $setupRouteInfo["ppid"];
             $uid = $setupRouteInfo["uid"];
         }
-
         //we've added this lab to the address book here.
         $uid = AddressBookAddEdit::createOrUpdateRecordInAddressBook($uid, $labData->name, $labData->address1, $labData->address2, $labData->city, $labData->state, $labData->zipCode, $labData->Website, $labData->phoneNumber, $labData->faxNumber, $note);
         $ppid = LabRouteSetup::createUpdateProcedureProviders($ppid, $labData->name, $routeData->npi, $labData->labGuid, $uid, $routeData->labAccountNumber);
-
         //lets add/update to the new dorn route table
         $isLabSetup = LabRouteSetup::createDornRoute($apiResponse->labName, $apiResponse->routeGuid, $apiResponse->labGuid, $ppid, $uid, $labData->textLineBreakCharacter, $routeData->labAccountNumber);
-        if ($isLabSetup) {
-            $message = "Lab has been setup";
-        } else {
-            $message = "Failure creating route!";
-        }
+        $message = $isLabSetup ? "Lab has been setup" : "Failure creating route!";
+    } elseif ($apiResponse->responseMessage) {
+        $message = $apiResponse->responseMessage;
     } else {
-        if ($apiResponse->responseMessage) {
-            $message = $apiResponse->responseMessage;
-        } else {
-            $message = "Error creating route, no information came back though";
-        }
+        $message = "Error creating route, no information came back though";
     }
-} else {
-    if (!empty($_GET)) {
-        $labGuid = $_REQUEST['labGuid'];
-    }
+} elseif ($_GET !== []) {
+    $labGuid = $_REQUEST['labGuid'];
 }
 
 $primaryInfos = ConnectorApi::getPrimaryInfos('');
@@ -104,9 +94,9 @@ $primaryInfos = ConnectorApi::getPrimaryInfos('');
                     <label for="form_primaries"><?php echo xlt("Select NPI") ?>:</label>
                     <select id="form_primaries" name="form_primaries">
                         <?php
-                        foreach ($primaryInfos as $pInfo) {
+                        foreach ($primaryInfos as $primaryInfo) {
                             ?>
-                            <option <?php echo DisplayHelper::SelectOption($_POST['form_primaries'] ?? '', $pInfo->npi ?? '') ?>  value='<?php echo attr($pInfo->npi) ?>' ><?php echo text($pInfo->primaryName); ?> (<?php echo text($pInfo->npi); ?>)</option>
+                            <option <?php echo DisplayHelper::SelectOption($_POST['form_primaries'] ?? '', $primaryInfo->npi ?? '') ?>  value='<?php echo attr($primaryInfo->npi) ?>' ><?php echo text($primaryInfo->primaryName); ?> (<?php echo text($primaryInfo->npi); ?>)</option>
                             <?php
                         }
                         ?>

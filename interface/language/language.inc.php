@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * language.inc.php script
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-function check_pattern($data, $pat)
+function check_pattern($data, $pat): bool
 {
     if (preg_match("/" . addcslashes($pat, '/') . "/", $data)) {
         return true ;
@@ -21,7 +23,7 @@ function check_pattern($data, $pat)
 
 // Function to insert/modify items in the language log table, lang_custom
 //
-function insert_language_log($lang_desc, $lang_code, $cons_name, $def)
+function insert_language_log($lang_desc, $lang_code, $cons_name, $def): void
 {
     global $disable_utf8_flag, $sqlconf;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ccr;
 
 use Ccr\Model\Ccr;
@@ -11,13 +13,13 @@ use Laminas\View\Helper\Openemr\Menu;
 
 class Module
 {
-    public function getAutoloaderConfig()
+    public function getAutoloaderConfig(): array
     {
         return array(
-            'Laminas\Loader\ClassMapAutoloader' => array(
+            \Laminas\Loader\ClassMapAutoloader::class => array(
                 __DIR__ . '/autoload_classmap.php',
             ),
-            'Laminas\Loader\StandardAutoloader' => array(
+            \Laminas\Loader\StandardAutoloader::class => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
 
@@ -31,12 +33,13 @@ class Module
         return include __DIR__ . '/config/module.config.php';
     }
 
-    public function init(ModuleManager $moduleManager)
+    public function init(ModuleManager $moduleManager): void
     {
         $sharedEvents = $moduleManager->getEventManager()->getSharedManager();
-        $sharedEvents->attach(__NAMESPACE__, 'dispatch', function ($e) {
+        $sharedEvents->attach(__NAMESPACE__, 'dispatch', function ($e): void {
             $controller = $e->getTarget();
             $controller->layout('ccr/layout/layout');
+
                 $route = $controller->getEvent()->getRouteMatch();
                 $controller->getEvent()->getViewModel()->setVariables(array(
                     'current_controller' => $route->getParam('controller'),

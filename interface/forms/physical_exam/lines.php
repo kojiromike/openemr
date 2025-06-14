@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * physical_exam lines.php
  *

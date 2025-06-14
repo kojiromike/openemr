@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 use OpenEMR\Common\Acl\AclExtended;
@@ -8,16 +10,25 @@ use OpenEMR\Services\CodeTypesService;
 
 class C_DocumentCategory extends Controller
 {
-    var $template_mod;
-    var $document_categories;
-    var $tree;
-    var $link;
-    var $_last_node;
+    public $template_mod;
 
-    function __construct($template_mod = "general")
+    public $document_categories = array();
+
+    /**
+     * @var \CategoryTree
+     */
+    public $tree;
+
+    /**
+     * @var string
+     */
+    public $link;
+
+    public $_last_node;
+
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $this->document_categories = array();
         $this->template_mod = $template_mod;
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
         $this->assign("CURRENT_ACTION", $GLOBALS['webroot'] . "/controller.php?" . "practice_settings&document_category&");
@@ -25,37 +36,33 @@ class C_DocumentCategory extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
         $this->assign("V_JS_INCLUDES", $GLOBALS['v_js_includes']);
 
-        $t = new CategoryTree(1);
+        $categoryTree = new CategoryTree(1);
         //print_r($t->tree);
-        $this->tree = $t;
+        $this->tree = $categoryTree;
     }
 
-    function default_action()
+    public function default_action()
     {
         return $this->list_action();
     }
 
-    function list_action()
+    public function list_action(): string
     {
-        //$this->tree->rebuild_tree(1,1);
-
-        $icon         = 'folder.gif';
-        $expandedIcon = 'folder-expanded.gif';
-        $menu  = new HTML_TreeMenu();
+        $htmlTreeMenu  = new HTML_TreeMenu();
         $this->_last_node = null;
         $rnode = $this->_array_recurse($this->tree->tree);
 
-        $menu->addItem($rnode);
-        $treeMenu = new HTML_TreeMenu_DHTML($menu, array('images' => 'public/images', 'defaultClass' => 'treeMenuDefault'));
-        $this->assign("tree_html", $treeMenu->toHTML());
+        $htmlTreeMenu->addItem($rnode);
+        $htmlTreeMenuDHTML = new HTML_TreeMenu_DHTML($htmlTreeMenu, array('images' => 'public/images', 'defaultClass' => 'treeMenuDefault'));
+        $this->assign("tree_html", $htmlTreeMenuDHTML->toHTML());
         $this->assign('add_node', (($this->getTemplateVars('add_node') ?? false) == true));
         $this->assign('edit_node', (($this->getTemplateVars('edit_node') ?? false) == true));
 
-        $twig = new TwigContainer(null, $GLOBALS['kernel']);
-        return $twig->getTwig()->render("document_categories/" . $this->template_mod . "_list.html.twig", $this->getTemplateVars());
+        $twigContainer = new TwigContainer(null, $GLOBALS['kernel']);
+        return $twigContainer->getTwig()->render("document_categories/" . $this->template_mod . "_list.html.twig", $this->getTemplateVars());
     }
 
-    function add_node_action($parent_is)
+    public function add_node_action($parent_is)
     {
         //echo $parent_is ."<br />";
         //echo $this->tree->get_node_name($parent_is);
@@ -72,10 +79,10 @@ class C_DocumentCategory extends Controller
         return $this->list_action();
     }
 
-    function add_node_action_process()
+    public function add_node_action_process()
     {
         if ($_POST['process'] != "true") {
-            return;
+            return null;
         }
 
         $name = $_POST['name'];
@@ -88,7 +95,7 @@ class C_DocumentCategory extends Controller
         return $this->list_action();
     }
 
-    function edit_node_action($parent_is)
+    public function edit_node_action($parent_is)
     {
         $info = $this->tree->get_node_info($parent_is);
         $this->assign("parent_is", $parent_is);
@@ -100,19 +107,20 @@ class C_DocumentCategory extends Controller
         $this->assign("CODES", $info['codes'] ?? '');
 
         if (!empty($info['codes'])) {
-            $codeTypeService = new CodeTypesService();
-            $description = $codeTypeService->lookup_code_description($info['codes']);
+            $codeTypesService = new CodeTypesService();
+            $description = $codeTypesService->lookup_code_description($info['codes']);
             $this->assign('CODE_TEXT', $description ?? "");
         } else {
             $this->assign('CODE_TEXT', "");
         }
+
         return $this->list_action();
     }
 
-    function edit_node_action_process()
+    public function edit_node_action_process()
     {
         if ($_POST['process'] != "true") {
-            return;
+            return null;
         }
 
         $parent_is = $_POST['parent_is'];
@@ -123,10 +131,10 @@ class C_DocumentCategory extends Controller
         return $this->list_action();
     }
 
-    function delete_node_action_process($id)
+    public function delete_node_action_process($id)
     {
         if ($_POST['process'] != "true") {
-            return;
+            return null;
         }
 
         $category_name = $this->tree->get_node_name($id);
@@ -152,7 +160,7 @@ class C_DocumentCategory extends Controller
         return $this->list_action();
     }
 
-    function &_array_recurse($array)
+    public function &_array_recurse($array)
     {
         if (!is_array($array)) {
             $array = array();
@@ -162,7 +170,7 @@ class C_DocumentCategory extends Controller
         $icon = 'folder.gif';
         $expandedIcon = 'folder-expanded.gif';
         foreach ($array as $id => $ar) {
-            if (is_array($ar) || !empty($id)) {
+            if (is_array($ar) || $id !== 0 && ($id !== '' && $id !== '0')) {
                 if ($node == null) {
                     //echo "r:" . $this->tree->get_node_name($id) . "<br />";
                     $rnode = new HTML_TreeNode(array('text' => $this->tree->get_node_name($id), 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon, 'expanded' => false));
@@ -172,23 +180,18 @@ class C_DocumentCategory extends Controller
                     //echo "p:" . $this->tree->get_node_name($id) . "<br />";
                     $this->_last_node = &$node->addItem(new HTML_TreeNode(array('text' => $this->tree->get_node_name($id), 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon)));
                 }
-
                 if (is_array($ar)) {
                     $this->_array_recurse($ar);
                 }
-            } else {
-                if ($id === 0 && !empty($ar)) {
-                    $info = $this->tree->get_node_info($id);
-                  //echo "b:" . $this->tree->get_node_name($id) . "<br />";
-                    $node->addItem(new HTML_TreeNode(array('text' => $info['value'], 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon)));
-                } else {
-                    //there is a third case that is implicit here when title === 0 and $ar is empty, in that case we do not want to do anything
-                    //this conditional tree could be more efficient but working with trees makes my head hurt, TODO
-                    if ($id !== 0 && is_object($node)) {
-                      //echo "n:" . $this->tree->get_node_name($id) . "<br />";
-                        $node->addItem(new HTML_TreeNode(array('text' => $this->tree->get_node_name($id), 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon)));
-                    }
-                }
+            } elseif ($id === 0 && !empty($ar)) {
+                $info = $this->tree->get_node_info($id);
+                //echo "b:" . $this->tree->get_node_name($id) . "<br />";
+                $node->addItem(new HTML_TreeNode(array('text' => $info['value'], 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon)));
+            } elseif ($id !== 0 && is_object($node)) {
+                //there is a third case that is implicit here when title === 0 and $ar is empty, in that case we do not want to do anything
+                //this conditional tree could be more efficient but working with trees makes my head hurt, TODO
+                //echo "n:" . $this->tree->get_node_name($id) . "<br />";
+                $node->addItem(new HTML_TreeNode(array('text' => $this->tree->get_node_name($id), 'link' => $this->_link("add_node", true) . "parent_id=" . urlencode($id) . "&", 'icon' => $icon, 'expandedIcon' => $expandedIcon)));
             }
         }
 

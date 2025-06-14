@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+    
+    /**
  *
  * @package OpenEMR
  * @link    http://www.open-emr.org
@@ -18,16 +20,12 @@
     use OpenEMR\Core\Header;
     use OpenEMR\Modules\Dorn\ConnectorApi;
 
-if (!empty($_GET)) {
-    if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_GET === []) && !CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 if (!AclMain::aclCheckCore('admin', 'users')) {
@@ -41,11 +39,7 @@ if (empty($rejectResults)) {
     $rejectResults = false;
 }
 
-if ($rejectResults == "true") {
-    $rejectResults = true;
-} else {
-    $rejectResults = false;
-}
+$rejectResults = $rejectResults == "true";
 if ($resultsGuid) {
     ConnectorApi::sendAck($resultsGuid, $rejectResults, null);
 }

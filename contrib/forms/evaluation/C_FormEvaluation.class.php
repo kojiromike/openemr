@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * class C_FormEvaluation
  *
@@ -13,16 +15,16 @@
  */
 
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormEvaluation.class.php");
+require_once(__DIR__ . "/FormEvaluation.class.php");
 
 use OpenEMR\Billing\BillingUtilities;
 use OpenEMR\Common\Csrf\CsrfUtils;
 
 class C_FormEvaluation extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -33,21 +35,17 @@ class C_FormEvaluation extends Controller
         $this->assign("CSRF_TOKEN_FORM", CsrfUtils::collectCsrfToken());
     }
 
-    function default_action()
+    public function default_action()
     {
-        $evaluation = new FormEvaluation();
-        $this->assign("checks", $evaluation->_form_layout());
-        $this->assign("evaluation", $evaluation);
+        $formEvaluation = new FormEvaluation();
+        $this->assign("checks", $formEvaluation->_form_layout());
+        $this->assign("evaluation", $formEvaluation);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
+    public function view_action($form_id)
     {
-        if (is_numeric($form_id)) {
-            $evaluation = new FormEvaluation($form_id);
-        } else {
-            $evaluation = new FormEvaluation();
-        }
+        $evaluation = is_numeric($form_id) ? new FormEvaluation($form_id) : new FormEvaluation();
 
         $this->assign("VIEW", true);
         $this->assign("checks", $evaluation->_form_layout());
@@ -55,7 +53,7 @@ class C_FormEvaluation extends Controller
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -83,6 +81,5 @@ class C_FormEvaluation extends Controller
         }
 
         $_POST['process'] = "";
-        return;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,77 +11,74 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+namespace OpenEMR\Modules\ClaimRevConnector;
 
-    namespace OpenEMR\Modules\ClaimRevConnector;
-
-    use OpenEMR\Modules\ClaimRevConnector\Bootstrap;
+use OpenEMR\Modules\ClaimRevConnector\Bootstrap;
 
 class ClaimRevModuleSetup
 {
-    public function __construct()
-    {
-    }
-
-    public static function doesPartnerExists()
+    public static function doesPartnerExists(): bool
     {
         $x12Name = $GLOBALS['oe_claimrev_x12_partner_name'];
         $sql = "SELECT * FROM x12_partners WHERE name = ?";
         $sqlarr = array($x12Name);
-        $result = sqlStatementNoLog($sql, $sqlarr);
-        $rowCount = sqlNumRows($result);
-
-        if ($rowCount > 0) {
-            return true;
-        }
-        return false;
+        $recordset = sqlStatementNoLog($sql, $sqlarr);
+        $rowCount = sqlNumRows($recordset);
+        return $rowCount > 0;
     }
-    public static function couldSftpServiceCauseIssues()
+
+    public static function couldSftpServiceCauseIssues(): bool
     {
         $sftp = ClaimRevModuleSetup::getServiceRecord("X12_SFTP");
-        if ($sftp != null) {
-            if ($sftp["active"] == 1) {
-                if ($sftp["require_once"] == "/library/billing_sftp_service.php") {
-                    return true;
-                }
+        if ($sftp != null && $sftp["active"] == 1) {
+            if ($sftp["require_once"] == "/library/billing_sftp_service.php") {
+                return true;
             }
         }
+
         return false;
     }
-    public static function deactivateSftpService()
+
+    public static function deactivateSftpService(): void
     {
         $require_once = "/interface/modules/custom_modules/oe-module-claimrev-connect/src/SFTP_Mock_Service.php";
         ClaimRevModuleSetup::updateBackGroundServiceSetRequireOnce("X12_SFTP", $require_once);
     }
-    public static function reactivateSftpService()
+
+    public static function reactivateSftpService(): void
     {
         $require_once = "/library/billing_sftp_service.php";
         ClaimRevModuleSetup::updateBackGroundServiceSetRequireOnce("X12_SFTP", $require_once);
     }
-    public static function updateBackGroundServiceSetRequireOnce($name, $requireOnce)
+
+    public static function updateBackGroundServiceSetRequireOnce($name, $requireOnce): void
     {
         $sql = "UPDATE background_services SET require_once = ? WHERE name = ?";
         $sqlarr = array($requireOnce,$name);
         sqlStatement($sql, $sqlarr);
     }
+
     public static function getServiceRecord($name)
     {
         $sql = "SELECT * FROM background_services WHERE name = ? LIMIT 1";
         $sqlarr = array($name);
-        $result = sqlStatement($sql, $sqlarr);
-        if (sqlNumRows($result) == 1) {
-            foreach ($result as $row) {
+        $recordset = sqlStatement($sql, $sqlarr);
+        if (sqlNumRows($recordset) == 1) {
+            foreach ($recordset as $row) {
                 return $row;
             }
         }
+
         return null;
     }
+
     public static function getBackgroundServices()
     {
         $sql = "SELECT * FROM background_services WHERE name like '%ClaimRev%' OR name = 'X12_SFTP'";
-        $result = sqlStatement($sql);
-        return $result;
+        return sqlStatement($sql);
     }
-    public static function createBackGroundServices()
+
+    public static function createBackGroundServices(): void
     {
         $sql = "DELETE FROM background_services WHERE name like '%ClaimRev%'";
         sqlStatement($sql);

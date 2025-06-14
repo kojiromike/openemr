@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * ccda_gateway.php
  *
@@ -36,6 +38,7 @@ if (isset($_SESSION['pid']) && isset($_SESSION['patient_portal_onsite_two'])) {
         header('Location: ' . $landingpage);
         exit;
     }
+
     define('IS_DASHBOARD', $_SESSION['authUserID']);
     define('IS_PORTAL', false);
 }
@@ -47,9 +50,11 @@ if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
 if (empty($GLOBALS['ccda_alt_service_enable'])) {
     die("Cda generation service turned off: Verify in Administration->Globals! Click back to return home."); // Die an honorable death!!
 }
+
 if (IS_PORTAL && $GLOBALS['ccda_alt_service_enable'] < 2) {
     die("Cda generation service turned off: Verify in Administration->Globals! Click back to return home."); // Die an honorable death!!
 }
+
 if (IS_DASHBOARD && ($GLOBALS['ccda_alt_service_enable'] != 1 && $GLOBALS['ccda_alt_service_enable'] != 3)) {
     die("Cda generation service turned off: Verify in Administration->Globals! Click back to return home."); // Die an honorable death!!
 }
@@ -73,6 +78,7 @@ if ($_REQUEST['action'] === 'dl') {
     echo $ccda_xml;
     exit;
 }
+
 if ($_REQUEST['action'] === 'view') {
     $ccda_xml = $cdaService->portalGenerateCCD($pid);
     // CCM returns viewable CCD html file
@@ -80,16 +86,19 @@ if ($_REQUEST['action'] === 'view') {
     echo $ccda_xml;
     exit;
 }
+
 if ($_REQUEST['action'] === 'report_ccd_view') {
     $ccda_xml = $cdaService->generateCCDHtml($pid);
     if (stripos($ccda_xml, '/interface/login_screen.php') !== false) {
         echo(xlt("Error. Not Authorized."));
         exit;
     }
+
     echo $ccda_xml;
 
     exit;
 }
+
 if ($_REQUEST['action'] === 'report_ccd_download') {
     $ccda_xml = $cdaService->generateCCDZip($pid);
     // download zip containing CCDA.xml, CCDA.html and cda.xsl files
@@ -101,4 +110,5 @@ if ($_REQUEST['action'] === 'report_ccd_download') {
     echo $ccda_xml;
     exit;
 }
+
 die(xlt("Error. Nothing to do."));

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Exception\TelehealthProviderNotEnrolledException;
@@ -10,48 +12,37 @@ use Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository
 
 class TeleHealthProvisioningService
 {
-    /**
-     * @var TeleHealthUserRepository
-     */
-    private $telehealthUserRepo;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository $teleHealthUserRepository;
 
-    /**
-     * @var TeleHealthProviderRepository
-     */
-    private $providerRepository;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthProviderRepository $teleHealthProviderRepository;
 
-    /**
-     * @var TeleHealthRemoteRegistrationService
-     */
-    private $telehealthRegistration;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TeleHealthRemoteRegistrationService $teleHealthRemoteRegistrationService;
 
 
-    public function __construct(TeleHealthUserRepository $userRepo, TeleHealthProviderRepository $providerRepo, TeleHealthRemoteRegistrationService $registrationService)
+    public function __construct(TeleHealthUserRepository $teleHealthUserRepository, TeleHealthProviderRepository $teleHealthProviderRepository, TeleHealthRemoteRegistrationService $teleHealthRemoteRegistrationService)
     {
-        $this->telehealthUserRepo = $userRepo;
-        $this->providerRepository = $providerRepo;
-        $this->telehealthRegistration = $registrationService;
+        $this->teleHealthUserRepository = $teleHealthUserRepository;
+        $this->teleHealthProviderRepository = $teleHealthProviderRepository;
+        $this->teleHealthRemoteRegistrationService = $teleHealthRemoteRegistrationService;
     }
 
-    /**
-     * @return TeleHealthRemoteRegistrationService
-     */
     public function getRemoteRegistrationService(): TeleHealthRemoteRegistrationService
     {
-        return $this->telehealthRegistration;
+        return $this->teleHealthRemoteRegistrationService;
     }
+
     /**
      * @param $user - a user as returned from UserService
      * @return \Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser|null
      * @throws TelehealthProvisioningServiceRequestException
      */
-    public function getOrCreateTelehealthProvider($user)
+    public function getOrCreateTelehealthProvider(array $user)
     {
-        $providerTelehealthSettings = $this->telehealthUserRepo->getUser($user['uuid']);
+        $providerTelehealthSettings = $this->teleHealthUserRepository->getUser($user['uuid']);
         if (empty($providerTelehealthSettings)) {
-            if ($this->providerRepository->isEnabledProvider($user['id'])) {
-                if ($this->telehealthRegistration->createUserRegistration($user)) {
-                    $providerTelehealthSettings = $this->telehealthUserRepo->getUser($user['uuid']);
+            if ($this->teleHealthProviderRepository->isEnabledProvider($user['id'])) {
+                if ($this->teleHealthRemoteRegistrationService->createUserRegistration($user)) {
+                    $providerTelehealthSettings = $this->teleHealthUserRepository->getUser($user['uuid']);
                 } else {
                     throw new TelehealthProvisioningServiceRequestException("Could not create telehealth registration for user " . $user['uuid']);
                 }
@@ -59,10 +50,11 @@ class TeleHealthProvisioningService
                 // we should never hit this situation as we are supposed to prevent launching of appointments on the client side of things.
                 throw new TelehealthProviderNotEnrolledException("Provider is either suspended or not enrolled in telehealth. Cannot create telehealth registration for user " . $user['uuid']);
             }
-        } else if (!$providerTelehealthSettings->getIsActive()) {
+        } elseif (!$providerTelehealthSettings->getIsActive()) {
             // provider is disabled... can't launch settings with this provider
             throw new TeleHealthProviderSuspendedException("Provider's telehealth subscription is suspended for user " . $user['uuid']);
         }
+
         return $providerTelehealthSettings;
     }
 
@@ -71,16 +63,17 @@ class TeleHealthProvisioningService
      * @return \Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser|null
      * @throws TelehealthProvisioningServiceRequestException
      */
-    public function getOrCreateTelehealthPatient($patient)
+    public function getOrCreateTelehealthPatient(array $patient)
     {
-        $telehealthSettings = $this->telehealthUserRepo->getUser($patient['uuid']);
+        $telehealthSettings = $this->teleHealthUserRepository->getUser($patient['uuid']);
         if (empty($telehealthSettings)) {
-            if ($this->telehealthRegistration->createPatientRegistration($patient)) {
-                $telehealthSettings = $this->telehealthUserRepo->getUser($patient['uuid']);
+            if ($this->teleHealthRemoteRegistrationService->createPatientRegistration($patient)) {
+                $telehealthSettings = $this->teleHealthUserRepository->getUser($patient['uuid']);
             } else {
                 throw new TelehealthProvisioningServiceRequestException("Could not create video registration for patient " . $patient['uuid']);
             }
         }
+
         return $telehealthSettings;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles API requests for patient portal.
  *
@@ -21,12 +23,13 @@ $redirect = $originalPath . "?";
 if (!empty($query)) {
     $redirect .= $query;
 }
+
 // need to retain the webroot if we have one
 $landingpage = $basePath . "portal/index.php?site=" . urlencode($_GET['site_id'] ?? '') . "&redirect=" . urlencode($redirect);
 $skipLandingPageError = true;
 
 // since we are working inside the portal we have to use the portal session verification logic here...
-require_once "../../../../../portal/verify_session.php";
+require_once __DIR__ . "/../../../../../portal/verify_session.php";
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Bootstrap;
 
@@ -36,6 +39,7 @@ $roomController = $bootstrap->getTeleconferenceRoomController(true);
 if (!empty($_SERVER['HTTP_APICSRFTOKEN'])) {
     $queryVars['csrf_token'] = $_SERVER['HTTP_APICSRFTOKEN'];
 }
+
 $action = $_GET['action'] ?? '';
 $queryVars = $_GET ?? [];
 $queryVars['pid'] = $_SESSION['pid']; // we overwrite any pid value to make sure we only grab this patient.

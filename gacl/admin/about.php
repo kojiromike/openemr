@@ -1,6 +1,8 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -11,9 +13,9 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once("gacl_admin.inc.php");
+require_once(__DIR__ . "/gacl_admin.inc.php");
 
-function get_system_info() {
+function get_system_info(): string {
 	global $gacl_api;
 
 	//Grab system info
@@ -23,22 +25,14 @@ function get_system_info() {
 	$system_info .= 'phpGACL Settings: '."\n";
 	$system_info .= '  phpGACL Version: '.$gacl_api->get_version()."\n";
 	$system_info .= '  phpGACL Schema Version: '.$gacl_api->get_schema_version()."\n";
+    $caching = $gacl_api->_caching == TRUE ? 'True' : 'False';
 
-	if($gacl_api->_caching == TRUE) {
-		$caching = 'True';
-	} else {
-		$caching = 'False';
-	}
 	$system_info .= '  Caching Enabled: '. $caching ."\n";
+    $force_cache_expire = $gacl_api->_force_cache_expire == TRUE ? 'True' : 'False';
 
-	if($gacl_api->_force_cache_expire == TRUE) {
-		$force_cache_expire = 'True';
-	} else {
-		$force_cache_expire = 'False';
-	}
 	$system_info .= '  Force Cache Expire: '.$force_cache_expire."\n";
 
-	$system_info .= '  Database Prefix: \''.$gacl_api->_db_table_prefix."'\n";
+	$system_info .= "  Database Prefix: '".$gacl_api->_db_table_prefix."'\n";
 	$system_info .= '  Database Type: '.$gacl_api->_db_type."\n";
 
 	$database_server_info = $gacl_api->db->ServerInfo();

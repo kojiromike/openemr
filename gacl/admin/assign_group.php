@@ -1,15 +1,15 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 //ensure user has proper access
@@ -18,14 +18,10 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once('gacl_admin.inc.php');
+require_once(__DIR__ . '/gacl_admin.inc.php');
 
 //GET takes precedence.
-if ($_GET['group_type'] != '') {
-	$group_type = $_GET['group_type'];
-} else {
-	$group_type = $_POST['group_type'];
-}
+$group_type = $_GET['group_type'] != '' ? $_GET['group_type'] : $_POST['group_type'];
 
 switch(strtolower(trim($group_type))) {
 	case 'axo':
@@ -119,7 +115,7 @@ switch ($postAction) {
 	$query = 'SELECT section_value,value,name FROM '. $table .' ORDER BY section_value,order_value,name';
 	$rs = $db->SelectLimit($query, $gacl_api->_max_select_box_items);
 
-	$js_array_name = 'options[\''. $group_type .'\']';
+	$js_array_name = "options['". $group_type ."']";
 	//Init the main aro js array.
 	$js_array = 'var options = new Array();' . "\n";
 	$js_array .= $js_array_name .' = new Array();' . "\n";
@@ -136,16 +132,16 @@ switch ($postAction) {
 
 			//Prepare javascript code for dynamic select box.
 			//Init the javascript sub-array.
-			if (!isset($tmp_section_value) OR $section_value != $tmp_section_value) {
+			if (!isset($tmp_section_value) || $section_value != $tmp_section_value) {
 				$i = 0;
-				$js_array .= $js_array_name .'[\''. $section_value .'\'] = new Array();' . "\n";
+				$js_array .= $js_array_name ."['". $section_value ."'] = new Array();" . "\n";
 			}
 
 			//Add each select option for the section
-			$js_array .= $js_array_name .'[\''. $section_value .'\']['. $i .'] = new Array(\''. $value .'\', \''. $name ."');\n";
+			$js_array .= $js_array_name ."['". $section_value ."'][". $i ."] = new Array('". $value ."', '". $name ."');\n";
 
 			$tmp_section_value = $section_value;
-			$i++;
+			++$i;
 		}
 	}
 
@@ -181,6 +177,7 @@ switch ($postAction) {
 
 		$smarty->assign('paging_data', $gacl_api->get_paging_data($rs));
 	}
+
 	//showarray($aros);
 
 	$smarty->assign('rows', $object_rows);

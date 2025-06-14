@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * Script to find open appointment slots
@@ -17,8 +19,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
 */
 
-require_once("../../globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/patient.inc.php');
 require_once(dirname(__FILE__) . "/../../../library/appointments.inc.php");
 require_once($GLOBALS['incdir'] . "/main/holidays/Holidays_Controller.php");
 
@@ -42,7 +44,7 @@ $eid = empty($_REQUEST['eid']) ? 0 : 0 + $_REQUEST['eid'];
 $input_catid = $_REQUEST['catid'];
 
 // Record an event into the slots array for a specified day.
-function doOneDay($catid, $udate, $starttime, $duration, $prefcatid)
+function doOneDay($catid, $udate, $starttime, $duration, $prefcatid): void
 {
     global $slots, $slotsecs, $slotstime, $slotbase, $slotcount, $input_catid;
     $udate = strtotime($starttime, $udate);
@@ -119,8 +121,8 @@ $edate = date(
 );
 
 // compute starting time slot number and number of slots.
-$slotstime = strtotime("$sdate 00:00:00");
-$slotetime = strtotime("$edate 00:00:00");
+$slotstime = strtotime($sdate . ' 00:00:00');
+$slotetime = strtotime($edate . ' 00:00:00');
 $slotbase  = (int) ($slotstime / $slotsecs);
 $slotcount = (int) ($slotetime / $slotsecs) - $slotbase;
 
@@ -138,11 +140,7 @@ if (isset($_REQUEST['evdur'])) {
     // if the event duration is less than or equal to zero, use the global calander interval
     // if the global calendar interval is less than or equal to zero, use 10 mins
     if (intval($_REQUEST['evdur']) <= 0) {
-        if (intval($GLOBALS['calendar_interval']) <= 0) {
-                $_REQUEST['evdur'] = 10;
-        } else {
-            $_REQUEST['evdur'] = intval($GLOBALS['calendar_interval']);
-        }
+        $_REQUEST['evdur'] = intval($GLOBALS['calendar_interval']) <= 0 ? 10 : intval($GLOBALS['calendar_interval']);
     }
 
     $evslots = 60 * $_REQUEST['evdur'];
@@ -172,14 +170,18 @@ if ($_REQUEST['providerid']) {
         "pc_eid != ? AND " .
         "((pc_endDate >= ? AND pc_eventDate < ? ) OR " .
         "(pc_endDate = '0000-00-00' AND pc_eventDate >= ? AND pc_eventDate < ?))";
-
-        array_push($sqlBindArray, $providerid, $eid, $sdate, $edate, $sdate, $edate);
+    $sqlBindArray[] = $providerid;
+    $sqlBindArray[] = $eid;
+    $sqlBindArray[] = $sdate;
+    $sqlBindArray[] = $edate;
+    $sqlBindArray[] = $sdate;
+    $sqlBindArray[] = $edate;
 
     // phyaura whimmel facility filtering
     if ($_REQUEST['facility'] ?? '' > 0) {
             $facility = $_REQUEST['facility'];
             $query .= " AND pc_facility = ?";
-            array_push($sqlBindArray, $facility);
+            $sqlBindArray[] = $facility;
     }
 
     // end facility filtering whimmel 29apr08
@@ -207,11 +209,11 @@ if ($_REQUEST['providerid']) {
             $inoffice = false;
         }
 
-        if ($slots[$i] & 1) {
+        if (($slots[$i] & 1) !== 0) {
             $inoffice = true;
         }
 
-        if ($slots[$i] & 2) {
+        if (($slots[$i] & 2) !== 0) {
             $inoffice = false;
         }
 
@@ -384,9 +386,9 @@ if (isset($_REQUEST['cktime'])) {
 
                 $utime = ($slotbase + $i) * $slotsecs;
                 $thisdate = date("Y-m-d", $utime);
-                if ($thisdate != $lastdate) {
+                if ($thisdate !== $lastdate) {
                     // if a new day, start a new row
-                    if ($lastdate) {
+                    if ($lastdate !== '' && $lastdate !== '0') {
                         echo "</div>";
                         echo "</td>\n";
                         echo " </tr>\n";
@@ -402,7 +404,7 @@ if (isset($_REQUEST['cktime'])) {
                 }
 
                 $ampm = date('a', $utime);
-                if ($ampmFlag != $ampm) {
+                if ($ampmFlag !== $ampm) {
                     echo "</div><div id='pm'>PM ";
                 }
 
@@ -428,7 +430,7 @@ if (isset($_REQUEST['cktime'])) {
                 $i += $evslots - 1;
             }
 
-            if ($lastdate) {
+            if ($lastdate !== '' && $lastdate !== '0') {
                 echo "</td>\n";
                 echo " </tr>\n";
             } else {
@@ -483,18 +485,22 @@ if (!$ckavail) {
             <?php
         }
     } else {
-        if ($is_holiday) { ?>
-            alert(<?php echo xlj('On this date there is a holiday, use it anyway?'); ?>);
-            <?php
-        } else {
-            if ($isProv) { ?>
-                alert(<?php echo xlj('Provider not available, please choose another.'); ?>);
-                <?php
-            } else { ?>
+        if ($is_holiday) {
+            ?>
+            alert(<?php 
+            echo xlj('On this date there is a holiday, use it anyway?');
+            ?>);
+            <?php 
+        } elseif ($isProv) {
+            ?>
+                alert(<?php 
+            echo xlj('Provider not available, please choose another.');
+            ?>);
+                <?php 
+        } else { ?>
                 alert(<?php echo xlj('This appointment slot is already used, please choose another.'); ?>);
-                <?php
-            }
-        } //close if is holiday
+            <?php
+            } //close if is holiday
     }
 } ?>
 

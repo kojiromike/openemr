@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * assessment_intake view.php.
  *
@@ -34,7 +36,7 @@ use OpenEMR\Core\Header;
 </head>
 <body class="body_top m-0">
 <?php
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 $obj = formFetch("form_assessment_intake", $_GET["id"]);
 

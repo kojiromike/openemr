@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * lang_definition.php
  *
@@ -123,7 +125,7 @@ if (!empty($_POST['load'])) {
             $value = trim($value);
 
             // do not create new blank definitions
-            if ($value == "") {
+            if ($value === "") {
                 continue;
             }
 
@@ -195,14 +197,14 @@ if (!empty($_POST['edit'])) {
     $lang_filter_def .= '%';
 
     $bind_sql_array = array();
-    array_push($bind_sql_array, $lang_filter);
+    $bind_sql_array[] = $lang_filter;
     $sql = "SELECT lc.cons_id, lc.constant_name, ld.def_id, ld.definition, ld.lang_id " .
     "FROM lang_definitions AS ld " .
     "RIGHT JOIN ( lang_constants AS lc, lang_languages AS ll ) ON " .
     "( lc.cons_id = ld.cons_id AND ll.lang_id = ld.lang_id ) " .
     "WHERE lc.constant_name " . $case_insensitive_collation . " LIKE ? AND ( ll.lang_id = 1 ";
     if ($lang_id != 1) {
-                array_push($bind_sql_array, $lang_id);
+        $bind_sql_array[] = $lang_id;
         $sql .= "OR ll.lang_id=? ";
         $what = "SELECT * from lang_languages where lang_id=? LIMIT 1";
         $res = SqlStatement($what, array($lang_id));
@@ -227,7 +229,7 @@ if (!empty($_POST['edit'])) {
             // if there is no definition
             if (empty($row['def_id'])) {
                 $cons_name = "cons_id[" . $row['cons_id'] . "]";
-                if ($lang_filter_def == '%') {
+                if ($lang_filter_def === '%') {
                     $isShow = true;
                 }
 
@@ -263,17 +265,13 @@ if (!empty($_POST['edit'])) {
 
                 $isShow = false; //flag if passes the definition filter
             $stringTemp = '<tr><td>' . text($row['constant_name']) . '</td>';
-            if ($row['definition'] == '' or $row['definition'] == 'NULL') {
-                $def = " " ;
-            } else {
-                $def = $row['definition'];
-            }
+            $def = ($row['definition'] == '' or $row['definition'] == 'NULL') ? " " : $row['definition'];
 
             $stringTemp .= '<td>' . text($def) . '</td>';
             $row = SqlFetchArray($res); // jump one to get the second language selected
-            if ($row['def_id'] == '' or $row['def_id'] == 'NULL') {
+            if ($row['def_id'] == '' || $row['def_id'] == 'NULL') {
                 $cons_name = "cons_id[" . $row['cons_id'] . "]";
-                if ($lang_filter_def == '%') {
+                if ($lang_filter_def === '%') {
                     $isShow = true;
                 }
 

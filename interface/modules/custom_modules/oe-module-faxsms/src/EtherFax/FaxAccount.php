@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\EtherFax;
 
 /**
@@ -18,19 +19,25 @@ namespace OpenEMR\Modules\FaxSMS\EtherFax;
 class FaxAccount
 {
     public $Account;
+
     public $Name;
+
     public $Ports;
+
     public $Enabled;
+
     public $Features;
+
     public $AcceptedFormats;
+
     public $Numbers;
+
     public $Country;
 
     /**
      * @param $data
-     * @return void
      */
-    public function set($data)
+    public function set($data): void
     {
         foreach ($data as $key => $value) {
             $this->{$key} = $value;

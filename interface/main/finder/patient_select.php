@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Patient selector screen.
  *
@@ -10,20 +12,18 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/report_database.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/report_database.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 use OpenEMR\Events\PatientSelect\PatientSelectFilterEvent;
 use OpenEMR\Events\BoundFilter;
 
-if (!empty($_REQUEST)) {
-    if (!CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_REQUEST === []) && !CsrfUtils::verifyCsrfToken($_REQUEST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 $fstart = isset($_REQUEST['fstart']) ? $_REQUEST['fstart'] : 0;
@@ -126,12 +126,12 @@ form {
 }
 </style>
 
-<?php if ($popup) { ?>
+<?php if ($popup !== 0) { ?>
     <?php Header::setupAssets('topdialog'); ?>
 <?php } ?>
 
 <script>
-<?php if ($popup) {
+<?php if ($popup !== 0) {
     require($GLOBALS['srcdir'] . "/restoreSession.php");
 } ?>
 // This is called when forward or backward paging is done.
@@ -167,7 +167,7 @@ $search_service_code = trim($_POST['search_service_code'] ?? '');
 echo "<input type='hidden' name='search_service_code' value='" .
   attr($search_service_code) . "' />\n";
 
-if ($popup) {
+if ($popup !== 0) {
     echo "<input type='hidden' name='popup' value='1' />\n";
 
   // Construct WHERE clause and save search parameters as form fields.
@@ -187,17 +187,17 @@ if ($popup) {
             $value = trim($_REQUEST[$field_id]);
             if ($field_id == 'pid') {
                 $where .= " AND " . escape_sql_column_name($field_id, array('patient_data')) . " = ?";
-                array_push($sqlBindArray, $value);
+                $sqlBindArray[] = $value;
             } elseif ($field_id == 'pubpid') {
                 $where .= " AND " . escape_sql_column_name($field_id, array('patient_data')) . " LIKE ?";
-                array_push($sqlBindArray, $value);
+                $sqlBindArray[] = $value;
                 //for 'date' field
             } elseif ($data_type == 4) {
                 $where .= " AND " . escape_sql_column_name($field_id, array('patient_data')) . " LIKE ?";
-                array_push($sqlBindArray, DateToYYYYMMDD($value));
+                $sqlBindArray[] = DateToYYYYMMDD($value);
             } else {
                 $where .= " AND " . escape_sql_column_name($field_id, array('patient_data')) . " LIKE ?";
-                array_push($sqlBindArray, $value . "%");
+                $sqlBindArray[] = $value . "%";
             }
 
             echo "<input type='hidden' name='" . attr($field_id) .
@@ -208,7 +208,7 @@ if ($popup) {
   // If a non-empty service code was given, then restrict to patients who
   // have been provided that service.  Since the code is used in a LIKE
   // clause, % and _ wildcards are supported.
-    if ($search_service_code) {
+    if ($search_service_code !== '' && $search_service_code !== '0') {
         $where .=
         " AND ( SELECT COUNT(*) FROM billing AS b WHERE " .
         "b.pid = patient_data.pid AND " .
@@ -216,7 +216,7 @@ if ($popup) {
         "b.code_type != 'COPAY' AND " .
         "b.code LIKE ? " .
         ") > 0";
-        array_push($sqlBindArray, $search_service_code);
+        $sqlBindArray[] = $search_service_code;
     }
 
     // Custom filtering which enables module developer to filter patients out of search
@@ -226,14 +226,10 @@ if ($popup) {
     $sqlBindArray = array_merge($boundFilter->getBoundValues(), $sqlBindArray);
     $customWhere = $boundFilter->getFilterClause();
 
-    if (empty($where)) {
-        $where = $customWhere;
-    } else {
-        $where = "$customWhere AND $where";
-    }
+    $where = $where === '' || $where === '0' ? $customWhere : sprintf('%s AND %s', $customWhere, $where);
 
-    $sql = "SELECT $given FROM patient_data " .
-    "WHERE $where ORDER BY $orderby LIMIT " . escape_limit($fstart) . ", " . escape_limit($sqllimit);
+    $sql = sprintf('SELECT %s FROM patient_data ', $given) .
+    sprintf('WHERE %s ORDER BY %s LIMIT ', $where, $orderby) . escape_limit($fstart) . ", " . escape_limit($sqllimit);
 
     $rez = sqlStatement($sql, $sqlBindArray);
     $result = array();
@@ -241,7 +237,7 @@ if ($popup) {
         $result[] = $row;
     }
 
-    _set_patient_inc_count($sqllimit, count($result), "$customWhere AND $where", $sqlBindArray);
+    _set_patient_inc_count($sqllimit, count($result), sprintf('%s AND %s', $customWhere, $where), $sqlBindArray);
 } elseif ($from_page == "cdr_report") {
   // Collect setting from cdr report
     echo "<input type='hidden' name='from_page' value='" . attr($from_page) . "' />\n";
@@ -453,7 +449,7 @@ if ($result) {
         }
 
         $all_other_phones = $phone_biz . $phone_contact . $phone_cell;
-        if ($all_other_phones == '') {
+        if ($all_other_phones === '') {
             $all_other_phones = xl('No other phone numbers listed');
         }
 
@@ -575,10 +571,10 @@ var SelectPatient = function (eObj) {
 // will set the pid and load all the other frames.
     objID = eObj.id;
     var parts = objID.split("~");
-    <?php if (!$popup) { ?>
+    <?php if ($popup === 0) { ?>
         top.restoreSession();
         document.location.href = "../../patient_file/summary/demographics.php?set_pid=" + parts[0];
-    <?php } elseif ($popup) { ?>
+    <?php } elseif ($popup !== 0) { ?>
         dlgclose("srchDone", parts[0]);
     <?php } ?>
 

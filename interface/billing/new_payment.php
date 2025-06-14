@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This screen handles the cash/cheque entry and its distribution to various charges.
  *
@@ -17,11 +19,11 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("../../custom/code_types.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/payment.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/../../custom/code_types.inc.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/payment.inc.php');
 
 use OpenEMR\Billing\ParseERA;
 use OpenEMR\Common\Acl\AclMain;
@@ -49,9 +51,9 @@ $hidden_type_code        = isset($_REQUEST['hidden_type_code']) ? $_REQUEST['hid
 //===============================================================================
 
 if ($mode == "new_payment" || $mode == "distribute") {
-    if (trim($_POST['type_name']) == 'insurance') {
+    if (trim($_POST['type_name']) === 'insurance') {
         $QueryPart = "payer_id = '" . add_escape_custom($hidden_type_code) . "', patient_id = '0" ;
-    } elseif (trim($_POST['type_name']) == 'patient') {
+    } elseif (trim($_POST['type_name']) === 'patient') {
         $QueryPart = "payer_id = '0', patient_id = '" . add_escape_custom($hidden_type_code);
     }
       $user_id = $_SESSION['authUserID'];
@@ -89,8 +91,8 @@ if ($mode == "new_payment" || $mode == "distribute") {
 if ($mode == "PostPayments" || $mode == "FinishPayments") {
     $user_id = $_SESSION['authUserID'];
     $created_time = date('Y-m-d H:i:s');
-    for ($CountRow = 1;; $CountRow++) {
-        if (isset($_POST["HiddenEncounter$CountRow"])) {
+    for ($CountRow = 1;; ++$CountRow) {
+        if (isset($_POST['HiddenEncounter' . $CountRow])) {
             DistributionInsert($CountRow, $created_time, $user_id);
         } else {
             break;
@@ -125,8 +127,8 @@ $payment_id = $payment_id * 1 > 0 ? $payment_id + 0 : $request_payment_id + 0;
     <script>
         var mypcc = '1';
     </script>
-    <?php include_once("{$GLOBALS['srcdir']}/payment_jav.inc.php"); ?>
-    <?php include_once("{$GLOBALS['srcdir']}/ajax/payment_ajax_jav.inc.php"); ?>
+    <?php include_once($GLOBALS['srcdir'] . '/payment_jav.inc.php'); ?>
+    <?php include_once($GLOBALS['srcdir'] . '/ajax/payment_ajax_jav.inc.php'); ?>
     <script>
         function CancelDistribute() {
             // Used in the cancel button.Helpful while cancelling the distribution.
@@ -341,7 +343,7 @@ $payment_id = $payment_id * 1 > 0 ? $payment_id + 0 : $request_payment_id + 0;
                     <fieldset>
                         <div class="jumbotron py-4">
                         <?php
-                            require_once("payment_master.inc.php"); //Check/cash details are entered here.
+                            require_once(__DIR__ . "/payment_master.inc.php"); //Check/cash details are entered here.
                         ?>
                         </div>
                         <br />
@@ -356,7 +358,7 @@ $payment_id = $payment_id * 1 > 0 ? $payment_id + 0 : $request_payment_id + 0;
                                 $_REQUEST['hidden_patient_code'] = $hidden_patient_code;
                                 $_REQUEST['RadioPaid'] = 'Show_Paid';
                             }
-                                require_once("payment_pat_sel.inc.php"); //Patient ajax section and listing of charges.
+                                require_once(__DIR__ . "/payment_pat_sel.inc.php"); //Patient ajax section and listing of charges.
                             ?>
                             <?php
                             if ($CountIndexBelow > 0) {

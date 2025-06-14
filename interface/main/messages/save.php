@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * /interface/main/messages/save.php
  *
@@ -10,11 +12,11 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once "../../globals.php";
-require_once "$srcdir/lists.inc.php";
-require_once "$srcdir/forms.inc.php";
-require_once "$srcdir/patient.inc.php";
-require_once "$srcdir/MedEx/API.php";
+require_once __DIR__ . "/../../globals.php";
+require_once $srcdir . '/lists.inc.php';
+require_once $srcdir . '/forms.inc.php';
+require_once $srcdir . '/patient.inc.php';
+require_once $srcdir . '/MedEx/API.php';
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Session\SessionUtil;
@@ -41,6 +43,7 @@ if ($_REQUEST['go'] == 'sms_search') {
     echo json_encode($results);
     exit;
 }
+
 //you need admin privileges to update this.
 if ($_REQUEST['go'] == 'Preferences') {
     if (AclMain::aclCheckCore('admin', 'super')) {
@@ -67,11 +70,14 @@ if ($_REQUEST['go'] == 'Preferences') {
         if ($result['output'] == false) {
             $result['success'] = "medex_prefs updated";
         }
+
         $result = $MedEx->login('1');
         echo json_encode($result);
     }
+
     exit;
 }
+
 if ($_REQUEST['MedEx'] == "start") {
     if (AclMain::aclCheckCore('admin', 'super')) {
         $query = "SELECT * FROM users WHERE id = ?";
@@ -102,13 +108,15 @@ if ($_REQUEST['MedEx'] == "start") {
         if ($_SERVER["SSL_TLS_SNI"]) {
             $prefix = "https://";
         }
+
         $data['website_url'] = $prefix . $_SERVER['HTTP_HOST'] . $web_root;
-        $practice_logo = "$OE_SITE_DIR/images/practice_logo.gif";
+        $practice_logo = $OE_SITE_DIR . '/images/practice_logo.gif';
         if (!file_exists($practice_logo)) {
             $data['logo_url'] = $prefix . $_SERVER['HTTP_HOST'] . $web_root . "/sites/" . $_SESSION["site_id"] . "/images/practice_logo.gif";
         } else {
             $data['logo_url'] = $prefix . $_SERVER['HTTP_HOST'] . $GLOBALS['images_static_relative'] . "/menu-logo.png";
         }
+
         $response = $MedEx->setup->autoReg($data);
         if (($response['API_key'] > '') && ($response['customer_id'] > '')) {
             sqlQuery("DELETE FROM medex_prefs");
@@ -117,11 +125,13 @@ if ($_REQUEST['MedEx'] == "start") {
             while ($frow = sqlFetchArray($fetch)) {
                 $facilities[] = $frow['id'];
             }
+
             $runQuery = "SELECT * FROM users WHERE username != '' AND active = '1' AND authorized = '1'";
             $prove = sqlStatement($runQuery);
             while ($prow = sqlFetchArray($prove)) {
                 $providers[] = $prow['id'];
             }
+
             $facilities = implode("|", $facilities);
             $providers = implode("|", $providers);
             $sqlINSERT = "INSERT INTO `medex_prefs` (
@@ -148,10 +158,12 @@ if ($_REQUEST['MedEx'] == "start") {
             echo json_encode($response_prob);
             sqlQuery("UPDATE `background_services` SET `active`='0' WHERE `name`='MedEx'");
         }
+
         //then redirect user to preferences with a success message!
     } else {
         echo xlt("Sorry you are not privileged enough. Enrollment is limited to Adminstrator accounts.");
     }
+
     exit;
 }
 
@@ -185,6 +197,7 @@ if (($_REQUEST['pid']) && ($_REQUEST['action'] == "new_recall")) {
         $result['provider'] = $result2['pc_aid'];
         $result['facility'] = $result2['pc_facility'];
     }
+
     /**
      * Is there an existing Recall in place already????
      * If so we need to use that info...
@@ -197,6 +210,7 @@ if (($_REQUEST['pid']) && ($_REQUEST['action'] == "new_recall")) {
         $result['facility']     = $result3['r_facility'];
         $result['provider']     = $result3['r_provider'];
     }
+
     echo json_encode($result);
     exit;
 }
@@ -229,6 +243,7 @@ if ($_REQUEST['action'] == "process") {
         sqlQuery($sql, array('recall_' . $new_pid[0], $_POST['item'], $_SESSION['authUserID'], $_POST['msg_notes']));
         return "done";
     }
+
     $pc_eidList = json_decode($_POST['pc_eid'], true);
     $pidList = json_decode($_POST['parameter'], true);
     $sessionSetArray['pc_eidList'] = $pc_eidList[0];
@@ -241,20 +256,22 @@ if ($_REQUEST['action'] == "process") {
             sqlQuery($sql, array('recall_' . $pid, $_POST['item'], $_SESSION['authUserID'], 'Postcard printed locally'));
         }
     }
+
     if ($_POST['item'] == "labels") {
         foreach ($pidList as $pid) {
             $sql = "INSERT INTO medex_outgoing (msg_pc_eid, msg_type, msg_reply, msg_extra_text) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE msg_extra_text='Label repeat'";
             sqlQuery($sql, array('recall_' . $pid, $_POST['item'], $_SESSION['authUserID'], 'Label printed locally'));
         }
     }
+
     echo text(json_encode($pidList));
     exit;
 }
-if ($_REQUEST['go'] == "Messages") {
-    if ($_REQUEST['msg_id']) {
-        $result = updateMessage($_REQUEST['msg_id']);
-        echo json_encode($result);
-        exit;
-    }
+
+if ($_REQUEST['go'] == "Messages" && $_REQUEST['msg_id']) {
+    $result = updateMessage($_REQUEST['msg_id']);
+    echo json_encode($result);
+    exit;
 }
+
 exit;

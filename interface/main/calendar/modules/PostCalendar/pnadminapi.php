@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Admin API for the calendar
  *
@@ -22,12 +24,12 @@ if (!defined('__POSTCALENDAR__')) {
 
 $pcModInfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
 $pcDir = pnVarPrepForOS($pcModInfo['directory']);
-require_once("modules/$pcDir/common.api.php");
+require_once(sprintf('modules/%s/common.api.php', $pcDir));
 unset($pcModInfo, $pcDir);
 
 
 
-function postcalendar_adminapi_updateCategories($args)
+function postcalendar_adminapi_updateCategories($args): bool
 {
     extract($args);
     if (!isset($updates)) {
@@ -44,6 +46,7 @@ function postcalendar_adminapi_updateCategories($args)
 
     return true;
 }
+
 function postcalendar_adminapi_deleteCategories($args)
 {
     extract($args);
@@ -53,13 +56,10 @@ function postcalendar_adminapi_deleteCategories($args)
 
     list($dbconn) = pnDBGetConn();
     $result = $dbconn->Execute($delete);
-    if ($result === false) {
-        return false;
-    }
-
-    return true;
+    return $result !== false;
 }
-function postcalendar_adminapi_addCategories($args)
+
+function postcalendar_adminapi_addCategories($args): bool
 {
     extract($args);
     if (!isset($name)) {
@@ -92,10 +92,10 @@ function postcalendar_adminapi_addCategories($args)
                                 pc_recurrtype,pc_recurrspec,pc_recurrfreq,pc_duration,
     							pc_dailylimit,pc_end_date_flag,pc_end_date_type,
     							pc_end_date_freq,pc_end_all_day,pc_cattype,pc_active,pc_seq,aco_spec)
-                                VALUES ('','$name','$constantid','$desc','$color',
-                                '$recurrtype','$recurrspec','$recurrfreq',
-                                '$duration','$limitid','$end_date_flag','$end_date_type',
-                                '$end_date_freq','$end_all_day','$value_cat_type','$active','$sequence','$aco')";
+                                VALUES ('','{$name}','{$constantid}','{$desc}','{$color}',
+                                '{$recurrtype}','{$recurrspec}','{$recurrfreq}',
+                                '{$duration}','{$limitid}','{$end_date_flag}','{$end_date_type}',
+                                '{$end_date_freq}','{$end_all_day}','{$value_cat_type}','{$active}','{$sequence}','{$aco}')";
 
 
     //print "sql is $sql \n";

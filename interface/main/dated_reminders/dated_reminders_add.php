@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Used for adding dated reminders.
  *
@@ -11,8 +13,8 @@
  * @copyright Copyright (c) 2017-2018 Brady Miller <brady.g.miller@gmail.com>
   */
 
-require_once("../../globals.php");
-require_once("$srcdir/dated_reminder_functions.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/dated_reminder_functions.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -54,7 +56,7 @@ $forwarding = false;
 $max_reminder_words = 160;
 
 // ---------------- FOR FORWARDING MESSAGES ------------->
-if (isset($_GET['mID']) and is_numeric($_GET['mID'])) {
+if (isset($_GET['mID']) && is_numeric($_GET['mID'])) {
     if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
@@ -68,13 +70,10 @@ if (isset($_GET['mID']) and is_numeric($_GET['mID'])) {
 
 
 // --- add reminders
-if ($_POST) {
+if ($_POST !== []) {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
-
-// --- initialize $output as blank
-    $output = '';
     $output = '<div><fieldset id="error_info" class="bg-danger text-white font-weight-bod" style="border: 1px solid var(--danger) !important; font-family: sans-serif; border-radius: 5px; padding: 20px 5px !important;">';// needs in-line styling because stylesheets not yet initialized
  // ------ fills an array with all recipients
     $sendTo = $_POST['sendTo'];
@@ -89,22 +88,14 @@ if ($_POST) {
 // --- check for the post, if it is valid, commit to the database, close this window and run opener.Handeler
     if (
 // ------- check sendTo is not empty
-        !empty($sendTo) and
-// ------- check dueDate, only allow valid dates, todo -> enhance date checker
-        isset($_POST['dueDate']) and preg_match('/\d{4}[-]\d{2}[-]\d{2}/', DateToYYYYMMDD($_POST['dueDate'])) and
-// ------- check priority, only allow 1-3
-        isset($_POST['priority']) and intval($_POST['priority']) <= 3 and
-// ------- check message, only up to 160 characters limited by Db
-        isset($_POST['message']) and mb_strlen($_POST['message']) <= $max_reminder_words and mb_strlen($_POST['message']) > 0 and
-// ------- check if PatientID is set and in numeric
-        isset($_POST['PatientID']) and is_numeric($_POST['PatientID'])
+        !empty($sendTo) && isset($_POST['dueDate']) && preg_match('/\d{4}[-]\d{2}[-]\d{2}/', DateToYYYYMMDD($_POST['dueDate'])) && isset($_POST['priority']) && intval($_POST['priority']) <= 3 && isset($_POST['message']) && mb_strlen($_POST['message']) <= $max_reminder_words && mb_strlen($_POST['message']) > 0 && isset($_POST['PatientID']) && is_numeric($_POST['PatientID'])
     ) {
         $dueDate = DateToYYYYMMDD($_POST['dueDate']);
         $priority = intval($_POST['priority']);
         $message = $_POST['message'];
         $fromID = $_SESSION['authUserID'];
         $patID = $_POST['PatientID'];
-        if (isset($_POST['sendSeperately']) and $_POST['sendSeperately']) {
+        if (isset($_POST['sendSeperately']) && $_POST['sendSeperately']) {
             foreach ($sendTo as $st) {
                 $ReminderSent = sendReminder(array($st), $fromID, $message, $dueDate, $patID, $priority);
             }
@@ -119,7 +110,7 @@ if ($_POST) {
         } else {
       // --------- echo javascript
             echo '<html><body>'
-            . "<script src=\"" . $webroot . "/interface/main/tabs/js/include_opener.js\"></script>"
+            . '<script src="' . $webroot . '/interface/main/tabs/js/include_opener.js"></script>'
             . '<script>';
       // ------------ 1) refresh parent window this updates if sent to self
             echo '  if (opener && !opener.closed && opener.updateme) opener.updateme("new");';
@@ -347,7 +338,7 @@ if (isset($this_message['pid'])) {
                                     <option value="<?php echo attr(intval($_SESSION['authUserID'])); ?>"><?php echo xlt('Myself') ?></option>
                                     <?php //
                                     $uSQL = sqlStatement('SELECT id, fname, mname, lname FROM `users` WHERE `active` = 1 AND `facility_id` > 0 AND id != ?', array(intval($_SESSION['authUserID'])));
-                                    for ($i = 2; $uRow = sqlFetchArray($uSQL); $i++) {
+                                    for ($i = 2; $uRow = sqlFetchArray($uSQL); ++$i) {
                                         echo '<option value="' . attr($uRow['id']) . '">' . text($uRow['fname'] . ' ' . $uRow['mname'] . ' ' . $uRow['lname']) . '</option>';
                                     }
                                     ?>
@@ -455,15 +446,15 @@ if (isset($this_message['pid'])) {
                         $_GET['sd'] = oeFormatShortDate();
                         $TempRemindersArray = logRemindersArray();
                         $remindersArray = array();
-                        foreach ($TempRemindersArray as $RA) {
-                            $remindersArray[$RA['messageID']]['messageID'] = $RA['messageID'];
-                            $remindersArray[$RA['messageID']]['ToName'] = ((!empty($remindersArray[$RA['messageID']]['ToName'])) ? $remindersArray[$RA['messageID']]['ToName'] . ', ' . ($RA['ToName'] ?? '') : ($RA['ToName'] ?? ''));
-                            $remindersArray[$RA['messageID']]['PatientName'] = $RA['PatientName'];
-                            $remindersArray[$RA['messageID']]['message'] = $RA['message'];
-                            $remindersArray[$RA['messageID']]['dDate'] = $RA['dDate'];
+                        foreach ($TempRemindersArray as $TempReminderArray) {
+                            $remindersArray[$TempReminderArray['messageID']]['messageID'] = $TempReminderArray['messageID'];
+                            $remindersArray[$TempReminderArray['messageID']]['ToName'] = ((empty($remindersArray[$TempReminderArray['messageID']]['ToName'])) ? $TempReminderArray['ToName'] ?? '' : ($remindersArray[$TempReminderArray['messageID']]['ToName'] . ', ' . ($TempReminderArray['ToName'] ?? '')));
+                            $remindersArray[$TempReminderArray['messageID']]['PatientName'] = $TempReminderArray['PatientName'];
+                            $remindersArray[$TempReminderArray['messageID']]['message'] = $TempReminderArray['message'];
+                            $remindersArray[$TempReminderArray['messageID']]['dDate'] = $TempReminderArray['dDate'];
                         }
 
-                        if (empty($remindersArray)) {
+                        if ($remindersArray === []) {
                             echo '<div class="alert alert-info text-center m-3">' . xlt('No Messages Found') . '</div>';
                         } else {
                             echo '<div class="table-responsive">
@@ -479,13 +470,13 @@ if (isset($this_message['pid'])) {
                                     </thead>
                                     <tbody>';
 
-                            foreach ($remindersArray as $RA) {
+                            foreach ($remindersArray as $reminderArray) {
                                 echo '<tr>
-                                    <td>' . text($RA['messageID']) . '</td>
-                                    <td>' . text($RA['ToName']) . '</td>
-                                    <td>' . text($RA['PatientName']) . '</td>
-                                    <td>' . text($RA['message']) . '</td>
-                                    <td>' . text(oeFormatShortDate($RA['dDate'])) . '</td>
+                                    <td>' . text($reminderArray['messageID']) . '</td>
+                                    <td>' . text($reminderArray['ToName']) . '</td>
+                                    <td>' . text($reminderArray['PatientName']) . '</td>
+                                    <td>' . text($reminderArray['message']) . '</td>
+                                    <td>' . text(oeFormatShortDate($reminderArray['dDate'])) . '</td>
                                     </tr>';
                             }
 

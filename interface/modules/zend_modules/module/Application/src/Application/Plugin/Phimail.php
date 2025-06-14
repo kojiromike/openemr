@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Plugin/Phimail.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
@@ -21,7 +22,12 @@ require_once($GLOBALS['srcdir'] . '/direct_message_check.inc.php');
 
 class Phimail extends AbstractPlugin
 {
-    protected $application;
+    /**
+     * @var \Application\Listener\Listener
+     */
+    public $listenerObject;
+    protected \Application\Model\ApplicationTable $application;
+
   /**
   *
   * Application Table Object
@@ -31,7 +37,7 @@ class Phimail extends AbstractPlugin
     public function __construct(ContainerInterface $container)
     {
         // TODO: again why grab the service... construct the tables and do nothing with them.  Can this code be removed?
-        $container->get('Laminas\Db\Adapter\Adapter');
+        $container->get(\Laminas\Db\Adapter\Adapter::class);
         $this->application    = new ApplicationTable();
         $this->listenerObject = new Listener();
     }
@@ -41,7 +47,7 @@ class Phimail extends AbstractPlugin
         return phimail_connect($err);
     }
 
-    public function phimail_write($fp, $text)
+    public function phimail_write($fp, $text): void
     {
         phimail_write($fp, $text);
     }
@@ -51,7 +57,7 @@ class Phimail extends AbstractPlugin
         return phimail_write_expect_OK($fp, $text);
     }
 
-    public function phimail_close($fp)
+    public function phimail_close($fp): void
     {
         phimail_close($fp);
     }

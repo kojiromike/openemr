@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Represents a cumulative result of an export operation.
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Models;
 
 use OpenEMR\Modules\EhiExporter\Models\ExportTableResult;
@@ -18,6 +19,7 @@ use OpenEMR\Modules\EhiExporter\Models\ExportTableResult;
 class ExportResult
 {
     public $downloadLink;
+
     /**
      * @var ExportTableResult[]
      */
@@ -25,7 +27,7 @@ class ExportResult
 
     public $exportedDocumentCount = 0;
 
-    public function fromJSON(array $exportedResult)
+    public function fromJSON(array $exportedResult): void
     {
         $this->downloadLink = $exportedResult['downloadLink'] ?? '';
         $this->exportedDocumentCount = $exportedResult['exportedDocumentCount'] ?? 0;

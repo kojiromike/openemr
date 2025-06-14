@@ -1,15 +1,15 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 //ensure user has proper access
@@ -18,7 +18,7 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once('gacl_admin.inc.php');
+require_once(__DIR__ . '/gacl_admin.inc.php');
 
 if (!isset($_POST['action']) ) {
 	$_POST['action'] = FALSE;
@@ -46,6 +46,7 @@ switch ($_POST['action']) {
 					${$type_array}[$split_value[0]][] = $split_value[1];
 				}
 			}
+
 			//showarray($$type_array);
 		}
 
@@ -55,7 +56,7 @@ switch ($_POST['action']) {
 			exit;
 		}
 
-		if (empty($selected_aro_array) AND empty($_POST['aro_groups'])) {
+		if (empty($selected_aro_array) && empty($_POST['aro_groups'])) {
 			echo 'Must select at least one Access Request Object or Group<br />' . "\n";
 			exit;
 		}
@@ -67,25 +68,23 @@ switch ($_POST['action']) {
 
 		//function add_acl($aco_array, $aro_array, $aro_group_ids=NULL, $axo_array=NULL, $axo_group_ids=NULL, $allow=1, $enabled=1, $acl_id=FALSE ) {
 		if (!empty($_POST['acl_id'])) {
-			//Update existing ACL
-			$acl_id = $_POST['acl_id'];
-			if ($gacl_api->edit_acl($acl_id, $selected_aco_array, $selected_aro_array, $_POST['aro_groups'], $selected_axo_array, ($_POST['axo_groups'] ?? null), $_POST['allow'], $enabled, $_POST['return_value'], $_POST['note'], $_POST['acl_section']) == FALSE) {
+            //Update existing ACL
+            $acl_id = $_POST['acl_id'];
+            if ($gacl_api->edit_acl($acl_id, $selected_aco_array, $selected_aro_array, $_POST['aro_groups'], $selected_axo_array, ($_POST['axo_groups'] ?? null), $_POST['allow'], $enabled, $_POST['return_value'], $_POST['note'], $_POST['acl_section']) == FALSE) {
 				echo 'ERROR editing ACL, possible conflict or error found...<br />' . "\n";
 				exit;
 			}
-		} else {
-			//Insert new ACL.
-			if ($gacl_api->add_acl($selected_aco_array, $selected_aro_array, $_POST['aro_groups'], $selected_axo_array, ($_POST['axo_groups'] ?? null), $_POST['allow'], $enabled, $_POST['return_value'], $_POST['note'], $_POST['acl_section']) == FALSE) {
-				echo 'ERROR adding ACL, possible conflict or error found...<br />' . "\n";
-				exit;
-			}
-		}
+        } elseif ($gacl_api->add_acl($selected_aco_array, $selected_aro_array, $_POST['aro_groups'], $selected_axo_array, ($_POST['axo_groups'] ?? null), $_POST['allow'], $enabled, $_POST['return_value'], $_POST['note'], $_POST['acl_section']) == FALSE) {
+            //Insert new ACL.
+            echo 'ERROR adding ACL, possible conflict or error found...<br />' . "\n";
+            exit;
+        }
 
 		$gacl_api->return_page($_POST['return_page']);
 		break;
 	default:
 		//showarray($_GET);
-		if ($_GET['action'] == 'edit' AND !empty($_GET['acl_id'])) {
+		if ($_GET['action'] == 'edit' && !empty($_GET['acl_id'])) {
 			$gacl_api->debug_text('EDITING ACL');
 
 			//CSRF prevent
@@ -117,10 +116,11 @@ switch ($_POST['action']) {
 				if (is_object($rs)) {
 					while ($row = $rs->FetchRow()) {
 						list($section_value, $value, $section, $obj) = $row;
-						$gacl_api->debug_text("Section Value: $section_value Value: $value Section: $section ACO: " . ($aco ?? ''));
+						$gacl_api->debug_text(sprintf('Section Value: %s Value: %s Section: %s ACO: ', $section_value, $value, $section) . ($aco ?? ''));
 						${$type_array}[$section_value.'^'.$value] = $section.' > '.$obj;
 					}
 				}
+
 				//showarray($$type_array);
 			}
 
@@ -136,7 +136,7 @@ switch ($_POST['action']) {
 				//showarray($$type_array);
 			}
 
-			$show_axo = (!empty($selected_axo_groups) OR !empty($options_selected_axo));
+			$show_axo = (!empty($selected_axo_groups) || !empty($options_selected_axo));
 		} else {
 			$gacl_api->debug_text('NOT EDITING ACL');
 			$allow=1;
@@ -173,7 +173,7 @@ switch ($_POST['action']) {
 		//Grab objects for select boxes
 		foreach (array('aco','aro','axo') as $type) {
 			//Init the main object js array.
-			$js_array .= 'options[\''. $type .'\'] = new Array();' . "\n";
+			$js_array .= "options['". $type ."'] = new Array();" . "\n";
 
 			unset($tmp_section_value);
 
@@ -192,15 +192,15 @@ switch ($_POST['action']) {
 
 					//Prepare javascript code for dynamic select box.
 					//Init the javascript sub-array.
-					if (!isset($tmp_section_value) OR $section_value != $tmp_section_value) {
+					if (!isset($tmp_section_value) || $section_value != $tmp_section_value) {
 						$i = 0;
-						$js_array .= 'options[\''. $type .'\'][\''. $section_value . '\'] = new Array();' . "\n";
+						$js_array .= "options['". $type ."']['". $section_value . "'] = new Array();" . "\n";
 						$tmp_section_value = $section_value;
 					}
 
 					//Add each select option for the section
-					$js_array .= 'options[\''. $type .'\'][\''. $section_value .'\']['. $i .'] = new Array(\''. $value . '\', \''. $name . "');\n";
-					$i++;
+					$js_array .= "options['". $type ."']['". $section_value ."'][". $i ."] = new Array('". $value . "', '". $name . "');\n";
+					++$i;
 				}
 			}
 		}
@@ -242,16 +242,19 @@ switch ($_POST['action']) {
 		if (isset($options_selected_aco)) {
 			$smarty->assign('options_selected_aco', $options_selected_aco);
 		}
+
 		$smarty->assign('selected_aco', array_keys($options_selected_aco ?? []));
 
 		if (isset($options_selected_aro)) {
 			$smarty->assign('options_selected_aro', $options_selected_aro);
 		}
+
 		$smarty->assign('selected_aro', array_keys($options_selected_aro ?? []));
 
 		if (isset($options_selected_axo)) {
 			$smarty->assign('options_selected_axo', $options_selected_axo);
 		}
+
 		$selected_axo = array_keys($options_selected_axo ?? []);
 
 		$smarty->assign('selected_axo', $selected_axo);
@@ -270,6 +273,7 @@ switch ($_POST['action']) {
 if (isset($_GET['return_page'])) {
 	$smarty->assign('return_page', $_GET['return_page']);
 }
+
 if (isset($_GET['action'])) {
 	$smarty->assign('action', $_GET['action']);
 }

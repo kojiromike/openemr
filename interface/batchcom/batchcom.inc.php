@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Misc. BatchCom convenience functions
  *
@@ -18,23 +20,24 @@ function check_date_format($date)
     if (($date == '') || ($date == '0000-00-00')) {
         return true;
     }
+
     $ymd = explode('-', $date);
     return (count($ymd) == 3) && ($ymd[0] > 1900) && checkdate($ymd[1], $ymd[2], $ymd[0]);
 }
 
-function check_age($age)
+function check_age($age): bool
 {
     $age = trim($age);
-    $pat = "/^([0-9]+)$/";
-    return preg_match($pat, $age) or $age == '';
+    $pat = "/^(\\d+)\$/";
+    return preg_match($pat, $age) || $age === '';
 }
 
-function check_select($select, $array)
+function check_select($select, $array): bool
 {
-    return array_search($select, $array) or 0 === array_search($select, $array);
+    return array_search($select, $array, true) || 0 === array_search($select, $array, true);
 }
 
-function where_or_and($and)
+function where_or_and($and): string
 {
     if ($and == '') {
         $and = 'WHERE ';
@@ -47,7 +50,7 @@ function where_or_and($and)
     return $and;
 }
 
-function register_email($patient_id, $sent_by, $msg_type, $msg_subject, $msg_text)
+function register_email($patient_id, $sent_by, $msg_type, $msg_subject, $msg_text): void
 {
 
     $sql = "INSERT INTO batchcom SET patient_id=?, sent_by=?,
@@ -56,10 +59,10 @@ function register_email($patient_id, $sent_by, $msg_type, $msg_subject, $msg_tex
 
     echo $sql;
 
-    $res = sqlStatement($sql, array($patient_id, $sent_by, $msg_type, $msg_subject, $msg_text));
+    sqlStatement($sql, array($patient_id, $sent_by, $msg_type, $msg_subject, $msg_text));
 }
 
-function generate_csv($sql_result)
+function generate_csv($sql_result): void
 {
     /*  batch CSV processor, included from batchcom */
     // create file header.
@@ -77,7 +80,7 @@ function generate_csv($sql_result)
             reset($row);
         }
 
-        foreach ($row as $key => $value) {
+        foreach ($row as $value) {
             $line .= csvEscape($value) . ",";
         }
 

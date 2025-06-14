@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * find_code_popup.php
  *
@@ -12,9 +14,9 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("../../custom/code_types.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once(__DIR__ . "/../../custom/code_types.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -146,7 +148,7 @@ if ($codetype) {
     }
 
     echo "    <option value='PROD'";
-    if ($codetype == 'PROD' || $form_code_type == 'PROD') {
+    if ($form_code_type == 'PROD') {
         echo " selected";
     }
 
@@ -189,7 +191,7 @@ if ($codetype) {
         $res = sqlStatement($query, array('%' . $search_term . '%', '%' . $search_term . '%'));
         $row_count = 0;
         while ($row = sqlFetchArray($res)) {
-            $row_count = $row_count + 1;
+            $row_count += 1;
             $drug_id = $row['drug_id'];
             $selector = $row['selector'];
             $desc = $row['name'];
@@ -221,7 +223,7 @@ if ($codetype) {
             $res = sqlStatement($query, array('%' . $search_term . '%', '%' . $search_term . '%'));
             $row_count = 0;
             while ($row = sqlFetchArray($res)) {
-                $row_count = $row_count + 1;
+                $row_count += 1;
                 $itercode = $row['code'];
                 $itertext = ucfirst(strtolower(trim($row['code_text'])));
                 ?>

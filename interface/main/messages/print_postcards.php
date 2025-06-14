@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Print postcards for patients currently in the $_SESSION['pidList'] variable.
  *
@@ -10,9 +12,7 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-
-$pid_list = array();
+require_once(__DIR__ . "/../../globals.php");
 $pid_list = $_SESSION['pidList'];
 
 $pdf = new FPDF('L', 'mm', array(148, 105));
@@ -24,11 +24,7 @@ $facility = sqlQuery($sql);
 
 $sql = "SELECT * FROM medex_prefs";
 $prefs = sqlQuery($sql);
-if ($prefs['postcard_top']) {
-    $postcard_top = $prefs['postcard_top'];
-} else {
-    $postcard_top = '';
-}
+$postcard_top = $prefs['postcard_top'] ? $prefs['postcard_top'] : '';
 
 $postcard_message = $postcard_top . "\n" . xl('Please call our office to schedule') . "\n" . xl('your next appointment at') . " " . $facility['phone'] . ".
 	\n\n" . $facility['street'] . "\n   
@@ -49,6 +45,7 @@ foreach ($pid_list as $pid) {
             $prov_name .= ", " . $prov['suffix'];
         }
     }
+
     $pdf->SetFont('Arial', '', 9);
     $pdf->Cell(74, 30, $facility['name'] . $prov_name, 1, 1, 'C');
     $pdf->MultiCell(74, 4, $postcard_message, 'LRTB', 'C', 0);// [, boolean fill]]])
@@ -56,6 +53,7 @@ foreach ($pid_list as $pid) {
     $pdf->Text(100, 55, $patdata['street']);
     $pdf->Text(100, 60, $patdata['city'] . " " . $patdata['state'] . "  " . $patdata['postal_code']);
 }
+
 $pdf->Output('postcards.pdf', 'D');
 //D forces the file download instead of showing it in browser
 //isn't there an openEMR global for this?

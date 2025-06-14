@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form to track any clinical parameter.
  *
@@ -164,7 +166,7 @@ echo "<input type='hidden' name='fromencounter' value='" . attr($fromencounter) 
 // go to encounter or go to demographics
 //---------------------------------------------
 if ($fromencounter == 1) {
-    echo "<td>&nbsp;&nbsp;&nbsp;<a class='btn btn-primary' href='" . $GLOBALS['webroot'] . "/interface/patient_file/encounter/$returnurl' onclick='top.restoreSession()'><span>" . xlt('Back to encounter') . "</span></a></td>";
+    echo "<td>&nbsp;&nbsp;&nbsp;<a class='btn btn-primary' href='" . $GLOBALS['webroot'] . sprintf("/interface/patient_file/encounter/%s' onclick='top.restoreSession()'><span>", $returnurl) . xlt('Back to encounter') . "</span></a></td>";
 }
 
 if ($fromencounter == 0) {
@@ -218,7 +220,7 @@ $query = sqlStatement($spell, array($the_procedure,$pid));
 while ($myrow = sqlFetchArray($query)) {
     $the_track = $myrow["id"];
     $the_encounter = $myrow["encounter"];
-    $track_count++;
+    ++$track_count;
 
     // reset local arrays;
     $date_local     = array();  # (collects items' datetime for local row)
@@ -244,7 +246,7 @@ while ($myrow = sqlFetchArray($query)) {
     $query2 = sqlStatement($spell2, array($the_track));
     while ($myrow2 = sqlFetchArray($query2)) {
         $thistime = $myrow2['track_timestamp'];
-        $shownameflag++;
+        ++$shownameflag;
 
         // get data of this specific track
         $spell3  = "SELECT form_track_anything_results.itemid, form_track_anything_results.result, form_track_anything_type.name AS the_name ";
@@ -264,13 +266,13 @@ while ($myrow = sqlFetchArray($query)) {
 
                 if ($save_item_flag == 0) {
                     $items_n[$items_c] = $myrow3['the_name']; // save item names
-                    $items_c++; // count number of items
+                    ++$items_c; // count number of items
                 }
 
-                $col++;
+                ++$col;
             }
 
-            $save_item_flag++;
+            ++$save_item_flag;
             echo "</tr>";
         }
 
@@ -290,13 +292,13 @@ while ($myrow = sqlFetchArray($query)) {
                     $value_local[$col_i][$row_lc]  = $myrow3['result']; // save value into local array
             }
 
-            $col_i++;
+            ++$col_i;
         }
 
         echo "</tr>";
-        $row++;
-        $row_gl++;
-        $row_lc++;
+        ++$row;
+        ++$row_gl;
+        ++$row_lc;
     }
 
     // check for each column if there is any numeric data
@@ -304,20 +306,20 @@ while ($myrow = sqlFetchArray($query)) {
     //----------------------------------------------------
     echo "<tr>";
     echo "<td class='check'>" . xlt('Check items to graph') . " </td>"; //
-    for ($col_i = 0; $col_i < $col; $col_i++) {
+    for ($col_i = 0; $col_i < $col; ++$col_i) {
         echo "<td class='check'>";
-        for ($row_b = 0; $row_b < $row_lc; $row_b++) {
+        for ($row_b = 0; $row_b < $row_lc; ++$row_b) {
             if (is_numeric($value_local[$col_i][$row_b])) {
                 if (empty($localplot_c[$col_i])) {
                     $localplot_c[$col_i] = 1;
                 } else {
-                    $localplot_c[$col_i]++; // count more than 1 to show graph-button
+                    ++$localplot_c[$col_i]; // count more than 1 to show graph-button
                 }
 
                 if (empty($globalplot_c[$col_i])) {
                     $globalplot_c[$col_i] = 1;
                 } else {
-                    $globalplot_c[$col_i]++;
+                    ++$globalplot_c[$col_i];
                 }
             }
         }
@@ -326,10 +328,10 @@ while ($myrow = sqlFetchArray($query)) {
         if ($localplot_c[$col_i] > 1 || $globalplot_c[$col_i] > 1) {
             echo "<input type='checkbox' name='check_col" . attr($track_count) . "' value='" . attr($col_i) . "'>";
             if ($localplot_c[$col_i] > 1) {
-                $localplot++;
+                ++$localplot;
             }
 
-            $globalplot++;
+            ++$globalplot;
         }
 
         echo "</td>";
@@ -421,7 +423,7 @@ echo "<input type='hidden' name='fromencounter' value='" . attr($fromencounter) 
 // go to encounter or go to demographics
 //---------------------------------------------
 if ($fromencounter == 1) {
-    echo "<td>&nbsp;&nbsp;&nbsp;<a class='btn btn-primary' href='" . $GLOBALS['webroot'] . "/interface/patient_file/encounter/$returnurl' onclick='top.restoreSession()'><span>" . xlt('Back to encounter') . "</span></a></td>";
+    echo "<td>&nbsp;&nbsp;&nbsp;<a class='btn btn-primary' href='" . $GLOBALS['webroot'] . sprintf("/interface/patient_file/encounter/%s' onclick='top.restoreSession()'><span>", $returnurl) . xlt('Back to encounter') . "</span></a></td>";
 }
 
 if ($fromencounter == 0) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Acl/src/Acl/Model/AclTable.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Acl\Model;
 
 use Laminas\Db\TableGateway\AbstractTableGateway;
@@ -32,18 +33,19 @@ class AclTable extends AbstractTableGateway
 
     public function aclSections($module_id)
     {
-        $obj    = new ApplicationTable();
+        $applicationTable    = new ApplicationTable();
         if ($module_id != '') {
             $sql    = "SELECT * FROM module_acl_sections WHERE module_id = ?";
             $params = array($module_id);
-            $result = $obj->zQuery($sql, $params);
+            $result = $applicationTable->zQuery($sql, $params);
         } else {
             $sql = "SELECT * FROM module_acl_sections ";
-            $result = $obj->zQuery($sql);
+            $result = $applicationTable->zQuery($sql);
         }
 
         return $result;
     }
+
     public function aclUserGroupMapping()
     {
         $sql = "SELECT 
@@ -65,55 +67,59 @@ class AclTable extends AbstractTableGateway
                 WHERE
                     garo.section_value = ?";
         $params = array('users');
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, $params);
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql, $params);
     }
+
     public function getActiveModules()
     {
         $sql    = "SELECT * FROM modules";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql);
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql);
     }
+
     public function getGroups()
     {
         $sql    = "SELECT * FROM gacl_aro_groups WHERE parent_id > 0";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql);
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql);
     }
+
     public function getGroupAcl($module_id)
     {
         $sql    = "SELECT * FROM module_acl_group_settings WHERE module_id = ? AND allowed = 1";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id));
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql, array($module_id));
     }
-    public function deleteGroupACL($module_id, $section_id)
+
+    public function deleteGroupACL($module_id, $section_id): void
     {
         $sql    = "DELETE FROM module_acl_group_settings WHERE module_id = ? AND section_id = ? ";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id,$section_id));
+        $applicationTable    = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($module_id,$section_id));
     }
-    public function deleteUserACL($module_id, $section_id)
+
+    public function deleteUserACL($module_id, $section_id): void
     {
         $sql    = "DELETE FROM module_acl_user_settings WHERE module_id = ? AND section_id = ? ";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id,$section_id));
+        $applicationTable    = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($module_id,$section_id));
     }
-    public function insertGroupACL($module_id, $group_id, $section_id, $allowed)
+
+    public function insertGroupACL($module_id, $group_id, $section_id, $allowed): void
     {
         $sql    = "INSERT INTO module_acl_group_settings (module_id,group_id,section_id,allowed) VALUES (?,?,?,?)";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id,$group_id,$section_id,$allowed));
+        $applicationTable    = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($module_id,$group_id,$section_id,$allowed));
     }
-    public function insertuserACL($module_id, $user_id, $section_id, $allowed)
+
+    public function insertuserACL($module_id, $user_id, $section_id, $allowed): void
     {
         $sql    = "INSERT INTO module_acl_user_settings(module_id,user_id,section_id,allowed) VALUES (?,?,?,?)";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id,$user_id,$section_id,$allowed));
+        $applicationTable    = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($module_id,$user_id,$section_id,$allowed));
     }
+
     public function getAclDataUsers($section_id)
     {
         $sql    = " SELECT 
@@ -129,47 +135,49 @@ class AclTable extends AbstractTableGateway
                           ON aromap.aro_id = aro.id 
                     WHERE 
                        usr_settings.`section_id` = ? AND aro.section_value = 'users'";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($section_id));
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql, array($section_id));
     }
+
     public function getAclDataGroups($section_id)
     {
         $sql    = "SELECT * FROM module_acl_group_settings WHERE section_id =?";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($section_id));
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql, array($section_id));
     }
-    public function deleteModuleGroupACL($module_id)
+
+    public function deleteModuleGroupACL($module_id): void
     {
         $sql    = "DELETE FROM module_acl_group_settings WHERE module_id =?";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id));
+        $applicationTable    = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($module_id));
     }
-    public function getSectionsInsertId()
+
+    public function getSectionsInsertId(): int|float
     {
         $sql    = "SELECT MAX(section_id) AS max_id FROM module_acl_sections";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql);
+        $applicationTable    = new ApplicationTable();
+        $type = $applicationTable->zQuery($sql);
         $max_id = 0;
-        foreach ($result as $row) {
+        foreach ($type as $row) {
             $max_id = $row['max_id'];
         }
 
-        $max_id++;
+        ++$max_id;
         return $max_id;
     }
-    public function saveACLSections($module_id, $parent_id, $section_identifier, $section_name, $section_id)
+
+    public function saveACLSections($module_id, $parent_id, $section_identifier, $section_name, $section_id): void
     {
         $sql        = "INSERT INTO module_acl_sections(section_id,section_name,parent_section,section_identifier,module_id) VALUES(?,?,?,?,?)";
-        $obj        = new ApplicationTable();
-        $result     = $obj->zQuery($sql, array($section_id,$section_name,$parent_id,$section_identifier,$module_id));
+        $applicationTable        = new ApplicationTable();
+        $applicationTable->zQuery($sql, array($section_id,$section_name,$parent_id,$section_identifier,$module_id));
     }
+
     public function getModuleSections($module_id)
     {
         $sql    = "SELECT * FROM module_acl_sections WHERE module_id = ?";
-        $obj    = new ApplicationTable();
-        $result = $obj->zQuery($sql, array($module_id));
-        return $result;
+        $applicationTable    = new ApplicationTable();
+        return $applicationTable->zQuery($sql, array($module_id));
     }
 }

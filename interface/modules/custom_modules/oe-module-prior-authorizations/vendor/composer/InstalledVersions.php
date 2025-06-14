@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of Composer.
  *
@@ -9,7 +11,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Composer;
 
 use Composer\Autoload\ClassLoader;
@@ -32,10 +33,7 @@ class InstalledVersions
      */
     private static $installed;
 
-    /**
-     * @var bool|null
-     */
-    private static $canGetVendors;
+    private static ?bool $canGetVendors = null;
 
     /**
      * @var array[]
@@ -49,7 +47,7 @@ class InstalledVersions
      * @return string[]
      * @psalm-return list<string>
      */
-    public static function getInstalledPackages()
+    public static function getInstalledPackages(): array
     {
         $packages = array();
         foreach (self::getInstalled() as $installed) {
@@ -60,7 +58,7 @@ class InstalledVersions
             return $packages[0];
         }
 
-        return array_keys(array_flip(\call_user_func_array('array_merge', $packages)));
+        return array_keys(array_flip(array_merge(...$packages)));
     }
 
     /**
@@ -70,7 +68,7 @@ class InstalledVersions
      * @return string[]
      * @psalm-return list<string>
      */
-    public static function getInstalledPackagesByType($type)
+    public static function getInstalledPackagesByType($type): array
     {
         $packagesByType = array();
 
@@ -112,15 +110,15 @@ class InstalledVersions
      *
      *   Composer\InstalledVersions::satisfies(new VersionParser, 'foo/bar', '^2.3')
      *
-     * @param  VersionParser $parser      Install composer/semver to have access to this class and functionality
+     * @param VersionParser $versionParser Install composer/semver to have access to this class and functionality
      * @param  string        $packageName
      * @param  string|null   $constraint  A version constraint to check for, if you pass one you have to make sure composer/semver is required by your package
      * @return bool
      */
-    public static function satisfies(VersionParser $parser, $packageName, $constraint)
+    public static function satisfies(VersionParser $versionParser, $packageName, $constraint)
     {
-        $constraint = $parser->parseConstraints($constraint);
-        $provided = $parser->parseConstraints(self::getVersionRanges($packageName));
+        $constraint = $versionParser->parseConstraints($constraint);
+        $provided = $versionParser->parseConstraints(self::getVersionRanges($packageName));
 
         return $provided->matches($constraint);
     }
@@ -131,10 +129,9 @@ class InstalledVersions
      * It is easier to use this via isInstalled() with the $constraint argument if you need to check
      * whether a given version of a package is installed, and not just whether it exists
      *
-     * @param  string $packageName
      * @return string Version constraint usable with composer/semver
      */
-    public static function getVersionRanges($packageName)
+    public static function getVersionRanges(string $packageName): string
     {
         foreach (self::getInstalled() as $installed) {
             if (!isset($installed['versions'][$packageName])) {
@@ -145,12 +142,15 @@ class InstalledVersions
             if (isset($installed['versions'][$packageName]['pretty_version'])) {
                 $ranges[] = $installed['versions'][$packageName]['pretty_version'];
             }
+
             if (array_key_exists('aliases', $installed['versions'][$packageName])) {
                 $ranges = array_merge($ranges, $installed['versions'][$packageName]['aliases']);
             }
+
             if (array_key_exists('replaced', $installed['versions'][$packageName])) {
                 $ranges = array_merge($ranges, $installed['versions'][$packageName]['replaced']);
             }
+
             if (array_key_exists('provided', $installed['versions'][$packageName])) {
                 $ranges = array_merge($ranges, $installed['versions'][$packageName]['provided']);
             }
@@ -162,10 +162,9 @@ class InstalledVersions
     }
 
     /**
-     * @param  string      $packageName
      * @return string|null If the package is being replaced or provided but is not really installed, null will be returned as version, use satisfies or getVersionRanges if you need to know if a given version is present
      */
-    public static function getVersion($packageName)
+    public static function getVersion(string $packageName): ?string
     {
         foreach (self::getInstalled() as $installed) {
             if (!isset($installed['versions'][$packageName])) {
@@ -183,10 +182,9 @@ class InstalledVersions
     }
 
     /**
-     * @param  string      $packageName
      * @return string|null If the package is being replaced or provided but is not really installed, null will be returned as version, use satisfies or getVersionRanges if you need to know if a given version is present
      */
-    public static function getPrettyVersion($packageName)
+    public static function getPrettyVersion(string $packageName): ?string
     {
         foreach (self::getInstalled() as $installed) {
             if (!isset($installed['versions'][$packageName])) {
@@ -204,10 +202,9 @@ class InstalledVersions
     }
 
     /**
-     * @param  string      $packageName
      * @return string|null If the package is being replaced or provided but is not really installed, null will be returned as reference
      */
-    public static function getReference($packageName)
+    public static function getReference(string $packageName): ?string
     {
         foreach (self::getInstalled() as $installed) {
             if (!isset($installed['versions'][$packageName])) {
@@ -225,10 +222,9 @@ class InstalledVersions
     }
 
     /**
-     * @param  string      $packageName
      * @return string|null If the package is being replaced or provided but is not really installed, null will be returned as install path. Packages of type metapackages also have a null install path.
      */
-    public static function getInstallPath($packageName)
+    public static function getInstallPath(string $packageName)
     {
         foreach (self::getInstalled() as $installed) {
             if (!isset($installed['versions'][$packageName])) {
@@ -266,11 +262,7 @@ class InstalledVersions
         if (null === self::$installed) {
             // only require the installed.php file if this file is loaded from its dumped location,
             // and not from its source location in the composer/composer package, see https://github.com/composer/composer/issues/9937
-            if (substr(__DIR__, -8, 1) !== 'C') {
-                self::$installed = include __DIR__ . '/installed.php';
-            } else {
-                self::$installed = array();
-            }
+            self::$installed = substr(__DIR__, -8, 1) !== 'C' ? include __DIR__ . '/installed.php' : array();
         }
 
         return self::$installed;
@@ -301,11 +293,10 @@ class InstalledVersions
      * interference between PHPUnit's dependencies and the project's dependencies.
      *
      * @param  array[] $data A vendor/composer/installed.php data set
-     * @return void
      *
      * @psalm-param array{root: array{name: string, pretty_version: string, version: string, reference: string|null, type: string, install_path: string, aliases: string[], dev: bool}, versions: array<string, array{pretty_version?: string, version?: string, reference?: string|null, type?: string, install_path?: string, aliases?: string[], dev_requirement: bool, replaced?: string[], provided?: string[]}>} $data
      */
-    public static function reload($data)
+    public static function reload($data): void
     {
         self::$installed = $data;
         self::$installedByVendor = array();
@@ -315,16 +306,16 @@ class InstalledVersions
      * @return array[]
      * @psalm-return list<array{root: array{name: string, pretty_version: string, version: string, reference: string|null, type: string, install_path: string, aliases: string[], dev: bool}, versions: array<string, array{pretty_version?: string, version?: string, reference?: string|null, type?: string, install_path?: string, aliases?: string[], dev_requirement: bool, replaced?: string[], provided?: string[]}>}>
      */
-    private static function getInstalled()
+    private static function getInstalled(): array
     {
         if (null === self::$canGetVendors) {
-            self::$canGetVendors = method_exists('Composer\Autoload\ClassLoader', 'getRegisteredLoaders');
+            self::$canGetVendors = method_exists(\Composer\Autoload\ClassLoader::class, 'getRegisteredLoaders');
         }
 
         $installed = array();
 
         if (self::$canGetVendors) {
-            foreach (ClassLoader::getRegisteredLoaders() as $vendorDir => $loader) {
+            foreach (ClassLoader::getRegisteredLoaders() as $vendorDir => $classLoader) {
                 if (isset(self::$installedByVendor[$vendorDir])) {
                     $installed[] = self::$installedByVendor[$vendorDir];
                 } elseif (is_file($vendorDir.'/composer/installed.php')) {
@@ -335,16 +326,12 @@ class InstalledVersions
                 }
             }
         }
-
         if (null === self::$installed) {
             // only require the installed.php file if this file is loaded from its dumped location,
             // and not from its source location in the composer/composer package, see https://github.com/composer/composer/issues/9937
-            if (substr(__DIR__, -8, 1) !== 'C') {
-                self::$installed = require __DIR__ . '/installed.php';
-            } else {
-                self::$installed = array();
-            }
+            self::$installed = substr(__DIR__, -8, 1) !== 'C' ? require __DIR__ . '/installed.php' : array();
         }
+
         $installed[] = self::$installed;
 
         return $installed;

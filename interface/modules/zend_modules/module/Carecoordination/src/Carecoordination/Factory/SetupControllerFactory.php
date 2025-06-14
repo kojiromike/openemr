@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Carecoordination\Factory;
 
 use Carecoordination\Controller\EncounterccdadispatchController;

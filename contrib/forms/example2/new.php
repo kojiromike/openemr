@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * The page shown when the user requests a new form
  *
@@ -11,7 +13,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -46,7 +48,7 @@ $returnurl = 'encounter_top.php';
 
 <!-- Save/Cancel buttons -->
 <input type="button" class="save" value="<?php echo xla('Save'); ?>"> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
 
 <!-- container for the main body of the form -->
 <div id="form_container">
@@ -96,7 +98,7 @@ Date of signature:
 
 <!-- Save/Cancel buttons -->
 <input type="button" class="save" value="<?php echo xla('Save'); ?>"> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
 </form>
 
 </body>

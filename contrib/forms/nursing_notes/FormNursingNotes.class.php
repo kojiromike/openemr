@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -30,21 +32,29 @@ class FormNursingNotes extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $activity;
-    var $assessment;
-    var $procedures;
-    var $discharge;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $activity;
+
+    public $assessment;
+
+    public $procedures;
+
+    public $discharge;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -63,114 +73,115 @@ class FormNursingNotes extends ORDataObject
             //$this->date = $this->get_date();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function __toString()
+    public function __toString(): string
     {
         return "ID: " . $this->id . "\n";
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
 
-    function get_id()
+    public function get_id()
     {
         return $this->id;
     }
 
-    function set_pid($pid)
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
 
-    function get_pid()
+    public function get_pid()
     {
         return $this->pid;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
-    function set_date($dt)
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
 
-    function get_user()
+    public function get_user()
     {
         return $this->user;
     }
 
-    function set_user($u)
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
 
-    function set_activity($tf)
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
 
-    function get_activity()
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_assessment()
+    public function get_assessment()
     {
         return $this->assessment;
     }
 
-    function set_assessment($data)
+    public function set_assessment($data): void
     {
         if (!empty($data)) {
             $this->assessment = $data;
         }
     }
 
-    function get_procedures()
+    public function get_procedures()
     {
         return $this->procedures;
     }
 
-    function set_procedures($data)
+    public function set_procedures($data): void
     {
         if (!empty($data)) {
             $this->procedures = $data;
         }
     }
 
-    function get_discharge()
+    public function get_discharge()
     {
         return $this->discharge;
     }
 
-    function set_discharge($data)
+    public function set_discharge($data): void
     {
         if (!empty($data)) {
             $this->discharge = $data;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }

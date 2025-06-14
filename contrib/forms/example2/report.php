@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * example2 report.php
  *
@@ -15,7 +17,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
 /** CHANGE THIS, the name of the function is significant and  **
  **              must be changed to match the folder name     **/
-function example_report($pid, $encounter, $cols, $id)
+function example_report($pid, $encounter, $cols, $id): void
 {
 
     /** CHANGE THIS - name of the database table associated with this form **/
@@ -43,7 +45,7 @@ function example_report($pid, $encounter, $cols, $id)
             print("<tr>\n");
             print("<tr>\n");
             print "<td><span class=bold>" . text($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

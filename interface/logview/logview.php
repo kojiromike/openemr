@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Log Viewer.
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Crypto\CryptoGen;
@@ -26,10 +28,8 @@ if (!AclMain::aclCheckCore('admin', 'users')) {
     exit;
 }
 
-if (!empty($_GET)) {
-    if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_GET === []) && !CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 ?>
@@ -92,8 +92,8 @@ if (!empty($_GET)) {
                     <div class="col-sm-12 col-md-12 col-lg-12 p-0 m-0 px-1">
                         <?php
                         $err_message = 0;
-                        $start_date = (!empty($_GET["start_date"])) ? DateTimeToYYYYMMDDHHMMSS($_GET["start_date"]) : date("Y-m-d") . " 00:00";
-                        $end_date = (!empty($_GET["end_date"])) ? DateTimeToYYYYMMDDHHMMSS($_GET["end_date"]) : date("Y-m-d") . " 23:59";
+                        $start_date = (empty($_GET["start_date"])) ? date("Y-m-d") . " 00:00" : DateTimeToYYYYMMDDHHMMSS($_GET["start_date"]);
+                        $end_date = (empty($_GET["end_date"])) ? date("Y-m-d") . " 23:59" : DateTimeToYYYYMMDDHHMMSS($_GET["end_date"]);
                         /*
                         * Start date should not be greater than end date - Date Validation
                         */
@@ -112,7 +112,7 @@ if (!empty($_GET)) {
                         }
 
                         $res = sqlStatement("select distinct LEFT(date,10) as date from log order by date desc limit 30");
-                        for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+                        for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
                             $ret[$iter] = $row;
                         }
 
@@ -130,7 +130,7 @@ if (!empty($_GET)) {
                             <h3 class="text-center"><?php echo xlt('Main Log'); ?></h3>
                             <form method="get" name="theform" id="theform">
                                 <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
-                                <input type="hidden" name="direction" id="direction" value="<?php echo !empty($direction) ? attr($direction) : 'asc'; ?>" />
+                                <input type="hidden" name="direction" id="direction" value="<?php echo empty($direction) ? 'asc' : attr($direction); ?>" />
                                 <input type="hidden" name="sortby" id="sortby" value="<?php echo attr($sortby); ?>" />
                                 <input type=hidden name="csum" value="" />
                                 <input type=hidden name="show" value="show" />
@@ -145,7 +145,7 @@ if (!empty($_GET)) {
                                     </div>
                                     <label class="col-sm-1 col-form-label" for="end_date"><?php echo xlt('Patient'); ?>:</label>
                                     <div class="col-sm-3">
-                                        <input type='text' size='20' class='form-control' name='form_patient' id='form_patient' style='cursor:pointer;' value='<?php echo (!empty($form_patient)) ? attr($form_patient) : xla('Click To Select'); ?>' onclick='sel_patient()' title='<?php echo xla('Click to select patient'); ?>' />
+                                        <input type='text' size='20' class='form-control' name='form_patient' id='form_patient' style='cursor:pointer;' value='<?php echo (empty($form_patient)) ? xla('Click To Select') : attr($form_patient); ?>' onclick='sel_patient()' title='<?php echo xla('Click to select patient'); ?>' />
                                         <input type='hidden' name='form_pid' value='<?php echo attr($form_pid); ?>' />
                                     </div>
                                 </div>
@@ -156,7 +156,7 @@ if (!empty($_GET)) {
                                             <?php
                                             echo " <option value=''>" . xlt('All') . "</option>\n";
                                             while ($urow = sqlFetchArray($ures)) {
-                                                if (empty(trim($urow['username'] ?? ''))) {
+                                                if (in_array(trim($urow['username'] ?? ''), ['', '0'], true)) {
                                                     continue;
                                                 }
                                                 echo " <option value='" . attr($urow['username']) . "'";
@@ -178,35 +178,35 @@ if (!empty($_GET)) {
                                     $ename_list = array();
                                     $j = 0;
                                     while ($erow = sqlFetchArray($res)) {
-                                        if (!trim($erow['event'])) {
+                                        if (trim($erow['event']) === '' || trim($erow['event']) === '0') {
                                             continue;
                                         }
                                         $data = explode('-', $erow['event']);
                                         $data_c = count($data);
                                         $ename = $data[0];
-                                        for ($i = 1; $i < ($data_c - 1); $i++) {
+                                        for ($i = 1; $i < ($data_c - 1); ++$i) {
                                             $ename .= "-" . $data[$i];
                                         }
                                         $ename_list[$j] = $ename;
-                                        $j = $j + 1;
+                                        $j += 1;
                                     }
                                     $res1 = sqlStatement("select distinct event from extended_log order by event ASC");
                                     // $j=0; // This can't be right!  -- Rod 2013-08-23
                                     while ($row = sqlFetchArray($res1)) {
-                                        if (!trim($row['event'])) {
+                                        if (trim($row['event']) === '' || trim($row['event']) === '0') {
                                             continue;
                                         }
                                         $new_event = explode('-', $row['event']);
                                         $no = count($new_event);
                                         $events = $new_event[0];
-                                        for ($i = 1; $i < ($no - 1); $i++) {
+                                        for ($i = 1; $i < ($no - 1); ++$i) {
                                             $events .= "-" . $new_event[$i];
                                         }
-                                        if ($events == "disclosure") {
+                                        if ($events === "disclosure") {
                                             $ename_list[$j] = $events;
                                         }
 
-                                        $j = $j + 1;
+                                        $j += 1;
                                     }
                                     $ename_list = array_unique($ename_list);
                                     $ename_list = array_merge($ename_list);
@@ -217,7 +217,7 @@ if (!empty($_GET)) {
                                         <select name='eventname' id='eventname' class='form-control' onchange='eventTypeChange(this.options[this.selectedIndex].value);'>
                                             <?php
                                             echo " <option value=''>" . xlt('All') . "</option>\n";
-                                            for ($k = 0; $k < $ecount; $k++) {
+                                            for ($k = 0; $k < $ecount; ++$k) {
                                                 echo " <option value='" . attr($ename_list[$k]) . "'";
                                                 if ($ename_list[$k] == $eventname && $ename_list[$k] != "") {
                                                     echo " selected";
@@ -242,7 +242,7 @@ if (!empty($_GET)) {
                                             echo "<select name='type_event' id='type_event' class='form-control'>\n";
                                         }
                                         echo " <option value=''>" . xlt('All') . "</option>\n";
-                                        for ($k = 0; $k < $lcount; $k++) {
+                                        for ($k = 0; $k < $lcount; ++$k) {
                                             echo " <option value='" . attr($event_types[$k]) . "'";
                                             if ($event_types[$k] == $type_event && $event_types[$k] != "") {
                                                 echo " selected";
@@ -318,16 +318,8 @@ if (!empty($_GET)) {
                                                 $patterns = array('/^success/', '/^failure/', '/ encounter/');
                                                 $replace = array(xl('success'), xl('failure'), xl('encounter', '', ' '));
 
-                                                if (!empty($iter['encrypt'])) {
-                                                    $commentEncrStatus = $iter['encrypt'];
-                                                } else {
-                                                    $commentEncrStatus = "No";
-                                                }
-                                                if (!empty($iter['version'])) {
-                                                    $encryptVersion = $iter['version'];
-                                                } else {
-                                                    $encryptVersion = 0;
-                                                }
+                                                $commentEncrStatus = empty($iter['encrypt']) ? "No" : $iter['encrypt'];
+                                                $encryptVersion = empty($iter['version']) ? 0 : $iter['version'];
 
                                                 // Decrypt comment data if encrypted
                                                 if ($commentEncrStatus == "Yes") {
@@ -362,13 +354,12 @@ if (!empty($_GET)) {
                                                         } else {
                                                             $trans_comments = xl("Unable to decrypt these comments since the PHP openssl module is not installed.");
                                                         }
-                                                    } else { //$encryptVersion == 0
+                                                    } elseif (extension_loaded('mcrypt')) {
+                                                        //$encryptVersion == 0
                                                         // Use old mcrypt method
-                                                        if (extension_loaded('mcrypt')) {
-                                                            $trans_comments = preg_replace($patterns, $replace, $cryptoGen->aes256Decrypt_mycrypt($iter["comments"]));
-                                                        } else {
-                                                            $trans_comments = xl("Unable to decrypt these comments since the PHP mycrypt module is not installed.");
-                                                        }
+                                                        $trans_comments = preg_replace($patterns, $replace, $cryptoGen->aes256Decrypt_mycrypt($iter["comments"]));
+                                                    } else {
+                                                        $trans_comments = xl("Unable to decrypt these comments since the PHP mycrypt module is not installed.");
                                                     }
                                                 } else {
                                                     // base64 decode if applicable (note the $encryptVersion is a misnomer here, we have added in base64 encoding

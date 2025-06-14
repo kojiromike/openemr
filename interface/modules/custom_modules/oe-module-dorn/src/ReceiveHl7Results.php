@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022-2025 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn;
 
 use Document;
@@ -24,7 +25,7 @@ class ReceiveHl7Results
      * a lab could be split!  if this happens then more than one result is
      * retrieved and not expected.
      */
-    public function receiveResults($resultsGuid, $rejectResult): array
+    public function receiveResults(string $resultsGuid, $rejectResult): array
     {
         $labResults = ConnectorApi::getLabResults($resultsGuid);
         $responseModels = []; // Initialize an empty array to store response models
@@ -36,8 +37,8 @@ class ReceiveHl7Results
             return [$rtv]; // Return an array with a single response model
         }
 
-        foreach ($labResults as $result) {
-            $receiveResultsResponseModel = $this->receiveSingleResults($result, $rejectResult);
+        foreach ($labResults as $labResult) {
+            $receiveResultsResponseModel = $this->receiveSingleResults($labResult, $rejectResult);
             $responseModels[] = $receiveResultsResponseModel; // Add each response model to the array
         }
 
@@ -46,14 +47,14 @@ class ReceiveHl7Results
 
     public function receiveSingleResults($result, $rejectResult): ReceiveResultsResponseModel
     {
-        $returnValue = new ReceiveResultsResponseModel();
+        $receiveResultsResponseModel = new ReceiveResultsResponseModel();
         $resultPath = $GLOBALS['OE_SITE_DIR'] . "/documents/procedure_results";
 
         $orderNumber = $result->orderNumber;
         $patientId = $result->patientId;
 
-        $returnValue->resultsGuid = $result->resultGuid;
-        $returnValue->isUnsolicited = $result->isUnsolicited;
+        $receiveResultsResponseModel->resultsGuid = $result->resultGuid;
+        $receiveResultsResponseModel->isUnsolicited = $result->isUnsolicited;
 
 
         $sql = "SELECT pp.name, pp.npi, pp.protocol, pp.remote_host, pp.send_fac_id, pp.recv_fac_id,
@@ -72,116 +73,114 @@ class ReceiveHl7Results
         $recv_account = $record['recv_fac_id'];
         $lab_app = $record['recv_app_id'];
         $lab_npi = strtoupper(trim($record['npi']));
-        $lab_name = $record['name'];
         $direction = $record['direction'];
         $hl7 = '';
-
-        $protocol = $record['protocol'];
-        $remote_host = $record['remote_host'];
-        $debug = trim($record['DorP']) === 'D';
-
-        $logpath = $GLOBALS['OE_SITE_DIR'] . "/documents/procedure_results/logs/$lab_npi";
         $prpath .= $resultPath . '/' . $ppid . '-' . $lab_npi;
         $file = "result_" . $orderNumber . ".hl7";
 
         $msg = $this->validatePaths($resultPath);
         if (!empty($msg)) {
-            $returnValue->message = $msg;
-            $returnValue->isSuccess = false;
-            return $returnValue;
+            $receiveResultsResponseModel->message = $msg;
+            $receiveResultsResponseModel->isSuccess = false;
+            return $receiveResultsResponseModel;
         }
+
         $msg = $this->validatePaths($prpath);
         if (!empty($msg)) {
-            $returnValue->message = $msg;
-            $returnValue->isSuccess = false;
-            return $returnValue;
+            $receiveResultsResponseModel->message = $msg;
+            $receiveResultsResponseModel->isSuccess = false;
+            return $receiveResultsResponseModel;
         }
 
         if (!empty($result->hl7Base64)) {
             $hl7 = base64_decode($result->hl7Base64);
         } else {
-            $returnValue->message = "HL7 appears to be empty";
-            $returnValue->isSuccess = false;
-            return $returnValue;
+            $receiveResultsResponseModel->message = "HL7 appears to be empty";
+            $receiveResultsResponseModel->isSuccess = false;
+            return $receiveResultsResponseModel;
         }
+
         // If user requested reject and delete, do that.
         if ($rejectResult) {
-            $fh = fopen("$prpath/$file.rejected", 'w');
+            $fh = fopen(sprintf('%s/%s.rejected', $prpath, $file), 'w');
             if ($fh) {
                 $hl7_crypt = $this->hl7Crypt($hl7);
                 fwrite($fh, $hl7_crypt);
                 fclose($fh);
             } else {
-                $returnValue->message = xl('Cannot create file') . ' "' . "$prpath/$file.rejected" . '"';
-                $returnValue->isSuccess = false;
-                return $returnValue;
+                $receiveResultsResponseModel->message = xl('Cannot create file') . ' "' . sprintf('%s/%s.rejected', $prpath, $file) . '"';
+                $receiveResultsResponseModel->isSuccess = false;
+                return $receiveResultsResponseModel;
             }
-            ConnectorApi::sendAck($returnValue->resultsGuid, true, ['']);
-            return $returnValue;
+
+            ConnectorApi::sendAck($receiveResultsResponseModel->resultsGuid, true, ['']);
+            return $receiveResultsResponseModel;
         }
+
         if (!$this->matchLab($hl7, $send_account, $recv_account, $lab_app, $lab_npi)) {
-            $returnValue->message = "No Lab Match Account: $send_account\n";
-            $returnValue->isSuccess = false;
-            return $returnValue;
+            $receiveResultsResponseModel->message = sprintf('No Lab Match Account: %s%s', $send_account, PHP_EOL);
+            $receiveResultsResponseModel->isSuccess = false;
+            return $receiveResultsResponseModel;
         }
 
         // Do a dry run of its contents and check for errors and match requests.
         $tmp = $this->receiveHl7Results($hl7, $info['match'], $ppid, $direction, true, $patientId);
-        $returnValue->resultsParseMsg .= "Lab matched account $send_account. Results Dry Run Parse for Errors: ";
+        $receiveResultsResponseModel->resultsParseMsg .= sprintf('Lab matched account %s. Results Dry Run Parse for Errors: ', $send_account);
 
         if ($tmp['mssgs']) {
-            $returnValue->resultsParseMsg .=  print_r($tmp['mssgs'], true);
+            $receiveResultsResponseModel->resultsParseMsg .=  print_r($tmp['mssgs'], true);
             //should we say there are errors here an nack it?
-            ConnectorApi::sendAck($returnValue->resultsGuid, true, [$tmp['mssgs']]);
-            $returnValue->message = "No Lab Match Account: $send_account\n";
-            $returnValue->isSuccess = false;
-            return $returnValue;
+            ConnectorApi::sendAck($receiveResultsResponseModel->resultsGuid, true, [$tmp['mssgs']]);
+            $receiveResultsResponseModel->message = sprintf('No Lab Match Account: %s%s', $send_account, PHP_EOL);
+            $receiveResultsResponseModel->isSuccess = false;
+            return $receiveResultsResponseModel;
         } else {
-            $returnValue->resultsParseMsg .= "None";
+            $receiveResultsResponseModel->resultsParseMsg .= "None";
         }
 
         // Now the money shot - not a dry run.
-        $returnValue->resultsParseMsg .= "Lab matched account $send_account. Results Parse for Errors: ";
+        $receiveResultsResponseModel->resultsParseMsg .= sprintf('Lab matched account %s. Results Parse for Errors: ', $send_account);
         $tmp = $this->receiveHl7Results($hl7, $info['match'], $ppid, $direction, false, $patientId);
         if ($tmp['mssgs']) {
-            $returnValue->resultsParseMsg .=  print_r($tmp['mssgs'], true);
+            $receiveResultsResponseModel->resultsParseMsg .=  print_r($tmp['mssgs'], true);
         } else {
-            $returnValue->resultsParseMsg .= "None";
+            $receiveResultsResponseModel->resultsParseMsg .= "None";
         }
 
-        $returnValue->resultsParseMsg = $tmp['mssgs'];
+        $receiveResultsResponseModel->resultsParseMsg = $tmp['mssgs'];
         if (empty($tmp['fatal']) && empty($tmp['needmatch'])) {
             // It worked, archive and delete the file.
-            $fh = fopen("$prpath/$file", 'w');
+            $fh = fopen(sprintf('%s/%s', $prpath, $file), 'w');
             if ($fh) {
                 $hl7_crypt = $this->hl7Crypt($hl7);
                 fwrite($fh, $hl7_crypt);
                 fclose($fh);
-                $log .= "Success Saved Results to: $file\n";
+                $log .= sprintf('Success Saved Results to: %s%s', $file, PHP_EOL);
             } else {
-                $returnValue->message = "Success but Couldn't Save File: $file\n";
-                $returnValue->isSuccess = true;
-                $returnValue->message .= xl('Cannot create file') . ' "' . "$prpath/$file" . '"';
-                return $returnValue;
+                $receiveResultsResponseModel->message = sprintf("Success but Couldn't Save File: %s%s", $file, PHP_EOL);
+                $receiveResultsResponseModel->isSuccess = true;
+                $receiveResultsResponseModel->message .= xl('Cannot create file') . ' "' . sprintf('%s/%s', $prpath, $file) . '"';
+                return $receiveResultsResponseModel;
             }
         }
-        $returnValue->isSuccess = true;
-        $returnValue->message .= "Complete";
-        ConnectorApi::sendAck($returnValue->resultsGuid, false, null);
-        return $returnValue;
+
+        $receiveResultsResponseModel->isSuccess = true;
+        $receiveResultsResponseModel->message .= "Complete";
+        ConnectorApi::sendAck($receiveResultsResponseModel->resultsGuid, false, null);
+        return $receiveResultsResponseModel;
     }
-    private function validatePaths($prpath)
+
+    private function validatePaths(string $prpath): string
     {
-        if (!file_exists($prpath)) {
-            if (!mkdir($prpath, 0755, true) && !is_dir($prpath)) {
-                return "Directory " . $prpath . " was not created";
-            }
+        if (!file_exists($prpath) && (!mkdir($prpath, 0755, true) && !is_dir($prpath))) {
+            return "Directory " . $prpath . " was not created";
         }
+
         return "";
     }
-    private function receiveHl7Results(&$hl7, &$matchreq, $lab_id = 0, $direction = 'B', $dryrun = false, $patientId = null)
+
+    private function receiveHl7Results(&$hl7, array &$matchreq, int $lab_id = 0, $direction = 'B', bool $dryrun = false, $patientId = null)
     {
-        $log = '';
         global $rhl7_return;
         global $orphanLog;
         global $lab_npi;
@@ -194,7 +193,7 @@ class ReceiveHl7Results
         $rhl7_segnum = 0;
         $obrPerformingOrganization = '';
 
-        if (substr($hl7, 0, 3) != 'MSH') {
+        if (substr($hl7, 0, 3) !== 'MSH') {
             return $this->rhl7LogMsg(xl('Input does not begin with a MSH segment'), true);
         }
 
@@ -215,7 +214,7 @@ class ReceiveHl7Results
         // Ensoftek: Different labs seem to send different EOLs. Edit HL7 input to a character we know.
         $hl7 = (string)str_replace(array("\r\n", "\r", "\n"), "\r", $hl7);
 
-        $today = time();
+        time();
         $in_message_lab_name = '';
         $in_message_id = '';
         $in_ssn = '';
@@ -249,9 +248,7 @@ class ReceiveHl7Results
         // Delimiters
         $d0 = "\r";
         $d1 = substr($hl7, 3, 1); // typically |
-        $d2 = substr($hl7, 4, 1); // typically ^
-        $d3 = substr($hl7, 5, 1); // typically ~
-        $d4 = substr($hl7, 6, 1); // typically \
+        $d2 = substr($hl7, 4, 1); // typically \
         $d5 = substr($hl7, 7, 1); // typically &
 
         // We'll need the document category IDs for any embedded documents.
@@ -280,12 +277,14 @@ class ReceiveHl7Results
         $segs = explode($d0, $hl7);
 
         foreach ($segs as $seg) {
-            if (empty($seg)) {
+            if ($seg === '' || $seg === '0') {
                 continue;
             }
-            if ($seg == chr(28)) {
+
+            if ($seg === chr(28)) {
                 continue;
             }
+
             // echo "<!-- $dryrun $seg -->\n"; // debugging
 
             ++$rhl7_segnum;
@@ -298,7 +297,7 @@ class ReceiveHl7Results
 
                 $amain = array();
 
-                if ('MDM' == $msgtype && !$dryrun) {
+                if ('MDM' === $msgtype && !$dryrun) {
                     $rc = $this->rhl7FlushMDM(
                         $patient_id,
                         $mdm_docname,
@@ -334,7 +333,7 @@ class ReceiveHl7Results
             } elseif ($a[0] == 'PID') {
                 $context = $a[0];
 
-                if ('MDM' == $msgtype && !$dryrun) {
+                if ('MDM' === $msgtype && !$dryrun) {
                     $rc = $this->rhl7FlushMDM(
                         $patient_id,
                         $mdm_docname,
@@ -347,6 +346,7 @@ class ReceiveHl7Results
                         return $this->rhl7LogMsg($rc);
                     }
                 }
+
                 $porow = false;
                 $pcrow = false;
                 $oprow = false;
@@ -375,6 +375,7 @@ class ReceiveHl7Results
                     default:
                         $in_sex = 'Unassigned';
                 }
+
                 $tmp = explode($d2, $a[5]);
                 $in_lname = $this->rhl7Text($tmp[0]);
                 $in_fname = $this->rhl7Text($tmp[1]);
@@ -383,7 +384,7 @@ class ReceiveHl7Results
                 $patient_id = 0;
 
                 // Patient matching is needed for a results-only interface or MDM message type.
-                if ('R' == $direction || 'MDM' == $msgtype) {
+                if ('R' == $direction || 'MDM' === $msgtype) {
                     $ptarr = array(
                         'ss' => strtoupper($in_ssn),
                         'fname' => $this->ucname($in_fname),
@@ -407,20 +408,18 @@ class ReceiveHl7Results
                         if (isset($patientId)) {
                             // This will be an existing pid, or 0 to specify creating a patient.
                             $patient_id = intval($patientId);
+                        } elseif ($dryrun) {
+                            // Nope, ask the user to match.
+                            $matchreq[$ptstring] = true;
+                            $rhl7_return['needmatch'] = true;
                         } else {
-                            if ($dryrun) {
-                                // Nope, ask the user to match.
-                                $matchreq[$ptstring] = true;
-                                $rhl7_return['needmatch'] = true;
-                            } else {
-                                // Should not happen, but it would be bad to abort now.  Create the patient.
-                                $patient_id = 0;
-                                $this->rhl7LogMsg(
-                                    xl('Unexpected non-match, creating new patient for segment') .
-                                    ' ' . $rhl7_segnum,
-                                    false
-                                );
-                            }
+                            // Should not happen, but it would be bad to abort now.  Create the patient.
+                            $patient_id = 0;
+                            $this->rhl7LogMsg(
+                                xl('Unexpected non-match, creating new patient for segment') .
+                                ' ' . $rhl7_segnum,
+                                false
+                            );
                         }
                     }
 
@@ -436,13 +435,13 @@ class ReceiveHl7Results
             } elseif ('PD1' == $a[0]) {
                 // TBD: Save primary care provider name ($a[4]) somewhere?
             } elseif ('PV1' == $a[0]) {
-                if ('ORU' == $msgtype) {
+                if ('ORU' === $msgtype) {
                     // Save placer encounter number if present.
-                    if ($direction != 'R' && !empty($a[19])) {
+                    if ($direction != 'R' && (isset($a[19]) && ($a[19] !== '' && $a[19] !== '0'))) {
                         $tmp = explode($d2, $a[19]);
                         $in_encounter = intval($tmp[0]);
                     }
-                } elseif ('MDM' == $msgtype) {
+                } elseif ('MDM' === $msgtype) {
                     // For documents we want the ordering provider.
                     // Try Referring Provider first.
                     $oprow = $this->matchProvider(explode($d2, $a[8]));
@@ -451,7 +450,7 @@ class ReceiveHl7Results
                         $oprow = $this->matchProvider(explode($d2, $a[52]));
                     }
                 }
-            } elseif ('ORC' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('ORC' == $a[0] && 'ORU' === $msgtype) {
                 $context = $a[0];
                 $arep = array();
                 $porow = false;
@@ -459,13 +458,13 @@ class ReceiveHl7Results
                 if ($direction != 'R' && $a[2]) {
                     $in_orderid = intval($a[2]);
                 }
-            } elseif ('TXA' == $a[0] && 'MDM' == $msgtype) {
+            } elseif ('TXA' == $a[0] && 'MDM' === $msgtype) {
                 $context = $a[0];
                 $mdm_datetime = $this->rhl7DateTime($a[4]);
                 $mdm_docname = $this->rhl7Text($a[12]);
-            } elseif ($a[0] == 'NTE' && ($context == 'ORC' || $context == 'TXA')) {
+            } elseif ($a[0] == 'NTE' && ($context === 'ORC' || $context === 'TXA')) {
                 // Is this ever used?
-            } elseif ('OBR' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('OBR' == $a[0] && 'ORU' === $msgtype) {
                 $context = $a[0];
                 $arep = array();
                 if ($direction != 'R' && $a[2]) {
@@ -481,11 +480,12 @@ class ReceiveHl7Results
                 if ($lab_npi == "QUEST") {
                     // for profiles that may return dif component codes for profile code.
                     $tmp = explode($d2, $a[20]);
-                    if (!empty($tmp[3]) && !empty($tmp[4])) {
+                    if (isset($tmp[3]) && ($tmp[3] !== '' && $tmp[3] !== '0') && (isset($tmp[4]) && ($tmp[4] !== '' && $tmp[4] !== '0'))) {
                         $in_procedure_code = $tmp[3];
                         $in_procedure_name = $tmp[4];
                     }
                 }
+
                 // Filler identifier is supposed to be unique for each incoming report.
                 $in_filler_id = $a[3];
                 // Child results will have these pointers to their parent.
@@ -493,7 +493,7 @@ class ReceiveHl7Results
                 $in_parent_obxkey = '';
                 $parent_arep = false; // parent report, if any
                 $parent_ares = false; // parent result, if any
-                if (!empty($a[29])) {
+                if (isset($a[29]) && ($a[29] !== '' && $a[29] !== '0')) {
                     // This is a child so there should be a parent.
                     $tmp = explode($d2, $a[29]);
                     $in_parent_obrkey = isset($tmp[1]) ? str_replace($d5, $d2, $tmp[1]) : '';
@@ -531,7 +531,7 @@ class ReceiveHl7Results
                     // We have report date/time in OBR.22.
                     // We do not have an order date.
 
-                    $external_order_id = empty((int)$a[2]) ? $a[3] : $a[2];
+                    $external_order_id = (int)$a[2] === 0 ? $a[3] : $a[2];
                     $porow = false;
 
                     if (!$in_orderid && $external_order_id) {
@@ -566,7 +566,7 @@ class ReceiveHl7Results
                             $provider_id = intval($encrow['provider_id'] ?? '');
                         }
 
-                        if (!$provider_id) {
+                        if ($provider_id === 0) {
                             // Attempt ordering provider matching by name or NPI.
                             $oprow = $this->matchProvider(explode($d2, $a[16]));
                             if (!empty($oprow)) {
@@ -585,6 +585,7 @@ class ReceiveHl7Results
                                     $in_message_lab_name
                                 );
                             }
+
                             // Now create the procedure order.
                             $in_orderid = sqlInsert(
                                 "INSERT INTO procedure_order SET " .
@@ -614,16 +615,18 @@ class ReceiveHl7Results
                             if ($encounter_id && $in_orderid) {
                                 addForm($encounter_id, $form_name, $in_orderid, "procedure_order", $patient_id);
                             }
+
                             // create a note to provider about these actions
                             $txdate = $this->rhl7DateTime($a[7]);
-                            $ptext = "$orphanLog $form_name Order ordered by" .  ($provider_username ?? '') .
+                            $ptext = sprintf('%s %s Order ordered by', $orphanLog, $form_name) .  ($provider_username ?? '') .
                                 " with lab result file " .
-                                "creation date on $datetime_report and specimen collections on $txdate has been created. " .
+                                sprintf('creation date on %s and specimen collections on %s has been created. ', $datetime_report, $txdate) .
                                 "Please review these items to ensure proper resolution of order results.";
                             $dumb = $this->labNotice($patient_id, $ptext, ($provider_username ?? ''), '', $in_message_lab_name);
                         }
                     } // end no $porow
-                } // end results-only
+                }
+                 // end results-only
                 if (empty($porow)) {
                     $porow = sqlQuery(
                         "SELECT * FROM procedure_order WHERE " .
@@ -633,18 +636,18 @@ class ReceiveHl7Results
                     // The order must already exist. Currently we do not handle electronic
                     // results returned for manual orders.
                     if (empty($porow) && !($dryrun && $direction == 'R')) {
-                        return $this->rhl7LogMsg(xl('Procedure order not found') . ": $in_orderid", true);
+                        return $this->rhl7LogMsg(xl('Procedure order not found') . (': ' . $in_orderid), true);
                     }
 
-                    if ($in_encounter) {
+                    if ($in_encounter !== 0) {
                         if ($direction != 'R' && $porow['encounter_id'] != $in_encounter) {
                             return $this->rhl7LogMsg(
                                 xl('Encounter ID') .
                                 " '" . $porow['encounter_id'] . "' " .
                                 xl('for OBR placer order number') .
-                                " '$in_orderid' " .
+                                sprintf(" '%s' ", $in_orderid) .
                                 xl('does not match the PV1 encounter number') .
-                                " '$in_encounter'"
+                                sprintf(" '%s'", $in_encounter)
                             );
                         }
                     } else {
@@ -723,9 +726,11 @@ class ReceiveHl7Results
                         );
                     }
                 }
-                if (!empty($a[21])) {
+
+                if (isset($a[21]) && ($a[21] !== '' && $a[21] !== '0')) {
                     $obrPerformingOrganization = $this->getPerformingOrganizationDetails('', $a[21], '', $d2, $commentdelim);
                 }
+
                 $code_seq_array[$in_procedure_code] = 0 + $pcrow['procedure_order_seq'];
                 $arep = array();
                 $arep['procedure_order_id'] = $in_orderid;
@@ -756,10 +761,10 @@ class ReceiveHl7Results
                 $amain[$i]['rep'] = $arep;
                 $amain[$i]['fid'] = $in_filler_id;
                 $amain[$i]['res'] = array();
-            } elseif ($a[0] == 'NTE' && $context == 'OBR') {
+            } elseif ($a[0] == 'NTE' && $context === 'OBR') {
                 // Append this note to those for the most recent report.
                 $amain[count($amain) - 1]['rep']['report_notes'] .= $this->rhl7Text($a[3], true) . "\n";
-            } elseif ('OBX' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('OBX' == $a[0] && 'ORU' === $msgtype) {
                 $tmp = explode($d2, $a[3]);
                 $result_code = $this->rhl7Text($tmp[0]);
                 $result_text = $this->rhl7Text($tmp[1]);
@@ -767,14 +772,16 @@ class ReceiveHl7Results
                     if (empty($result_code)) {
                         $result_code = $this->rhl7Text($tmp[3]);
                     }
+
                     $result_text = $this->rhl7Text($tmp[4]);
                 }
+
                 // If this is a text result that duplicates the previous result except
                 // for its value, then treat it as an extension of that result's value.
                 $i = count($amain) - 1;
                 $j = count($amain[$i]['res']) - 1;
                 if (
-                    $j >= 0 && $context == 'OBX' && $a[2] == 'TX'
+                    $j >= 0 && $context === 'OBX' && $a[2] == 'TX'
                     && $amain[$i]['res'][$j]['result_data_type'] == 'L'
                     && $amain[$i]['res'][$j]['result_code'] == $result_code
                     && $amain[$i]['res'][$j]['date'] == $this->rhl7DateTime($a[14] ?? '')
@@ -806,6 +813,7 @@ class ReceiveHl7Results
                         if ($data === false) {
                             return $this->rhl7LogMsg(xl('Invalid encapsulated data encoding type') . ': ' . $tmp[3]);
                         }
+
                         if (!$dryrun) {
                             $d = new Document();
                             $rc = $d->createDocument(
@@ -821,7 +829,8 @@ class ReceiveHl7Results
 
                             $ares['document_id'] = $d->get_id();
                         }
-                    } // @todo suspect below!!
+                    }
+                     // @todo suspect below!!
                     $ares['date'] = $arep['date_report']; // $arep is left over from the OBR logic.
                     // Append this result to those for the most recent report.
                     // Note the 'procedure_report_id' item is not yet present.
@@ -835,11 +844,8 @@ class ReceiveHl7Results
                     // The first line of comments is reserved for such things.
                     $ares['result_data_type'] = 'L';
                     $ares['result'] = '';
-                    if (empty($a[5])) {
-                        $vTx = $this->rhl7Text(str_replace('^', ' ', $a[3]));
-                    } else {
-                        $vTx = $this->rhl7Text($a[5]);
-                    }
+                    $vTx = empty($a[5]) ? $this->rhl7Text(str_replace('^', ' ', $a[3])) : $this->rhl7Text($a[5]);
+
                     $ares['comments'] = $vTx . $commentdelim;
                 } else {
                     $ares['result'] = $this->rhl7Text($a[5]);
@@ -869,6 +875,7 @@ class ReceiveHl7Results
                 } else {
                     $performingOrganization = $obrPerformingOrganization;
                 }
+
                 if (!empty($performingOrganization)) {
                     $ares['facility'] .= $performingOrganization . $commentdelim;
                 }
@@ -886,7 +893,7 @@ class ReceiveHl7Results
                 // Append this result to those for the most recent report.
                 // Note the 'procedure_report_id' item is not yet present.
                 $amain[count($amain) - 1]['res'][] = $ares;
-            } elseif ('OBX' == $a[0] && 'MDM' == $msgtype) {
+            } elseif ('OBX' == $a[0] && 'MDM' === $msgtype) {
                 $context = $a[0];
                 if ($a[2] == 'TX') {
                     if ($mdm_text !== '') {
@@ -897,7 +904,7 @@ class ReceiveHl7Results
                 } else {
                     return $this->rhl7LogMsg(xl('Unsupported MDM OBX result type') . ': ' . $a[2]);
                 }
-            } elseif ('ZEF' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('ZEF' == $a[0] && 'ORU' === $msgtype) {
                 // ZEF segment is treated like an OBX with an embedded Base64-encoded PDF.
                 $context = 'OBX';
                 $ares = array();
@@ -931,25 +938,25 @@ class ReceiveHl7Results
                 // Append this result to those for the most recent report.
                 // Note the 'procedure_report_id' item is not yet present.
                 $amain[count($amain) - 1]['res'][] = $ares;
-            } elseif ('NTE' == $a[0] && 'OBX' == $context && 'ORU' == $msgtype) {
+            } elseif ('NTE' == $a[0] && 'OBX' === $context && 'ORU' === $msgtype) {
                 // Append this note to the most recent result item's comments.
                 $alast = count($amain) - 1;
                 $rlast = count($amain[$alast]['res']) - 1;
                 $amain[$alast]['res'][$rlast]['comments'] .= $this->rhl7Text($a[3] ?? '', true) . $commentdelim;
                 // Ensoftek: Get data from SPM segment for specimen.
                 // SPM segment always occurs after the OBX segment.
-            } elseif ('SPM' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('SPM' == $a[0] && 'ORU' === $msgtype) {
                 $this->rhl7UpdateReportWithSpecimen($amain, $a, $d2);
                 // Add code here for any other segment types that may be present.
                 // Ensoftek: Get data from SPM segment for specimen. Comes in with MU2 samples, but can be ignored.
-            } elseif ('TQ1' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('TQ1' == $a[0] && 'ORU' === $msgtype) {
                 // Ignore and do nothing.
-            } elseif ($a[0] == 'NTE' && 'PID' == $context) {
+            } elseif ($a[0] == 'NTE' && 'PID' === $context) {
                 // will get orderid on save.
                 if (!empty($amain[0])) {
                     $amain[0]['rep']['report_notes'] .= $this->rhl7Text($a[3], true) . "\n";
                 }
-            } elseif ('ZPS' == $a[0] && 'ORU' == $msgtype) {
+            } elseif ('ZPS' == $a[0] && 'ORU' === $msgtype) {
                 //global $ares;
                 $performingOrganization = $this->parseZPS($a);
                 if (!empty($performingOrganization)) {
@@ -957,17 +964,17 @@ class ReceiveHl7Results
                     $amain[$alast]['res'][0]['facility'] .= $performingOrganization . $commentdelim;
                 }
             } else {
-                return $this->rhl7LogMsg(xl('Segment name') . " '{$a[0]}' " . xl('is misplaced or unknown'));
+                return $this->rhl7LogMsg(xl('Segment name') . sprintf(" '%s' ", $a[0]) . xl('is misplaced or unknown'));
             }
         }
 
         // Write all reports and their results to the database.
         // This will do nothing if a dry run or MDM message type.
-        if ('ORU' == $msgtype && !$dryrun) {
+        if ('ORU' === $msgtype && !$dryrun) {
             $this->rhl7FlushMain($amain, $commentdelim);
         }
 
-        if ('MDM' == $msgtype && !$dryrun) {
+        if ('MDM' === $msgtype && !$dryrun) {
             // Write documents.
             $rc = $this->rhl7FlushMDM(
                 $patient_id,
@@ -991,11 +998,12 @@ class ReceiveHl7Results
      * @param  array $seg MSH seg identifying a provider.
      * @return mixed        TRUE, or FALSE if no match.
      */
-    private function matchLab(&$hl7, $send_acct, $lab_acct = '', $lab_app = '', $lab_npi = '')
+    private function matchLab(string|bool &$hl7, $send_acct, $lab_acct = '', $lab_app = '', $lab_npi = '')
     {
-        if (empty($hl7)) {
+        if ($hl7 === '' || $hl7 === '0' || $hl7 === false) {
             return false;
         }
+
         $d0 = "\r";
         $d1 = substr($hl7, 3, 1); // typically |
 
@@ -1008,33 +1016,28 @@ class ReceiveHl7Results
 
         unset($segs);
         // CMS has deactivated NPI 1891752424, not sure who AMMON is
-        if ($lab_npi == '1891752424' || strtoupper($lab_npi) == 'AMMON') {
-            if (strtoupper(trim($a[5])) == strtoupper(trim($send_acct))) {
+        if ($lab_npi == '1891752424' || strtoupper($lab_npi) === 'AMMON') {
+            if (strtoupper(trim($a[5])) === strtoupper(trim($send_acct))) {
                 $srch = '|' . strtoupper(trim($send_acct)) . '-';
                 $hl7 = str_replace($srch, "|", $hl7);
                 return true;
             }
+
             return false;
         }
-
-        if (
-            strtoupper(trim($a[5])) == strtoupper(trim($send_acct))
-            || strtoupper(trim($a[3])) == strtoupper(trim($lab_acct))
-            || strtoupper(trim($a[2])) == strtoupper(trim($lab_app))
-        ) {
-            return true;
-        }
-        return false;
+        return strtoupper(trim($a[5])) === strtoupper(trim($send_acct))
+        || strtoupper(trim($a[3])) === strtoupper(trim($lab_acct))
+        || strtoupper(trim($a[2])) === strtoupper(trim($lab_app));
     }
 
-    private function parseZPS($segment)
+    private function parseZPS($segment): string
     {
         $composites = $segment; //explode('|', $segment);
 
         // Try to parse composites
         foreach ($composites as $key => $composite) {
             // If it is a composite ...
-            if (!(strpos($composite, '^') === false)) {
+            if (strpos($composite, '^') !== false) {
                 $composites[$key] = explode('^', $composite);
             }
         }
@@ -1057,12 +1060,11 @@ class ReceiveHl7Results
         $labdir = $zps[0]['lab_director'][0] . " " . $zps[0]['lab_director'][1] . ", " . $zps[0]['lab_director'][2];
         $address = $zps[0]['lab_address'][0] . "\n" . $zps[0]['lab_address'][2] . " " . $zps[0]['lab_address'][3] .
             " " . $zps[0]['lab_address'][4];
-        $r = $zps[0]['lab_name'] . "\n" . $address . "\n" . $zps[0]['lab_phone'] . "\n" . $labdir . "\n";
-        return $r;
+        return $zps[0]['lab_name'] . "\n" . $address . "\n" . $zps[0]['lab_phone'] . "\n" . $labdir . "\n";
     }
 
 
-    private function rhl7LogMsg($msg, $fatal = true)
+    private function rhl7LogMsg(string $msg, bool $fatal = true)
     {
         global $rhl7_return;
         if ($fatal) {
@@ -1082,21 +1084,21 @@ class ReceiveHl7Results
         return $rhl7_return;
     }
 
-    private function rhl7InsertRow(&$arr, $tablename)
+    private function rhl7InsertRow(&$arr, string $tablename)
     {
         if (empty($arr)) {
-            return;
+            return null;
         }
 
         // echo "<!-- ";   // debugging
         // print_r($arr);
         // echo " -->\n";
 
-        $query = "INSERT INTO $tablename SET";
+        $query = sprintf('INSERT INTO %s SET', $tablename);
         $binds = array();
         $sep = '';
         foreach ($arr as $key => $value) {
-            $query .= "$sep `$key` = ?";
+            $query .= sprintf('%s `%s` = ?', $sep, $key);
             $sep = ',';
             $binds[] = $value;
         }
@@ -1106,7 +1108,7 @@ class ReceiveHl7Results
     }
 
     // Write all of the accumulated reports and their results.
-    private function rhl7FlushMain(&$amain, $commentdelim = "\n")
+    private function rhl7FlushMain(&$amain, string $commentdelim = "\n"): void
     {
         foreach ($amain as $arr) {
             if (!isset($amain[0]['rep']['procedure_order_id'])) {
@@ -1117,6 +1119,7 @@ class ReceiveHl7Results
                     unset($amain[0]);
                 }
             }
+
             $procedure_report_id = $this->rhl7InsertRow($arr['rep'], 'procedure_report');
             foreach ($arr['res'] as $ares) {
                 $ares['procedure_report_id'] = $procedure_report_id;
@@ -1138,22 +1141,22 @@ class ReceiveHl7Results
 
     // Write the MDM document if appropriate.
     //
-    private function rhl7FlushMDM($patient_id, $mdm_docname, $mdm_datetime, $mdm_text, $mdm_category_id, $provider)
+    private function rhl7FlushMDM($patient_id, string $mdm_docname, $mdm_datetime, string $mdm_text, $mdm_category_id, ?string $provider)
     {
         if ($patient_id) {
-            if (!empty($mdm_docname)) {
+            if ($mdm_docname !== '' && $mdm_docname !== '0') {
                 $mdm_docname .= '_';
             }
 
             $mdm_docname .= preg_replace('/[^0-9]/', '', $mdm_datetime);
             $filename = $mdm_docname . '.txt';
-            $d = new Document();
-            $rc = $d->createDocument($patient_id, $mdm_category_id, $filename, 'text/plain', $mdm_text);
+            $document = new Document();
+            $rc = $document->createDocument($patient_id, $mdm_category_id, $filename, 'text/plain', $mdm_text);
             if (!$rc) {
-                $this->rhl7LogMsg(xl('Document created') . ": $filename", false);
+                $this->rhl7LogMsg(xl('Document created') . (': ' . $filename), false);
                 if ($provider) {
-                    $d->postPatientNote($provider, $mdm_category_id, xl('Electronic document received'));
-                    $this->rhl7LogMsg(xl('Notification sent to') . ": $provider", false);
+                    $document->postPatientNote($provider, $mdm_category_id, xl('Electronic document received'));
+                    $this->rhl7LogMsg(xl('Notification sent to') . (': ' . $provider), false);
                 } else {
                     $this->rhl7LogMsg(xl('No provider was matched'), false);
                 }
@@ -1165,7 +1168,7 @@ class ReceiveHl7Results
         return '';
     }
 
-    private function rhl7Text($s, $allow_newlines = false)
+    private function rhl7Text($s, bool $allow_newlines = false): string|array
     {
         $s = str_replace('\\S\\', '^', $s);
         $s = str_replace('\\F\\', '|', $s);
@@ -1173,16 +1176,11 @@ class ReceiveHl7Results
         $s = str_replace('\\T\\', '&', $s);
         $s = str_replace('\\X0d\\', "\r", $s);
         $s = str_replace('\\E\\', '\\', $s);
-        if ($allow_newlines) {
-            $s = str_replace('\\.br\\', "\n", $s);
-        } else {
-            $s = str_replace('\\.br\\', '~', $s);
-        }
 
-        return $s;
+        return $allow_newlines ? str_replace('\\.br\\', "\n", $s) : str_replace('\\.br\\', '~', $s);
     }
 
-    private function rhl7DateTime($s)
+    private function rhl7DateTime($s): string
     {
         // Remove UTC offset if present.
         if (preg_match('/^([0-9.]+)[+-]/', $s, $tmp)) {
@@ -1207,7 +1205,7 @@ class ReceiveHl7Results
         return $ret;
     }
 
-    private function rhl7DateTimeZone($s)
+    private function rhl7DateTimeZone(string $s): string
     {
         // UTC offset if present always begins with "+" or "-".
         if (preg_match('/^[0-9.]+([+-].*)$/', $s, $tmp)) {
@@ -1217,59 +1215,59 @@ class ReceiveHl7Results
         return '';
     }
 
-    private function rhl7Date($s)
+    private function rhl7Date(string $s): string
     {
         return substr($this->rhl7DateTime($s), 0, 10);
     }
 
-    private function rhl7Abnormal($s)
+    private function rhl7Abnormal(string $s)
     {
-        if ($s == '') {
+        if ($s === '') {
             return 'no';
         }
 
-        if ($s == 'N') {
+        if ($s === 'N') {
             return 'no';
         }
 
-        if ($s == 'A') {
+        if ($s === 'A') {
             return 'yes';
         }
 
-        if ($s == 'H') {
+        if ($s === 'H') {
             return 'high';
         }
 
-        if ($s == 'L') {
+        if ($s === 'L') {
             return 'low';
         }
 
-        if ($s == 'HH') {
+        if ($s === 'HH') {
             return 'vhigh';
         }
 
-        if ($s == 'LL') {
+        if ($s === 'LL') {
             return 'vlow';
         }
 
         return $this->rhl7Text($s);
     }
 
-    private function rhl7ReportStatus($s)
+    private function rhl7ReportStatus(string $s)
     {
-        if ($s == 'F') {
+        if ($s === 'F') {
             return 'final';
         }
 
-        if ($s == 'P') {
+        if ($s === 'P') {
             return 'prelim';
         }
 
-        if ($s == 'C') {
+        if ($s === 'C') {
             return 'correct';
         }
 
-        if ($s == 'X') {
+        if ($s === 'X') {
             return 'error';
         }
 
@@ -1285,25 +1283,25 @@ class ReceiveHl7Results
      * @param  string $fileext The lower case extension.
      * @return string            MIME type.
      */
-    private function rhl7MimeType($fileext)
+    private function rhl7MimeType(string $fileext): string
     {
-        if ($fileext == 'pdf') {
+        if ($fileext === 'pdf') {
             return 'application/pdf';
         }
 
-        if ($fileext == 'doc') {
+        if ($fileext === 'doc') {
             return 'application/msword';
         }
 
-        if ($fileext == 'rtf') {
+        if ($fileext === 'rtf') {
             return 'application/rtf';
         }
 
-        if ($fileext == 'txt') {
+        if ($fileext === 'txt') {
             return 'text/plain';
         }
 
-        if ($fileext == 'zip') {
+        if ($fileext === 'zip') {
             return 'application/zip';
         }
 
@@ -1317,17 +1315,17 @@ class ReceiveHl7Results
      * @param  string &$src    Encoded data  from OBX[5][4].
      * @return string            Decoded data, or FALSE if error.
      */
-    private function rhl7DecodeData($enctype, &$src)
+    private function rhl7DecodeData(string $enctype, string &$src)
     {
-        if ($enctype == 'Base64') {
+        if ($enctype === 'Base64') {
             return base64_decode($src);
         }
 
-        if ($enctype == 'A') {
+        if ($enctype === 'A') {
             return $this->rhl7Text($src);
         }
 
-        if ($enctype == 'Hex') {
+        if ($enctype === 'Hex') {
             $data = '';
             for ($i = 0; $i < strlen($src) - 1; $i += 2) {
                 $data .= chr(hexdec($src[$i] . $src[$i + 1]));
@@ -1339,7 +1337,7 @@ class ReceiveHl7Results
         return false;
     }
 
-    private function rhl7CWE($s, $componentdelimiter)
+    private function rhl7CWE($s, $componentdelimiter): string
     {
         $out = '';
         if ($s === '') {
@@ -1347,7 +1345,7 @@ class ReceiveHl7Results
         }
 
         $arr = explode($componentdelimiter, $s);
-        if (!empty($arr[8])) {
+        if (isset($arr[8]) && ($arr[8] !== '' && $arr[8] !== '0')) {
             $out = $arr[8];
         } else {
             $out = $arr[0];
@@ -1364,10 +1362,8 @@ class ReceiveHl7Results
      *
      * @param string $specimen Encoding type from SPM.
      */
-    private function rhl7UpdateReportWithSpecimen(&$amain, $specimen, $d2)
+    private function rhl7UpdateReportWithSpecimen(&$amain, $specimen, string $d2): void
     {
-        $specimen_display = '';
-
         // SPM4: Specimen Type: Example: 119297000^BLD^SCT^BldSpc^Blood^99USA^^^Blood Specimen
         $specimen_display = $this->rhl7CWE($specimen[4], $d2);
 
@@ -1395,38 +1391,39 @@ class ReceiveHl7Results
      * @param string $obx23 Encoding type from OBX25.
      * @param string $obx23 New line character.
      */
-    private function getPerformingOrganizationDetails($obx23, $obx24, $obx25, $componentdelimiter, $commentdelim)
+    private function getPerformingOrganizationDetails(string $obx23, string $obx24, string $obx25, string $componentdelimiter, string $commentdelim)
     {
         $s = null;
 
-        if (!empty($obx23) || !empty($obx24) || !empty($obx25)) {
+        if ($obx23 !== '' && $obx23 !== '0' || $obx24 !== '' && $obx24 !== '0' || $obx25 !== '' && $obx25 !== '0') {
             // Organization Name
             // OBX23 Example: "Century Hospital^^^^^NIST-AA-1&2.16.840.1.113883.3.72.5.30.1&ISO^XX^^^987"
             $obx23_segs = explode($componentdelimiter, $obx23);
-            if (!empty($obx23_segs[0])) {
+            if (isset($obx23_segs[0]) && ($obx23_segs[0] !== '' && $obx23_segs[0] !== '0')) {
                 $s .= $obx23_segs[0] . $commentdelim;
             }
 
             // Medical Director
             // OBX25 Example: "2343242^Knowsalot^Phil^J.^III^Dr.^^^NIST-AA-1&2.16.840.1.113883.3.72.5.30.1&ISO^L^^^DNSPM"
             //             Dr. Phil Knowsalot J. III
-            if (!empty($obx25)) {
+            if ($obx25 !== '' && $obx25 !== '0') {
                 $obx25_segs = explode($componentdelimiter, $obx25);
-                $s .= "$obx25_segs[5] $obx25_segs[2] $obx25_segs[1] $obx25_segs[3] $obx25_segs[4]" . $commentdelim;
+                $s .= sprintf('%s %s %s %s %s', $obx25_segs[5], $obx25_segs[2], $obx25_segs[1], $obx25_segs[3], $obx25_segs[4]) . $commentdelim;
             }
 
             // Organization Address
             // OBX24 Example: "2070 Test Park^^Los Angeles^CA^90067^USA^B^^06037"
-            if (!empty($obx24)) {
+            if ($obx24 !== '' && $obx24 !== '0') {
                 $obx24 = str_replace('~', ' ', $obx24);
                 $obx24_segs = explode($componentdelimiter, $obx24);
-                $s .= "$obx24_segs[0]$commentdelim$obx24_segs[1]$commentdelim$obx24_segs[2], " .
-                    "$obx24_segs[3] $obx24_segs[4]$commentdelim$obx24_segs[5]$commentdelim";
-                if (!empty($obx24_segs[6])) {
-                    $s .= "$obx24_segs[6]$commentdelim";
+                $s .= sprintf('%s%s%s%s%s, ', $obx24_segs[0], $commentdelim, $obx24_segs[1], $commentdelim, $obx24_segs[2]) .
+                    sprintf('%s %s%s%s%s', $obx24_segs[3], $obx24_segs[4], $commentdelim, $obx24_segs[5], $commentdelim);
+                if (isset($obx24_segs[6]) && ($obx24_segs[6] !== '' && $obx24_segs[6] !== '0')) {
+                    $s .= $obx24_segs[6] . $commentdelim;
                 }
-                if (!empty($obx24_segs[8])) {
-                    $s .= "County/Parish Code: $obx24_segs[8]$commentdelim";
+
+                if (isset($obx24_segs[8]) && ($obx24_segs[8] !== '' && $obx24_segs[8] !== '0')) {
+                    $s .= sprintf('County/Parish Code: %s%s', $obx24_segs[8], $commentdelim);
                 }
             }
         }
@@ -1441,16 +1438,15 @@ class ReceiveHl7Results
      *   0  No patient is close to a match.
      *  -1  It's not clear if there is a match.
      */
-    private function matchPatient($ptarr)
+    private function matchPatient(array $ptarr): int
     {
         $in_ss = str_replace('-', '', $ptarr['ss']);
         $in_fname = $ptarr['fname'];
         $in_lname = $ptarr['lname'];
-        $in_dob = $ptarr['DOB'];
-        $in_sex = strtoupper($ptarr['sex']) == 'M' ? 'Male' : 'Female'; // AND sex IS NOT NULL AND sex = ?
+        $in_dob = $ptarr['DOB']; // AND sex IS NOT NULL AND sex = ?
 
         $patient_id = 0;
-        $res = sqlStatement(
+        $recordset = sqlStatement(
             "SELECT pid FROM patient_data WHERE " .
             "((ss IS NULL OR ss = '' OR '' = ?) AND " .
             "fname IS NOT NULL AND fname != '' AND fname = ? AND " .
@@ -1463,12 +1459,12 @@ class ReceiveHl7Results
             "ORDER BY ss DESC, pid DESC LIMIT 2",
             array($in_ss, $in_fname, $in_lname, $in_dob, $in_ss, $in_fname, $in_lname, $in_dob)
         );
-        if (sqlNumRows($res) > 1) {
+        if (sqlNumRows($recordset) > 1) {
             // Multiple matches, so ambiguous.
             $patient_id = -1;
-        } elseif (sqlNumRows($res) == 1) {
+        } elseif (sqlNumRows($recordset) == 1) {
             // Got exactly one match, so use it.
-            $tmp = sqlFetchArray($res);
+            $tmp = sqlFetchArray($recordset);
             $patient_id = intval($tmp['pid']);
         } else {
             // No match good enough, figure out if there's enough ambiguity to ask the user.
@@ -1489,7 +1485,7 @@ class ReceiveHl7Results
         return $patient_id;
     }
 
-    private function lookupTestCode($labid, $procedure_code)
+    private function lookupTestCode($labid, string $procedure_code)
     {
 
         $query = "SELECT procedure_type_id, procedure_code, procedure_type, name, transport " .
@@ -1498,13 +1494,12 @@ class ReceiveHl7Results
             "(procedure_type LIKE 'ord' OR procedure_type LIKE 'pro') AND " .
             "activity = 1 AND procedure_code = ? " .
             "LIMIT 1";
-        $res = sqlQuery($query, array($labid, $procedure_code));
 
-        return $res;
+        return sqlQuery($query, array($labid, $procedure_code));
     }
 
     // create encounter
-    private function createEncounter($pid, $provider_id, $order_date, $lab_name)
+    private function createEncounter($pid, int $provider_id, $order_date, $lab_name)
     {
         global $orphanLog;
         $conn = $GLOBALS['adodb']['db'];
@@ -1536,15 +1531,15 @@ class ReceiveHl7Results
             date('Y-m-d'),
             'SYSTEM'
         );
-        $orphanLog .= "New Encounter: $encounter created. ";
+        $orphanLog .= sprintf('New Encounter: %s created. ', $encounter);
         return $encounter ?: 0;
     }
 
     // send a message (pnote) to provider to inform about orders creation
-    private function labNotice($pid, $newtext, $assigned_to = 'admin', $datetime = '', $labname = '')
+    private function labNotice($pid, string $newtext, $assigned_to = 'admin', string $datetime = '', string $labname = '')
     {
         if ($pid > 999999990) {
-            return;
+            return null;
         }
 
         $message_sender = $_SESSION['authUser'];
@@ -1553,13 +1548,14 @@ class ReceiveHl7Results
         $activity = '1';
         $title = 'Lab Results';
         $message_status = 'New';
-        if (empty($datetime)) {
+        if ($datetime === '' || $datetime === '0') {
             $datetime = date('Y-m-d H:i:s');
         }
 
         if (!$assigned_to) {
             $assigned_to = $_SESSION['authUser'];
         }
+
         $notify = $assigned_to; //@todo get user lookup
 
         $body = date('Y-m-d H:i') . ' (' . $labname . ' to ' . $notify . ') ' . $newtext;
@@ -1581,6 +1577,7 @@ class ReceiveHl7Results
             )
         );
     }
+
     /**
      * Look for a local provider matching the given XCN field from some segment.
      *
@@ -1592,8 +1589,8 @@ class ReceiveHl7Results
         if (empty($arr)) {
             return false;
         }
-
-        $op_lname = $op_fname = '';
+        $op_lname = '';
+        $op_fname = '';
         $op_npi = preg_replace('/[^0-9]/', '', $arr[0]);
         if (!empty($arr[1])) {
             $op_lname = $arr[1];
@@ -1619,7 +1616,7 @@ class ReceiveHl7Results
 
             $oprow = sqlQuery(
                 "SELECT id, username FROM users WHERE " .
-                "username IS NOT NULL AND username != '' AND $where " .
+                sprintf("username IS NOT NULL AND username != '' AND %s ", $where) .
                 "ORDER BY active DESC, authorized DESC, username, id LIMIT 1",
                 $qarr
             );
@@ -1631,22 +1628,23 @@ class ReceiveHl7Results
         return false;
     }
 
-    private function ucname($string)
+    private function ucname($string): string
     {
         $string = ucwords(strtolower($string));
 
-        foreach (array('-', '\'') as $delimiter) {
+        foreach (array('-', "'") as $delimiter) {
             if (strpos($string, $delimiter) !== false) {
                 $string = implode($delimiter, array_map('ucfirst', explode($delimiter, $string)));
             }
         }
+
         return $string;
     }
 
     /**
      * Create a patient using whatever patient_data attributes are provided.
      */
-    private function createSkeletonPatient($patient_data)
+    private function createSkeletonPatient(array $patient_data): int
     {
         global $orphanLog;
         $employer_data = array();
@@ -1659,10 +1657,11 @@ class ReceiveHl7Results
         updatePatientData($ptid, $patient_data, true);
         updateEmployerData($ptid, $employer_data, true);
         newHistoryData($ptid);
-        $tmp = "Pid: $ptid " . $patient_data['fname'] . ' ' . $patient_data['lname'] . ' ' . $patient_data['DOB'];
-        $orphanLog .= "New Patient for $tmp created. ";
+        $tmp = sprintf('Pid: %d ', $ptid) . $patient_data['fname'] . ' ' . $patient_data['lname'] . ' ' . $patient_data['DOB'];
+        $orphanLog .= sprintf('New Patient for %s created. ', $tmp);
         return $ptid;
     }
+
     /**
      * Encrypt the content of the hl7 file if the global is turned on.
      *

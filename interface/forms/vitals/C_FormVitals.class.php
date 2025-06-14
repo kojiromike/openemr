@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * vitals C_FormVitals.php
  *
@@ -30,13 +32,21 @@ class C_FormVitals
      */
     public $vitals;
 
-    var $template_dir;
-    var $form_id;
-    var $units_of_measurement;
-    var $template_mod;
-    var $context;
+    /**
+     * @var string
+     */
+    public $template_dir;
+
+    public $form_id;
+
+    public $units_of_measurement;
+
+    public $template_mod;
+
+    public $context;
 
     const OMIT_CIRCUMFERENCES_NO = 0;
+
     const OMIT_CIRCUMFERENCES_YES = 1;
 
     /**
@@ -53,15 +63,16 @@ class C_FormVitals
         $this->context = $context;
     }
 
-    public function setFormId($form_id)
+    public function setFormId($form_id): void
     {
         $this->form_id = $form_id;
     }
 
-    public function default_action()
+    public function default_action(): void
     {
         $vitalsService = new VitalsService();
         $vitalsService->setShouldConvertVitalMeasurementsFlag(false);
+
         $form_id = $this->form_id;
 
         $vitals = new FormVitals();
@@ -72,6 +83,7 @@ class C_FormVitals
             if (isset($vitalsArray['uuid'])) {
                 $vitalsArray['uuid'] = UuidRegistry::uuidToBytes($vitalsArray['uuid']);
             }
+
             $vitals->populate_array($vitalsArray);
         } else {
             $this->populate_session_user_information($vitals);
@@ -86,14 +98,14 @@ class C_FormVitals
         // eventually we want this just to use the service search date but we will move this here.
         $records = $vitalsService->getVitalsHistoryForPatient($GLOBALS['pid'], $form_id);
 
-        foreach ($records as $result) {
+        foreach ($records as $record) {
             $historicalVitals = new FormVitals();
             // TODO: @brady.miller note we dropped the inconsistency of displaying historical usa weights in lbs&oz and entering them in via decimal format.
             // Everything now is consistent decimal format, I can put it back but its a bit of work to treat weight special over everything else and seems
             // odd the inconsistency
-            $historicalVitals->populate_array($result);
+            $historicalVitals->populate_array($record);
             $results[$i] = $historicalVitals;
-            $i++;
+            ++$i;
         }
 
         // For the demographics page and $form_id === 0
@@ -104,7 +116,7 @@ class C_FormVitals
         ) {
             $vitals_history_count = count($results);
             $vitals = $results[$vitals_history_count];
-            if (isset($vitals->uuid)) {
+            if ($vitals->uuid !== null) {
                 $vitals->uuid = UuidRegistry::uuidToBytes($vitals->uuid);
             }
         }
@@ -359,12 +371,15 @@ class C_FormVitals
             ,'show_pediatric_fields' => ($patient_age <= 20 || (preg_match('/month/', $patient_age)))
             ,'has_id' => $form_id
         ];
-        $twig = (new TwigContainer($this->template_dir, $GLOBALS['kernel']))->getTwig();
+        $twigEnvironment = (new TwigContainer($this->template_dir, $GLOBALS['kernel']))->getTwig();
 
-        echo $twig->render("vitals.html.twig", $data);
+        echo $twigEnvironment->render("vitals.html.twig", $data);
     }
 
-    private function get_interpretation_list_options()
+    /**
+     * @return list<array{title: mixed, id: mixed, code: mixed, is_default: bool}>
+     */
+    private function get_interpretation_list_options(): array
     {
         $listService = new ListService();
         $options = $listService->getOptionsByListName(FormVitals::LIST_OPTION_VITALS_INTERPRETATION);
@@ -378,19 +393,24 @@ class C_FormVitals
             ];
             $orderedList[] = $item;
         }
+
         return $orderedList;
     }
 
-    private function get_interpretation_list_as_hash()
+    /**
+     * @return mixed[]
+     */
+    private function get_interpretation_list_as_hash(): array
     {
         $hashList = [];
-        foreach ($this->interpretationsList as $option) {
-            $hashList[$option['id']] = $option;
+        foreach ($this->interpretationsList as $interpretationList) {
+            $hashList[$interpretationList['id']] = $interpretationList;
         }
+
         return $hashList;
     }
 
-    public function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -437,10 +457,9 @@ class C_FormVitals
         $this->populate_object($this->vitals);
 
         $vitalsService->saveVitalsForm($this->vitals);
-        return;
     }
 
-    public function populate_object(&$obj)
+    public function populate_object(&$obj): void
     {
         if (!is_object($obj)) {
             throw new \InvalidArgumentException("populate_object called with invalid argument");
@@ -515,6 +534,7 @@ class C_FormVitals
                 if (empty($value) && empty($_POST['reasonCodeStatus'][$column]) && empty($details->get_id())) {
                     continue; // nothing to do here if we don't have a code and a status
                 }
+
                 if (empty($value) || empty($_POST['reasonCodeStatus'][$column])) {
                     $details->clear_reason();
                 } else {
@@ -522,6 +542,7 @@ class C_FormVitals
                     $details->set_reason_status($_POST['reasonCodeStatus'][$column] ?? '');
                     $details->set_reason_description($_POST['reasonCodeText'][$column] ?? '');
                 }
+
                 $details->set_vitals_column($column);
                 $detailsToUpdate[$column] = $details;
             }
@@ -532,9 +553,9 @@ class C_FormVitals
         }
     }
 
-    private function populate_session_user_information(FormVitals $vitals)
+    private function populate_session_user_information(FormVitals $formVitals): void
     {
-        $vitals->set_groupname($_SESSION['authProvider']);
-        $vitals->set_user($_SESSION['authUser']);
+        $formVitals->set_groupname($_SESSION['authProvider']);
+        $formVitals->set_user($_SESSION['authUser']);
     }
 }

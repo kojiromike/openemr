@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Billing Report Program
  *
@@ -18,10 +20,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once "../globals.php";
-require_once "../../custom/code_types.inc.php";
-require_once "$srcdir/patient.inc.php";
-require_once "$srcdir/options.inc.php";
+require_once __DIR__ . "/../globals.php";
+require_once __DIR__ . "/../../custom/code_types.inc.php";
+require_once $srcdir . '/patient.inc.php';
+require_once $srcdir . '/options.inc.php';
 
 use OpenEMR\Billing\BillingReport;
 use OpenEMR\Billing\BillingUtilities;
@@ -37,7 +39,7 @@ if (!AclMain::aclCheckCore('acct', 'eob', '', 'write') && !AclMain::aclCheckCore
     exit;
 }
 
-$EXPORT_INC = "$webserver_root/custom/BillingExport.php";
+$EXPORT_INC = $webserver_root . '/custom/BillingExport.php';
 // echo $GLOBALS['daysheet_provider_totals'];
 
 $daysheet = false;
@@ -519,10 +521,10 @@ $partners = $x->_utility_array($x->x12_partner_factory());
             return true;
         }
     </script>
-    <?php require_once "$srcdir/../interface/reports/report.script.php"; ?>
+    <?php require_once $srcdir . '/../interface/reports/report.script.php'; ?>
     <!-- Criteria Section common javascript page-->
     <!-- =============Included for Insurance ajax criteria==== -->
-    <?php require_once "{$GLOBALS['srcdir']}/ajax/payment_ajax_jav.inc.php"; ?>
+    <?php require_once $GLOBALS['srcdir'] . '/ajax/payment_ajax_jav.inc.php'; ?>
     <style>
         #ajax_div_insurance {
             position: absolute;
@@ -638,7 +640,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             xl("User")
                         );
                         $TPSCriteriaKeyMaster = "form_encounter.date,billing.date,claims.process_time,claims.target,patient_data.fname," . "form_encounter.pid,claims.payer_id,form_encounter.encounter,insurance_data.provider,billing.id,billing.billed," . "billing.authorized,form_encounter.last_level_billed,billing.x12_partner_id,billing.user";
-                        $TPSCriteriaDataTypeMaster = "datetime,datetime,datetime,radio,text_like," . "text,include,text,radio,radio,radio," . "radio_like,radio,query_drop_down,text";
+                        $TPSCriteriaDataTypeMaster = 'datetime,datetime,datetime,radio,text_like,text,include,text,radio,radio,radio,' . "radio_like,radio,query_drop_down,text";
                     } else {
                         $TPSCriteriaDisplayMaster = array(
                             xl("Date of Service"),
@@ -657,7 +659,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             xl("X12 Partner")
                         );
                         $TPSCriteriaKeyMaster = "form_encounter.date,billing.date,claims.process_time,claims.target,patient_data.fname," . "form_encounter.pid,claims.payer_id,form_encounter.encounter,insurance_data.provider,billing.id,billing.billed," . "billing.authorized,form_encounter.last_level_billed,billing.x12_partner_id";
-                        $TPSCriteriaDataTypeMaster = "datetime,datetime,datetime,radio,text_like," . "text,include,text,radio,radio,radio," . "radio_like,radio,query_drop_down";
+                        $TPSCriteriaDataTypeMaster = 'datetime,datetime,datetime,radio,text_like,text,include,text,radio,radio,radio,' . "radio_like,radio,query_drop_down";
                     }
                         // The below section is needed if there is any 'radio' or 'radio_like' type in the $TPSCriteriaDataTypeMaster
                         // $TPSCriteriaDisplayRadioMaster,$TPSCriteriaRadioKeyMaster ==>For each radio data type this pair comes.
@@ -707,7 +709,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                         // The below section is needed if there is any 'include' type in the $TPSCriteriaDataTypeMaster
                         // Function name is added here.Corresponding include files need to be included in the respective pages as done in this page.
                         // It is labled(Included for Insurance ajax criteria)(Line:-279-299).
-                        $TPSCriteriaIncludeMaster[1] = "OpenEMR\Billing\BillingReport::insuranceCompanyDisplay";
+                        $TPSCriteriaIncludeMaster[1] = \OpenEMR\Billing\BillingReport::class . '::insuranceCompanyDisplay';
                         if (!isset($_REQUEST['mode'])) {// default case
                             $_REQUEST['final_this_page_criteria'][0] = "form_encounter.date|between|" . date("Y-m-d 00:00:00") . "|" . date("Y-m-d 23:59:59");
                             $_REQUEST['final_this_page_criteria_text'][0] = xl("Date of Service = Today");
@@ -721,7 +723,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                         }
                         ?>
                     <?php
-                        require_once "$srcdir/../interface/reports/criteria.tab.php";
+                        require_once $srcdir . '/../interface/reports/criteria.tab.php';
                     ?>
                     <!-- end criteria -->
                 </form>
@@ -848,45 +850,17 @@ $partners = $x->_utility_array($x->x12_partner_factory());
             <input name='to_date' type='hidden' value="<?php echo attr($to_date); ?>" />
             <input name='from_date' type='hidden' value="<?php echo attr($from_date); ?>" />
             <?php
-            if ($my_authorized == "on") {
-                $my_authorized = "1";
-            } else {
-                $my_authorized = "%";
-            }
-            if ($unbilled == "on") {
-                $unbilled = "0";
-            } else {
-                $unbilled = "%";
-            }
+            $my_authorized = $my_authorized == "on" ? "1" : "%";
+            $unbilled = $unbilled == "on" ? "0" : "%";
             $list = BillingReport::getBillsListBetween("%");
             // don't query the whole encounter table if no criteria selected
 
             if (!isset($_POST["mode"])) {
-                if (!isset($_POST["from_date"])) {
-                    $from_date = date("Y-m-d");
-                } else {
-                    $from_date = $_POST["from_date"];
-                }
-                if (empty($_POST["to_date"])) {
-                    $to_date = '';
-                } else {
-                    $to_date = $_POST["to_date"];
-                }
-                if (!isset($_POST["code_type"])) {
-                    $code_type = "all";
-                } else {
-                    $code_type = $_POST["code_type"];
-                }
-                if (!isset($_POST["unbilled"])) {
-                    $unbilled = "on";
-                } else {
-                    $unbilled = $_POST["unbilled"];
-                }
-                if (!isset($_POST["authorized"])) {
-                    $my_authorized = "on";
-                } else {
-                    $my_authorized = $_POST["authorized"];
-                }
+                $from_date = isset($_POST["from_date"]) ? $_POST["from_date"] : date("Y-m-d");
+                $to_date = empty($_POST["to_date"]) ? '' : $_POST["to_date"];
+                $code_type = isset($_POST["code_type"]) ? $_POST["code_type"] : "all";
+                $unbilled = isset($_POST["unbilled"]) ? $_POST["unbilled"] : "on";
+                $my_authorized = isset($_POST["authorized"]) ? $_POST["authorized"] : "on";
             } else {
                 $from_date = $_POST["from_date"] ?? null;
                 $to_date = $_POST["to_date"] ?? null;
@@ -895,17 +869,9 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                 $my_authorized = $_POST["authorized"] ?? null;
             }
 
-            if ($my_authorized == "on") {
-                $my_authorized = "1";
-            } else {
-                $my_authorized = "%";
-            }
+            $my_authorized = $my_authorized == "on" ? "1" : "%";
 
-            if ($unbilled == "on") {
-                $unbilled = "0";
-            } else {
-                $unbilled = "%";
-            }
+            $unbilled = $unbilled == "on" ? "0" : "%";
 
             if (isset($_POST["mode"]) && $_POST["mode"] == "bill") {
                 billCodesList($list);
@@ -973,9 +939,9 @@ $partners = $x->_utility_array($x->x12_partner_factory());
 
                             $this_encounter_id = $iter['enc_pid'] . "-" . $iter['enc_encounter'];
 
-                            if ($last_encounter_id != $this_encounter_id) {
+                            if ($last_encounter_id !== $this_encounter_id) {
                             // This dumps all HTML for the previous encounter.
-                                if ($lhtml) {
+                                if ($lhtml !== '' && $lhtml !== '0') {
                                     while ($rcount < $lcount) {
                                         $rhtml .= "<tr style='background-color: " . attr($bgcolor) . ";'><td colspan='9'></td></tr>";
                                         ++$rcount;
@@ -987,7 +953,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                             $lhtml .= '</div>';
                                             $DivPut = 'no';
                                         }
-                                        echo "<tr style='background-color: " . attr($bgcolor) . ";'>\n<td class='align-top' rowspan='" . attr($rcount) . "'>\n$lhtml</td>$rhtml\n";
+                                        echo "<tr style='background-color: " . attr($bgcolor) . ";'>\n<td class='align-top' rowspan='" . attr($rcount) . "'>\n{$lhtml}</td>{$rhtml}\n";
                                         echo "<tr style='background-color: " . attr($bgcolor) . ";'><td colspan='9' height='5'></td></tr>\n\n";
                                         $encount = $encount ?? null;
                                         ++$encount;
@@ -1003,7 +969,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                 // the normal case of viewing only authorized billing, then skip the
                                 // entire encounter.
                                 $skipping = false;
-                                if ($my_authorized == '1') {
+                                if ($my_authorized === '1') {
                                     $res = sqlQuery(
                                         "SELECT count(*) AS count FROM billing WHERE " .
                                         "encounter = ? AND " .
@@ -1041,7 +1007,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                 );
                                 $namecolor = ($res['count'] > 0) ? "black" : "#ff7777";
 
-                                $bgcolor = ((($encount ?? null) & 1) ? "var(--light)" : "var(--gray300)");
+                                $bgcolor = (((($encount ?? null) & 1) !== 0) ? "var(--light)" : "var(--gray300)");
                                 echo "<tr style='background-color: " . attr($bgcolor) . ";'><td colspan='9' height='5'></td></tr>\n";
                                 $lcount = 1;
                                 $rcount = 0;
@@ -1094,7 +1060,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                 // Changed "To xxx" buttons to allow room for encounter date display 2/17/09 JCH
                                 $lhtml .= "<a class='btn btn-sm btn-primary' role='button' " .
                                     "href='javascript:window.toInsurance(" .
-                                        "\"ins\"" . "," .
+                                        '"ins"' . "," .
                                         attr_js($iter['enc_pid']) . "," .
                                         attr_js($name['pubpid']) . "," .
                                         attr_js($ptname) . "," .
@@ -1110,7 +1076,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                     ");" . " '>" . xlt('Insurance') . "</a>";
                                 $is_edited = $iter['mboid'] ? 'btn-success' : 'btn-secondary';
                                 $title = $iter['mboid'] ? xlt("This claim has HCFA 1500 miscellaneous billing options") : xlt("Click to add HCFA 1500 miscellaneous billing options");
-                                $lhtml .= "<a class='btn btn-sm $is_edited' role='button' title='" . attr($title) . "' onclick='popMBO(" . attr_js($iter['enc_pid']) . "," . attr_js($iter['enc_encounter']) . "," . attr_js($iter['mboid']) . "); return false;'>" . xlt('MBO ') . "</a>";
+                                $lhtml .= sprintf("<a class='btn btn-sm %s' role='button' title='", $is_edited) . attr($title) . "' onclick='popMBO(" . attr_js($iter['enc_pid']) . "," . attr_js($iter['enc_encounter']) . "," . attr_js($iter['mboid']) . "); return false;'>" . xlt('MBO ') . "</a>";
                                 if ($ub04_support && isset($iter['billed'])) {
                                     $c = sqlQuery(
                                         "SELECT submitted_claim AS status FROM claims WHERE " .
@@ -1124,11 +1090,11 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                     );
                                     $is_edited = ($c['status'] ?? null) ? 'btn-success' : 'btn-warning';
                                     $bname = ($c['status'] ?? null) ? xl('Reviewed') : xl('Review UB04');
-                                    $lhtml .= "<a class='btn btn-sm $is_edited' role='button' onclick='popUB04(" . attr_js($iter['enc_pid']) . "," . attr_js($iter['enc_encounter']) . "); return false;'>" . text($bname) . "</a>";
+                                    $lhtml .= sprintf("<a class='btn btn-sm %s' role='button' onclick='popUB04(", $is_edited) . attr_js($iter['enc_pid']) . "," . attr_js($iter['enc_encounter']) . "); return false;'>" . text($bname) . "</a>";
                                 }
                                 $lhtml .= "</div>";
-                                $divnos = $divnos + 1;
-                                $lhtml .= "&nbsp;&nbsp;&nbsp;<a onclick='divtoggle(" . attr_js("spanid_" . $divnos) . "," . attr_js("divid_" . $divnos) . ");' class='small' id='aid_" . attr($divnos) . "' href=\"JavaScript:void(0);" . "\">(<span id=spanid_" . attr($divnos) . " class=\"indicator\">" . xlt('Expand') . '</span>)<br /></a>';
+                                $divnos += 1;
+                                $lhtml .= "&nbsp;&nbsp;&nbsp;<a onclick='divtoggle(" . attr_js("spanid_" . $divnos) . "," . attr_js("divid_" . $divnos) . ");' class='small' id='aid_" . attr($divnos) . "' href=\"JavaScript:void(0);" . '">(<span id=spanid_' . attr($divnos) . ' class="indicator">' . xlt('Expand') . '</span>)<br /></a>';
                                 if ($GLOBALS['notes_to_display_in_Billing'] == 2 || $GLOBALS['notes_to_display_in_Billing'] == 3) {
                                     $lhtml .= '<span class="font-weight-bold text-danger" style="margin-left: 20px;">' . text($billing_note) . '</span>';
                                 }
@@ -1146,7 +1112,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                     foreach ($effective_insurances as $key => $row) {
                                         $insuranceName = sqlQuery("SELECT `name` FROM `insurance_companies` WHERE `id` = ?", array($row['provider']))['name'];
                                         $x12Partner = sqlQuery("SELECT `x12_default_partner_id` FROM `insurance_companies` WHERE `id` = ?", array($row['provider']))['x12_default_partner_id'];
-                                        $lhtml .= "<option value=\"" . attr(substr($row['type'], 0, 1) . $row['provider']) . "\"";
+                                        $lhtml .= '<option value="' . attr(substr($row['type'], 0, 1) . $row['provider']) . '"';
                                         if (
                                             $key == $last_level_closed
                                             || $insuranceCount == 1
@@ -1164,7 +1130,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                     $lhtml .= "<select class='form-control' id='partners' name='claims[" . attr($this_encounter_id) . "][partner]'>";
                                     $lhtml .= "<option value='-1' label='Unassigned'>" . xlt("Partner not configured") . "</option>\n";
                                     foreach ($partners as $xid => $xname) {
-                                        if (empty(trim($xname))) {
+                                        if (in_array(trim($xname), ['', '0'], true)) {
                                             continue;
                                         }
                                         $lhtml .= '<option label="' . attr($xname) . '" value="' . attr($xid) . '"';
@@ -1230,7 +1196,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                             $lhtml .= "<br />\n&nbsp;" . text(oeFormatShortDate(substr($crow['bill_time'], 0, 10))) . text(substr($crow['bill_time'], 10, 6)) . " " . xlt("This claim has been denied.Reason:-");
                                             if ($crow['process_file']) {
                                                 $code_array = explode(',', $crow['process_file']);
-                                                foreach ($code_array as $code_key => $code_value) {
+                                                foreach ($code_array as $code_value) {
                                                     $lhtml .= "<br />\n&nbsp;&nbsp;&nbsp;";
                                                     $reason_array = explode('_', $code_value);
                                                     if (!isset($adjustment_reasons[$reason_array[3]])) {
@@ -1273,14 +1239,14 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             if ($iter['fee'] > 0) {
                                 ++$mmo_num_charges;
                                 $tmp = substr($iter['code'], 0, 3);
-                                if (($tmp == '992' || $tmp == '993') && empty($iter['modifier'])) {
+                                if (($tmp === '992' || $tmp === '993') && empty($iter['modifier'])) {
                                     $mmo_empty_mod = true;
                                 }
                             }
 
                             ++$rcount;
 
-                            if ($rhtml) {
+                            if ($rhtml !== '' && $rhtml !== '0') {
                                 $rhtml .= "<tr style='background-color: " . attr($bgcolor) . ";'>\n";
                             }
                             $rhtml .= "<td width='50'>";
@@ -1296,13 +1262,13 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                 $js = explode(":", $iter['justify']);
                                 $counter = 0;
                                 foreach ($js as $j) {
-                                    if (!empty($j)) {
+                                    if ($j !== '' && $j !== '0') {
                                         if ($counter == 0) {
                                             $justify .= " (<b>" . text($j) . "</b>)";
                                         } else {
                                             $justify .= " (" . text($j) . ")";
                                         }
-                                        $counter++;
+                                        ++$counter;
                                     }
                                 }
                             }
@@ -1311,7 +1277,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             if ($iter['modifier']) {
                                 $rhtml .= ":" . text($iter['modifier']);
                             }
-                            $rhtml .= "</span><span style='font-size:8pt;'>$justify</span></td>\n";
+                            $rhtml .= "</span><span style='font-size:8pt;'>{$justify}</span></td>\n";
 
                             $rhtml .= '<td align="right"><span style="font-size:8pt;">&nbsp;&nbsp;&nbsp;';
                             if ($iter['id'] && $iter['fee'] > 0) {
@@ -1324,10 +1290,8 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             }
                             $rhtml .= "</span></td>\n";
                             $rhtml .= '<td><span style="font-size:8pt;">&nbsp;&nbsp;&nbsp;';
-                            if ($GLOBALS['display_units_in_billing'] != 0) {
-                                if ($iter['id']) {
-                                    $rhtml .= xlt("Units") . ":" . text($iter["units"]);
-                                }
+                            if ($GLOBALS['display_units_in_billing'] != 0 && $iter['id']) {
+                                $rhtml .= xlt("Units") . ":" . text($iter["units"]);
                             }
                             $rhtml .= "</span></td>\n";
                             $rhtml .= '<td width="100">&nbsp;&nbsp;&nbsp;<span style="font-size:8pt;">';
@@ -1341,7 +1305,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             } else {
                                 $rhtml .= "<td></td>\n";
                             }
-                            if ($iter['id'] && $last_encounter_id != $this_encounter_id) {
+                            if ($iter['id'] && $last_encounter_id !== $this_encounter_id) {
                                 $tmpbpr = $iter['bill_process'];
                                 if ($tmpbpr == '0' && $iter['billed']) {
                                     $tmpbpr = '2';
@@ -1351,7 +1315,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             } else {
                                 $rhtml .= "<td></td>\n";
                             }
-                            if ($last_encounter_id != $this_encounter_id) {
+                            if ($last_encounter_id !== $this_encounter_id) {
                                 $rhtml2 = "";
                                 $rowcnt = 0;
                                 $resMoneyGot = sqlStatement(
@@ -1365,15 +1329,15 @@ $partners = $x->_utility_array($x->x12_partner_factory());
 // new fees screen copay gives account_code='PCP'
                                 if (sqlNumRows($resMoneyGot) > 0) {
                                     $lcount += 2;
-                                    $rcount++;
+                                    ++$rcount;
                                 }
 // checks whether a copay exists for the encounter and if exists displays it.
                                 while ($rowMoneyGot = sqlFetchArray($resMoneyGot)) {
-                                    $rowcnt++;
+                                    ++$rowcnt;
                                     $PatientPay = $rowMoneyGot['PatientPay'];
                                     $date = $rowMoneyGot['date'];
                                     if ($PatientPay > 0) {
-                                        if ($rhtml) {
+                                        if ($rhtml !== '0') {
                                             $rhtml2 .= "<tr style='background-color: " . attr($bgcolor) . ";'>\n";
                                         }
                                         $rhtml2 .= "<td width='50'>";
@@ -1396,7 +1360,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                         }
                                         if (!$iter['id'] && $rowcnt == 1) {
                                             $rhtml2 .= "<td><input type='checkbox' value='0' name='claims[" . attr($this_encounter_id) . "][bill]' onclick='set_button_states()' id='CheckBoxBilling" . attr($CheckBoxBilling * 1) . "'>&nbsp;</td>\n";
-                                            $CheckBoxBilling++;
+                                            ++$CheckBoxBilling;
                                         } else {
                                             $rhtml2 .= "<td></td>\n";
                                         }
@@ -1408,7 +1372,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                             $last_encounter_id = $this_encounter_id;
                         } // end foreach
 
-                        if ($lhtml) {
+                        if ($lhtml !== '' && $lhtml !== '0') {
                             while ($rcount < $lcount) {
                                 $rhtml .= "<tr style='background-color: " . attr($bgcolor) . ";'><td colspan='9'></td></tr>";
                                 ++$rcount;
@@ -1418,7 +1382,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
                                     $lhtml .= '</div>';
                                     $DivPut = 'no';
                                 }
-                                echo "<tr style='background-color: " . attr($bgcolor) . ";'>\n<td rowspan='" . attr($rcount) . "' valign='top' width='25%'>\n$lhtml</td>$rhtml\n";
+                                echo "<tr style='background-color: " . attr($bgcolor) . ";'>\n<td rowspan='" . attr($rcount) . "' valign='top' width='25%'>\n{$lhtml}</td>{$rhtml}\n";
                                 echo "<tr style='background-color: " . attr($bgcolor) . ";'><td colspan='9' height='5'></td></tr>\n";
                             }
                         }
@@ -1436,7 +1400,7 @@ $partners = $x->_utility_array($x->x12_partner_factory());
     <script>
         set_button_states();
         <?php
-        if ($alertmsg) {
+        if ($alertmsg !== '') {
             echo "alert(" . js_escape($alertmsg) . ");\n";
         }
         ?>

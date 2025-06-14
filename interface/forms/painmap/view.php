@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * painmap view.php
  *
@@ -16,7 +18,7 @@ require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS['srcdir'] . '/api.inc.php');
 
 /* include our smarty derived controller class. */
-require('C_FormPainMap.class.php');
+require(__DIR__ . '/C_FormPainMap.class.php');
 
 /* Create a form object. */
 $c = new C_FormPainMap();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2024 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 if (!$GLOBALS ?? null) {
@@ -25,38 +26,36 @@ use ZipArchive;
 
 class DownloadWenoPharmacies
 {
-    public function __construct()
-    {
-    }
-
     /**
      * @param      $filePath
-     * @param bool $isInsertOnly
      * @return false|int
      */
-    public function processWenoPharmacyCsv($filePath, bool $isInsertOnly = true): false|int
+    public function processWenoPharmacyCsv(string $filePath, bool $isInsertOnly = true): false|int
     {
-        $wenoLog = new WenoLogService();
+        $wenoLogService = new WenoLogService();
 
-        if (date("l") == "Monday" && $isInsertOnly) {
+        if (date("l") === "Monday" && $isInsertOnly) {
             $sql = "TRUNCATE TABLE weno_pharmacy";
             sqlStatement($sql);
         }
+
         // Use existing connection.
         // Compared to creating a new connection, this method is slower by 3 seconds.
         // Using the sqlStatement() method is even slower by 10 seconds. That's 13 seconds slower overall.
         $connect = $GLOBALS['dbh'];
         if ($connect->connect_error) {
-            $wenoLog->insertWenoLog("Pharmacy Directory", "Connection Failed.");
+            $wenoLogService->insertWenoLog("Pharmacy Directory", "Connection Failed.");
             error_log("Connection failed: " . $connect->connect_error);
             return false;
         }
+
         // Check if file exists and is readable
         if (!file_exists($filePath) || !is_readable($filePath)) {
-            $wenoLog->insertWenoLog("Pharmacy Directory", "Download file not found or not readable");
+            $wenoLogService->insertWenoLog("Pharmacy Directory", "Download file not found or not readable");
             error_log("Download file not found or not readable: " . $filePath);
             return false;
         }
+
         // Begin transaction
         $connect->begin_transaction();
         try {
@@ -74,18 +73,19 @@ class DownloadWenoPharmacies
                 $records = $stmt->process($csv);
                 $headers = $records->getHeader();
             }
+
             if ($headers === false) {
-                throw new Exception("Error reading header from file: $filePath");
+                throw new Exception('Error reading header from file: ' . $filePath);
             }
 
-            $columns = implode(", ", array_map(fn($col) => "`$col`", $headers));
+            $columns = implode(", ", array_map(fn($col): string => sprintf('`%s`', $col), $headers));
             $placeholders = implode(", ", array_fill(0, count($headers), '?'));
 
             if ($isInsertOnly) {
-                $sql = "INSERT INTO weno_pharmacy ($columns) VALUES ($placeholders)";
+                $sql = sprintf('INSERT INTO weno_pharmacy (%s) VALUES (%s)', $columns, $placeholders);
             } else {
-                $updates = implode(", ", array_map(fn($col) => "`$col`=VALUES(`$col`)", $headers));
-                $sql = "INSERT INTO weno_pharmacy ($columns) VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updates";
+                $updates = implode(", ", array_map(fn($col): string => sprintf('`%s`=VALUES(`%s`)', $col, $col), $headers));
+                $sql = sprintf('INSERT INTO weno_pharmacy (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s', $columns, $placeholders, $updates);
             }
 
             $stmt = $connect->prepare($sql);
@@ -101,9 +101,10 @@ class DownloadWenoPharmacies
                 if (stripos($record['Created'], 'Confidential WENO Exchange') !== false) {
                     continue;
                 }
-                $rowNumber++;
 
-                $record = array_map(fn($item) => str_replace(['[', ']'], '', trim($item ?? '')), $record);
+                ++$rowNumber;
+
+                $record = array_map(fn($item): string => str_replace(['[', ']'], '', trim($item ?? '')), $record);
                 $dateTime = \DateTime::createFromFormat('m/d/Y h:i:s A', $record['Created']);
                 $record['Created'] = $dateTime ? $dateTime->format('Y-m-d H:i:s') : null;
                 $dateTime = \DateTime::createFromFormat('m/d/Y h:i:s A', $record['Modified']);
@@ -116,35 +117,38 @@ class DownloadWenoPharmacies
                 $record['City'] = ucwords(strtolower($record['City']));
 
                 if (count($record) !== count($headers)) {
-                    error_log(text("Column count mismatch at row $rowNumber in file: $filePath"));
+                    error_log(text(sprintf('Column count mismatch at row %d in file: %s', $rowNumber, $filePath)));
                     continue;
                 }
+
                 // Batch records in groups of batch size.
                 $batchRecords[] = $record;
 
                 if (count($batchRecords) === $batchSize) {
                     $recordSizeInBytes += strlen(serialize($batchRecords));
-                    foreach ($batchRecords as $record) {
-                        $stmt->bind_param($types, ...array_values($record));
+                    foreach ($batchRecords as $batchRecord) {
+                        $stmt->bind_param($types, ...array_values($batchRecord));
                         $stmt->execute();
                     }
+
                     $batchRecords = [];
                 }
             }
+
             // Finish processing any remaining records.
-            if (!empty($batchRecords)) {
+            if ($batchRecords !== []) {
                 $recordSizeInBytes += strlen(serialize($batchRecords));
-                foreach ($batchRecords as $record) {
-                    $stmt->bind_param($types, ...array_values($record));
+                foreach ($batchRecords as $batchRecord) {
+                    $stmt->bind_param($types, ...array_values($batchRecord));
                     $stmt->execute();
                 }
             }
 
             $connect->commit();
            // $connect->close();
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $connect->rollback();
-            error_log(text($e->getMessage()));
+            error_log(text($exception->getMessage()));
             return false;
         }
 
@@ -154,15 +158,15 @@ class DownloadWenoPharmacies
     /**
      * @param $url
      * @param $storelocation
-     * @return string|null
      */
-    public function retrieveDataFile($url, $storelocation): ?string
+    public function retrieveDataFile($url, string $storelocation): ?string
     {
         $path_to_extract = $storelocation;
         $storelocation .= "weno_pharmacy.zip";
         if (!is_dir($path_to_extract)) {
             mkdir($path_to_extract, 0775, true);
         }
+
         unlink($storelocation);
         $fp = fopen($storelocation, 'w+');
 
@@ -181,21 +185,20 @@ class DownloadWenoPharmacies
     /**
      * @param $path_to_extract
      * @param $storeLocation
-     * @return string|null
      */
-    public function extractFile($path_to_extract, $storeLocation): ?string
+    public function extractFile(string $path_to_extract, $storeLocation): ?string
     {
         $wenoLog = new WenoLogService();
 
         try {
-            $zip = new ZipArchive();
-        } catch (\Exception $e) {
-            error_log('Error extracting zip file: ' . errorLogEscape($e->getMessage()));
+            $zipArchive = new ZipArchive();
+        } catch (\Exception $exception) {
+            error_log('Error extracting zip file: ' . errorLogEscape($exception->getMessage()));
             return "PHPError_install_zip_archive";
         }
 
-        if ($zip->open($storeLocation) === true) {
-            $zip->extractTo($path_to_extract);
+        if ($zipArchive->open($storeLocation) === true) {
+            $zipArchive->extractTo($path_to_extract);
             $files = glob($path_to_extract . "/*.csv");
             $csvFile = '';
             // search for the lite version either daily or weekly csv file
@@ -206,9 +209,10 @@ class DownloadWenoPharmacies
                         break;
                     }
                 }
-                $zip->close();
+
+                $zipArchive->close();
                 //unlink($storeLocation); // TODO: uncomment this line
-                if ($csvFile) {
+                if ($csvFile !== '' && $csvFile !== '0') {
                     // process the csv file
                     // Number of rows imported or false if error
                     $logMessage = "Background Initiated Pharmacy Update";
@@ -224,10 +228,10 @@ class DownloadWenoPharmacies
                             $_SESSION['authUser'],
                             $_SESSION['authProvider'],
                             1,
-                            "Background Task Pharmacy Download Imported $count Pharmacies Successfully."
+                            sprintf('Background Task Pharmacy Download Imported %d Pharmacies Successfully.', $count)
                         );
-                        $wenoLog->insertWenoLog("Pharmacy Directory", "Success $count pharmacies Updated");
-                        error_log("Background Task Pharmacy Imported $count Pharmacies");
+                        $wenoLog->insertWenoLog("Pharmacy Directory", sprintf('Success %d pharmacies Updated', $count));
+                        error_log(sprintf('Background Task Pharmacy Imported %d Pharmacies', $count));
                     } else {
                         EventAuditLogger::instance()->newEvent(
                             "pharmacy_log",
@@ -239,12 +243,14 @@ class DownloadWenoPharmacies
                         $wenoLog->insertWenoLog("Pharmacy Directory", "Failed");
                         error_log("Background Task Pharmacy Import Failed");
                     }
+
                     // remove the files
                     foreach ($files as $file) {
                         if (is_file($file) && stripos($file, 'logsync.csv') === false) {
                             unlink($file);
                         }
                     }
+
                     return $count;
                 } else {
                     EventAuditLogger::instance()->newEvent(
@@ -270,9 +276,11 @@ class DownloadWenoPharmacies
                     error_log("Pharmacy Failed download! Weno error: Other");
                     $wenoLog->insertWenoLog("Pharmacy Directory", "Failed");
                 }
+
                 die;
             }
         }
+
         return false;
     }
 }

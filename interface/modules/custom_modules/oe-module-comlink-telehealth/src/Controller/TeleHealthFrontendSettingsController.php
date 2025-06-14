@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Contains all of the translations used by the client side portion of the TeleHealth.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Controller;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig;
@@ -19,23 +20,24 @@ use Twig\Environment;
 class TeleHealthFrontendSettingsController
 {
     /**
+     * @var string
+     */
+    public $assetPath;
+    /**
      * @var Environment The twig environment
      */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $config;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig $telehealthGlobalConfig;
 
-    public function __construct(string $assetPath, Environment $twig, TelehealthGlobalConfig $config)
+    public function __construct(string $assetPath, Environment $twigEnvironment, TelehealthGlobalConfig $telehealthGlobalConfig)
     {
         $this->assetPath = $assetPath;
-        $this->twig = $twig;
-        $this->config = $config;
+        $this->twigEnvironment = $twigEnvironment;
+        $this->telehealthGlobalConfig = $telehealthGlobalConfig;
     }
 
-    public function renderFrontendSettings($isPatient = true)
+    public function renderFrontendSettings($isPatient = true): void
     {
         $assetPath = $this->assetPath;
         // strip off the assets, and public folder to get to the base of our module directory
@@ -46,13 +48,13 @@ class TeleHealthFrontendSettingsController
                 'translations' => $this->getTranslationSettings()
                 ,'modulePath' => $modulePath
                 ,'assetPath' => $assetPath
-                ,'fhirPath' => $this->config->getFHIRPath()
+                ,'fhirPath' => $this->telehealthGlobalConfig->getFHIRPath()
                 ,'apiCSRFToken' => ''
                 ,'features' => [
-                    'thirdPartyInvitations' => $this->config->isThirdPartyInvitationsEnabled()
+                    'thirdPartyInvitations' => $this->telehealthGlobalConfig->isThirdPartyInvitationsEnabled()
                     ,'minimizeWindow' => [
                         'enabled' => true
-                        ,'defaultPosition' => $this->config->getMinimizedSessionDefaultPosition()
+                        ,'defaultPosition' => $this->telehealthGlobalConfig->getMinimizedSessionDefaultPosition()
                     ]
                 ]
             ]
@@ -63,11 +65,13 @@ class TeleHealthFrontendSettingsController
         if (!$isPatient) {
             $data['settings']['apiCSRFToken'] = CsrfUtils::collectCsrfToken('api');
         }
-        echo $this->twig->render("comlink/telehealth-frontend-settings.js.twig", $data);
+
+        echo $this->twigEnvironment->render("comlink/telehealth-frontend-settings.js.twig", $data);
     }
-    public function getTranslationSettings()
+
+    public function getTranslationSettings(): array
     {
-        $translations = [
+        return [
                 'CALL_CONNECT_FAILED' => xl("Failed to connect the call."),
                 'BRIDGE_FAILED' => xl("Failed to establish a connection with the telehealth service provider.  Check your internet connection or contact support to verify the service is setup correctly."),
                 'SESSION_LAUNCH_FAILED' => xl("There was an error in launching your telehealth session.  Please try again or contact support"),
@@ -106,6 +110,5 @@ class TeleHealthFrontendSettingsController
                 'PATIENT_SETUP_FOR_TELEHEALTH_FAILED' => xl("Patient is missing portal credentials, has not authorized the portal, or has not verified their email address."),
                 'PATIENT_SETUP_FOR_TELEHEALTH_VALIDATING' => xl("Checking if patient is setup for telehealth appointment...")
         ];
-        return $translations;
     }
 }

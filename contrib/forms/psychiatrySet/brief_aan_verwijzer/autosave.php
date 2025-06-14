@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    form_brief_aan_verwijzer - Autosave
 // Package: letter to... - Dutch specific form
@@ -9,8 +11,8 @@
 
 //local includes
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 
 /////////////////
@@ -25,12 +27,7 @@ $vectAutosave = sqlQuery("SELECT id, autosave_flag, autosave_datetime FROM form_
 
 // if yes then update this else insert
 if ($vectAutosave['autosave_flag'] == 1 || $_POST["mode"] == "update") {
-    if ($_POST["mode"] == "update") {
-        $newid = $_POST["id"];
-    } else {
-        $newid = $vectAutosave['id'];
-    }
-
+    $newid = $_POST["mode"] == "update" ? $_POST["id"] : $vectAutosave['id'];
     $strSql = "UPDATE form_brief_aan_verwijzer
                 SET pid = ?, groupname=?, user=?,
                 authorized=?, activity=1, date = NOW(),
@@ -43,11 +40,9 @@ if ($vectAutosave['autosave_flag'] == 1 || $_POST["mode"] == "update") {
                 autosave_flag=1,
                 autosave_datetime=NOW()
                   WHERE id = ?;";
-
     sqlQuery($strSql, array($_SESSION["pid"], $_SESSION["authProvider"], $_SESSION["authUser"], $userauthorized, $_POST["introductie"], $_POST["reden_van_aanmelding"],
     $_POST["anamnese"], $_POST["psychiatrisch_onderzoek"], $_POST["beschrijvend_conclusie"], $_POST["advies_beleid"], $newid));
-
-//echo "DEBUG :: id=$newid, sql=$strSql<br />";
+    //echo "DEBUG :: id=$newid, sql=$strSql<br />";
 } else {
     $newid = formSubmit("form_brief_aan_verwijzer", $_POST, $_GET["id"], $userauthorized);
     addForm($encounter, "Psychiatric Brief Letter", $newid, "brief_aan_verwijzer", $pid, $userauthorized);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRxGlobals.php Functions for retrieving NewCrop global configurations.
  *
@@ -32,7 +34,7 @@ class eRxGlobals
      * Set the configuration array for use in eRxGlobals
      * @param array &$configuration Array of configurations to use
      */
-    public function setGlobals(&$configuration)
+    public function setGlobals(&$configuration): static
     {
         $this->configuration =& $configuration;
 
@@ -49,13 +51,14 @@ class eRxGlobals
         if (array_key_exists($key, $this->configuration)) {
             return $this->configuration[$key];
         }
+        return null;
     }
 
     /**
      * Return the version of OpenEMR
      * @return string OpenEMR version
      */
-    public function getOpenEMRVersion()
+    public function getOpenEMRVersion(): string
     {
         return (new VersionService())->asString();
     }
@@ -136,7 +139,7 @@ class eRxGlobals
      * Return the NewCrop eRx password for credentials
      * @return string Password for credentials
      */
-    public function getAccountPassword()
+    public function getAccountPassword(): string|false
     {
         $cryptoGen = new CryptoGen();
         return $cryptoGen->decryptStandard($this->getGlobalValue('erx_account_password'));
@@ -200,7 +203,7 @@ class eRxGlobals
      * Return array containing NewCrop eRx credentials
      * @return array NewCrop eRx credentials: index [ 0 = Partner Name, 1 = Account Name, 2 = Password ]
      */
-    public function getCredentials()
+    public function getCredentials(): array
     {
         return array(
             $this->getPartnerName(),

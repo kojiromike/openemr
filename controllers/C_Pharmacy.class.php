@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * C_Pharmacy class
  *
@@ -9,39 +11,36 @@
  * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-
 class C_Pharmacy extends Controller
 {
-    var $template_mod;
-    var $pharmacies;
-    public $totalpages;
-    private $pageno;
-    private $Pharmacy;
+    public $template_mod;
 
-    function __construct($template_mod = "general")
+    public $pharmacies = array();
+
+    public $totalpages;
+    private \Pharmacy $Pharmacy;
+
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $this->pharmacies = array();
         $this->template_mod = $template_mod;
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
         $this->assign("CURRENT_ACTION", $GLOBALS['webroot'] . "/controller.php?" . "practice_settings&pharmacy&");
         $this->assign("STYLE", $GLOBALS['style']);
         $this->Pharmacy = new Pharmacy();
         $this->totalpages = $this->Pharmacy->totalPages();
-        $this->pageno = $this->Pharmacy->getPageno();
     }
 
-    function default_action()
+    public function default_action()
     {
         return $this->list_action();
     }
 
-    function edit_action($id = "", $patient_id = "", $p_obj = null)
+    public function edit_action($id = "", $patient_id = "", $p_obj = null)
     {
         if ($p_obj != null && get_class($p_obj) == "pharmacy") {
             $this->pharmacies[0] = $p_obj;
-        } elseif (empty($this->pharmacies[0]) || !is_object($this->pharmacies[0]) || get_class($this->pharmacies[0]) != "pharmacy") {
+        } elseif (empty($this->pharmacies[0]) || !is_object($this->pharmacies[0]) || get_class($this->pharmacies[0]) !== "pharmacy") {
             $this->pharmacies[0] = new Pharmacy($id);
         }
 
@@ -54,7 +53,7 @@ class C_Pharmacy extends Controller
         return $this->fetch($GLOBALS['template_dir'] . "pharmacies/" . $this->template_mod . "_edit.html");
     }
 
-    function list_action()
+    public function list_action()
     {
         $this->assign("pharmacies", $this->Pharmacy->pharmacies_factory());
 
@@ -63,18 +62,14 @@ class C_Pharmacy extends Controller
     }
 
 
-    function edit_action_process()
+    public function edit_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
         }
 
         //print_r($_POST);
-        if (is_numeric($_POST['id'])) {
-            $this->pharmacies[0] = new Pharmacy($_POST['id']);
-        } else {
-            $this->pharmacies[0] = new Pharmacy();
-        }
+        $this->pharmacies[0] = is_numeric($_POST['id']) ? new Pharmacy($_POST['id']) : new Pharmacy();
 
         parent::populate_object($this->pharmacies[0]);
         //print_r($this->pharmacies[0]);

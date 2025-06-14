@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *
  * @package      OpenEMR
@@ -13,4 +15,4 @@
 
 $module_config = 1;
 
-require_once('./welcome.php');
+require_once(__DIR__ . '/welcome.php');

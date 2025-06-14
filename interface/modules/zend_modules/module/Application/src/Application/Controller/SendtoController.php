@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Controller/SendtoController.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -19,9 +20,11 @@ use OpenEMR\Cqm\QrdaControllers\QrdaReportController;
 
 class SendtoController extends AbstractActionController
 {
-    protected $sendtoTable;
-    protected $applicationTable;
-    protected $listenerObject;
+    protected \Application\Model\SendtoTable $sendtoTable;
+
+    protected \Application\Model\ApplicationTable $applicationTable;
+
+    protected \Application\Listener\Listener $listenerObject;
 
     public function __construct(\Application\Model\ApplicationTable $applicationTable, \Application\Model\SendtoTable $sendToTable)
     {
@@ -33,22 +36,21 @@ class SendtoController extends AbstractActionController
     /*
     * Display the content of Send To button
     */
-    public function sendAction()
+    public function sendAction(): \Laminas\View\Model\ViewModel
     {
         $button_only = $this->params()->fromQuery('embedded_button');
         $required_butons = $this->params()->fromQuery('required_butons');
         $selected_cform = $this->params()->fromQuery('selected_form');
         $default_send_via = $this->params()->fromQuery('default_send_via');
         $default_send_via = $default_send_via ? $default_send_via : 'printer';
-        $encounter = $GLOBALS['encounter'];
         $faxRecievers = $this->getSendtoTable()->getFaxRecievers();
         $ccda_sections = $this->getSendtoTable()->getCCDAComponents(0);
         $ccda_components = $this->getSendtoTable()->getCCDAComponents(1);
-        $reportController = new QrdaReportController();
-        $measures = $reportController->reportMeasures;
+        $qrdaReportController = new QrdaReportController();
+        $measures = $qrdaReportController->reportMeasures;
 
         $this->layout('layout/sendto');
-        $view = new ViewModel(array(
+        $viewModel = new ViewModel(array(
             'send_via' => $default_send_via,
             'faxRecievers' => $faxRecievers,
             'ccda_sections' => $ccda_sections,
@@ -63,7 +65,7 @@ class SendtoController extends AbstractActionController
             $this->layout('layout/embedded_button');
         }
 
-        return $view;
+        return $viewModel;
     }
 
     /*
@@ -82,7 +84,7 @@ class SendtoController extends AbstractActionController
                 break;
             case 'send_fax':
                 $x = ob_get_level();
-                for (; $x > 0; $x--) {
+                for (; $x > 0; --$x) {
                     ob_end_clean();
                 }
 
@@ -116,6 +118,7 @@ class SendtoController extends AbstractActionController
                         echo "<option value='" . $this->escapeHtml($user['fax']) . "' >" . $displayName . "</option>";
                     }
                 }
+
                 break;
         }
 

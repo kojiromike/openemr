@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Report - Cash receipts by Provider
  *
@@ -23,7 +25,7 @@
 
 // TODO: Replace tables with BS4 grid classes for GSoC
 
-require_once('../globals.php');
+require_once(__DIR__ . '/../globals.php');
 require_once($GLOBALS['srcdir'] . '/patient.inc.php');
 require_once($GLOBALS['srcdir'] . '/options.inc.php');
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
@@ -33,7 +35,7 @@ require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 // have to customize this function.  If you use the "fee sheet" encounter
 // form then the code below may work for you.
 //
-require_once('../forms/fee_sheet/codes.php');
+require_once(__DIR__ . '/../forms/fee_sheet/codes.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -46,7 +48,7 @@ if (!AclMain::aclCheckCore('acct', 'rep') && !AclMain::aclCheckCore('acct', 'rep
     exit;
 }
 
-function is_clinic($code)
+function is_clinic($code): bool
 {
     global $bcodes;
     $i = strpos($code, ':');
@@ -276,10 +278,10 @@ $form_facility   = $_POST['form_facility'] ?? null;
 
                             <td>
                         <div class='checkbox'>
-                                <label><input type='checkbox' name='form_details' value='1'<?php echo (!empty($_POST['form_details'])) ? " checked" : ""; ?>><?php echo xlt('Details')?></label>
+                                <label><input type='checkbox' name='form_details' value='1'<?php echo (empty($_POST['form_details'])) ? "" : " checked"; ?>><?php echo xlt('Details')?></label>
                         </div>
                         <div class='checkbox'>
-                                <label><input type='checkbox' name='form_procedures' value='1'<?php echo ($form_procedures) ? " checked" : ""; ?>><?php echo xlt('Procedures')?></label>
+                                <label><input type='checkbox' name='form_procedures' value='1'<?php echo ($form_procedures !== 0) ? " checked" : ""; ?>><?php echo xlt('Procedures')?></label>
                         </div>
                             </td>
                         </tr>
@@ -331,7 +333,7 @@ $form_facility   = $_POST['form_facility'] ?? null;
                 <th>
                     <?php echo xlt('Date') ?>
                 </th>
-                    <?php if ($form_procedures) { ?>
+                    <?php if ($form_procedures !== 0) { ?>
                 <th>
                         <?php
                         if ($GLOBALS['cash_receipts_report_invoice'] == '0') {
@@ -341,17 +343,17 @@ $form_facility   = $_POST['form_facility'] ?? null;
                         }?>
                 </th>
                     <?php } ?>
-                    <?php if ($form_proc_codefull) { ?>
+                    <?php if ($form_proc_codefull !== '' && $form_proc_codefull !== '0') { ?>
                 <th align='right'>
                         <?php echo xlt('InvAmt') ?>
                 </th>
                     <?php } ?>
-                    <?php if ($form_proc_codefull) { ?>
+                    <?php if ($form_proc_codefull !== '' && $form_proc_codefull !== '0') { ?>
                 <th>
                         <?php echo xlt('Insurance') ?>
                 </th>
                     <?php } ?>
-                    <?php if ($form_procedures) { ?>
+                    <?php if ($form_procedures !== 0) { ?>
                 <th>
                         <?php echo xlt('Procedure') ?>
                 </th>
@@ -408,17 +410,18 @@ $form_facility   = $_POST['form_facility'] ?? null;
                             "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
                             "WHERE b.code_type = 'COPAY' AND b.activity = 1 AND " .
                             "fe.date >= ? AND fe.date <= ?";
-                            array_push($sqlBindArray, $form_from_date . " 00:00:00", $form_to_date . " 23:59:59");
+                            $sqlBindArray[] = $form_from_date . " 00:00:00";
+                            $sqlBindArray[] = $form_to_date . " 23:59:59";
                             // If a facility was specified.
                             if ($form_facility) {
                                 $query .= " AND fe.facility_id = ?";
-                                array_push($sqlBindArray, $form_facility);
+                                $sqlBindArray[] = $form_facility;
                             }
 
                             // If a doctor was specified.
                             if ($form_doctor) {
                                 $query .= " AND fe.provider_id = ?";
-                                array_push($sqlBindArray, $form_doctor);
+                                $sqlBindArray[] = $form_doctor;
                             }
 
                             /************************************************************/
@@ -430,7 +433,7 @@ $form_facility   = $_POST['form_facility'] ?? null;
                                 $patient_id = $row['pid'];
                                 $encounter_id = $row['encounter'];
                             //
-                                if (!empty($ids_to_skip[$trans_id])) {
+                                if (isset($ids_to_skip[$trans_id]) && $ids_to_skip[$trans_id] !== 0) {
                                     continue;
                                 }
 
@@ -464,9 +467,9 @@ $form_facility   = $_POST['form_facility'] ?? null;
                                 $arows[$key]['project_id'] = 0;
                                 $arows[$key]['memo'] = '';
                                 if ($GLOBALS['cash_receipts_report_invoice'] == '0') {
-                                    $arows[$key]['invnumber'] = "$patient_id.$encounter_id";
+                                    $arows[$key]['invnumber'] = sprintf('%s.%s', $patient_id, $encounter_id);
                                 } else {
-                                    $arows[$key]['invnumber'] = "$patient_name";
+                                    $arows[$key]['invnumber'] = $patient_name;
                                 }
 
                                 $arows[$key]['irnumber'] = $row['invoice_refno'];
@@ -508,19 +511,25 @@ $form_facility   = $_POST['form_facility'] ?? null;
                         "a.post_time >= ? AND a.post_time <= ? " .
                         "OR fe.date >= ? AND fe.date <= ? " .
                         "OR s.deposit_date >= ? AND s.deposit_date <= ? )";
-                        array_push($sqlBindArray, $form_from_date . " 00:00:00", $form_to_date . " 23:59:59", $form_from_date . " 00:00:00", $form_to_date . " 23:59:59", $form_from_date, $form_to_date);
+                        $sqlBindArray[] = $form_from_date . " 00:00:00";
+                        $sqlBindArray[] = $form_to_date . " 23:59:59";
+                        $sqlBindArray[] = $form_from_date . " 00:00:00";
+                        $sqlBindArray[] = $form_to_date . " 23:59:59";
+                        $sqlBindArray[] = $form_from_date;
+                        $sqlBindArray[] = $form_to_date;
                         // If a procedure code was specified.
                         // Support code type if it is in the ar_activity table. Note it is not always included, so
                         // also support a blank code type in ar_activity table.
                         if ($form_proc_codetype && $form_proc_code) {
                             $query .= " AND (a.code_type = ? OR a.code_type = '') AND a.code = ?";
-                            array_push($sqlBindArray, $form_proc_codetype, $form_proc_code);
+                            $sqlBindArray[] = $form_proc_codetype;
+                            $sqlBindArray[] = $form_proc_code;
                         }
 
                         // If a facility was specified.
                         if ($form_facility) {
                             $query .= " AND fe.facility_id = ?";
-                            array_push($sqlBindArray, $form_facility);
+                            $sqlBindArray[] = $form_facility;
                         }
 
                         // If a doctor was specified.
@@ -528,7 +537,8 @@ $form_facility   = $_POST['form_facility'] ?? null;
                             $query .= " AND ( b.provider_id = ? OR " .
                             "( ( b.provider_id IS NULL OR b.provider_id = 0 ) AND " .
                             "fe.provider_id = ? ) )";
-                            array_push($sqlBindArray, $form_doctor, $form_doctor);
+                            $sqlBindArray[] = $form_doctor;
+                            $sqlBindArray[] = $form_doctor;
                         }
 
                         /**************************************************************/
@@ -540,18 +550,14 @@ $form_facility   = $_POST['form_facility'] ?? null;
                             $encounter_id = $row['encounter'];
                             $patient_name = $row['pat_fulname'];
                             //
-                            if (!empty($ids_to_skip[$trans_id])) {
+                            if (isset($ids_to_skip[$trans_id]) && $ids_to_skip[$trans_id] !== 0) {
                                 continue;
                             }
 
                             //
 
-                            if (empty($form_use_edate)) {
-                                if (!empty($row['deposit_date'])) {
-                                    $thedate = $row['deposit_date'];
-                                } else {
-                                    $thedate = substr($row['post_time'], 0, 10);
-                                }
+                            if ($form_use_edate === 0) {
+                                $thedate = empty($row['deposit_date']) ? substr($row['post_time'], 0, 10) : $row['deposit_date'];
                             } elseif ($form_use_edate == 1) {
                                 $thedate = substr($row['date'], 0, 10);
                             } elseif ($form_use_edate == 2) {
@@ -593,9 +599,9 @@ $form_facility   = $_POST['form_facility'] ?? null;
                             $arows[$key]['project_id'] = empty($row['payer_id']) ? 0 : $row['payer_id'];
                             $arows[$key]['memo'] = $row['code'];
                             if ($GLOBALS['cash_receipts_report_invoice'] == '0') {
-                                $arows[$key]['invnumber'] = "$patient_id.$encounter_id";
+                                $arows[$key]['invnumber'] = sprintf('%s.%s', $patient_id, $encounter_id);
                             } else {
-                                $arows[$key]['invnumber'] = "$patient_name";
+                                $arows[$key]['invnumber'] = $patient_name;
                             }
 
                             $arows[$key]['irnumber'] = $row['invoice_refno'];
@@ -604,37 +610,37 @@ $form_facility   = $_POST['form_facility'] ?? null;
                         ksort($arows);
                         $docid = 0;
 
-                        foreach ($arows as $row) {
+                        foreach ($arows as $arow) {
                         // Get insurance company name
                             $insconame = '';
-                            if ($form_proc_codefull  && $row['project_id']) {
+                            if ($form_proc_codefull  && $arow['project_id']) {
                                 $tmp = sqlQuery("SELECT name FROM insurance_companies WHERE " .
-                                "id = ?", array($row['project_id']));
+                                "id = ?", array($arow['project_id']));
                                 $insconame = $tmp['name'];
                             }
 
                             $amount1 = 0;
                             $amount2 = 0;
-                            if ($form_procedures && is_clinic($row['memo'])) {
-                                $amount2 -= $row['amount'];
+                            if ($form_procedures && is_clinic($arow['memo'])) {
+                                $amount2 -= $arow['amount'];
                             } else {
-                                $amount1 -= $row['amount'];
+                                $amount1 -= $arow['amount'];
                             }
 
                         // if ($docid != $row['employee_id']) {
-                            if ($docid != $row['docid']) {
+                            if ($docid != $arow['docid']) {
                                 if ($docid) {
                                     // Print doc totals.
                                     ?>
                     <!-- TODO: Replace bgcolor with BS4 !-->
                     <tr bgcolor="#ddddff">
-                        <td class="detail" colspan="<?php echo ($form_proc_codefull ? 4 : 2) + ($form_procedures ? 2 : 0); ?>">
+                        <td class="detail" colspan="<?php echo ($form_proc_codefull !== '' && $form_proc_codefull !== '0' ? 4 : 2) + ($form_procedures !== 0 ? 2 : 0); ?>">
                                     <?php echo xlt('Totals for ') . text($docname) ?>
                 </td>
                 <td>
                                     <?php echo text(FormatMoney::getBucks($doctotal1)) ?>
                 </td>
-                                    <?php if ($form_procedures) { ?>
+                                    <?php if ($form_procedures !== 0) { ?>
                 <td>
                                         <?php echo text(FormatMoney::getBucks($doctotal2)) ?>
                 </td>
@@ -646,7 +652,7 @@ $form_facility   = $_POST['form_facility'] ?? null;
                                 $doctotal1 = 0;
                                 $doctotal2 = 0;
 
-                                $docid = $row['docid'];
+                                $docid = $arow['docid'];
                                 $tmp = sqlQuery("SELECT lname, fname FROM users WHERE id = ?", array($docid));
                                 $docname = empty($tmp) ? xl('Unknown') : $tmp['fname'] . ' ' . $tmp['lname'];
 
@@ -661,17 +667,17 @@ $form_facility   = $_POST['form_facility'] ?? null;
                                 <?php echo text($docnameleft); $docnameleft = " " ?>
                 </td>
                 <td class="detail">
-                                <?php echo text(oeFormatShortDate($row['transdate'])); ?>
+                                <?php echo text(oeFormatShortDate($arow['transdate'])); ?>
                 </td>
-                                <?php if ($form_procedures) { ?>
+                                <?php if ($form_procedures !== 0) { ?>
                 <td class="detail">
-                                    <?php echo empty($row['irnumber']) ? text($row['invnumber']) : text($row['irnumber']); ?>
+                                    <?php echo empty($arow['irnumber']) ? text($arow['invnumber']) : text($arow['irnumber']); ?>
                 </td>
                     <?php } ?>
                                 <?php
                                 if ($form_proc_code && $form_proc_codetype) {
                                         echo "  <td class='detail' align='right'>";
-                                        list($patient_id, $encounter_id) = explode(".", $row['invnumber']);
+                                        list($patient_id, $encounter_id) = explode(".", $arow['invnumber']);
                                         $tmp = sqlQuery("SELECT SUM(fee) AS sum FROM billing WHERE " .
                                             "pid = ? AND encounter = ? AND " .
                                             "code_type = ? AND code = ? AND activity = 1", array($patient_id,$encounter_id,$form_proc_codetype,$form_proc_code));
@@ -680,20 +686,20 @@ $form_facility   = $_POST['form_facility'] ?? null;
                                 }
                                 ?>
                                 <?php
-                                if ($form_proc_codefull) { ?>
+                                if ($form_proc_codefull !== '' && $form_proc_codefull !== '0') { ?>
                     <td class="detail">
                                         <?php echo text($insconame) ?>
                     </td>
                                     <?php } ?>
-                                <?php if ($form_procedures) { ?>
+                                <?php if ($form_procedures !== 0) { ?>
                 <td class="detail">
-                                    <?php echo text($row['memo']) ?>
+                                    <?php echo text($arow['memo']) ?>
                 </td>
                             <?php } ?>
                 <td class="detail">
                                 <?php echo text(FormatMoney::getBucks($amount1)) ?>
                 </td>
-                                <?php if ($form_procedures) { ?>
+                                <?php if ($form_procedures !== 0) { ?>
                 <td class="detail">
                                     <?php echo text(FormatMoney::getBucks($amount2)) ?>
                 </td>
@@ -713,13 +719,13 @@ $form_facility   = $_POST['form_facility'] ?? null;
                         ?>
                 <!-- TODO: Replace bgcolor with BS4 !-->
                 <tr bgcolor="#ddddff">
-                <td class="detail" colspan="<?php echo ($form_proc_codefull ? 4 : 2) + ($form_procedures ? 2 : 0); ?>">
+                <td class="detail" colspan="<?php echo ($form_proc_codefull !== '' && $form_proc_codefull !== '0' ? 4 : 2) + ($form_procedures !== 0 ? 2 : 0); ?>">
                         <?php echo xlt('Totals for ') . text($docname ?? '') ?>
                 </td>
                 <td>
                         <?php echo text(FormatMoney::getBucks($doctotal1 ?? '')) ?>
                 </td>
-                        <?php if ($form_procedures) { ?>
+                        <?php if ($form_procedures !== 0) { ?>
                 <td>
                             <?php echo text(FormatMoney::getBucks($doctotal2)) ?>
                 </td>
@@ -728,13 +734,13 @@ $form_facility   = $_POST['form_facility'] ?? null;
 
                 <!-- TODO: Replace bgcolor with BS4 !-->
                 <tr bgcolor="#ffdddd">
-                <td class="detail" colspan="<?php echo ($form_proc_codefull ? 4 : 2) + ($form_procedures ? 2 : 0); ?>">
+                <td class="detail" colspan="<?php echo ($form_proc_codefull !== '' && $form_proc_codefull !== '0' ? 4 : 2) + ($form_procedures !== 0 ? 2 : 0); ?>">
                         <?php echo xlt('Grand Totals') ?>
                 </td>
                 <td>
                         <?php echo text(FormatMoney::getBucks($grandtotal1 ?? '')) ?>
                 </td>
-                        <?php if ($form_procedures) { ?>
+                        <?php if ($form_procedures !== 0) { ?>
                 <td>
                             <?php echo text(FormatMoney::getBucks($grandtotal2)) ?>
                 </td>

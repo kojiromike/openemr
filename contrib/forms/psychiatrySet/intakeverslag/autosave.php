@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    Intakeverslag - Autosave
 // Package: Report of First visit - Dutch specific form
@@ -9,8 +11,8 @@
 
 //local includes
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 //echo "intakedatum=".$_POST["intakedatum"];
 //var_dump($_POST);
@@ -27,12 +29,7 @@ $vectAutosave = sqlQuery("SELECT id, autosave_flag, autosave_datetime FROM form_
 
 // if yes then update this else insert
 if ($vectAutosave['autosave_flag'] == 1 || $_POST["mode"] == "update") {
-    if ($_POST["mode"] == "update") {
-        $newid = $_POST["id"];
-    } else {
-        $newid = $vectAutosave['id'];
-    }
-
+    $newid = $_POST["mode"] == "update" ? $_POST["id"] : $vectAutosave['id'];
     sqlQuery("UPDATE form_intakeverslag
                 SET pid = ?, groupname= ?, user= ?,
                 authorized=, activity=1, date = NOW(),
@@ -59,8 +56,7 @@ if ($vectAutosave['autosave_flag'] == 1 || $_POST["mode"] == "update") {
                   $_POST["hulpverlening_onderzoek"], $_POST["hulpvraag_en_doelen"], $_POST["bijzonderheden_systeem"], $_POST["werk_opleiding_vrije_tijdsbesteding"], $_POST["relatie_kinderen"], $_POST["somatische_context"],
                   $_POST["alcohol"], $_POST["drugs"], $_POST["roken"], $_POST["medicatie"], $_POST["familieanamnese"], $_POST["indruk_observaties"], $_POST["beschrijvende_conclusie"], $_POST["behandelvoorstel"],
                   $newid));
-
-//echo "lalalalal id=$newid, sql=$strSql<br />";
+    //echo "lalalalal id=$newid, sql=$strSql<br />";
 } else {
     $newid = formSubmit("form_intakeverslag", $_POST, $_GET["id"], $userauthorized);
     addForm($encounter, "Psychiatric Intake", $newid, "intakeverslag", $pid, $userauthorized);

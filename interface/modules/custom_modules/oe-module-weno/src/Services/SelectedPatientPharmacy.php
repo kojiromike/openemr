@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package     OpenEMR
  * @link        https://www.open-emr.org
@@ -7,16 +9,11 @@
  * @copyright   Copyright (c) 2024 Omegasystems Group Intl <info@omegasystemsgroup.com>
  * @license     https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 class SelectedPatientPharmacy
 {
-    public function __construct()
-    {
-    }
-
-    public function prepSelectedPharmacy(array $data)
+    public function prepSelectedPharmacy(array $data): void
     {
         $newData = array(
             "primary_pharmacy" => $_POST['primary_pharmacy'],
@@ -36,7 +33,7 @@ class SelectedPatientPharmacy
         $pharmacyService->createWenoPharmaciesForPatient($data['pid'], $newData);
     }
 
-    public function prepForUpdatePharmacy($data)
+    public function prepForUpdatePharmacy($data): void
     {
         $updateData = array(
             "primary_pharmacy" => $data['primary_pharmacy'],

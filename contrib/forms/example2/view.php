@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Sports Physical Form
  *
@@ -12,7 +14,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -74,7 +76,7 @@ function PrintForm() {
 
 <!-- Save/Cancel links -->
 <input type="button" class="save" value="<?php echo xla('Save Changes'); ?>"> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save Changes'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save Changes"); ?>"> &nbsp;
 <input type="button" class="printform" value="<?php echo xla('Print'); ?>"> &nbsp;
 
 <!-- container for the main body of the form -->
@@ -129,7 +131,7 @@ Date of signature:
 </div> <!-- end form_container -->
 
 <input type="button" class="save" value="<?php echo xla('Save Changes'); ?>"> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save Changes'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save Changes"); ?>"> &nbsp;
 <input type="button" class="printform" value="<?php echo xla('Print'); ?>"> &nbsp;
 
 </form>

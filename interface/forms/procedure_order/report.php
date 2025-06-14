@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form for entering procedure orders.
  *
@@ -15,7 +17,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 require_once($GLOBALS["srcdir"] . "/options.inc.php");
 require_once($GLOBALS["include_root"] . "/orders/single_order_results.inc.php");
 
-function procedure_order_report($pid, $encounter, $cols, $id)
+function procedure_order_report($pid, $encounter, $cols, $id): void
 {
     generate_order_report($id);
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Main info frame.
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 // this allows us to keep our viewtype between screens -- JRM calendar_view_type
 $viewtype = $GLOBALS['calendar_view_type'];
@@ -30,15 +32,13 @@ if (isset($_SESSION['pc_username'])) {
         foreach ($_SESSION['pc_username'] as $pcu) {
             $pcuStr .= "&pc_username[]=" . attr_url($pcu);
         }
-    } else {
+    } elseif (is_string($_SESSION['pc_username'])) {
         // two possibilities here
         // 1) pc_username is an array with a single element
         // 2) pc_username is just a string, not an array
-        if (is_string($_SESSION['pc_username'])) {
-            $pcuStr .= "&pc_username[]=" . attr_url($_SESSION['pc_username']);
-        } else {
-            $pcuStr .= "&pc_username[]=" . attr_url($_SESSION['pc_username'][0]);
-        }
+        $pcuStr .= "&pc_username[]=" . attr_url($_SESSION['pc_username']);
+    } else {
+        $pcuStr .= "&pc_username[]=" . attr_url($_SESSION['pc_username'][0]);
     }
 }
 

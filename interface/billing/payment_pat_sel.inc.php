@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * payment_pat_sel.inc.php
  *
@@ -23,34 +25,28 @@ use OpenEMR\Billing\SLEOB;
 //===============================================================================
 //Patient ajax section and listing of charges..Used in New Payment and Edit Payment screen.
 //===============================================================================
-if (isset($_POST["mode"])) {
-    if (
-           ($_POST["mode"] == "search") || (($_POST["default_search_patient"] ?? null) == "default_search_patient") &&
-           isset($_REQUEST['hidden_patient_code']) &&
-           (int)$_REQUEST['hidden_patient_code'] > 0
-    ) {
-        $hidden_patient_code = $_REQUEST['hidden_patient_code'];
-        $RadioPaid = $_REQUEST['RadioPaid'] ?? null;
-        if ($RadioPaid == 'Show_Paid') {
-            $StringForQuery = '';
-        } elseif ($RadioPaid == 'Non_Paid') {
-            $StringForQuery = " and last_level_closed = 0 ";
-        } elseif ($RadioPaid == 'Show_Primary_Complete') {
-            $StringForQuery = " and last_level_closed >= 1 ";
-        }
-        $ResultSearchNew = sqlStatement("SELECT b.id,last_level_closed,b.encounter,fe.`date`,b.code_type,b.code,b.modifier,fee
+if (isset($_POST["mode"]) && ($_POST["mode"] == "search" || ($_POST["default_search_patient"] ?? null) == "default_search_patient" && isset($_REQUEST['hidden_patient_code']) && (int)$_REQUEST['hidden_patient_code'] > 0)) {
+    $hidden_patient_code = $_REQUEST['hidden_patient_code'];
+    $RadioPaid = $_REQUEST['RadioPaid'] ?? null;
+    if ($RadioPaid == 'Show_Paid') {
+        $StringForQuery = '';
+    } elseif ($RadioPaid == 'Non_Paid') {
+        $StringForQuery = " and last_level_closed = 0 ";
+    } elseif ($RadioPaid == 'Show_Primary_Complete') {
+        $StringForQuery = " and last_level_closed >= 1 ";
+    }
+    $ResultSearchNew = sqlStatement("SELECT b.id,last_level_closed,b.encounter,fe.`date`,b.code_type,b.code,b.modifier,fee
             FROM billing AS b,form_encounter AS fe, code_types AS ct
             WHERE b.encounter=fe.encounter AND b.code_type=ct.ct_key AND ct.ct_diag=0
             AND b.activity!=0 AND fe.pid =? AND b.pid =?
             " . ($StringForQuery ?? '') . " ORDER BY fe.`date`, fe.encounter,b.code,b.modifier", array($hidden_patient_code, $hidden_patient_code));
-        $res = sqlStatement("SELECT fname,lname,mname FROM patient_data
+    $res = sqlStatement("SELECT fname,lname,mname FROM patient_data
                          where pid =?", array($hidden_patient_code));
-        $row = sqlFetchArray($res);
-        $fname = $row['fname'] ?? '';
-        $lname = $row['lname'] ?? '';
-        $mname = $row['mname'] ?? '';
-        $NameNew = $lname . ' ' . $fname . ' ' . $mname;
-    }
+    $row = sqlFetchArray($res);
+    $fname = $row['fname'] ?? '';
+    $lname = $row['lname'] ?? '';
+    $mname = $row['mname'] ?? '';
+    $NameNew = $lname . ' ' . $fname . ' ' . $mname;
 }
 //===============================================================================
 ?>
@@ -122,8 +118,8 @@ if (isset($_POST["mode"])) {
                         <?php
                         do {
                             $CountIndex = $CountIndex ?? null;
-                            $CountIndex++;
-                            $CountIndexBelow++;
+                            ++$CountIndex;
+                            ++$CountIndexBelow;
                             $Ins = 0;
                             // Determine the next insurance level to be billed.
                             $ferow = sqlQuery("SELECT date, last_level_closed " .
@@ -148,11 +144,7 @@ if (isset($_POST["mode"])) {
                             $Codetype = $RowSearch['code_type'];
                             $Code = $RowSearch['code'];
                             $Modifier = $RowSearch['modifier'];
-                            if ($Modifier != '') {
-                                $ModifierString = ", $Modifier";
-                            } else {
-                                $ModifierString = "";
-                            }
+                            $ModifierString = $Modifier != '' ? ', ' . $Modifier : "";
                             $Fee = $RowSearch['fee'];
                             $Encounter = $RowSearch['encounter'];
 
@@ -182,7 +174,7 @@ if (isset($_POST["mode"])) {
                                 $rowMoneyGot = sqlFetchArray($resMoneyGot);
                                 $PatientPay = $rowMoneyGot['PatientPay'];
 
-                                $Copay = $Copay + $PatientPay;
+                                $Copay += $PatientPay;
                             }
                             //payer_type!=0, supports both mapped and unmapped code_type in ar_activity
                             $resMoneyGot = sqlStatement(
@@ -221,7 +213,7 @@ if (isset($_POST["mode"])) {
                             <tr class="text" bgcolor='<?php echo attr($bgcolor); ?>' id="trCharges<?php echo attr($CountIndex); ?>">
                                 <td class="text-left">
                                     <input name="HiddenIns<?php echo attr($CountIndex); ?>" id="HiddenIns<?php echo attr($CountIndex); ?>" value="<?php echo attr($Ins); ?>" type="hidden"/>
-                                    <?php echo generate_select_list("payment_ins$CountIndex", "payment_ins", "$Ins", "Insurance/Patient", '', 'oe-payment-select form-input-sm', 'ActionOnInsPat("' . $CountIndex . '")');?>
+                                    <?php echo generate_select_list('payment_ins' . $CountIndex, "payment_ins", $Ins, "Insurance/Patient", '', 'oe-payment-select form-input-sm', 'ActionOnInsPat("' . $CountIndex . '")');?>
                                 </td>
                                 <td>
                                     <?php echo text($ServiceDate); ?>
@@ -265,7 +257,7 @@ if (isset($_POST["mode"])) {
                                 </td>
                                 <td class="text-left">
                                     <input name="HiddenReasonCode<?php echo attr($CountIndex); ?>" id="HiddenReasonCode<?php echo attr($CountIndex); ?>"  value="<?php echo attr($ReasonCodeDB ?? ''); ?>" type="hidden" />
-                                    <?php echo generate_select_list("ReasonCode$CountIndex", "msp_remit_codes", "", "MSP Code", "--", "oe-payment-select"); ?>
+                                    <?php echo generate_select_list('ReasonCode' . $CountIndex, "msp_remit_codes", "", "MSP Code", "--", "oe-payment-select"); ?>
                                 </td>
                                 <td class="text-center">
                                     <input type="checkbox" id="FollowUp<?php echo attr($CountIndex); ?>" name="FollowUp<?php echo attr($CountIndex); ?>" value="y" onClick="ActionFollowUp(<?php echo attr_js($CountIndex); ?>)" />

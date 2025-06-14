@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ccr;
 
 use Laminas\ServiceManager\Factory\InvokableFactory;
@@ -17,7 +19,7 @@ use Laminas\Db\TableGateway\TableGateway;
 return array(
     'controllers' => array(
         'factories' => [
-            CcrController::class => function (ContainerInterface $container, $requestedName) {
+            CcrController::class => function (ContainerInterface $container, $requestedName): \Ccr\Controller\CcrController {
                 return new CcrController($container->get(CcrTable::class), $container->get(DocumentsController::class));
             }
         ],
@@ -57,16 +59,16 @@ return array(
     'service_manager' => [
         'factories' => [
             // TODO: it is odd that this has to be available to the service manager to be dynamically instantiated... but its in the controller namespace.
-            ModuleconfigController::class => function (ContainerInterface $container, $requestedName) {
+            ModuleconfigController::class => function (ContainerInterface $container, $requestedName): \Ccr\Controller\ModuleconfigController {
                 return new ModuleconfigController();
             }
-            ,CcrTable::class =>  function (ContainerInterface $container, $requestedName) {
+            ,CcrTable::class =>  function (ContainerInterface $container, $requestedName): \Ccr\Model\CcrTable {
                 $dbAdapter = $container->get(Adapter::class);
                 $resultSetPrototype = new ResultSet();
                 $resultSetPrototype->setArrayObjectPrototype(new Ccr());
+
                 $tableGateway = new TableGateway('module_menu', $dbAdapter, null, $resultSetPrototype);
-                $table = new CcrTable($tableGateway);
-                return $table;
+                return new CcrTable($tableGateway);
             }
         ]
 

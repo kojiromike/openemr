@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /********************************************************************************\
  * Copyright (C) ViCarePlus, Visolve (vicareplus_engg@visolve.com)              *
  *                                                                              *
@@ -26,21 +28,17 @@ ini_set('max_execution_time', '0');
 //set de_identification_config to 1 to run the de_identification_upgrade script
 $de_identification_config = 0;
 
-require_once('../../interface/globals.php');
+require_once(__DIR__ . '/../../interface/globals.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
-function tableExists_de($tblname)
+function tableExists_de($tblname): bool
 {
     $row = sqlQuery("SHOW TABLES LIKE '" . add_escape_custom($tblname) . "'");
-    if (empty($row)) {
-        return false;
-    }
-
-    return true;
+    return !empty($row);
 }
 
-function upgradeFromSqlFile_de($filename)
+function upgradeFromSqlFile_de($filename): void
 {
     global $webserver_root;
 
@@ -49,7 +47,7 @@ function upgradeFromSqlFile_de($filename)
     echo xlt('Processing');
     echo " " . text($filename) . "...</font><br />\n";
 
-    $fullname = "$webserver_root/sql/" . convert_safe_file_dir_name($filename);
+    $fullname = $webserver_root . '/sql/' . convert_safe_file_dir_name($filename);
 
     $fd = fopen($fullname, 'r');
     if ($fd == false) {
@@ -72,7 +70,7 @@ function upgradeFromSqlFile_de($filename)
             continue;
         }
 
-        if ($line == "") {
+        if ($line === "") {
             continue;
         }
 
@@ -100,9 +98,9 @@ function upgradeFromSqlFile_de($filename)
             $query .= "\n";
         }
 
-        $query = $query . $line;
+        $query .= $line;
 
-        if (substr($query, -1) == '$') {
+        if (substr($query, -1) === '$') {
             $query = rtrim($query, '$');
             if ($proc == 0) {
                 $proc = 1;
@@ -120,7 +118,7 @@ function upgradeFromSqlFile_de($filename)
             }
         }
 
-        if (substr($query, -1) == ';' and $proc == 0) {
+        if (substr($query, -1) === ';' && $proc == 0) {
             $query = rtrim($query, ';');
             echo text($query) . "<br />\n";  //executes sql statements
             if (!sqlStatement($query)) {
@@ -139,7 +137,7 @@ function upgradeFromSqlFile_de($filename)
 } // end function
 
 
-$sqldir = "$webserver_root/sql";
+$sqldir = $webserver_root . '/sql';
 $dh = opendir($sqldir);
 if (! $dh) {
     die(xlt("Cannot read") . " " . text($sqldir));
@@ -175,8 +173,8 @@ if (!empty($_POST['form_submit'])) {
         exit();
     }  $login = $sqlconf["login"];
     $loginhost = $sqlconf["host"];
-    generic_sql_select_db($sqlconf['dbase']) or die(text(getSqlLastError()));
-    if (sqlStatement("GRANT FILE ON *.* TO '$login'@'$loginhost'") == false) {
+    generic_sql_select_db($sqlconf['dbase']) || die(text(getSqlLastError()));
+    if (sqlStatement(sprintf("GRANT FILE ON *.* TO '%s'@'%s'", $login, $loginhost)) == false) {
         echo xlt("Error when granting file privilege to the OpenEMR user.");
         echo "\n";
         echo "<p>" . text(getSqlLastError()) . " (#" . text(getSqlLastErrorNo()) . ")\n";
@@ -200,7 +198,7 @@ if (!empty($_POST['form_submit'])) {
     echo xlt("Please set de_identification_config variable back to zero");
     echo "</font></p>\n";
     echo "</body></html>\n";
-    sqlClose($dbh);
+    sqlClose();
     exit();
 }
 ?>

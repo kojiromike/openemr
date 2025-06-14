@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * gad-7 report.php
  * display a form's values in the encounter summary page
@@ -12,16 +14,15 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("gad7.inc.php");
+require_once(__DIR__ . "/gad7.inc.php");
 
 $gad7_total = 0;
 $pdf_as_string = '';
-$data;
 $exp = '';
 
 $str_difficulty_values = [0 => xl('Not at all') . ' (0)',1 => xl('Somewhat difficult') . ' (1)', 2 => xl('Very difficult') . ' (2)', 3 => xl('Extremely difficult') . ' (3)', 'undef' => xl('not answered')];
 
-function gad7_report($pid, $encounter, $cols, $id)
+function gad7_report($pid, $encounter, $cols, $id): void
 {
     global $str_test, $str_nervous,$gad7_total, $pdf_as_string, $str_values,$str_difficulty_values, $data, $exp, $file_name, $str_generate_pdf;
 
@@ -42,6 +43,7 @@ function gad7_report($pid, $encounter, $cols, $id)
             if ($key == "id" || $key == "pid" || $key == "user" || $key == "groupname" || $key == "authorized" || $key ==  "activity" || $key == "date" || $value == "" || $key == "scores_array" || $key == "total" || $value == "0000-00-00 00:00:00") {
                 continue;
             }
+
             if ($key == "difficulty") {
                 print "<td><span class=bold>" . text($str_issues[$key]) . ": </span><span class=text>" . text($str_difficulty_values [$value]) . "</span></td>";
             } else {
@@ -50,12 +52,14 @@ function gad7_report($pid, $encounter, $cols, $id)
                     $gad7_total += $value;
                 }
             }
-            $count++;
+
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";
             }
         }
+
         // print the total
         switch (intdiv($gad7_total, 5)) {
             case 0:

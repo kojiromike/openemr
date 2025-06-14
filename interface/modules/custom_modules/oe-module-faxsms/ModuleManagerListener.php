@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\Core\AbstractModuleActionListener;
 use OpenEMR\Modules\FaxSMS\BootstrapService;
 
@@ -34,20 +36,20 @@ use OpenEMR\Modules\FaxSMS\BootstrapService;
 
 class ModuleManagerListener extends AbstractModuleActionListener
 {
+    /**
+     * @var \OpenEMR\Modules\FaxSMS\BootstrapService
+     */
     public $service;
-    private $authUser;
 
     public function __construct()
     {
         parent::__construct();
-        $this->authUser = (int)$this->getSession('authUserID');
         $this->service = new BootstrapService();
     }
 
     /**
      * @param        $methodName
      * @param        $modId
-     * @param string $currentActionStatus
      * @return string On method success a $currentAction status should be returned or error string.
      */
     public function moduleManagerAction($methodName, $modId, string $currentActionStatus = 'Success'): string
@@ -55,7 +57,7 @@ class ModuleManagerListener extends AbstractModuleActionListener
         if (method_exists(self::class, $methodName)) {
             return self::$methodName($modId, $currentActionStatus);
         } else {
-            return "Module cleanup method $methodName does not exist.";
+            return sprintf('Module cleanup method %s does not exist.', $methodName);
         }
     }
 
@@ -63,10 +65,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * Required method to return namespace
      * If namespace isn't provided return an empty
      * and register namespace using example at top of this script.
-     *
-     * @return string
      */
-    public static function getModuleNamespace(): string
+    protected static function getModuleNamespace(): string
     {
         return 'OpenEMR\\Modules\\FaxSMS\\';
     }
@@ -74,10 +74,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * Required method to return this class object,
      * so it is instantiated in Laminas Manager.
-     *
-     * @return ModuleManagerListener
      */
-    public static function initListenerSelf(): ModuleManagerListener
+    protected static function initListenerSelf(): ModuleManagerListener
     {
         return new self();
     }
@@ -85,9 +83,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function install($modId, $currentActionStatus): mixed
+    private function install($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -95,17 +92,18 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function enable($modId, $currentActionStatus): mixed
+    private function enable($currentActionStatus): mixed
     {
         if (empty($this->service)) {
             $this->service = new BootstrapService();
         }
+
         $globals = $this->service->fetchPersistedSetupSettings() ?? '';
         if (empty($globals)) {
             $globals = $this->service->getVendorGlobals();
         }
+
         $this->service->saveModuleListenerGlobals($globals);
 
         return $currentActionStatus;
@@ -116,21 +114,23 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * @param $currentActionStatus
      * @return mixed
      */
-    private function disable($modId, $currentActionStatus)
+    private function disable($currentActionStatus)
     {
         if (empty($this->service)) {
             $this->service = new BootstrapService();
         }
+
         // fetch current.
         $globals = $this->service->getVendorGlobals();
         // persist current for enable action.
-        $rid = $this->service->persistSetupSettings($globals);
+        $this->service->persistSetupSettings($globals);
         foreach ($globals as $k => $v) {
             if ($k == 'oefax_enable_sms' || $k == 'oefax_enable_fax') {
                 // force disable of services
                 $globals[$k] = 0;
             }
         }
+
         // save new disabled settings.
         $this->service->saveModuleListenerGlobals($globals);
         return $currentActionStatus;
@@ -139,9 +139,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function unregister($modId, $currentActionStatus): mixed
+    private function unregister($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -149,9 +148,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function install_sql($modId, $currentActionStatus): mixed
+    private function install_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -159,9 +157,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function upgrade_sql($modId, $currentActionStatus): mixed
+    private function upgrade_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }

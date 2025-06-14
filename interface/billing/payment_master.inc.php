@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Check/cash details are entered here.Used in New Payment and Edit Payment screen.
  * Special list function
@@ -13,7 +15,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-function generate_list_payment_category($tag_name, $list_id, $currvalue, $title, $empty_name = ' ', $class = '', $onchange = '', $PaymentType = 'insurance', $screen = 'new_payment')
+function generate_list_payment_category($tag_name, $list_id, $currvalue, $title, $empty_name = ' ', $class = '', ?string $onchange = '', $PaymentType = 'insurance', $screen = 'new_payment'): string
 {
     $s = '';
     $s .= "<select name='" . attr($tag_name) . "' id='" . attr($tag_name) . "'";
@@ -27,9 +29,9 @@ function generate_list_payment_category($tag_name, $list_id, $currvalue, $title,
     if ($empty_name) {
         $s .= "<option value=''>" . xlt($empty_name) . "</option>";
     }
-    $lres = sqlStatement("SELECT * FROM list_options WHERE list_id = ? AND activity = 1 ORDER BY seq, title", array($list_id));
+    $recordset = sqlStatement("SELECT * FROM list_options WHERE list_id = ? AND activity = 1 ORDER BY seq, title", array($list_id));
     $got_selected = false;
-    while ($lrow = sqlFetchArray($lres)) {
+    while ($lrow = sqlFetchArray($recordset)) {
         $s .= "<option   id='option_" . attr($lrow['option_id']) . "'" . " value='" . attr($lrow['option_id']) . "'";
         if ((strlen($currvalue) == 0 && $lrow['is_default']) || (strlen($currvalue) > 0 && $lrow['option_id'] == $currvalue) || ($lrow['option_id'] == 'insurance_payment' && $screen == 'new_payment')) {
             $s .= " selected";
@@ -158,12 +160,8 @@ if (($screen == 'new_payment' && $payment_id * 1 == 0) || ($screen == 'edit_paym
             <label class="control-label" for="payment_method"><?php echo xlt('Payment Method'); ?>:</label>
             <div class="pl-0">
                 <?php
-                if ($PaymentMethod == '' && $screen == 'edit_payment') {
-                    $blankValue = ' ';
-                } else {
-                    $blankValue = '';
-                }
-                echo generate_select_list("payment_method", "payment_method", "$PaymentMethod", "Payment Method", "$blankValue", "", 'CheckVisible("yes")');
+                $blankValue = $PaymentMethod == '' && $screen == 'edit_payment' ? ' ' : '';
+                echo generate_select_list("payment_method", "payment_method", $PaymentMethod, "Payment Method", $blankValue, "", 'CheckVisible("yes")');
                 ?>
             </div>
         </div>
@@ -190,32 +188,24 @@ if (($screen == 'new_payment' && $payment_id * 1 == 0) || ($screen == 'edit_paym
         <div class="forms col-3">
             <label class="control-label" for="type_name"><?php echo xlt('Paying Entity'); ?>:</label>
             <?php
-            if ($PaymentType == '' && $screen == 'edit_payment') {
-                $blankValue = ' ';
-            } else {
-                $blankValue = '';
-            }
-            echo generate_select_list("type_name", "payment_type", "$PaymentType", "Paying Entity", "$blankValue", "form-control", 'PayingEntityAction()');
+            $blankValue = $PaymentType == '' && $screen == 'edit_payment' ? ' ' : '';
+            echo generate_select_list("type_name", "payment_type", $PaymentType, "Paying Entity", $blankValue, "form-control", 'PayingEntityAction()');
             ?>
         </div>
         <div class="forms col-3">
             <label class="control-label" for="adjustment_code"><?php echo xlt('Payment Category'); ?>:</label>
             <?php
-            if ($AdjustmentCode == '' && $screen == 'edit_payment') {
-                $blankValue = ' ';
-            } else {
-                $blankValue = '';
-            }
+            $blankValue = $AdjustmentCode == '' && $screen == 'edit_payment' ? ' ' : '';
             echo generate_list_payment_category(
                 "adjustment_code",
                 "payment_adjustment_code",
-                "$AdjustmentCode",
+                $AdjustmentCode,
                 "Payment Category",
-                "$blankValue",
+                $blankValue,
                 "form-control",
                 'FilterSelection(this)',
-                "$PaymentType",
-                "$screen"
+                $PaymentType,
+                $screen
             );
             ?>
         </div>

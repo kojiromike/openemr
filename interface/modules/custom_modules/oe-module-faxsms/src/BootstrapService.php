@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS;
 
 /**
@@ -17,13 +18,6 @@ namespace OpenEMR\Modules\FaxSMS;
  */
 class BootstrapService
 {
-    public function __construct()
-    {
-    }
-
-    /**
-     * @return array
-     */
     public function getVendorGlobals(): array
     {
         $vendors['oefax_enable_sms'] = '';
@@ -32,20 +26,17 @@ class BootstrapService
         $vendors['oerestrict_users'] = '';
         $vendors['oe_enable_email'] = '';
 
-        $gl = sqlStatementNoLog(
+        $recordset = sqlStatementNoLog(
             "SELECT gl_name, gl_value FROM `globals` WHERE `gl_name` IN(?, ?, ?, ?, ?)",
             array("oefax_enable_sms", "oefax_enable_fax", "oesms_send", "oerestrict_users", 'oe_enable_email')
         );
-        while ($row = sqlFetchArray($gl)) {
+        while ($row = sqlFetchArray($recordset)) {
             $vendors[$row['gl_name']] = $row['gl_value'];
         }
 
         return $vendors;
     }
 
-    /**
-     * @return void
-     */
     public function createVendorGlobals(): void
     {
         sqlInsert(
@@ -60,7 +51,6 @@ class BootstrapService
 
     /**
      * @param $vendors
-     * @return void
      */
     public function saveVendorGlobals($vendors): void
     {
@@ -84,12 +74,11 @@ class BootstrapService
      *
      * @param        $modId
      * @param string $col
-     * @return array
      */
-    function getModuleRegistry($modId, $col = '*'): array
+    public function getModuleRegistry($modId, $col = '*'): array
     {
         $registry = [];
-        $sql = "SELECT $col FROM modules WHERE mod_id = ?";
+        $sql = sprintf('SELECT %s FROM modules WHERE mod_id = ?', $col);
         $results = sqlQuery($sql, array($modId));
         foreach ($results as $k => $v) {
             $registry[$k] = trim((preg_replace('/\R/', '', $v)));
@@ -100,7 +89,6 @@ class BootstrapService
 
     /**
      * @param $items
-     * @return void
      */
     public function saveModuleListenerGlobals($items): void
     {
@@ -128,9 +116,6 @@ class BootstrapService
         return sqlQuery($sql, array('', $authId, $vendor, $content, $authId, $vendor, $content));
     }
 
-    /**
-     * @return array
-     */
     public function fetchPersistedSetupSettings(): array
     {
         $vendor = '_persisted';
@@ -139,6 +124,7 @@ class BootstrapService
         if (is_string($globals['credentials'])) {
             return json_decode($globals['credentials'], true) ?? [];
         }
+
         return [];
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the retrieval of calendar categories that are specific to TeleHealth
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Models;
 
 class UserVideoRegistrationRequest
@@ -17,85 +18,65 @@ class UserVideoRegistrationRequest
     /**
      * The unique user name for a video api user max string length 64 chars.
      * This is typically a UUIDV1 or UUIDV4
-     * @var string
      */
-    private $username;
+    private ?string $username = null;
 
     /**
      * The unique password length for the video api user max string length 256 chars
-     * @var string
      */
-    private $password;
+    private ?string $password = null;
 
     /**
      * The unique UUID for the OpenEMR installation we are originating users from.  Max chars 64
-     * @var string
      */
-    private $instituationId;
+    private ?string $instituationId = null;
 
     /**
      * the Unique institution name for the OpenEMR installation. Max chars 255
-     * @var string
      */
-    private $institutionName;
+    private ?string $institutionName = null;
 
     /**
      * The user's first name used for reporting purposes.  Max chars 255
-     * @var string
      */
-    private $firstName;
+    private ?string $firstName = null;
 
     /**
      *  the User's last name used for reporting purposes.  Max chars 255
-     * @var string
      */
-    private $lastName;
+    private ?string $lastName = null;
 
     /**
      * @var int The unique database id of the record
      */
-    private $dbRecordId = null;
+    private ?int $dbRecordId = null;
 
     /**
      * @var bool True if the registration request is for a patient or false if its a provider
      */
-    private $isPatient = false;
+    private bool $isPatient = false;
 
     /**
      * @var string The unique registration code that can be used by the user to identify their mobile app for first time setup.
      */
-    private $registrationCode;
+    private ?string $registrationCode = null;
 
-    /**
-     * @return int
-     */
     public function getDbRecordId(): int
     {
         return $this->dbRecordId;
     }
 
-    /**
-     * @param int $dbRecordId
-     * @return UserVideoRegistrationRequest
-     */
     public function setDbRecordId(int $dbRecordId): UserVideoRegistrationRequest
     {
         $this->dbRecordId = $dbRecordId;
         return $this;
     }
 
-    /**
-     * @return bool
-     */
     public function isPatient(): bool
     {
         return $this->isPatient;
     }
 
-    /**
-     * @param bool $isPatient
-     * @return UserVideoRegistrationRequest
-     */
     public function setIsPatient(bool $isPatient): UserVideoRegistrationRequest
     {
         $this->isPatient = $isPatient;
@@ -103,65 +84,47 @@ class UserVideoRegistrationRequest
     }
 
 
-    /**
-     * @return string
-     */
     public function getUsername(): string
     {
         return $this->username;
     }
 
-    /**
-     * @param string $username
-     * @return UserVideoRegistrationRequest
-     */
     public function setUsername(string $username): UserVideoRegistrationRequest
     {
         if (strlen($username) > 64) {
             throw new \InvalidArgumentException("username must be 64 characters or less");
         }
+
         $this->username = $username;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getPassword(): string
     {
         return $this->password;
     }
 
-    /**
-     * @param string $password
-     * @return UserVideoRegistrationRequest
-     */
     public function setPassword(string $password): UserVideoRegistrationRequest
     {
         if (strlen($password) > 256) {
             throw new \InvalidArgumentException("password must be 256 characters or less");
         }
+
         $this->password = $password;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getInstituationId(): string
     {
         return $this->instituationId;
     }
 
-    /**
-     * @param string $instituationId
-     * @return UserVideoRegistrationRequest
-     */
     public function setInstituationId(string $instituationId): UserVideoRegistrationRequest
     {
         if (strlen($instituationId) > 64) {
             throw new \InvalidArgumentException("InstitutionId must be 64 characters or less");
         }
+
         $this->instituationId = $instituationId;
         return $this;
     }
@@ -174,15 +137,12 @@ class UserVideoRegistrationRequest
         return $this->institutionName;
     }
 
-    /**
-     * @param string $institutionName
-     * @return UserVideoRegistrationRequest
-     */
     public function setInstitutionName(string $institutionName): UserVideoRegistrationRequest
     {
         if (strlen($institutionName) > 255) {
             throw new \InvalidArgumentException("institutionName must be 255 characters or less");
         }
+
         $this->institutionName = $institutionName;
         return $this;
     }
@@ -195,15 +155,12 @@ class UserVideoRegistrationRequest
         return $this->firstName;
     }
 
-    /**
-     * @param string $firstName
-     * @return UserVideoRegistrationRequest
-     */
     public function setFirstName(string $firstName): UserVideoRegistrationRequest
     {
         if (strlen($firstName) > 255) {
             throw new \InvalidArgumentException("firstName must be 255 characters or less");
         }
+
         $this->firstName = $firstName;
         return $this;
     }
@@ -216,40 +173,29 @@ class UserVideoRegistrationRequest
         return $this->lastName;
     }
 
-    /**
-     * @param string $lastName
-     * @return UserVideoRegistrationRequest
-     */
     public function setLastName(string $lastName): UserVideoRegistrationRequest
     {
         if (strlen($lastName) > 255) {
             throw new \InvalidArgumentException("lastName must be 255 characters or less");
         }
+
         $this->lastName = $lastName;
         return $this;
     }
 
     /**
      * Returns true if the username, password, and institutionId have been populated, false otherwise.
-     * @return bool
      */
     public function isValid(): bool
     {
         return !empty($this->username) && !empty($this->password) && !empty($this->instituationId);
     }
 
-    /**
-     * @return string
-     */
     public function getRegistrationCode(): string
     {
         return $this->registrationCode;
     }
 
-    /**
-     * @param string $registrationCode
-     * @return UserVideoRegistrationRequest
-     */
     public function setRegistrationCode(string $registrationCode): UserVideoRegistrationRequest
     {
         $this->registrationCode = $registrationCode;
@@ -279,11 +225,12 @@ class UserVideoRegistrationRequest
         ];
     }
 
-    private function getArrayRole()
+    private function getArrayRole(): string
     {
         if ($this->isPatient) {
             return 'patient';
         }
+
         return 'provider';
     }
 }

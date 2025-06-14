@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Model/ApplicationTable.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Model;
 
 use DateTime;
@@ -22,6 +23,7 @@ use OpenEMR\Common\Logging\EventAuditLogger;
 class ApplicationTable extends AbstractTableGateway
 {
     protected $table = 'application';
+
     protected $adapter;
 
     /**
@@ -33,6 +35,7 @@ class ApplicationTable extends AbstractTableGateway
         // TODO: I can't find any reason why we grab the static adapter instead of injecting a regular DB adapter here...
         $adapter = \Laminas\Db\TableGateway\Feature\GlobalAdapterFeature::getStaticAdapter();
         $this->adapter = $adapter;
+
         $this->resultSetPrototype = new ResultSet();
         $this->resultSetPrototype->setArrayObjectPrototype(new Application());
         $this->initialize();
@@ -98,10 +101,9 @@ class ApplicationTable extends AbstractTableGateway
      * Path /library/sql.inc.php
      *
      * @param type   $e
-     * @param string $sql
      * @param array  $binds
      */
-    public function errorHandler($e, $sql, $binds = '')
+    public function errorHandler($e, string $sql, $binds = ''): void
     {
         $escaper = new \Laminas\Escaper\Escaper('utf-8');
         $trace = $e->getTraceAsString();
@@ -111,20 +113,21 @@ class ApplicationTable extends AbstractTableGateway
         do {
             $logMsg .= "\r Exception: " . $escaper->escapeHtml($e->getMessage());
         } while ($e = $e->getPrevious());
+
         /** List all Params */
         $processedBinds = "";
         if (is_array($binds)) {
             $firstLoop = true;
-            foreach ($binds as $valueBind) {
+            foreach ($binds as $bind) {
                 if ($firstLoop) {
-                    $processedBinds .= "'" . $valueBind . "'";
+                    $processedBinds .= "'" . $bind . "'";
                     $firstLoop = false;
                 } else {
-                    $processedBinds .= ",'" . $valueBind . "'";
+                    $processedBinds .= ",'" . $bind . "'";
                 }
             }
 
-            if (!empty($processedBinds)) {
+            if ($processedBinds !== '' && $processedBinds !== '0') {
                 $processedBinds = "(" . $processedBinds . ")";
             }
         }
@@ -139,8 +142,10 @@ class ApplicationTable extends AbstractTableGateway
         echo $trace;
         echo '</pre>';
         /** Error Logging */
-        $logMsg .= "\n SQL statement : $sql" . $processedBinds;
-        $logMsg .= "\n $trace";
+        $logMsg .= '
+ SQL statement : ' . $sql . $processedBinds;
+        $logMsg .= '
+ ' . $trace;
         error_log("ERROR: " . errorLogEscape($logMsg), 0);
     }
 
@@ -167,9 +172,8 @@ class ApplicationTable extends AbstractTableGateway
      *
      * @param int $user_id Auth user Id
      *                     $param String  $section_identifier ACL Section id
-     * @return boolean
      */
-    public function zAclCheck($user_id, $section_identifier)
+    public function zAclCheck($user_id, $section_identifier): bool
     {
         $sql_user_acl = " SELECT
                                 COUNT(allowed) AS count
@@ -200,10 +204,10 @@ class ApplicationTable extends AbstractTableGateway
                             WHERE
                                 garo.section_value = ? AND usr. id = ?";
 
-        $res_groups = $this->zQuery($sql_user_group, array('users', $user_id));
+        $type = $this->zQuery($sql_user_group, array('users', $user_id));
         $groups = array();
-        foreach ($res_groups as $row) {
-            array_push($groups, $row['group_id']);
+        foreach ($type as $row) {
+            $groups[] = $row['group_id'];
         }
 
         $groups_str = implode(",", $groups);
@@ -224,13 +228,13 @@ class ApplicationTable extends AbstractTableGateway
         }
 
         $res_group_denied = $this->zQuery($sql_group_acl, array($section_identifier, $groups_str, 0));
-        foreach ($res_group_denied as $row) {
-            $count_group_denied = $row['count'];
+        foreach ($res_group_denied as $re_group_denied) {
+            $count_group_denied = $re_group_denied['count'];
         }
 
         $res_group_allowed = $this->zQuery($sql_group_acl, array($section_identifier, $groups_str, 1));
-        foreach ($res_group_allowed as $row) {
-            $count_group_allowed = $row['count'];
+        foreach ($res_group_allowed as $re_group_allowed) {
+            $count_group_allowed = $re_group_allowed['count'];
         }
 
         if ($count_user_denied > 0) {
@@ -248,25 +252,15 @@ class ApplicationTable extends AbstractTableGateway
 
     /**
      * Auto Suggest
+     * @return mixed[]
      */
-    public function listAutoSuggest($post, $limit)
+    public function listAutoSuggest($post, $limit): array
     {
-        $pages = 0;
         $limitEnd = \Application\Plugin\CommonPlugin::escapeLimit($limit);
 
         if (isset($GLOBALS['set_autosuggest_options'])) {
-            if ($GLOBALS['set_autosuggest_options'] == 1) {
-                $leading = '%';
-            } else {
-                $leading = $post->leading;
-            }
-
-            if ($GLOBALS['set_autosuggest_options'] == 2) {
-                $trailing = '%';
-            } else {
-                $trailing = $post->trailing;
-            }
-
+            $leading = $GLOBALS['set_autosuggest_options'] == 1 ? '%' : $post->leading;
+            $trailing = $GLOBALS['set_autosuggest_options'] == 2 ? '%' : $post->trailing;
             if ($GLOBALS['set_autosuggest_options'] == 3) {
                 $leading = '%';
                 $trailing = '%';
@@ -281,16 +275,10 @@ class ApplicationTable extends AbstractTableGateway
 
         $page = $post->page;
         $searchType = $post->searchType;
-        $searchEleNo = $post->searchEleNo;
-
-        if ($page == '') {
-            $limitStart = 0;
-        } else {
-            $limitStart = \Application\Plugin\CommonPlugin::escapeLimit($page);
-        }
+        $limitStart = $page == '' ? 0 : \Application\Plugin\CommonPlugin::escapeLimit($page);
 
         $keyword = $leading . $queryString . $trailing;
-        if (strtolower($searchType) == 'patient') {
+        if (strtolower($searchType) === 'patient') {
             $sql = "SELECT fname, mname, lname, pid, DOB FROM patient_data
                 WHERE pid LIKE ?
                 OR  CONCAT(fname, ' ', lname) LIKE ?
@@ -308,7 +296,7 @@ class ApplicationTable extends AbstractTableGateway
                 $keyword
             ));
             $rowCount = $result->count();
-            $sql .= "LIMIT $limitStart, $limitEnd";
+            $sql .= sprintf('LIMIT %s, %s', $limitStart, $limitEnd);
             $result = $this->zQuery($sql, array(
                 $keyword,
                 $keyword,
@@ -318,7 +306,7 @@ class ApplicationTable extends AbstractTableGateway
                 $keyword,
 
             ));
-        } elseif (strtolower($searchType) == 'emrdirect') {
+        } elseif (strtolower($searchType) === 'emrdirect') {
             $sql = "SELECT fname, mname, lname,email_direct AS 'email',id FROM users
                 WHERE (CONCAT(fname, ' ', lname) LIKE ?
                 OR  CONCAT(lname, ' ', fname) LIKE ?
@@ -332,7 +320,7 @@ class ApplicationTable extends AbstractTableGateway
                 $keyword,
             ));
             $rowCount = $result->count();
-            $sql .= "LIMIT $limitStart, $limitEnd";
+            $sql .= sprintf('LIMIT %s, %s', $limitStart, $limitEnd);
             $result = $this->zQuery($sql, array(
                 $keyword,
                 $keyword,
@@ -405,7 +393,7 @@ class ApplicationTable extends AbstractTableGateway
      *                              If null, the method will attempt to detect the format.
      * @return string|false         The formatted date or false if conversion fails.
      */
-    public static function fixDate($input_date, $output_format = null, $input_format = null)
+    public static function fixDate($input_date, $output_format = null, $input_format = null): false|string
     {
         if (!$input_date) {
             return false;
@@ -416,15 +404,14 @@ class ApplicationTable extends AbstractTableGateway
 
         if ($input_format) {
             $inputFormat = self::dateFormat($input_format);
+        } elseif (preg_match('/^\d{8}$/', $input_date)) {
+            $inputFormat = 'Ymd';
+        } elseif (preg_match('/^\d{14}$/', $input_date)) {
+            $inputFormat = 'YmdHis';
         } else {
-            if (preg_match('/^\d{8}$/', $input_date)) {
-                $inputFormat = 'Ymd';
-            } elseif (preg_match('/^\d{14}$/', $input_date)) {
-                $inputFormat = 'YmdHis';
-            } else {
-                $inputFormat = null;
-            }
+            $inputFormat = null;
         }
+
         if ($inputFormat) {
             $dateObj = DateTime::createFromFormat($inputFormat, $input_date);
         } else {

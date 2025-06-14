@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Bootstrap custom module skeleton.  This file is an example custom module that can be used
  * to create modules that can be utilized inside the OpenEMR system.  It is NOT intended for
@@ -13,7 +15,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 /**
@@ -46,56 +47,46 @@ class Bootstrap
     /**
      * @var EventDispatcherInterface The object responsible for sending and subscribing to events through the OpenEMR system
      */
-    private $eventDispatcher;
+    private \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher;
 
     /**
      * @var GlobalConfig Holds our module global configuration values that can be used throughout the module.
      */
-    private $globalsConfig;
-
-    /**
-     * @var string The folder name of the module.  Set dynamically from searching the filesystem.
-     */
-    private $moduleDirectoryName;
+    private \OpenEMR\Modules\ClaimRevConnector\GlobalConfig $globalConfig;
 
     /**
      * @var \Twig\Environment The twig rendering environment
      */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Common\Logging\SystemLogger $systemLogger;
 
     public function __construct(EventDispatcherInterface $eventDispatcher, ?Kernel $kernel = null)
     {
         global $GLOBALS;
 
-        if (empty($kernel)) {
+        if (!$kernel instanceof \OpenEMR\Core\Kernel) {
             $kernel = new Kernel();
         }
 
         // NOTE: eventually you will be able to pull the twig container directly from the kernel instead of instantiating
         // it here.
-        $twig = new TwigContainer($this->getTemplatePath(), $kernel);
-        $twigEnv = $twig->getTwig();
-        $this->twig = $twigEnv;
-
-        $this->moduleDirectoryName = basename(dirname(__DIR__));
+        $twigContainer = new TwigContainer($this->getTemplatePath(), $kernel);
+        $twigEnvironment = $twigContainer->getTwig();
+        $this->twigEnvironment = $twigEnvironment;
         $this->eventDispatcher = $eventDispatcher;
 
         // we inject our globals value.
-        $this->globalsConfig = new GlobalConfig($GLOBALS);
-        $this->logger = new SystemLogger();
+        $this->globalConfig = new GlobalConfig($GLOBALS);
+        $this->systemLogger = new SystemLogger();
     }
 
-    public function subscribeToEvents()
+    public function subscribeToEvents(): void
     {
         $this->addGlobalSettings();
 
         // we only add the rest of our event listeners and configuration if we have been fully setup and configured
-        if ($this->globalsConfig->isConfigured()) {
+        if ($this->globalConfig->isConfigured()) {
             $this->registerMenuItems();
             $this->registerTemplateEvents();
             $this->subscribeToApiEvents();
@@ -110,27 +101,27 @@ class Bootstrap
      */
     public function getGlobalConfig()
     {
-        return $this->globalsConfig;
+        return $this->globalConfig;
     }
 
-    public function addGlobalSettings()
+    public function addGlobalSettings(): void
     {
         $this->eventDispatcher->addListener(GlobalsInitializedEvent::EVENT_HANDLE, [$this, 'addGlobalSettingsSection']);
     }
 
-    public function addGlobalSettingsSection(GlobalsInitializedEvent $event)
+    public function addGlobalSettingsSection(GlobalsInitializedEvent $globalsInitializedEvent): void
     {
         global $GLOBALS;
 
-        $service = $event->getGlobalsService();
+        $globalsService = $globalsInitializedEvent->getGlobalsService();
         $section = xlt("ClaimRev Connect");
-        $service->createSection($section, 'Portal');
+        $globalsService->createSection($section, 'Portal');
 
-        $settings = $this->globalsConfig->getGlobalSettingSectionConfiguration();
+        $settings = $this->globalConfig->getGlobalSettingSectionConfiguration();
 
         foreach ($settings as $key => $config) {
             $value = $GLOBALS[$key] ?? $config['default'];
-            $service->appendToSection(
+            $globalsService->appendToSection(
                 $section,
                 $key,
                 new GlobalSetting(
@@ -145,30 +136,30 @@ class Bootstrap
     }
 
 
-    public function registerDemographicsEvents()
+    public function registerDemographicsEvents(): void
     {
         if ($this->getGlobalConfig()->getGlobalSetting(GlobalConfig::CONFIG_ENABLE_ELIGIBILITY_CARD)) {
             $this->eventDispatcher->addListener(pRenderEvent::EVENT_SECTION_LIST_RENDER_AFTER, [$this, 'renderEligibilitySection']);
         }
     }
 
-    public function registerEligibilityEvents()
+    public function registerEligibilityEvents(): void
     {
         if ($this->getGlobalConfig()->getGlobalSetting(GlobalConfig::CONFIG_ENABLE_REALTIME_ELIGIBILITY)) {
             $this->eventDispatcher->addListener(AppointmentSetEvent::EVENT_HANDLE, [$this, 'renderAppointmentSetEvent']);
         }
     }
-    public function renderAppointmentSetEvent(AppointmentSetEvent $event)
+    public function renderAppointmentSetEvent(AppointmentSetEvent $appointmentSetEvent): void
     {
-        ClaimRevRteService::createEligibilityFromAppointment($event->eid);
+        ClaimRevRteService::createEligibilityFromAppointment($appointmentSetEvent->eid);
     }
-    public function renderEligibilitySection(pRenderEvent $event)
+    public function renderEligibilitySection(pRenderEvent $pRenderEvent): void
     {
         //using this magic thing again, for some reason I can't move up to the templates directory!!!
         $path = __DIR__;
         $path = str_replace("src", "templates", $path);
 
-        $pid = $event->getPid();
+        $pid = $pRenderEvent->getPid();
         ?>
         <section class="card mb-2">
         <?php
@@ -205,28 +196,23 @@ class Bootstrap
     /**
      * We tie into any events dealing with the templates / page rendering of the system here
      */
-    public function registerTemplateEvents()
+    public function registerTemplateEvents(): void
     {
         $this->eventDispatcher->addListener(TwigEnvironmentEvent::EVENT_CREATED, [$this, 'addTemplateOverrideLoader']);
     }
 
     /**
      * Add our javascript and css file for the module to the main tabs page of the system
-     *
-     * @param RenderEvent $event
      */
-    public function renderMainBodyScripts(RenderEvent $event)
+    public function renderMainBodyScripts(RenderEvent $renderEvent)
     {
     }
 
-    /**
-     * @param TwigEnvironmentEvent $event
-     */
-    public function addTemplateOverrideLoader(TwigEnvironmentEvent $event)
+    public function addTemplateOverrideLoader(TwigEnvironmentEvent $twigEnvironmentEvent): void
     {
         try {
-            $twig = $event->getTwigEnvironment();
-            if ($twig === $this->twig) {
+            $twig = $twigEnvironmentEvent->getTwigEnvironment();
+            if ($twig === $this->twigEnvironment) {
                 // we do nothing if its our own twig environment instantiated that we already setup
                 return;
             }
@@ -235,17 +221,15 @@ class Bootstrap
             if ($loader instanceof FilesystemLoader) {
                 $loader->prependPath($this->getTemplatePath());
             }
-        } catch (LoaderError $error) {
-            $this->logger->errorLogCaller("Failed to create template loader", ['innerMessage' => $error->getMessage(), 'trace' => $error->getTraceAsString()]);
+        } catch (LoaderError $loaderError) {
+            $this->systemLogger->errorLogCaller("Failed to create template loader", ['innerMessage' => $loaderError->getMessage(), 'trace' => $loaderError->getTraceAsString()]);
         }
     }
 
-    public function registerMenuItems()
+    public function registerMenuItems(): void
     {
         if ($this->getGlobalConfig()->getGlobalSetting(GlobalConfig::CONFIG_ENABLE_MENU)) {
             /**
-             * @var    EventDispatcherInterface $eventDispatcher
-             * @var    array $module
              * @global $eventDispatcher @see ModulesApplication::loadCustomModule
              * @global $module @see ModulesApplication::loadCustomModule
              */
@@ -253,9 +237,9 @@ class Bootstrap
         }
     }
 
-    public function addCustomModuleMenuItem(MenuEvent $event)
+    public function addCustomModuleMenuItem(MenuEvent $menuEvent): MenuEvent
     {
-        $menu = $event->getMenu();
+        $menu = $menuEvent->getMenu();
 
         $menuItem = new \stdClass();
         $menuItem->requirement = 0;
@@ -302,62 +286,49 @@ class Bootstrap
             }
         }
 
-        $event->setMenu($menu);
+        $menuEvent->setMenu($menu);
 
-        return $event;
+        return $menuEvent;
     }
 
     public function subscribeToApiEvents()
     {
     }
 
-    public function addCustomSkeletonApi(RestApiCreateEvent $event)
+    public function addCustomSkeletonApi(RestApiCreateEvent $restApiCreateEvent): RestApiCreateEvent
     {
         /**
          * Events must ALWAYS be returned
          */
-        return $event;
+        return $restApiCreateEvent;
     }
 
     /**
      * Adds the webhook api scopes to the oauth2 scope validation events for the standard api.  This allows the webhook
      * to be fired.
-     *
-     * @param  RestApiScopeEvent $event
-     * @return RestApiScopeEvent
      */
-    public function addApiScope(RestApiScopeEvent $event)
+    public function addApiScope(RestApiScopeEvent $restApiScopeEvent): RestApiScopeEvent
     {
-        if ($event->getApiType() == RestApiScopeEvent::API_TYPE_FHIR) {
-            $scopes = $event->getScopes();
+        if ($restApiScopeEvent->getApiType() == RestApiScopeEvent::API_TYPE_FHIR) {
+            $scopes = $restApiScopeEvent->getScopes();
             $scopes[] = 'user/CustomSkeletonResource.read';
             $scopes[] = 'patient/CustomSkeletonResource.read';
             // only add system scopes if they are actually enabled
             if (\RestConfig::areSystemScopesEnabled()) {
                 $scopes[] = 'system/CustomSkeletonResource.read';
             }
-            $event->setScopes($scopes);
+            $restApiScopeEvent->setScopes($scopes);
         }
-        return $event;
+        return $restApiScopeEvent;
     }
 
-    public function addMetadataConformance(RestApiResourceServiceEvent $event)
+    public function addMetadataConformance(RestApiResourceServiceEvent $restApiResourceServiceEvent): RestApiResourceServiceEvent
     {
-        $event->setServiceClass(CustomSkeletonFHIRResourceService::class);
-        return $event;
+        $restApiResourceServiceEvent->setServiceClass(CustomSkeletonFHIRResourceService::class);
+        return $restApiResourceServiceEvent;
     }
 
-    private function getPublicPath()
-    {
-        return self::MODULE_INSTALLATION_PATH . ($this->moduleDirectoryName ?? '') . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR;
-    }
-
-    private function getAssetPath()
-    {
-        return $this->getPublicPath() . 'assets' . DIRECTORY_SEPARATOR;
-    }
-
-    public function getTemplatePath()
+    public function getTemplatePath(): string
     {
         return \dirname(__DIR__) . DIRECTORY_SEPARATOR . "templates" . DIRECTORY_SEPARATOR;
     }

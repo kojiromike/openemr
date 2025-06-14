@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+    
+    /**
  *
  * @package OpenEMR
  * @link    http://www.open-emr.org
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-    require_once "../../../../globals.php";
+    require_once __DIR__ . "/../../../../globals.php";
 
     use OpenEMR\Common\Acl\AclMain;
     use OpenEMR\Common\Twig\TwigContainer;
@@ -34,7 +36,7 @@ if (!AclMain::aclCheckCore('acct', 'bill')) {
         <div class="row"> 
             <div class="col">
             <?php
-                require '../templates/navbar.php';
+                require __DIR__ . '/../templates/navbar.php';
             ?>
             </div>
         </div>

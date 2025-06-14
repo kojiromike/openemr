@@ -1,13 +1,15 @@
 <?php
 
- // Copyright (C) 2006 Rod Roark <rod@sunsetsystems.com>
+ declare(strict_types=1);
+
+// Copyright (C) 2006 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
  // as published by the Free Software Foundation; either version 2
  // of the License, or (at your option) any later version.
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -51,9 +53,9 @@ if ($GLOBALS['enable_hylafax']) {
     */
     $donelines = array();
     exec("faxstat -s -d -l -h " . escapeshellarg($GLOBALS['hylafax_server']), $donelines);
-    foreach ($donelines as $line) {
+    foreach ($donelines as $doneline) {
             // This gets jobid, priority, statchar, owner, phone, pages, dials and tts/status.
-        if (preg_match('/^(\d+)\s+(\d+)\s+(\S)\s+(\S+)\s+(\S+)\s+(\d+:\d+)\s+(\d+:\d+)(.*)$/', $line, $matches)) {
+        if (preg_match('/^(\d+)\s+(\d+)\s+(\S)\s+(\S+)\s+(\S+)\s+(\d+:\d+)\s+(\d+:\d+)(.*)$/', $doneline, $matches)) {
             $dlines[$matches[1]] = $matches;
         }
     }
@@ -70,11 +72,11 @@ if ($scandir && $GLOBALS['enable_scanner']) {
     }
 
     while (false !== ($sfname = readdir($dh))) {
-        if (substr($sfname, 0, 1) == '.') {
+        if (substr($sfname, 0, 1) === '.') {
             continue;
         }
 
-        $tmp = stat("$scandir/$sfname");
+        $tmp = stat(sprintf('%s/%s', $scandir, $sfname));
         $tmp[0] = $sfname; // put filename in slot 0 which we don't otherwise need
         $slines[$tmp[9] . $tmp[1]] = $tmp; // key is file mod time and inode number
     }
@@ -223,8 +225,8 @@ function dosdclick(sfname) {
 foreach ($mlines as $matches) {
     ++$encount;
     $ffname = $matches[4];
-    $ffbase = basename("/$ffname", '.tif');
-    $bgcolor = (($encount & 1) ? "#ddddff" : "#ffdddd");
+    $ffbase = basename('/' . $ffname, '.tif');
+    $bgcolor = ((($encount & 1) !== 0) ? "#ddddff" : "#ffdddd");
     echo "    <tr class='detail' bgcolor='" . attr($bgcolor) . "'>\n";
     echo "     <td onclick='dodclick(\"" . attr(addslashes($ffname)) . "\")'>";
     echo "<a href='fax_view.php?file=" . attr_url($ffname) . "&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "' onclick='return false'>" . text($ffbase) . "</a></td>\n";
@@ -250,29 +252,30 @@ foreach ($mlines as $matches) {
     </tr>
 <?php
  $encount = 0;
-foreach ($dlines as $matches) {
+foreach ($dlines as $dline) {
     ++$encount;
-    $jobid = $matches[1];
-    $ffstatus = $faxstats[$matches[3]];
+    $jobid = $dline[1];
+    $ffstatus = $faxstats[$dline[3]];
     $fftts = '';
-    $ffstatend = trim($matches[8]);
+    $ffstatend = trim($dline[8]);
     if (preg_match('/^(\d+:\d+)\s*(.*)$/', $ffstatend, $tmp)) {
         $fftts = $tmp[1];
         $ffstatend = $tmp[2];
     }
 
-    if ($ffstatend) {
+    if ($ffstatend !== '' && $ffstatend !== '0') {
         $ffstatus .= ': ' . $ffstatend;
     }
 
-    $bgcolor = (($encount & 1) ? "#ddddff" : "#ffdddd");
+    $bgcolor = ((($encount & 1) !== 0) ? "#ddddff" : "#ffdddd");
     echo "    <tr class='detail' bgcolor='" . attr($bgcolor) . "'>\n";
     echo "     <td onclick='dojclick(\"" . attr(addslashes($jobid)) . "\")'>" .
      "<a href='fax_view.php?jid=" . attr_url($jobid) . "&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "' onclick='return false'>" .
-     "$jobid</a></td>\n";
-    echo "     <td>" . text($matches[5]) . "</td>\n";
-    echo "     <td>" . text($matches[6]) . "</td>\n";
-    echo "     <td>" . text($matches[7]) . "</td>\n";
+     ($jobid . '</a></td>
+');
+    echo "     <td>" . text($dline[5]) . "</td>\n";
+    echo "     <td>" . text($dline[6]) . "</td>\n";
+    echo "     <td>" . text($dline[7]) . "</td>\n";
     echo "     <td>" . text($fftts)      . "</td>\n";
     echo "     <td>" . text($ffstatus)   . "</td>\n";
     echo "    </tr>\n";
@@ -293,13 +296,14 @@ foreach ($dlines as $matches) {
  $encount = 0;
 foreach ($slines as $sline) {
     ++$encount;
-    $bgcolor = (($encount & 1) ? "#ddddff" : "#ffdddd");
+    $bgcolor = ((($encount & 1) !== 0) ? "#ddddff" : "#ffdddd");
     $sfname = $sline[0]; // filename
     $sfdate = date('Y-m-d H:i', $sline[9]);
     echo "    <tr class='detail' bgcolor='" . attr($bgcolor) . "'>\n";
     echo "     <td onclick='dosvclick(\"" . attr(addslashes($sfname)) . "\")'>" .
      "<a href='fax_view.php?scan=" . attr_url($sfname) . "&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "' onclick='return false'>" .
-     "$sfname</a></td>\n";
+     ($sfname . '</a></td>
+');
     echo "     <td onclick='dosdclick(\"" . attr(addslashes($sfname)) . "\")'>";
     echo "<a href='fax_dispatch.php?scan=" . attr_url($sfname) . "&csrf_token_form=" . attr_url(CsrfUtils::collectCsrfToken()) . "' onclick='return false'>" . xlt('Dispatch') . "</a></td>\n";
     echo "     <td>" . text($sfdate) . "</td>\n";

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // +-----------------------------------------------------------------------------+
 // Copyright (C) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
 //
@@ -37,12 +39,15 @@ use Laminas\InputFilter\InputFilterInterface;
 
 class ModuleconfigTable extends AbstractTableGateway
 {
-    public function getUsers()
+    /**
+     * @return string[]
+     */
+    public function getUsers(): array
     {
         $users = array('0' => '');
         $res = $this->applicationTable->zQuery(("SELECT id, fname, lname, street, city, state, zip  FROM users WHERE abook_type='ccda'"));
-        foreach ($res as $row) {
-            $users[$row['id']] = $row['fname'] . " " . $row['lname'];
+        foreach ($res as $re) {
+            $users[$re['id']] = $re['fname'] . " " . $re['lname'];
         }
 
         return $users;

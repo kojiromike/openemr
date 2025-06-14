@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+    /**
  * CCR Script.
  *
  * Copyright (C) 2010 Garden State Health Systems <http://www.gshsys.com/>
@@ -27,7 +29,7 @@
     //while ($row = sqlFetchArray($result)) {
 
 do {
-    $pCount++;
+    ++$pCount;
 
     $e_Problem = $ccr->createElement('Problem');
     $e_Problems->appendChild($e_Problem);
@@ -129,6 +131,7 @@ do {
 
     $e_HealthStatus->appendChild(sourceType($ccr, $sourceID));
 } while ($row = sqlFetchArray($result));
+
     //}
 
     // complex type should go in different find and should be included in createCCR.php

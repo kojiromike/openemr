@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Export table definition for the form_track_anything table.  Handles the custom query for exporting
  * this table since the table does not save off the patient pid for the foreign key to the patient_data table like the other form
@@ -12,7 +14,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\TableDefinitions;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -21,6 +22,7 @@ use OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition;
 class ExportTrackAnythingFormTableDefinition extends ExportTableDefinition
 {
     const TABLE_NAME = 'form_track_anything';
+
     const FORM_DIR = "track_anything";
 
     public function getRecords()
@@ -29,10 +31,9 @@ class ExportTrackAnythingFormTableDefinition extends ExportTableDefinition
 
         $patientPids = $this->getHashmapForKey('pid');
         $patientIdsCount = count($patientPids);
-        $sql = "SELECT $selectQuery FROM `" . self::TABLE_NAME . "` WHERE `" . self::TABLE_NAME
+        $sql = sprintf('SELECT %s FROM `', $selectQuery) . self::TABLE_NAME . "` WHERE `" . self::TABLE_NAME
             . "`.`id` IN ( SELECT `forms`.`form_id` FROM `forms` WHERE `formdir`='" . self::FORM_DIR . "' AND `forms`.`pid` IN ("
             . str_repeat("?, ", $patientIdsCount - 1) . "? ) )";
-        $records = QueryUtils::fetchRecords($sql, $patientPids);
-        return $records;
+        return QueryUtils::fetchRecords($sql, $patientPids);
     }
 }

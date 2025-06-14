@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -7,7 +9,6 @@
  *  @copyright Copyright (c) 2020 Sherwin Gaddis <sherwingaddis@gmail.com>
  *  @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 use DateTime;
@@ -15,8 +16,10 @@ use DateTimeZone;
 
 class LogImportBuild
 {
+    /**
+     * @var string
+     */
     public $rxsynclog;
-    private $insertdata;
     /**
      * @var mixed|null
      */
@@ -24,7 +27,6 @@ class LogImportBuild
 
     public function __construct()
     {
-        $this->insertdata = new LogDataInsert();
         $this->rxsynclog = $GLOBALS['OE_SITE_DIR'] . "/documents/logs_and_misc/weno/logsync.csv";
     }
 
@@ -40,12 +42,11 @@ class LogImportBuild
         }
     }
 
-    public function prescriptionId()
+    public function prescriptionId(): int|float
     {
         $sql = "SELECT MAX(id) as id FROM prescriptions";
         $record = sqlQuery($sql);
-        $rec = 1 + $record['id'];
-        return $rec;
+        return 1 + $record['id'];
     }
 
     public function drugForm($title)
@@ -62,18 +63,18 @@ class LogImportBuild
         return $entry['count'] ?? 0;
     }
 
-    function convertToUTC($dateString)
+    public function convertToUTC($dateString): string
     {
         $date = new DateTime($dateString, new DateTimeZone('UTC'));
-        $tz = new DateTimeZone(date_default_timezone_get());
-        $date->setTimezone($tz);
+        $dateTimeZone = new DateTimeZone(date_default_timezone_get());
+        $date->setTimezone($dateTimeZone);
 
         return $date->format('Y-m-d H:i:s');
     }
 
     public function buildPrescriptionInserts(): bool|string
     {
-        $wenoLog = new WenoLogService();
+        $wenoLogService = new WenoLogService();
         $l = 0;
         $rxCnt = 0;
         $updateCnt = 0;
@@ -84,17 +85,20 @@ class LogImportBuild
                 $line = fgetcsv($records);
 
                 if ($l <= 2) {
-                    $l++;
+                    ++$l;
                     continue;
                 }
+
                 if (!isset($line[1])) {
                     continue;
                 }
+
                 if (isset($line[4])) {
                     $this->messageid = $line[4];
                     $is_saved = $this->checkMessageId();
                 }
-                if (!empty($line)) {
+
+                if ($line !== []) {
                     $pr = $line[2] ?? '';
                     $provider = explode(":", $pr);
                     $pr = trim($pr);
@@ -123,7 +127,7 @@ class LogImportBuild
                     $insertdata['drug'] = $drug;
                     $insertdata['quantity'] = $line[18] ?? '';
                     $insertdata['refills'] = $refills;
-                    $sub = ($line[14] = 'Allowed' ? 1 : 0);
+                    $sub = ($line[14] = 'Allowed' !== '' ? 1 : 0);
                     $insertdata['substitute'] = $sub ?? '';
                     $insertdata['note'] = $line[21] ?? '';
                     $insertdata['rxnorm_drugcode'] = $line[12] ?? '';
@@ -131,22 +135,24 @@ class LogImportBuild
                     $insertdata['user_id'] = ($uid > 0) ? $uid : $this->getUserIdByWenoId($provider[0]);
                     $insertdata['prescriptionguid'] = $line[4] ?? '';
                     $insertdata['txDate'] = $ida;
-                    $loginsert = new LogDataInsert();
+                    $logDataInsert = new LogDataInsert();
                     if ($is_saved > 0) {
-                        $loginsert->updatePrescriptions($insertdata);
-                        if (trim($line[7] ?? '') == 'True') {
+                        $logDataInsert->updatePrescriptions($insertdata);
+                        if (trim($line[7] ?? '') === 'True') {
                             ++$updateCnt;
                         }
                     } else {
-                        $loginsert->insertPrescriptions($insertdata);
+                        $logDataInsert->insertPrescriptions($insertdata);
                         ++$rxCnt;
                     }
+
                     ++$l;
                 }
             }
+
             fclose($records);
         } else {
-            $wenoLog->insertWenoLog("Sync Report", "Missing report file.");
+            $wenoLogService->insertWenoLog("Sync Report", "Missing report file.");
             return false;
         }
 
@@ -155,7 +161,8 @@ class LogImportBuild
         } else {
             $status = xl("Synced") . " " . text($rxCnt) . " new " . text($updateCnt) . " " . xl("updated")  . " " . xl("prescriptions.");
         }
-        $wenoLog->insertWenoLog("Sync Report", $status);
+
+        $wenoLogService->insertWenoLog("Sync Report", $status);
         return true;
     }
 }

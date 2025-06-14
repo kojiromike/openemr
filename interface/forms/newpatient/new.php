@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form new script.
  *
@@ -11,8 +13,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/lists.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/lists.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -27,4 +29,4 @@ if (($tmp['squad'] && ! AclMain::aclCheckCore('squads', $tmp['squad'])) || !AclM
 }
 
 $viewmode = false;
-require_once("common.php");
+require_once(__DIR__ . "/common.php");

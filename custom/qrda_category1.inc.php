@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+    /**
  *
  * QRDA Category1 File
  *
