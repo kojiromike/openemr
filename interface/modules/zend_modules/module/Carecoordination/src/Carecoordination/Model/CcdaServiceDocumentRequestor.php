@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CcdaServiceDocumentRequestor handles the communication with the node ccda service in sending and receiving data
  * over the socket.
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 use Exception;
@@ -21,7 +22,7 @@ class CcdaServiceDocumentRequestor
     /**
      * @throws CcdaServiceConnectionException
      */
-    public function socket_get($data)
+    public function socket_get($data): string
     {
         $output = "";
         $system = new System();
@@ -31,6 +32,7 @@ class CcdaServiceDocumentRequestor
         if ($socket === false) {
             throw new CcdaServiceConnectionException("Socket Creation Failed");
         }
+
         // Let's check if server is already running but suppress warning with @ operator
         $server_active = @socket_connect($socket, "127.0.0.1", "6661");
 
@@ -48,6 +50,7 @@ class CcdaServiceDocumentRequestor
                     if ($pipeHandle === false) {
                         throw new CcdaServiceConnectionException("Failed to start local ccdaservice");
                     }
+
                     if (pclose($pipeHandle) === -1) {
                         error_log("Failed to close pipehandle for ccdaservice");
                     }
@@ -62,23 +65,26 @@ class CcdaServiceDocumentRequestor
                             throw new CcdaServiceConnectionException('Connection Failed.');
                         }
                     }
-                    $cmd = $system->escapeshellcmd("$command " . $path . "/serveccda.js");
+
+                    $cmd = $system->escapeshellcmd($command . ' ' . $path . "/serveccda.js");
                     exec($cmd . " > /dev/null &");
                 }
+
                 sleep(5); // give cpu a rest
                 // now try to connect to the server
-                $result = socket_connect($socket, "127.0.0.1", (int)6661);
+                $result = socket_connect($socket, "127.0.0.1", 6661);
                 if ($result === false) {
                     $errorCode = socket_last_error($socket);
                     $errorMsg = socket_strerror($errorCode);
-                    error_log("Socket connection error $errorCode: $errorMsg");
-                    throw new CcdaServiceConnectionException("Connection Failed: $errorMsg");
+                    error_log(sprintf('Socket connection error %d: %s', $errorCode, $errorMsg));
+                    throw new CcdaServiceConnectionException('Connection Failed: ' . $errorMsg);
                 }
             } else {
                 error_log("C-CDA Service is not enabled in Global Settings");
                 throw new CcdaServiceConnectionException("Please Enable C-CDA Alternate Service in Global Settings");
             }
         }
+
         // add file separator character for server end of message
         $data = $data . chr(28) . chr(28);
         $len = strlen($data);
@@ -87,6 +93,7 @@ class CcdaServiceDocumentRequestor
         if ($good_buf === false) { // Can't set buffer
             error_log("Failed to set socket buffer to " . $len);
         }
+
         // make writeSize chunk either the size set above or the default buffer size (64Kb).
         $writeSize = socket_get_option($socket, SOL_SOCKET, SO_SNDBUF);
         $pos = 0;
@@ -100,6 +107,7 @@ class CcdaServiceDocumentRequestor
             } else {
                 break;
             }
+
             // pause for the receiving side
             usleep(200000);
         } while ($out !== false && $pos < $len && $currentCounter++ <= $maxLineAttempts);
@@ -107,20 +115,21 @@ class CcdaServiceDocumentRequestor
         socket_set_nonblock($socket);
         //Read back rendered document from node service!
         do {
-            $line = "";
             $line = trim(socket_read($socket, 1024, PHP_NORMAL_READ));
             $output .= $line;
-        } while (!empty($line));
+        } while ($line !== '' && $line !== '0');
 
         $output = substr(trim($output), 0, strlen($output) - 1);
         // Close and return.
         socket_close($socket);
-        if ($output == "Authentication Failure") {
+        if ($output === "Authentication Failure") {
             throw new CcdaServiceConnectionException("Authentication Failure");
         }
-        if (empty(trim($output))) {
+
+        if (in_array(trim($output), ['', '0'], true)) {
             throw new CcdaServiceConnectionException("Ccda document generated was empty.  Check node service logs.");
         }
+
         return $output;
     }
 }

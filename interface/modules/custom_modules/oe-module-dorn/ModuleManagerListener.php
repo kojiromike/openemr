@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Class to be called from Laminas Module Manager for reporting management actions.
  * Example is if the module is enabled, disabled or unregistered ect.
@@ -45,7 +47,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param        $methodName
      * @param        $modId
-     * @param string $currentActionStatus
      * @return string On method success a $currentAction status should be returned or error string.
      */
     public function moduleManagerAction($methodName, $modId, string $currentActionStatus = 'Success'): string
@@ -62,10 +63,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * Required method to return namespace
      * If namespace isn't provided return empty
      * and register namespace at top of this script..
-     *
-     * @return string
      */
-    public static function getModuleNamespace(): string
+    protected static function getModuleNamespace(): string
     {
         // Module Manager will register this namespace.
         return 'OpenEMR\\Modules\\Dorn\\';
@@ -74,10 +73,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * Required method to return this class object
      * so it will be instantiated in Laminas Manager.
-     *
-     * @return ModuleManagerListener
      */
-    public static function initListenerSelf(): ModuleManagerListener
+    protected static function initListenerSelf(): ModuleManagerListener
     {
         return new self();
     }
@@ -85,7 +82,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function install($modId, $currentActionStatus): mixed
     {
@@ -94,31 +90,30 @@ class ModuleManagerListener extends AbstractModuleActionListener
          * configure the module before enabling it. However, if the module is disabled
          * this flag is reset by MM.
         */
-        self::setModuleState($modId, '0', '1');
+        $this->setModuleState($modId, '0', '1');
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function help_requested($modId, $currentActionStatus): mixed
+    private function help_requested($currentActionStatus): mixed
     {
         // must call a script that implements a dialog to show help.
         // I can't find a way to override the Lamina's UI except using a dialog.
         if (file_exists(__DIR__ . '/show_help.php')) {
             include __DIR__ . '/show_help.php';
         }
+
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function preenable($modId, $currentActionStatus): mixed
+    private function preenable($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -126,32 +121,29 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function enable($modId, $currentActionStatus): mixed
     {
-        self::setModuleState($modId, '1', '0');
+        $this->setModuleState($modId, '1', '0');
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
     private function disable($modId, $currentActionStatus): mixed
     {
         // allow config button to show before enable.
-        self::setModuleState($modId, '0', '1');
+        $this->setModuleState($modId, '0', '1');
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function unregister($modId, $currentActionStatus): mixed
+    private function unregister($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -159,9 +151,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function install_sql($modId, $currentActionStatus): mixed
+    private function install_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -169,9 +160,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function upgrade_sql($modId, $currentActionStatus): mixed
+    private function upgrade_sql($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -181,12 +171,11 @@ class ModuleManagerListener extends AbstractModuleActionListener
      *
      * @param        $modId
      * @param string $col
-     * @return array
      */
     public function getModuleRegistry($modId, $col = '*'): array
     {
         $registry = [];
-        $sql = "SELECT $col FROM modules WHERE mod_id = ?";
+        $sql = sprintf('SELECT %s FROM modules WHERE mod_id = ?', $col);
         $results = sqlQuery($sql, array($modId));
         foreach ($results as $k => $v) {
             $registry[$k] = trim((preg_replace('/\R/', '', $v)));
@@ -198,9 +187,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param      $flag
      * @param      $serviceArray
-     * @param bool $reset
-     * @param bool $removeTask
-     * @return void
      */
     private static function setTaskState($flag, $serviceArray, bool $reset = false, bool $removeTask = false): void
     {
@@ -208,13 +194,16 @@ class ModuleManagerListener extends AbstractModuleActionListener
         if ($reset) {
             $sql_next = "UPDATE `background_services` SET `active` = ?, next_run = NOW() WHERE `name` = ?";
         }
+
         if ($removeTask) {
             $sql_next = "DELETE FROM background_services WHERE `name` = ?";
             foreach ($serviceArray as $name) {
                 sqlQuery($sql_next, array($name));
             }
+
             return;
         }
+
         foreach ($serviceArray as $name) {
             sqlQuery($sql_next, array($flag, $name));
         }
@@ -224,9 +213,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * @param $modId   int|string module id or directory name
      * @param $flag    int|string 1 or 0 to activate or deactivate module.
      * @param $flag_ui int|string custom flag to activate or deactivate Manager UI button states.
-     * @return array|bool|null
      */
-    private static function setModuleState(int|string $modId, int|string $flag, int|string $flag_ui): array|bool|null
+    private function setModuleState(int|string $modId, int|string $flag, int|string $flag_ui): array|bool|null
     {
         // set module state.
         $sql = "UPDATE `modules` SET `mod_active` = ?, `mod_ui_active` = ? WHERE `mod_id` = ? OR `mod_directory` = ?";

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the TeleHealthUserRepository Unit Tests
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser;
@@ -17,9 +18,10 @@ use Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository
 use OpenEMR\Common\Database\QueryUtils;
 use PHPUnit\Framework\TestCase;
 
-class TeleHealthUserRepositoryTest extends TestCase
+final class TeleHealthUserRepositoryTest extends TestCase
 {
     const TEST_USERNAME = "phpunit-test-username";
+
     const TEST_PASSWORD = "randomToken";
 
     protected function tearDown(): void
@@ -29,74 +31,77 @@ class TeleHealthUserRepositoryTest extends TestCase
             . " WHERE username LIKE ?", ["%" . self::TEST_USERNAME . "%"]);
     }
 
-    public function testSaveUserWithEmptyUsernameThrowsException()
+    public function testSaveUserWithEmptyUsernameThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("username cannot be empty");
 
-        $user = new TeleHealthUser();
-        $user->setAuthToken(self::TEST_PASSWORD);
-        $repo = new TeleHealthUserRepository();
-        $repo->saveUser($user);
+        $teleHealthUser = new TeleHealthUser();
+        $teleHealthUser->setAuthToken(self::TEST_PASSWORD);
+
+        $teleHealthUserRepository = new TeleHealthUserRepository();
+        $teleHealthUserRepository->saveUser($teleHealthUser);
     }
 
-    public function testSaveUserWithEmptyAuthTokenThrowsException()
+    public function testSaveUserWithEmptyAuthTokenThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("authToken cannot be empty");
 
-        $user = new TeleHealthUser();
-        $user->setUsername(self::TEST_USERNAME);
-        $repo = new TeleHealthUserRepository();
-        $repo->saveUser($user);
+        $teleHealthUser = new TeleHealthUser();
+        $teleHealthUser->setUsername(self::TEST_USERNAME);
+
+        $teleHealthUserRepository = new TeleHealthUserRepository();
+        $teleHealthUserRepository->saveUser($teleHealthUser);
     }
 
-    public function testSaveUserCreatesProviderDatabaseRecord()
+    public function testSaveUserCreatesProviderDatabaseRecord(): void
     {
-        $user = new TeleHealthUser();
-        $user->setUsername(self::TEST_USERNAME);
-        $user->setAuthToken(self::TEST_PASSWORD);
-        $user->setDbRecordId(1);
-        $user->setIsActive(true);
-        $user->setIsPatient(false);
-        $user->setDateRegistered(new \DateTime());
+        $teleHealthUser = new TeleHealthUser();
+        $teleHealthUser->setUsername(self::TEST_USERNAME);
+        $teleHealthUser->setAuthToken(self::TEST_PASSWORD);
+        $teleHealthUser->setDbRecordId(1);
+        $teleHealthUser->setIsActive(true);
+        $teleHealthUser->setIsPatient(false);
+        $teleHealthUser->setDateRegistered(new \DateTime());
 
-        $repo = new TeleHealthUserRepository();
-        $repo->saveUser($user);
+        $teleHealthUserRepository = new TeleHealthUserRepository();
+        $teleHealthUserRepository->saveUser($teleHealthUser);
 
         $query = "select * from " . TeleHealthUserRepository::TABLE_NAME . " WHERE username = ? ";
         $records = QueryUtils::fetchRecords($query, [self::TEST_USERNAME]);
         $this->assertNotEmpty($records, "Record should have been created");
         $record = $records[0];
-        $this->assertEquals($user->getDbRecordId(), $record['user_id']);
+        $this->assertEquals($teleHealthUser->getDbRecordId(), $record['user_id']);
         $this->assertEquals(1, $record['active']);
-        $this->assertEquals($user->getAuthToken(), $record['auth_token']);
+        $this->assertEquals($teleHealthUser->getAuthToken(), $record['auth_token']);
         $this->assertNotEmpty($record['date_created']);
         $this->assertNotEmpty($record['date_updated']);
         $this->assertNotEmpty($record['date_registered']);
     }
 
-    public function testGetUser()
+    public function testGetUser(): void
     {
-        $user = new TeleHealthUser();
-        $user->setUsername(self::TEST_USERNAME);
-        $user->setAuthToken(self::TEST_PASSWORD);
-        $user->setDbRecordId(1);
-        $user->setIsActive(true);
-        $user->setIsPatient(false);
-        $user->setDateRegistered(new \DateTime());
+        $teleHealthUser = new TeleHealthUser();
+        $teleHealthUser->setUsername(self::TEST_USERNAME);
+        $teleHealthUser->setAuthToken(self::TEST_PASSWORD);
+        $teleHealthUser->setDbRecordId(1);
+        $teleHealthUser->setIsActive(true);
+        $teleHealthUser->setIsPatient(false);
+        $teleHealthUser->setDateRegistered(new \DateTime());
 
         $repo = new TeleHealthUserRepository();
-        $repo->saveUser($user);
+        $repo->saveUser($teleHealthUser);
 
         $repo = new TeleHealthUserRepository();
-        $checkUser = $repo->getUser($user->getUsername());
+
+        $checkUser = $repo->getUser($teleHealthUser->getUsername());
 
         $this->assertNotNull($checkUser);
         $this->assertNotNull($checkUser->getId());
-        $this->assertEquals($user->getUsername(), $checkUser->getUsername());
-        $this->assertEquals($user->getDbRecordId(), $checkUser->getDbRecordId());
-        $this->assertEquals($user->getAuthToken(), $checkUser->getAuthToken());
+        $this->assertEquals($teleHealthUser->getUsername(), $checkUser->getUsername());
+        $this->assertEquals($teleHealthUser->getDbRecordId(), $checkUser->getDbRecordId());
+        $this->assertEquals($teleHealthUser->getAuthToken(), $checkUser->getAuthToken());
         $this->assertNotNull($checkUser->getDateRegistered());
         $this->assertNotNull($checkUser->getDateCreated());
         $this->assertNotNull($checkUser->getDateUpdated());

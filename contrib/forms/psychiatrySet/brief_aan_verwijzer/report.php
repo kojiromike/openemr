@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    BRIEF AAN VERWIJZER
 // Package: letter to - Dutch specific form
@@ -15,7 +17,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 // Purpose: callback func?
 // Input:   pid? encounter, cols, id ?
 ////////////////////////////////////////////////////////////////////
-function brief_aan_verwijzer_report($pid, $encounter, $cols, $id)
+function brief_aan_verwijzer_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_psychiatrisch_onderzoek", $id);
@@ -74,7 +76,7 @@ function brief_aan_verwijzer_report($pid, $encounter, $cols, $id)
             }
 
             // increment records counter
-            $count++;
+            ++$count;
             // check if not at the end close/open new row
             if ($count == $cols) {
                 $count = 0;

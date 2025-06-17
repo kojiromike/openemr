@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -55,13 +57,13 @@ foreach ($benefits as $benefit) {
             PrintProperty::displayProperty("Benefit Quantity", $benefit->benefitQuantity, "", " - " . $benefit->quantityQualifierDesc);
             PrintProperty::displayProperty("Authorization/Certification Indicator", $benefit->certificationIndicator);
             PrintProperty::displayProperty("In Plan Network", $benefit->inPlanNetworkIndicator);
-            include 'service_delivery.php';
-            include 'procedure_info.php';
-            include 'date_information.php';
-            include 'identifier_info.php';
-            include 'additional_info.php';
-            include 'related_entity.php';
-            include 'messages.php';
+            include __DIR__ . '/service_delivery.php';
+            include __DIR__ . '/procedure_info.php';
+            include __DIR__ . '/date_information.php';
+            include __DIR__ . '/identifier_info.php';
+            include __DIR__ . '/additional_info.php';
+            include __DIR__ . '/related_entity.php';
+            include __DIR__ . '/messages.php';
     ?>
 
      

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This script deletes a procedure form and marks
  * associated procedure_order_id as inactive.
@@ -65,8 +67,8 @@ if (!empty($_POST['confirm'])) {
     EventAuditLogger::instance()->newEvent("delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "Form " . $_POST['formname'] . " deleted from Encounter " . $_POST['encounter']);
 
     // redirect back to the encounter
-    $address = "{$GLOBALS['rootdir']}/patient_file/encounter/$returnurl";
-    echo "\n<script>top.restoreSession();window.location='$address';</script>\n";
+    $address = sprintf('%s/patient_file/encounter/%s', $GLOBALS['rootdir'], $returnurl);
+    echo "\n<script>top.restoreSession();window.location='{$address}';</script>\n";
     exit;
 }
 ?>
@@ -117,7 +119,7 @@ if (!empty($_POST['confirm'])) {
 
 $(function () {
     $("#confirmbtn").on("click", function() { return ConfirmDelete(); });
-    $("#cancel").on("click", function() { location.href=<?php echo js_escape("$rootdir/patient_file/encounter/$returnurl");?>; });
+    $("#cancel").on("click", function() { location.href=<?php echo js_escape(sprintf('%s/patient_file/encounter/%s', $rootdir, $returnurl));?>; });
 });
 
 function ConfirmDelete() {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form to track any clinical parameter.
  *
@@ -15,7 +17,7 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function track_anything_report($pid, $encounter, $cols, $id)
+function track_anything_report($pid, $encounter, $cols, $id): void
 {
     #$patient_report_flag = 'no';
     echo "<div id='track_anything'>";
@@ -45,12 +47,12 @@ function track_anything_report($pid, $encounter, $cols, $id)
     $spell0 .= "FROM form_track_anything_results ";
     $spell0 .= "WHERE track_anything_id = ? ";
     $spell0 .= "ORDER BY track_timestamp DESC ";
-    $query = sqlStatement($spell0, array($formid));
+    $recordset = sqlStatement($spell0, array($formid));
 
     // get all data of this specific track
-    while ($myrow = sqlFetchArray($query)) {
+    while ($myrow = sqlFetchArray($recordset)) {
         $thistime = $myrow['track_timestamp'];
-        $shownameflag++;
+        ++$shownameflag;
         $spell  = "SELECT form_track_anything_results.itemid, form_track_anything_results.result, form_track_anything_type.name AS the_name ";
         $spell .= "FROM form_track_anything_results ";
         $spell .= "INNER JOIN form_track_anything_type ON form_track_anything_results.itemid = form_track_anything_type.track_anything_type_id ";
@@ -64,7 +66,7 @@ function track_anything_report($pid, $encounter, $cols, $id)
             while ($myrow2 = sqlFetchArray($query2)) {
                 echo "<th class='item'>&nbsp;" . text($myrow2['the_name']) . "&nbsp;</th>";
                 $ofc_name[$col] = $myrow2['the_name']; // save for chart-form
-                $col++;
+                ++$col;
             }
 
             echo "</tr>";
@@ -81,11 +83,11 @@ function track_anything_report($pid, $encounter, $cols, $id)
                     $ofc_value[$col_i][$row] = $myrow2['result'];// save for chart-form
             }
 
-            $col_i++;
+            ++$col_i;
         }
 
         echo "</tr>";
-        $row++;
+        ++$row;
     }
 
 
@@ -98,19 +100,19 @@ function track_anything_report($pid, $encounter, $cols, $id)
     //-------------------------------
         echo "<tr>";
         echo "<td class='check'><div class='navigateLink'>" . xlt('Check items to graph') . "</div></td>";
-    for ($col_i = 0; $col_i < $col; $col_i++) {
+    for ($col_i = 0; $col_i < $col; ++$col_i) {
         echo "<td class='check'><div class='navigateLink'>";
-        for ($row_b = 0; $row_b < $row; $row_b++) {
+        for ($row_b = 0; $row_b < $row; ++$row_b) {
             // count more than 1 to show graph-button
             if (is_numeric($ofc_value[$col_i][$row_b])) {
-                $dummy[$col_i]++;
+                ++$dummy[$col_i];
             }
         }
 
         // show graph-button only if we have more than 1 valid data
         if ($dummy[$col_i] > 1) {
             echo "<input type='checkbox' name='check_col" . attr($formid) . "' value='" . attr($col_i) . "'>";
-            $showbutton++;
+            ++$showbutton;
         }
 
         echo "</div></td>";

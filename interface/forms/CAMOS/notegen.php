@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS note generator.
  *
@@ -14,14 +16,14 @@
 
 $depth = '../../../';
 require_once($depth . 'interface/globals.php');
-require_once("content_parser.php");
+require_once(__DIR__ . "/content_parser.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
 ?>
 <?php
-if (!($_POST['submit_pdf'] || $_POST['submit_html']) && ($_GET['pid'] && $_GET['encounter'])) {
+if (!$_POST['submit_pdf'] && !$_POST['submit_html'] && ($_GET['pid'] && $_GET['encounter'])) {
     ?>
 <html>
 <head>
@@ -153,7 +155,7 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
         <body>
     <div class='paddingdiv'>
         <?php
-        foreach ($output as $datekey => $dailynote) {
+        foreach ($output as $dailynote) {
             foreach ($dailynote as $note_id => $notecontents) {
                 preg_match('/(\d+)_(\d+)/', $note_id, $matches); //the unique note id contains the pid and encounter
                 $pid = $matches[1];
@@ -207,14 +209,14 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                 if (count($notecontents['billing']) > 0) {
                     $tmp = array();
                     foreach ($notecontents['billing'] as $code) {
-                        $tmp[$code]++;
+                        ++$tmp[$code];
                     }
 
-                    if (count($tmp) > 0) {
+                    if ($tmp !== []) {
                         print "<br/>";
                         print "<span class='heading'>" . xlt("Coding") . "</span><br/>";
                         print "<br/>";
-                        foreach ($tmp as $code => $val) {
+                        foreach (array_keys($tmp) as $code) {
                             print nl2br(text($code)) . "<br/>";
                         }
                     }
@@ -225,12 +227,12 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                     print "<br/>";
                     print "<span class='heading'>" . xlt("Calories") . "</span><br/>";
                     print "<br/>";
-                    foreach ($notecontents['calories'] as $calories => $value) {
+                    foreach ($notecontents['calories'] as $value) {
                         print text($value['content']) . ' - ' . text($value['item']) . ' - ' . text($value['date']) . "<br/>";
                         $sum += $value['content'];
                     }
 
-                    print "--------" . "<br/>";
+                    print '--------<br/>';
                     print text($sum) . "<br/>";
                 }
 
@@ -269,12 +271,12 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
         $pdf->selectFont('Helvetica');
         $pdf->ezSetCmMargins(3, 1, 1, 1);
         $first = 1;
-        foreach ($output as $datekey => $dailynote) {
+        foreach ($output as $dailynote) {
             foreach ($dailynote as $note_id => $notecontents) {
                 preg_match('/(\d+)_(\d+)/', $note_id, $matches); //the unique note id contains the pid and encounter
                 $pid = $matches[1];
                 $enc = $matches[2];
-                if (!$first) { //generate a new page each time except first iteration when nothing has been printed yet
+                if ($first === 0) { //generate a new page each time except first iteration when nothing has been printed yet
                     $pdf->ezNewPage();
                 } else {
                     $first = 0;
@@ -325,14 +327,14 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                 if (count($notecontents['billing']) > 0) {
                     $tmp = array();
                     foreach ($notecontents['billing'] as $code) {
-                        $tmp[$code]++;
+                        ++$tmp[$code];
                     }
 
-                    if (count($tmp) > 0) {
+                    if ($tmp !== []) {
                         $pdf->ezText("", 8);
                         $pdf->ezText(xl("Coding"), 12);
                         $pdf->ezText("", 8);
-                        foreach ($tmp as $code => $val) {
+                        foreach (array_keys($tmp) as $code) {
                             $pdf->ezText($code, 8);
                         }
                     }
@@ -343,7 +345,7 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                     $pdf->ezText("", 8);
                     $pdf->ezText(xl("Calories"), 12);
                     $pdf->ezText("", 8);
-                    foreach ($notecontents['calories'] as $calories => $value) {
+                    foreach ($notecontents['calories'] as $value) {
                         $pdf->ezText($value['content'] . ' - ' . $value['item'] . ' - ' . $value['date'], 8);
                         $sum += $value['content'];
                     }
@@ -376,7 +378,10 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
     }
 }
 
-function getFormData($start_date, $end_date, $lname, $fname)
+/**
+ * @return array<mixed, array<non-falsy-string, array{name: non-falsy-string, date: mixed, pubpid: mixed, dob: mixed, vitals: mixed, reason: mixed, exam: array{}, prescriptions: array{}, other: array<array{}>, billing: array{}, calories: array{}}>>
+ */
+function getFormData($start_date, $end_date, $lname, $fname): array
 {
  //dates in sql format
 
@@ -394,7 +399,7 @@ function getFormData($start_date, $end_date, $lname, $fname)
         $name_clause = "t2.pid='" . add_escape_custom($_GET['pid']) . "' and t2.encounter='" . add_escape_custom($_GET['encounter']) . "' ";
     }
 
-    $query1 = sqlStatement(
+    $recordset = sqlStatement(
         "select t1.form_id, t1.form_name, t1.pid, date_format(t2.date,'%m-%d-%Y') as date, " .
         "date_format(t2.date,'%Y%m%d') as datekey, " .
         "t3.lname, t3.fname, t3.pubpid, date_format(t3.DOB,'%m-%d-%Y') as dob, " .
@@ -409,7 +414,7 @@ function getFormData($start_date, $end_date, $lname, $fname)
         $name_clause .
         "order by date,pid"
     );
-    while ($results1 = sqlFetchArray($query1)) {
+    while ($results1 = sqlFetchArray($recordset)) {
         if (!$dates[$results1['datekey']]) {
             $dates[$results1['datekey']] = array();
         }
@@ -433,26 +438,23 @@ function getFormData($start_date, $end_date, $lname, $fname)
         $query2 = sqlStatement("select * from billing where encounter = ?" .
             " and pid = ? and code_type like 'ICD10' and activity=1", array($results1['enc'], $results1['pid']));
         while ($results2 = sqlFetchArray($query2)) {
-            array_push(
-                $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['billing'],
-                $results2['code'] . ' ' . $results2['code_text']
-            );
+            $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['billing'][] = $results2['code'] . ' ' . $results2['code_text'];
         }
 
-        if (strtolower($results1['form_name']) == 'vitals') { // deal with Vitals
+        if (strtolower($results1['form_name']) === 'vitals') { // deal with Vitals
             $query2 = sqlStatement("select * from form_vitals where id = ?", array($results1['form_id']));
             if ($results2 = sqlFetchArray($query2)) {
                 $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['vitals'] = formatVitals($results2);
             }
         }
 
-        if (substr(strtolower($results1['form_name']), 0, 5) == 'camos') { // deal with camos
+        if (substr(strtolower($results1['form_name']), 0, 5) === 'camos') { // deal with camos
             $query2 = sqlStatement("select category,subcategory,item,content,date_format(date,'%h:%i %p') as date from " . mitigateSqlTableUpperCase("form_CAMOS") . " where id = ?", array($results1['form_id']));
             if ($results2 = sqlFetchArray($query2)) {
                 if ($results2['category'] == 'exam') {
-                    array_push($dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['exam'], $results2['content']);
+                    $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['exam'][] = $results2['content'];
                 } elseif ($results2['category'] == 'prescriptions') {
-                    array_push($dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['prescriptions'], preg_replace("/\n+/", ' ', $results2['content']));
+                    $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['prescriptions'][] = preg_replace("/\n+/", ' ', $results2['content']);
                 } elseif ($results2['category'] == 'communications') {
                     //do nothing
                 } elseif ($results2['category'] == 'calorie intake') {
@@ -460,16 +462,13 @@ function getFormData($start_date, $end_date, $lname, $fname)
                         'item' => $results2['item'],
                         'content' => $results2['content'],
                         'date' => $results2['date']);
-                    array_push($dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['calories'], $values);
+                    $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['calories'][] = $values;
                 } else {
                     if (!$dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['other'][$results2['category']]) {
                         $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['other'][$results2['category']] = array();
                     }
 
-                    array_push(
-                        $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['other'][$results2['category']],
-                        preg_replace(array("/\n+/","/patientname/i"), array(' ',$results1['fname'] . ' ' . $results1['lname']), $results2['content'])
-                    );
+                    $dates[$results1['datekey']][$results1['pid'] . '_' . $results1['enc']]['other'][$results2['category']][] = preg_replace(array("/\n+/","/patientname/i"), array(' ',$results1['fname'] . ' ' . $results1['lname']), $results2['content']);
                 }
             }
         }
@@ -477,7 +476,7 @@ function getFormData($start_date, $end_date, $lname, $fname)
 
     return $dates;
 }
-function formatVitals($raw)
+function formatVitals(array $raw): string
 {
  //pass raw vitals array, format and return as string
     $height = '';
@@ -522,7 +521,7 @@ function formatVitals($raw)
 
     $ret = $height . $weight . $bmi . $temp . $bp .
         $pulse . $respiration . $oxygen_saturation;
-    if ($ret != '') {
+    if ($ret !== '') {
         $ret = xl("Vital Signs") . ": " . $ret;
     }
 

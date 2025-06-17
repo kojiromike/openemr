@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/forms/group_attendance/save.php
  *
@@ -13,7 +15,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("functions.php");
+require_once(__DIR__ . "/functions.php");
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -41,7 +43,13 @@ if ($_GET['mode'] == 'new') {
     $sql_for_table_ftga = "INSERT INTO form_group_attendance (id, date, group_id, user, groupname, authorized, encounter_id, activity) " .
         "VALUES(?,NOW(),?,?,?,?,?,?);";
     $sqlBindArray = array();
-    array_push($sqlBindArray, $newid, $therapy_group, $_SESSION["authUser"], $_SESSION["authProvider"], $userauthorized, $encounter, '1');
+    $sqlBindArray[] = $newid;
+    $sqlBindArray[] = $therapy_group;
+    $sqlBindArray[] = $_SESSION["authUser"];
+    $sqlBindArray[] = $_SESSION["authProvider"];
+    $sqlBindArray[] = $userauthorized;
+    $sqlBindArray[] = $encounter;
+    $sqlBindArray[] = '1';
     sqlStatement($sql_for_table_ftga, $sqlBindArray);
 
     // Database insertions for participants
@@ -51,7 +59,10 @@ if ($_GET['mode'] == 'new') {
     $id = $_GET['id'];
     $sql_for_form_tga = "UPDATE form_group_attendance SET date = NOW(), user = ?, groupname = ?, authorized = ? WHERE id = ?;";
     $sqlBindArray = array();
-    array_push($sqlBindArray, $_SESSION["authUser"], $_SESSION["authProvider"], $userauthorized, $id);
+    $sqlBindArray[] = $_SESSION["authUser"];
+    $sqlBindArray[] = $_SESSION["authProvider"];
+    $sqlBindArray[] = $userauthorized;
+    $sqlBindArray[] = $id;
     sqlStatement($sql_for_form_tga, $sqlBindArray);
 
     // Delete from therapy_groups_participant_attendance table

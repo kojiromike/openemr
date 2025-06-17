@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -117,7 +119,7 @@ foreach ($insurance as $row) {
                     $results = $individual->eligibility;
                     $index = 0;
             foreach ($results as $result) {
-                $index++;
+                ++$index;
                 $eligibilityData = $result;
                 $benefits = null;
                 $subscriberPatient = null;
@@ -128,21 +130,17 @@ foreach ($insurance as $row) {
 
                 if (property_exists($data, 'dependent')) {
                     $dependent = $data->dependent;
-                    if ($dependent != null) {
-                        if (property_exists($dependent, 'benefits')) {
-                            $benefits = $dependent->benefits;
-                            $subscriberPatient = $dependent;
-                        }
+                    if ($dependent != null && property_exists($dependent, 'benefits')) {
+                        $benefits = $dependent->benefits;
+                        $subscriberPatient = $dependent;
                     }
                 }
 
                 if (property_exists($data, 'subscriber')) {
                     $subscriber = $data->subscriber;
-                    if ($subscriber != null) {
-                        if (property_exists($subscriber, 'benefits')) {
-                            $benefits = $subscriber->benefits;
-                            $subscriberPatient = $subscriber;
-                        }
+                    if ($subscriber != null && property_exists($subscriber, 'benefits')) {
+                        $benefits = $subscriber->benefits;
+                        $subscriberPatient = $subscriber;
                     }
                 }
 
@@ -201,7 +199,7 @@ foreach ($insurance as $row) {
                                     </div>
                                 </div>
                                 <div id="eligibility-benefits-<?php echo(attr($index)); ?>" class="tab-pane">
-                                 
+
                                     <div class="row">
                                         <div class="col">
                 <?php
@@ -240,7 +238,7 @@ foreach ($insurance as $row) {
                                     </div>
                                 </div>     
                             </div>
-  
+
                 <?php
             }//end foreach eligibility
         }//else results

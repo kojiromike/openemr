@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * scanned_notes report.php
  *
@@ -15,14 +17,12 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function scanned_notes_report($pid, $useless_encounter, $cols, $id)
+function scanned_notes_report($pid, $useless_encounter, $cols, $id): void
 {
     global $webserver_root, $web_root, $encounter;
 
  // In the case of a patient report, the passed encounter is vital.
     $thisenc = $useless_encounter ? $useless_encounter : $encounter;
-
-    $count = 0;
 
     $data = sqlQuery("SELECT * " .
     "FROM form_scanned_notes WHERE " .
@@ -35,23 +35,20 @@ function scanned_notes_report($pid, $useless_encounter, $cols, $id)
         }
 
         for ($i = -1; true; ++$i) {
-             $suffix = ($i < 0) ? "" : "-$i";
+             $suffix = ($i < 0) ? "" : '-' . $i;
              $imagepath = $GLOBALS['OE_SITE_DIR'] . "/documents/" . check_file_dir_name($pid) . "/encounters/" . check_file_dir_name($thisenc) . "_" . check_file_dir_name($id) . check_file_dir_name($suffix) . ".jpg";
              $imageurl  = $web_root . "/sites/" . $_SESSION['site_id'] . "/documents/" . check_file_dir_name($pid) . "/encounters/" . check_file_dir_name($thisenc) . "_" . check_file_dir_name($id) . check_file_dir_name($suffix) . ".jpg";
             if (is_file($imagepath)) {
-                echo "   <img src='$imageurl'";
+                echo sprintf("   <img src='%s'", $imageurl);
                 // Flag images with excessive width for possible stylesheet action.
                 $asize = getimagesize($imagepath);
                 if ($asize[0] > 750) {
                     echo " class='bigimage'";
                 }
-
                 echo " />\n";
                 echo " <br />\n";
-            } else {
-                if ($i >= 0) {
-                    break;
-                }
+            } elseif ($i >= 0) {
+                break;
             }
         }
     }

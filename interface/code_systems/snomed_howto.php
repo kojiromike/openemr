@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Instructions for loading SNOMED Database
  *
@@ -22,7 +24,7 @@
  * @link    http://www.open-emr.org
  */
 
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Core\Header;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * weno pharmacy search.
  *
@@ -39,6 +41,7 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_city') {
     while ($row = sqlFetchArray($res)) {
         $return_arr[] = $row['city'];
     }
+
     echo text(json_encode($return_arr));
 }
 
@@ -56,7 +59,7 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_pharmacy') {
     $weno_zipcode = $_GET['weno_zipcode'] ?? false ?: '';
     $weno_only = $_GET['weno_only'] == 'true' ? 'True' : '';
     $full_day = $_GET['full_day'] == 'true' ? 'Yes' : '';
-    $weno_test_pharmacies = $_GET['test_pharmacy'] ?? '' == 'true' ? 'True' : '';
+    $weno_test_pharmacies = $_GET['test_pharmacy'] ?? '' === 'true' ? 'True' : '';
 
 
     // mail order is special case.
@@ -67,6 +70,7 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_pharmacy') {
                 $sql .= " AND city = ?";
                 $params[] = $weno_city;
             }
+
             if (!empty($weno_state)) {
                 $sql .= " AND state = ?";
                 $params[] = $weno_state;
@@ -83,16 +87,19 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_pharmacy') {
     } else {
         $sql .= " AND (state_wide_mail_order = 'Local')";
     }
+
     // optional filters
-    if (!empty($full_day)) {
+    if ($full_day !== '' && $full_day !== '0') {
         $sql .= " AND 24HR = ?";
         $params[] = $full_day;
     }
-    if (!empty($weno_test_pharmacies)) {
+
+    if ($weno_test_pharmacies !== '' && $weno_test_pharmacies !== '0') {
         $sql .= " AND test_pharmacy = ?";
         $params[] = $weno_test_pharmacies;
     }
-    if (!empty($weno_only)) {
+
+    if ($weno_only !== '' && $weno_only !== '0') {
         $sql .= " AND on_weno = ?";
         $params[] = $weno_only;
     }
@@ -109,6 +116,7 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_pharmacy') {
             );
         }
     }
+
     echo json_encode($return_arr);
 }
 
@@ -131,6 +139,7 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_drop') {
                 $sql .= " AND city = ?";
                 $params[] = $weno_city;
             }
+
             if (!empty($weno_state)) {
                 $sql .= " AND state = ?";
                 $params[] = $weno_state;
@@ -147,19 +156,23 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_drop') {
     } else {
         $sql .= " AND (state_wide_mail_order = 'Local')";
     }
+
     // optional filters
-    if (!empty($full_day)) {
+    if ($full_day !== '' && $full_day !== '0') {
         $sql .= " AND 24HR = ?";
         $params[] = $full_day;
     }
-    if (!empty($weno_test_pharmacies)) {
+
+    if ($weno_test_pharmacies !== '' && $weno_test_pharmacies !== '0') {
         $sql .= " AND test_pharmacy = ?";
         $params[] = $weno_test_pharmacies;
     }
-    if (!empty($weno_only)) {
+
+    if ($weno_only !== '' && $weno_only !== '0') {
         $sql .= " AND on_weno = ?";
         $params[] = $weno_only;
     }
+
     $sql .= " ORDER BY Business_Name ASC";
 
     $return_arr = [];
@@ -172,5 +185,6 @@ if (isset($_GET['searchFor']) && $_GET['searchFor'] == 'weno_drop') {
             );
         }
     }
+
     echo json_encode($return_arr);
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /* FormHPI class
  *
  * @package OpenEMR
@@ -26,27 +28,41 @@ define("EVENT_OTHER", 4);
 
 class FormHPI extends ORDataObject
 {
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $activity;
-    var $complaint;
-    var $location;
-    var $quality;
-    var $severity;
-    var $duration;
-    var $timing;
-    var $context;
-    var $factors;
-    var $signs;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $activity;
+
+    public $complaint;
+
+    public $location;
+
+    public $quality;
+
+    public $severity;
+
+    public $duration;
+
+    public $timing;
+
+    public $context;
+
+    public $factors;
+
+    public $signs;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -66,186 +82,186 @@ class FormHPI extends ORDataObject
         }
     }
 
-    function populate()
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function __toString()
+    public function __toString(): string
     {
         return "ID: " . $this->id . "\n";
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
 
-    function get_id()
+    public function get_id()
     {
         return $this->id;
     }
 
-    function set_pid($pid)
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
 
-    function get_pid()
+    public function get_pid()
     {
         return $this->pid;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
-    function set_date($dt)
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
 
-    function get_user()
+    public function get_user()
     {
         return $this->user;
     }
 
-    function set_user($u)
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
 
-    function set_activity($tf)
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
 
-    function get_activity()
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_complaint()
+    public function get_complaint()
     {
         return $this->complaint;
     }
 
-    function set_complaint($data)
+    public function set_complaint($data): void
     {
         if (!empty($data)) {
             $this->complaint = $data;
         }
     }
 
-    function get_location()
+    public function get_location()
     {
         return $this->location;
     }
 
-    function set_location($data)
+    public function set_location($data): void
     {
         if (!empty($data)) {
             $this->location = $data;
         }
     }
 
-    function get_quality()
+    public function get_quality()
     {
         return $this->quality;
     }
 
-    function set_quality($data)
+    public function set_quality($data): void
     {
         if (!empty($data)) {
             $this->quality = $data;
         }
     }
 
-    function get_severity()
+    public function get_severity()
     {
         return $this->severity;
     }
 
-    function set_severity($data)
+    public function set_severity($data): void
     {
         if (!empty($data)) {
             $this->severity = $data;
         }
     }
 
-    function get_duration()
+    public function get_duration()
     {
         return $this->duration;
     }
 
-    function set_duration($data)
+    public function set_duration($data): void
     {
         if (!empty($data)) {
             $this->duration = $data;
         }
     }
 
-    function get_timing()
+    public function get_timing()
     {
         return $this->timing;
     }
 
-    function set_timing($data)
+    public function set_timing($data): void
     {
         if (!empty($data)) {
             $this->timing = $data;
         }
     }
 
-    function get_context()
+    public function get_context()
     {
         return $this->context;
     }
 
-    function set_context($data)
+    public function set_context($data): void
     {
         if (!empty($data)) {
             $this->context = $data;
         }
     }
 
-    function get_factors()
+    public function get_factors()
     {
         return $this->factors;
     }
 
-    function set_factors($data)
+    public function set_factors($data): void
     {
         if (!empty($data)) {
             $this->factors = $data;
         }
     }
 
-    function get_signs()
+    public function get_signs()
     {
         return $this->signs;
     }
 
-    function set_signs($data)
+    public function set_signs($data): void
     {
         if (!empty($data)) {
             $this->signs = $data;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }

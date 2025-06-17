@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Events;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\NotificationSendAddress;
@@ -8,162 +10,105 @@ class TelehealthNotificationSendEvent
 {
     const EVENT_HANDLE = "comlink.telehealth.notification.send";
 
-    /**
-     * @var string
-     */
-    private $messageId;
+    private ?string $messageId = null;
 
     /**
      * Note as this table changes this data record could change.  If you need type safety its recommended to use the pid.
      * @var array The patient record array from the patient_data table.
      */
-    private $patient;
+    private ?array $patient = null;
 
     /**
      * @var The unique pid id of the patient
      */
-    private $pid;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Events\The $the = null;
 
-    /**
-     * @var string
-     */
-    private $subject;
+    private ?string $subject = null;
 
-    /**
-     * @var string
-     */
-    private $joinLink;
+    private ?string $joinLink = null;
 
-    /**
-     * @var NotificationSendAddress
-     */
-    private $from;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Models\NotificationSendAddress $notificationSendAddress = null;
 
     /**
      * @var NotificationSendAddress[]
      */
-    private $sendToDestinations;
+    private ?array $sendToDestinations = null;
 
     /**
      * @var NotificationSendAddress[]
      */
-    private $replyToDestinations;
+    private ?array $replyToDestinations = null;
 
-    /**
-     * @var string
-     */
-    private $textBody;
+    private ?string $textBody = null;
 
-    /**
-     * @var string
-     */
-    private $htmlBody;
+    private ?string $htmlBody = null;
 
-    /**
-     * @return string
-     */
     public function getMessageId(): string
     {
         return $this->messageId;
     }
 
-    /**
-     * @param string $messageId
-     * @return TelehealthNotificationSendEvent
-     */
     public function setMessageId(string $messageId): TelehealthNotificationSendEvent
     {
         $this->messageId = $messageId;
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getPatient(): array
     {
         return $this->patient;
     }
 
-    /**
-     * @param array $patient
-     * @return TelehealthNotificationSendEvent
-     */
     public function setPatient(array $patient): TelehealthNotificationSendEvent
     {
         $this->patient = $patient;
         return $this;
     }
 
-    /**
-     * @return The
-     */
     public function getPid(): The
     {
-        return $this->pid;
+        return $this->the;
     }
 
-    /**
-     * @param The $pid
-     * @return TelehealthNotificationSendEvent
-     */
-    public function setPid(The $pid): TelehealthNotificationSendEvent
+    public function setPid(The $the): TelehealthNotificationSendEvent
     {
-        $this->pid = $pid;
+        $this->the = $the;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getSubject(): string
     {
         return $this->subject;
     }
 
-    /**
-     * @param string $subject
-     * @return TelehealthNotificationSendEvent
-     */
     public function setSubject(string $subject): TelehealthNotificationSendEvent
     {
         $this->subject = $subject;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getJoinLink(): string
     {
         return $this->joinLink;
     }
 
-    /**
-     * @param string $joinLink
-     * @return TelehealthNotificationSendEvent
-     */
     public function setJoinLink(string $joinLink): TelehealthNotificationSendEvent
     {
         $this->joinLink = $joinLink;
         return $this;
     }
 
-    /**
-     * @return NotificationSendAddress
-     */
     public function getFrom(): NotificationSendAddress
     {
-        return $this->from;
+        return $this->notificationSendAddress;
     }
 
     /**
      * @param NotificationSendAddress $from
-     * @return TelehealthNotificationSendEvent
      */
     public function setFrom($destination, $name, $type = NotificationSendAddress::TYPE_EMAIL): TelehealthNotificationSendEvent
     {
-        $this->from = new NotificationSendAddress($destination, $name, $type);
+        $this->notificationSendAddress = new NotificationSendAddress($destination, $name, $type);
         return $this;
     }
 
@@ -177,7 +122,6 @@ class TelehealthNotificationSendEvent
 
     /**
      * @param NotificationSendAddress[] $sendToDestinations
-     * @return TelehealthNotificationSendEvent
      */
     public function setSendToDestinations(array $sendToDestinations): TelehealthNotificationSendEvent
     {
@@ -189,7 +133,6 @@ class TelehealthNotificationSendEvent
      * @param $destination
      * @param $name
      * @param string $type
-     * @return TelehealthNotificationSendEvent
      */
     public function addSendToDestination($destination, $name, $type = NotificationSendAddress::TYPE_EMAIL): TelehealthNotificationSendEvent
     {
@@ -207,7 +150,6 @@ class TelehealthNotificationSendEvent
 
     /**
      * @param NotificationSendAddress[] $replyToDestinations
-     * @return TelehealthNotificationSendEvent
      */
     public function setReplyToDestinations(array $replyToDestinations): TelehealthNotificationSendEvent
     {
@@ -219,7 +161,6 @@ class TelehealthNotificationSendEvent
      * @param $destination
      * @param $name
      * @param string $type
-     * @return TelehealthNotificationSendEvent
      */
     public function addReplyToDestination($destination, $name, $type = NotificationSendAddress::TYPE_EMAIL): TelehealthNotificationSendEvent
     {
@@ -227,36 +168,22 @@ class TelehealthNotificationSendEvent
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getTextBody(): string
     {
         return $this->textBody;
     }
 
-    /**
-     * @param string $textBody
-     * @return TelehealthNotificationSendEvent
-     */
     public function setTextBody(string $textBody): TelehealthNotificationSendEvent
     {
         $this->textBody = $textBody;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getHtmlBody(): string
     {
         return $this->htmlBody;
     }
 
-    /**
-     * @param string $htmlBody
-     * @return TelehealthNotificationSendEvent
-     */
     public function setHtmlBody(string $htmlBody): TelehealthNotificationSendEvent
     {
         $this->htmlBody = $htmlBody;

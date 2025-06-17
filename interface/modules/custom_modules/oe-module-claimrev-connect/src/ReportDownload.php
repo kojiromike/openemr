@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Services\BaseService;
@@ -17,7 +18,7 @@ use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
 
 class ReportDownload extends BaseService
 {
-    public static function getWaitingFiles()
+    public static function getWaitingFiles(): void
     {
         $reportTypes = array("999", "277");
         $siteDir = $GLOBALS['OE_SITE_DIR'];
@@ -26,7 +27,7 @@ class ReportDownload extends BaseService
         $token = ClaimRevApi::GetAccessToken();
         foreach ($reportTypes as $reportType) {
             $reportFolder = "f" . $reportType;
-            if ($reportType == "999") {
+            if ($reportType === "999") {
                 $reportFolder = "f997";
             }
 
@@ -54,7 +55,8 @@ class ReportDownload extends BaseService
             }
         }
     }
-    public static function download835($objectId)
+
+    public static function download835(string $objectId): void
     {
         $siteDir = $GLOBALS['OE_SITE_DIR'];
         //should be something like '/var/www/localhost/htdocs/openemr/sites/default'

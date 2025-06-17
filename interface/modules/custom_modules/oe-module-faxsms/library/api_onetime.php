@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Portal OneTime for API
  *
@@ -43,18 +45,18 @@ function doOnetimeInvoiceRequest(): void
 {
     $service = new PatientPortalService();
     // auto allow if a portal user else must be an admin
-    if (!$service::isPortalUser()) {
-        // default is admin documents
-        if (!$service::verifyAcl()) {
-            throw new Exception(xlt("Error! Not authorised. You must be an authorised portal user or admin."));
-        }
+    // default is admin documents
+    if (!$service::isPortalUser() && !$service::verifyAcl()) {
+        throw new Exception(xlt("Error! Not authorised. You must be an authorised portal user or admin."));
     }
+
     $ot_pid = $_REQUEST['pid'] ?? 0;
     if (!empty($ot_pid)) {
         $patient = $service->getPatientDetails($ot_pid);
     } else {
         throw new Exception(xlt("Error! Missing patient id."));
     }
+
     $message = "Dear " . $patient['fname'] . ' ' . $patient['lname'] . ",\n";
     $message .= xlt("Please review your current invoice by clinking the link to automatically redirect to your billing account portal. Use this PIN to complete authorization");
     $data = [
@@ -74,8 +76,8 @@ function doOnetimeInvoiceRequest(): void
     try {
         $rtn = $GLOBALS["kernel"]->getEventDispatcher()
             ->dispatch(new SendNotificationEvent($data['pid'], $data, 'email'), SendNotificationEvent::SEND_NOTIFICATION_SERVICE_UNIVERSAL_ONETIME);
-    } catch (Exception $e) {
-        die($e->getMessage());
+    } catch (Exception $exception) {
+        die($exception->getMessage());
     }
 }
 
@@ -86,12 +88,11 @@ function doOnetimeDocumentRequest(): void
 {
     $service = new PatientPortalService();
     // auto allow if a portal user else must be an admin
-    if (!$service::isPortalUser()) {
-        // default is admin documents
-        if (!$service::verifyAcl()) {
-            throw new Exception(xlt("Error! Not authorised. You must be an authorised portal user or admin."));
-        }
+    // default is admin documents
+    if (!$service::isPortalUser() && !$service::verifyAcl()) {
+        throw new Exception(xlt("Error! Not authorised. You must be an authorised portal user or admin."));
     }
+
     $details = json_decode($service->getRequest('details'), true);
     $content = $service->getRequest('comments');
     $ot_pid = $details['pid'] ?? $service->getRequest('form_pid');
@@ -100,6 +101,7 @@ function doOnetimeDocumentRequest(): void
     } else {
         throw new Exception(xlt("Error! Missing patient id."));
     }
+
     $data = [
         'pid' => $details['pid'] ?? 0,
         'onetime_period' => $details['onetime_period'] ?? 'PT60M',
@@ -114,8 +116,9 @@ function doOnetimeDocumentRequest(): void
     ];
     try {
         $rtn = $service->dispatchPortalOneTimeDocumentRequest($ot_pid, $data, $content);
-    } catch (Exception $e) {
-        die($e->getMessage());
+    } catch (Exception $exception) {
+        die($exception->getMessage());
     }
+
     echo js_escape($rtn);
 }

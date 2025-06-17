@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Represents a specific table definition result as to how many records were exported for a given table.
  *
@@ -10,15 +12,15 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Models;
 
 class ExportTableResult
 {
     public $count;
+
     public $tableName;
 
-    public function fromJSON(array $exportedTable)
+    public function fromJSON(array $exportedTable): void
     {
         $this->tableName = $exportedTable['tableName'] ?? '';
         $this->count = $exportedTable['count'] ?? 0;

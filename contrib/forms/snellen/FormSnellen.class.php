@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -30,22 +32,31 @@ class FormSnellen extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $activity;
-    var $left_1;
-    var $left_2;
-    var $right_1;
-    var $right_2;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $activity;
+
+    public $left_1;
+
+    public $left_2;
+
+    public $right_1;
+
+    public $right_2;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -64,13 +75,14 @@ class FormSnellen extends ORDataObject
             //$this->date = $this->get_date();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function __toString()
+    public function __toString(): string
     {
         $string .= "\n"
             . "ID: " . $this->id . "\n";
@@ -81,112 +93,126 @@ class FormSnellen extends ORDataObject
             return $string;
         }
     }
-    function set_id($id)
+
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
-    function set_date($dt)
+
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
-    function get_user()
+
+    public function get_user()
     {
         return $this->user;
     }
-    function set_user($u)
+
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
 
-    function set_activity($tf)
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }
 
     //
 
-    function set_left_1($tf)
+    public function set_left_1($tf): void
     {
         $this->left_1 = $tf;
     }
-    function get_left_1()
+
+    public function get_left_1()
     {
         return $this->left_1;
     }
 
-    function set_left_2($tf)
+    public function set_left_2($tf): void
     {
         $this->left_2 = $tf;
     }
-    function get_left_2()
+
+    public function get_left_2()
     {
         return $this->left_2;
     }
 
 
-    function set_right_1($tf)
+    public function set_right_1($tf): void
     {
         $this->right_1 = $tf;
     }
-    function get_right_1()
+
+    public function get_right_1()
     {
         return $this->right_1;
     }
 
-    function set_right_2($tf)
+    public function set_right_2($tf): void
     {
         $this->right_2 = $tf;
     }
-    function get_right_2()
+
+    public function get_right_2()
     {
         return $this->right_2;
     }
 
     // ----- notes -----
 
-    var $notes;
-    function get_notes()
+    public $notes;
+
+    public function get_notes()
     {
         return $this->notes;
     }
-    function set_notes($data)
+
+    public function set_notes($data): void
     {
         if (!empty($data)) {
             $this->notes = $data;

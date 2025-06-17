@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CCR Script.
  *
@@ -56,7 +58,7 @@ if ($notPatientPortal) {
     }
 }
 
-function createCCR($action, $raw = "no", $requested_by = "")
+function createCCR($action, $raw = "no", $requested_by = ""): void
 {
 
     $authorID = getUuid();
@@ -66,7 +68,7 @@ function createCCR($action, $raw = "no", $requested_by = "")
 
     $result = getActorData();
     while ($res = sqlFetchArray($result[2])) {
-        ${"labID{$res['id']}"} = getUuid();
+        ${'labID' . $res['id']} = getUuid();
     }
 
        $ccr = new DOMDocument('1.0', 'UTF-8');
@@ -78,39 +80,39 @@ function createCCR($action, $raw = "no", $requested_by = "")
 
        /////////////// Header
 
-       require_once("createCCRHeader.php");
+       require_once(__DIR__ . "/createCCRHeader.php");
        $e_Body = $ccr->createElement('Body');
        $e_ccr->appendChild($e_Body);
 
        /////////////// Problems
 
        $e_Problems = $ccr->createElement('Problems');
-       require_once("createCCRProblem.php");
+       require_once(__DIR__ . "/createCCRProblem.php");
        $e_Body->appendChild($e_Problems);
 
        /////////////// Alerts
 
        $e_Alerts = $ccr->createElement('Alerts');
-       require_once("createCCRAlerts.php");
+       require_once(__DIR__ . "/createCCRAlerts.php");
        $e_Body->appendChild($e_Alerts);
 
        ////////////////// Medication
 
        $e_Medications = $ccr->createElement('Medications');
-       require_once("createCCRMedication.php");
+       require_once(__DIR__ . "/createCCRMedication.php");
        $e_Body->appendChild($e_Medications);
 
        ///////////////// Immunization
 
        $e_Immunizations = $ccr->createElement('Immunizations');
-       require_once("createCCRImmunization.php");
+       require_once(__DIR__ . "/createCCRImmunization.php");
        $e_Body->appendChild($e_Immunizations);
 
 
        /////////////////// Results
 
        $e_Results = $ccr->createElement('Results');
-       require_once("createCCRResult.php");
+       require_once(__DIR__ . "/createCCRResult.php");
        $e_Body->appendChild($e_Results);
 
 
@@ -128,7 +130,7 @@ function createCCR($action, $raw = "no", $requested_by = "")
        /////////////// Actors
 
        $e_Actors = $ccr->createElement('Actors');
-       require_once("createCCRActor.php");
+       require_once(__DIR__ . "/createCCRActor.php");
        $e_ccr->appendChild($e_Actors);
 
     if ($action == "generate") {
@@ -140,7 +142,7 @@ function createCCR($action, $raw = "no", $requested_by = "")
     }
 }
 
-function gnrtCCR($ccr, $raw = "no", $requested_by = "")
+function gnrtCCR($ccr, $raw = "no", $requested_by = ""): void
 {
     global $pid;
 
@@ -200,7 +202,7 @@ function gnrtCCR($ccr, $raw = "no", $requested_by = "")
                     displayError(xl("ERROR: Unable to Create Zip Archive."));
                     return;
         }
-    } elseif (substr($raw, 0, 4) == "send") {
+    } elseif (substr($raw, 0, 4) === "send") {
         $recipient = trim(stripslashes(substr($raw, 5)));
         $ccd_out = $ccr->saveXml();
         $result = transmitCCD($pid, $ccd_out, $recipient, $requested_by, "CCR");
@@ -212,7 +214,7 @@ function gnrtCCR($ccr, $raw = "no", $requested_by = "")
     }
 }
 
-function viewCCD($ccr, $raw = "no", $requested_by = "")
+function viewCCD($ccr, $raw = "no", $requested_by = ""): void
 {
     global $pid;
 
@@ -301,7 +303,7 @@ function viewCCD($ccr, $raw = "no", $requested_by = "")
         }
     }
 
-    if (substr($raw, 0, 4) == "send") {
+    if (substr($raw, 0, 4) === "send") {
         $recipient = trim(stripslashes(substr($raw, 5)));
         $ccd_out = $ccd->saveXml();
         $result = transmitCCD($pid, $ccd_out, $recipient, $requested_by);
@@ -335,13 +337,13 @@ function sourceType($ccr, $uuid)
 }
 
 
-function displayError($message)
+function displayError($message): void
 {
     echo '<script>alert("' . addslashes($message) . '");</script>';
 }
 
 
-function createHybridXML($ccr)
+function createHybridXML($ccr): void
 {
 
     // save the raw xml
@@ -386,7 +388,7 @@ function createHybridXML($ccr)
 if ($_POST['ccrAction']) {
     $raw = $_POST['raw'];
   /* If transmit requested, fail fast if the recipient address fails basic validation */
-    if (substr($raw, 0, 4) == "send") {
+    if (substr($raw, 0, 4) === "send") {
         $send_to = trim(stripslashes(substr($raw, 5)));
         if (!PHPMailer::ValidateAddress($send_to)) {
             echo(htmlspecialchars(xl('Invalid recipient address. Please try again.'), ENT_QUOTES));

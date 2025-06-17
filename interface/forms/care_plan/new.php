@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Care plan form new.php
  *
@@ -13,10 +15,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 require_once($GLOBALS['srcdir'] . '/csv_like_join.php');
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
@@ -26,7 +28,7 @@ use OpenEMR\Core\Header;
 
 $returnurl = 'encounter_top.php';
 $formid = (int)($_GET['id'] ?? 0);
-if (empty($formid)) {
+if ($formid === 0) {
     $sql = "SELECT form_id, encounter FROM `forms` WHERE formdir = 'care_plan' AND pid = ? AND encounter = ? AND deleted = 0 LIMIT 1";
     $formid = sqlQuery($sql, array($_SESSION["pid"], $_SESSION["encounter"]))['form_id'] ?? 0;
     if (!empty($formid)) {
@@ -38,7 +40,7 @@ if (empty($formid)) {
 if (!empty($formid)) {
     $sql = "SELECT * FROM `form_care_plan` WHERE id=? AND pid = ? AND encounter = ?";
     $res = sqlStatement($sql, array($formid,$_SESSION["pid"], $_SESSION["encounter"]));
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $all[$iter] = $row;
     }
     $check_res = $all;
@@ -118,7 +120,7 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                                     <option value=""></option>
                                                     <?php foreach ($care_plan_type as $value) :
                                                         $selected = ($value['value'] == $obj["care_plan_type"]) ? 'selected="selected"' : '';
-                                                        if (!empty($selected)) {
+                                                        if ($selected !== '' && $selected !== '0') {
                                                             $context = $value['title'];
                                                         }
                                                         ?>
@@ -133,11 +135,11 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                         </div>
                                         <div class="form-row mt-2">
                                             <div class="forms col-md-12 d-flex flex-row-reverse ">
-                                                <?php include("templates/careplan_actions.php"); ?>
+                                                <?php include(__DIR__ . "/templates/careplan_actions.php"); ?>
                                             </div>
                                             <input type="hidden" name="count[]" id="count_<?php echo attr($key) + 1; ?>" class="count" value="<?php echo attr($key) + 1;?>" />
                                         </div>
-                                        <?php include "templates/careplan_reason_row.php"; ?>
+                                        <?php include __DIR__ . "/templates/careplan_reason_row.php"; ?>
                                         <hr />
                                     </div>
                                 <?php }
@@ -172,13 +174,13 @@ $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status 
                                             </div>
                                             <div class="form-row w-100 mt-2 text-center">
                                                 <div class="forms col-md-12">
-                                                    <?php include("templates/careplan_actions.php"); ?>
+                                                    <?php include(__DIR__ . "/templates/careplan_actions.php"); ?>
                                                 </div>
                                                 <input type="hidden" name="count[]" id="count_1" class="count" value="1" />
                                             </div>
                                             <hr />
                                         </div>
-                                        <?php include "templates/careplan_reason_row.php"; ?>
+                                        <?php include __DIR__ . "/templates/careplan_reason_row.php"; ?>
                                     </div>
                                 <?php } ?>
                             </div>

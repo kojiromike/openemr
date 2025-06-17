@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Questionnaire form
  *
@@ -25,7 +27,8 @@ echo "<h3>" . text($formMetaData['form_name']) . "</h3>";
 echo xlt("Dated") . ' ' . text(oeFormatShortDate($formMetaData['date'])) . "<br><br>";
 try {
     questionnaire_assessments_report('', '', '', $formid);
-} catch (Exception $e) {
-    echo xlt("An error was encountered.") . "<br>\n" . text($e->getMessage());
+} catch (Exception $exception) {
+    echo xlt("An error was encountered.") . "<br>\n" . text($exception->getMessage());
 }
+
 echo json_encode(ob_get_clean());

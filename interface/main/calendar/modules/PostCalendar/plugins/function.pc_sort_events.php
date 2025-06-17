@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,7 +27,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_sort_events($params, &$smarty)
+function smarty_function_pc_sort_events($params, &$smarty): void
 {
     extract($params);
 
@@ -50,33 +52,36 @@ function smarty_function_pc_sort_events($params, &$smarty)
 
     switch ($sort) {
         case 'category':
-            if (strtolower($order) == 'asc') {
+            if (strtolower($order) === 'asc') {
                 $function = 'sort_byCategoryA';
             }
 
-            if (strtolower($order) == 'desc') {
+            if (strtolower($order) === 'desc') {
                 $function = 'sort_byCategoryD';
             }
+
             break;
 
         case 'title':
-            if (strtolower($order) == 'asc') {
+            if (strtolower($order) === 'asc') {
                 $function = 'sort_byTitleA';
             }
 
-            if (strtolower($order) == 'desc') {
+            if (strtolower($order) === 'desc') {
                 $function = 'sort_byTitleD';
             }
+
             break;
 
         case 'time':
-            if (strtolower($order) == 'asc') {
+            if (strtolower($order) === 'asc') {
                 $function = 'sort_byTimeA';
             }
 
-            if (strtolower($order) == 'desc') {
+            if (strtolower($order) === 'desc') {
                 $function = 'sort_byTimeD';
             }
+
             break;
     }
 

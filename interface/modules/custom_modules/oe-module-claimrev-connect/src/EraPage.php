@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,34 +11,34 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Modules\ClaimRevConnector\EraSearch;
 
 class EraPage
 {
-    public static function searchEras($postData)
+    public static function searchEras(array $postData)
     {
         $startDate = $postData['startDate'];
         $endDate = $postData['endDate'];
         $fileStatus = $postData['downloadStatus'];
 
-        $model = new FileSearchModel();
-        $model->fileStatus = intval($fileStatus);
-        $model->ediType = "835";
-        $model->receivedDateStart = $startDate;
-        $model->receivedDateEnd = $endDate;
+        $fileSearchModel = new FileSearchModel();
+        $fileSearchModel->fileStatus = intval($fileStatus);
+        $fileSearchModel->ediType = "835";
+        $fileSearchModel->receivedDateStart = $startDate;
+        $fileSearchModel->receivedDateEnd = $endDate;
 
-        if ($model->receivedDateStart == "") {
-            $model->receivedDateStart = null;
+        if ($fileSearchModel->receivedDateStart == "") {
+            $fileSearchModel->receivedDateStart = null;
         }
-        if ($model->receivedDateEnd == "") {
-            $model->receivedDateEnd = null;
+
+        if ($fileSearchModel->receivedDateEnd == "") {
+            $fileSearchModel->receivedDateEnd = null;
         }
-        $data = EraSearch::search($model);
-        return $data;
+        return EraSearch::search($fileSearchModel);
     }
+
     public static function downloadEra($id)
     {
         $data = EraSearch::downloadEra($id);

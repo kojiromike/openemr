@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Viewing and modification/creation of office notes.
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -68,7 +70,6 @@ $totalPages = ceil($totalNotes / $N);
  * @param $currentPage
  * @param $totalPages
  * @param $active
- * @return string
  */
 function renderPaginationControls($currentPage, $totalPages, $active): string
 {
@@ -80,7 +81,7 @@ function renderPaginationControls($currentPage, $totalPages, $active): string
     } else {
         $paginationHtml .= "<li class='page-item disabled'><span class='page-link'>&laquo; " . xlt('Previous') . "</span></li>";
     }
-    for ($i = 0; $i < $totalPages; $i++) {
+    for ($i = 0; $i < $totalPages; ++$i) {
         $offset = $i * $N;
         $activeClass = ($offset == ($_REQUEST['offset'] ?? 0)) ? 'active' : '';
         $paginationHtml .= "<li class='page-item " . attr($activeClass) . "'><a class='page-link' href='office_comments_full.php?offset=" . attr($offset) . "&active=" . attr($active) . "'>" . attr($i + 1) . "</a></li>";
@@ -91,9 +92,8 @@ function renderPaginationControls($currentPage, $totalPages, $active): string
     } else {
         $paginationHtml .= "<li class='page-item disabled'><span class='page-link'>" . xlt('Next') . " &raquo;</span></li>";
     }
-    $paginationHtml .= '</ul>';
 
-    return $paginationHtml;
+    return $paginationHtml . '</ul>';
 }
 
 ?>

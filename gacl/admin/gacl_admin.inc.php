@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
  * phpGACL - Generic Access Control List
  * Copyright (C) 2002 Mike Benoit
@@ -43,14 +45,10 @@ if ( !isset($config_file) ) {
 //Values supplied in $gacl_options array overwrite those in the config file.
 if ( file_exists($config_file) ) {
 	$config = parse_ini_file($config_file);
+    if (is_array($config)) {
+        $gacl_options = isset($gacl_options) ? array_merge($config, $gacl_options) : $config;
+    }
 
-	if ( is_array($config) ) {
-		if ( isset($gacl_options) ) {
-			$gacl_options = array_merge($config, $gacl_options);
-		} else {
-			$gacl_options = $config;
-		}
-	}
 	unset($config);
 }
 

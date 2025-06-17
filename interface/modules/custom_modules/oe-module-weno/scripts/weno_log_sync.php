@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package    OpenEMR
  * @link       http://www.open-emr.org
@@ -22,7 +24,7 @@ use OpenEMR\Modules\WenoModule\Services\WenoValidate;
  */
 function downloadWenoPharmacy(): void
 {
-    $wenoLog = new WenoLogService();
+    new WenoLogService();
     $wenoValidate = new WenoValidate();
     $localPharmacyJson = new WenoPharmaciesJson(new CryptoGen());
 
@@ -30,6 +32,7 @@ function downloadWenoPharmacy(): void
     if ((int)$isKey >= 998) {
         handleDownloadError("Background Initiated Pharmacy download attempt failed. Internet problem!");
     }
+
     if ($isKey === false) {
         requireGlobals();
     }
@@ -66,10 +69,10 @@ function downloadWenoPrescriptionLog(): void
     try {
         $logSync = new LogProperties();
         $rtn = $logSync->logSync('background');
-    } catch (Exception $e) {
+    } catch (Exception $exception) {
         $rtn = false;
-        $wenoLog->insertWenoLog("Sync Report", $e->getMessage());
-        error_log('Error syncing log: ' . errorLogEscape($e->getMessage()));
+        $wenoLog->insertWenoLog("Sync Report", $exception->getMessage());
+        error_log('Error syncing log: ' . errorLogEscape($exception->getMessage()));
         http_response_code(500);
         exit;
     }
@@ -84,10 +87,8 @@ function downloadWenoPrescriptionLog(): void
 
 /**
  * Handle download errors.
- *
- * @param string $errorMessage
  */
-function handleDownloadError(string $errorMessage)
+function handleDownloadError(string $errorMessage): void
 {
     EventAuditLogger::instance()->newEvent(
         "pharmacy_background",

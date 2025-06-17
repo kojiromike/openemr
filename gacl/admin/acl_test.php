@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
 meinhard_jahn@web.de, 20041102: link to acl_test2.php and acl_test3.php
 */
@@ -8,7 +10,7 @@ if (!empty($_GET['debug'])) {
 }
 */
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -21,10 +23,10 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 @set_time_limit(600);
 
-require_once('../profiler.inc.php');
+require_once(__DIR__ . '/../profiler.inc.php');
 $profiler = new Profiler(true,true);
 
-require_once("gacl_admin.inc.php");
+require_once(__DIR__ . "/gacl_admin.inc.php");
 
 $smarty->assign("return_page", $_SERVER['PHP_SELF'] );
 

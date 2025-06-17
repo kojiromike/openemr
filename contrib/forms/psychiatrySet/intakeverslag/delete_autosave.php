@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    Intakeverslag - Delete Autosave
 // Package: remove autosaved form  - Dutch specific form

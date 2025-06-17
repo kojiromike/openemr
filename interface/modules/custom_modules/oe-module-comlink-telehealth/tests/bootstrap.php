@@ -13,7 +13,7 @@
 declare(strict_types=1);
 
 // make sure this can only be run on the command line.
-if (php_sapi_name() !== 'cli') {
+if (PHP_SAPI !== 'cli') {
     exit;
 }
 

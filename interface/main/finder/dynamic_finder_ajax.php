@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * dynamic_finder_ajax.php
  *
@@ -45,12 +47,13 @@ if ($searchAny) {
             AND field_id not like ? AND field_id not like ? AND uor !=0",
         array('em\_%', 'add%')
     );
-    for ($iter = 0; $row = sqlFetchArray($layoutCols); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($layoutCols); ++$iter) {
         $aColumns[] = $row['field_id'];
     }
 } else {
     $aColumns = explode(',', $_GET['sColumns']);
 }
+
 // Paging parameters.  -1 means not applicable.
 //
 $iDisplayStart  = isset($_GET['iDisplayStart' ]) ? 0 + $_GET['iDisplayStart' ] : -1;
@@ -59,25 +62,26 @@ $limit = '';
 if ($iDisplayStart >= 0 && $iDisplayLength >= 0) {
     $limit = "LIMIT " . escape_limit($iDisplayStart) . ", " . escape_limit($iDisplayLength);
 }
+
 // Search parameter.  -1 means .
 //
-$searchMethodInPatientList = isset($_GET['searchType' ]) && $_GET['searchType' ] === "true" ?  true : false;
+$searchMethodInPatientList = isset($_GET['searchType' ]) && $_GET['searchType' ] === "true";
 
 // Column sorting parameters.
 //
 $orderby = '';
 if (isset($_GET['iSortCol_0'])) {
     for ($i = 0; $i < intval($_GET['iSortingCols']); ++$i) {
-        $iSortCol = intval($_GET["iSortCol_$i"]);
-        if ($_GET["bSortable_$iSortCol"] == "true") {
-            $sSortDir = escape_sort_order($_GET["sSortDir_$i"]); // ASC or DESC
+        $iSortCol = intval($_GET['iSortCol_' . $i]);
+        if ($_GET['bSortable_' . $iSortCol] == "true") {
+            $sSortDir = escape_sort_order($_GET['sSortDir_' . $i]); // ASC or DESC
             // We are to sort on column # $iSortCol in direction $sSortDir.
-            $orderby .= $orderby ? ', ' : 'ORDER BY ';
+            $orderby .= $orderby !== '' && $orderby !== '0' ? ', ' : 'ORDER BY ';
             //
             if ($aColumns[$iSortCol] == 'name') {
-                $orderby .= "lname $sSortDir, fname $sSortDir, mname $sSortDir";
+                $orderby .= sprintf('lname %s, fname %s, mname %s', $sSortDir, $sSortDir, $sSortDir);
             } else {
-                $orderby .= "`" . escape_sql_column_name($aColumns[$iSortCol], array('patient_data')) . "` $sSortDir";
+                $orderby .= "`" . escape_sql_column_name($aColumns[$iSortCol], array('patient_data')) . ('` ' . $sSortDir);
             }
         }
     }
@@ -100,7 +104,7 @@ function dateSearch($sSearch)
     $mdy = empty($GLOBALS['date_display_format']) ?
         ($GLOBALS['phone_country_code'] == 1) : ($GLOBALS['date_display_format'] == 1);
     // If no delimiters then just search the whole date.
-    $mystr = "%$sSearch%";
+    $mystr = sprintf('%%%s%%', $sSearch);
     if (preg_match('/[^0-9]/', $sSearch)) {
         // Delimiter found. Separate it all into year, month and day components.
         $parts = preg_split('/[^0-9]/', $sSearch);
@@ -112,6 +116,7 @@ function dateSearch($sSearch)
             $parts = $mdy ? array($parts[2], $parts[0], $parts[1]) :
                 array($parts[2], $parts[1], $parts[0]);
         }
+
         // A single-digit day or month is zero-filled. Fill in other missing
         // digits with wildcards. A 2-digit year like 19 becomes 19__, not __19.
         $parts[0] = substr($parts[0] . '____', 0, 4);
@@ -120,13 +125,16 @@ function dateSearch($sSearch)
         } elseif (strlen($parts[1]) == 1) {
             $parts[1] = '0' . $parts[1];
         }
+
         if (strlen($parts[2]) == 0) {
             $parts[2] = '__';
         } elseif (strlen($parts[2]) == 1) {
             $parts[2] = '0' . $parts[2];
         }
+
         $mystr = $parts[0] . '-' . $parts[1] . '-' . $parts[2];
     }
+
     return $mystr;
 }
 
@@ -136,31 +144,37 @@ $where = "";
 $srch_bind = array();
 if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
     $sSearch = trim($_GET['sSearch']);
-    foreach ($aColumns as $colname) {
-        $where .= $where ? " OR " : " ( ";
-        if ($colname == 'name') {
+    foreach ($aColumns as $aColumn) {
+        $where .= $where !== '' && $where !== '0' ? " OR " : " ( ";
+        if ($aColumn == 'name') {
             $where .=
                 "lname LIKE ? OR " .
                 "fname LIKE ? OR " .
                 "mname LIKE ? ";
-            if ($searchMethodInPatientList) { // exact search
-                array_push($srch_bind, $sSearch, $sSearch, $sSearch);
-            } else {// like search
-                array_push($srch_bind, ($sSearch . "%"), ($sSearch . "%"), ($sSearch . "%"));
+            if ($searchMethodInPatientList) {
+                // exact search
+                $srch_bind[] = $sSearch;
+                $srch_bind[] = $sSearch;
+                $srch_bind[] = $sSearch;
+            } else {
+                // like search
+                $srch_bind[] = $sSearch . "%";
+                $srch_bind[] = $sSearch . "%";
+                $srch_bind[] = $sSearch . "%";
             }
         } elseif ($searchMethodInPatientList) { // exact search
-            $where .= "`" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ? ";
-            array_push($srch_bind, $sSearch);
+            $where .= "`" . escape_sql_column_name($aColumn, array('patient_data')) . "` LIKE ? ";
+            $srch_bind[] = $sSearch;
         } elseif ($searchAny) {
-            $where .= " `" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ?"; // any search
-            array_push($srch_bind, ('%' . $sSearch . '%'));
+            $where .= " `" . escape_sql_column_name($aColumn, array('patient_data')) . "` LIKE ?"; // any search
+            $srch_bind[] = '%' . $sSearch . '%';
         } else {
-            $where .= "`" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ? ";
-            array_push($srch_bind, ($sSearch . '%'));
+            $where .= "`" . escape_sql_column_name($aColumn, array('patient_data')) . "` LIKE ? ";
+            $srch_bind[] = $sSearch . '%';
         }
     }
 
-    if ($where) {
+    if ($where !== '' && $where !== '0') {
         $where .= ")";
     }
 }
@@ -168,31 +182,38 @@ if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
 // Column-specific filtering.
 //
 $columnFilters = [];
-for ($i = 0; $i < count($aColumns); ++$i) {
+$counter = count($aColumns);
+for ($i = 0; $i < $counter; ++$i) {
     $colname = $aColumns[$i];
-    if (isset($_GET["bSearchable_$i"]) && $_GET["bSearchable_$i"] == "true" && $_GET["sSearch_$i"] != '') {
-        $where .= $where ? ' AND ' : '';
-        $sSearch = $_GET["sSearch_$i"];
+    if (isset($_GET['bSearchable_' . $i]) && $_GET['bSearchable_' . $i] == "true" && $_GET['sSearch_' . $i] != '') {
+        $where .= $where !== '' && $where !== '0' ? ' AND ' : '';
+        $sSearch = $_GET['sSearch_' . $i];
         $columnFilters[] = new ColumnFilter($colname, $sSearch);
         if ($colname == 'name') {
             $where .=
                 "lname LIKE ? OR " .
                 "fname LIKE ? OR " .
                 "mname LIKE ? ";
-            if ($searchMethodInPatientList) { // exact search
-                array_push($srch_bind, $sSearch, $sSearch, $sSearch);
-            } else {// like search
-                array_push($srch_bind, ($sSearch . "%"), ($sSearch . "%"), ($sSearch . "%"));
+            if ($searchMethodInPatientList) {
+                // exact search
+                $srch_bind[] = $sSearch;
+                $srch_bind[] = $sSearch;
+                $srch_bind[] = $sSearch;
+            } else {
+                // like search
+                $srch_bind[] = $sSearch . "%";
+                $srch_bind[] = $sSearch . "%";
+                $srch_bind[] = $sSearch . "%";
             }
         } elseif ($colname == 'DOB') {
             $where .= "`" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ? ";
-            array_push($srch_bind, dateSearch($sSearch));
+            $srch_bind[] = dateSearch($sSearch);
         } elseif ($searchMethodInPatientList) { // exact search
             $where .= "`" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ? ";
-            array_push($srch_bind, $sSearch);
+            $srch_bind[] = $sSearch;
         } else {
             $where .= "`" . escape_sql_column_name($colname, array('patient_data')) . "` LIKE ? ";
-            array_push($srch_bind, ($sSearch . '%'));
+            $srch_bind[] = $sSearch . '%';
         }
     }
 }
@@ -212,6 +233,7 @@ $srch_bind = array_merge($boundFilter->getBoundValues(), $srch_bind);
 if ($searchAny) {
     $aColumns = explode(',', $_GET['sColumns']);
 }
+
 $sellist = 'pid';
 foreach ($aColumns as $colname) {
     if ($colname == 'pid') {
@@ -228,17 +250,13 @@ foreach ($aColumns as $colname) {
 
 // Get total number of rows in the table.
 // Include the custom filter clause and bound values, if any
-$row = sqlQuery("SELECT COUNT(id) AS count FROM patient_data WHERE $customWhere", $boundFilter->getBoundValues());
+$row = sqlQuery('SELECT COUNT(id) AS count FROM patient_data WHERE ' . $customWhere, $boundFilter->getBoundValues());
 $iTotal = $row['count'];
-
 // Get total number of rows in the table after filtering.
 //
-if (empty($where)) {
-    $where = $customWhere;
-} else {
-    $where = "$customWhere AND ( $where )";
-}
-$row = sqlQuery("SELECT COUNT(id) AS count FROM patient_data WHERE $where", $srch_bind);
+$where = $where === '' || $where === '0' ? $customWhere : sprintf('%s AND ( %s )', $customWhere, $where);
+
+$row = sqlQuery('SELECT COUNT(id) AS count FROM patient_data WHERE ' . $where, $srch_bind);
 $iFilteredTotal = $row['count'];
 
 // Build the output data array.
@@ -258,13 +276,13 @@ while ($row = sqlFetchArray($res)) {
     $fieldsInfo[$row['field_id']] = $row;
 }
 
-$query = "SELECT $sellist FROM patient_data WHERE $where $orderby $limit";
+$query = sprintf('SELECT %s FROM patient_data WHERE %s %s %s', $sellist, $where, $orderby, $limit);
 $res = sqlStatement($query, $srch_bind);
 while ($row = sqlFetchArray($res)) {
     // Each <tr> will have an ID identifying the patient.
     $arow = array('DT_RowId' => 'pid_' . $row['pid']);
-    foreach ($aColumns as $colname) {
-        if ($colname == 'name') {
+    foreach ($aColumns as $aColumn) {
+        if ($aColumn == 'name') {
             $name = $row['lname'];
             if ($name && $row['fname']) {
                 $name .= ', ';
@@ -280,7 +298,7 @@ while ($row = sqlFetchArray($res)) {
 
             $arow[] = attr($name);
         } else {
-            $arow[] = isset($fieldsInfo[$colname]) ? attr(generate_plaintext_field($fieldsInfo[$colname], $row[$colname])) : attr($row[$colname]);
+            $arow[] = isset($fieldsInfo[$aColumn]) ? attr(generate_plaintext_field($fieldsInfo[$aColumn], $row[$aColumn])) : attr($row[$aColumn]);
         }
     }
 

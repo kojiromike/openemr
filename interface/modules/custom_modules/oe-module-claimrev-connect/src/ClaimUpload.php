@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,22 +11,28 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+namespace OpenEMR\Modules\ClaimRevConnector;
 
-    namespace OpenEMR\Modules\ClaimRevConnector;
-
-    use OpenEMR\Services\BaseService;
-    use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
-    use OpenEMR\Billing\BillingProcessor\X12RemoteTracker;
+use OpenEMR\Services\BaseService;
+use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
+use OpenEMR\Billing\BillingProcessor\X12RemoteTracker;
 
 class ClaimUpload extends BaseService
 {
     public const STATUS_WAITING = 'waiting';
+
     public const STATUS_PARAMETER_ERROR = 'parameter-error';
+
     public const STATUS_CLAIM_FILE_ERROR = 'claim-file-error';
+
     public const STATUS_LOGIN_ERROR = 'login-error';
+
     public const STATUS_CHDIR_ERROR = 'chdir-error';
+
     public const STATUS_IN_PROGRESS = 'in-progress';
+
     public const STATUS_UPLOAD_ERRROR = 'upload-error';
+
     public const STATUS_SUCCESS = 'success';
 
     public const TABLE_NAME = 'x12_remote_tracker';
@@ -50,10 +58,10 @@ class ClaimUpload extends BaseService
         parent::__construct(self::TABLE_NAME);
     }
 
-    public static function sendWaitingFiles()
+    public static function sendWaitingFiles(): void
     {
-        $remoteTracker = new X12RemoteTracker();
-        $x12_remotes = $remoteTracker->fetchByStatus(self::STATUS_WAITING);
+        $x12RemoteTracker = new X12RemoteTracker();
+        $x12_remotes = $x12RemoteTracker->fetchByStatus(self::STATUS_WAITING);
         $x12_remote['messages'] = [];
 
         $token = ClaimRevApi::GetAccessToken();
@@ -62,7 +70,7 @@ class ClaimUpload extends BaseService
             if (false === $token) {
                 $x12_remote['status'] = self::STATUS_LOGIN_ERROR;
                 $x12_remote['messages'] = "Invalid Username or Password.";
-                $remoteTracker->update($x12_remote);
+                $x12RemoteTracker->update($x12_remote);
                 continue;
             }
 
@@ -76,26 +84,26 @@ class ClaimUpload extends BaseService
             $claim_file_contents = file_get_contents($claim_file);
             if (false === $claim_file_contents) {
                 $x12_remote['status'] = self::STATUS_CLAIM_FILE_ERROR;
-                $x12_remote['messages'] = "Could not open local claim file: `$claim_file`";
-                $remoteTracker->update($x12_remote);
+                $x12_remote['messages'] = sprintf('Could not open local claim file: `%s`', $claim_file);
+                $x12RemoteTracker->update($x12_remote);
                 continue;
             }
 
             // Change status from waiting to in-progress
             $x12_remote['status'] = self::STATUS_IN_PROGRESS;
-            $remoteTracker->update($x12_remote);
+            $x12RemoteTracker->update($x12_remote);
 
             // Upload the file
             if (false === ClaimRevApi::uploadClaimFile($claim_file_contents, $x12_remoteFilename, $token)) {
                 $x12_remote['status'] = self::STATUS_UPLOAD_ERRROR;
                 $x12_remote['messages'] = "Could not upload file.";
-                $remoteTracker->update($x12_remote);
+                $x12RemoteTracker->update($x12_remote);
                 continue;
             }
 
             // Change status from waiting to in-progress
             $x12_remote['status'] = self::STATUS_SUCCESS;
-            $remoteTracker->update($x12_remote);
+            $x12RemoteTracker->update($x12_remote);
         }
     }
 }

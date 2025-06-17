@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CCR Script.
  *
@@ -122,4 +124,5 @@ do {
     $e_Text = $ccr->createElement('Text', 'None');
     $e_Status->appendChild($e_Text);
 } while ($row = sqlFetchArray($result));
+
     //}

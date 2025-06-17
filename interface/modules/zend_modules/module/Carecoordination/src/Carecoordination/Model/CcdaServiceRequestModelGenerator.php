@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CcdaServiceRequestModelGenerator is responsible for generating an xml model file that is used to generate a CCDA file by the ccda generator
  * service.
@@ -15,7 +17,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 use OpenEMR\Services\EncounterService;
@@ -24,24 +25,23 @@ use OpenEMR\Validators\ProcessingResult;
 
 class CcdaServiceRequestModelGenerator
 {
-    private $data;
-    private $createdtime;
+    private string $data = "";
+
+    private ?int $createdtime = null;
+
     private $exportwithDocuments;
 
-    /**
-     * @var EncounterccdadispatchTable
-     */
-    private $encounterCCDADispatchTable;
+    private \Carecoordination\Model\EncounterccdadispatchTable $encounterccdadispatchTable;
 
-    public function __construct(EncounterccdadispatchTable $table)
+    public function __construct(EncounterccdadispatchTable $encounterccdadispatchTable)
     {
-        $this->encounterCCDADispatchTable = $table;
-        $this->data = "";
+        $this->encounterccdadispatchTable = $encounterccdadispatchTable;
         $this->exportwithDocuments = $_REQUEST['with_documents'] ?? false;
     }
+
     public function getEncounterccdadispatchTable(): EncounterccdadispatchTable
     {
-        return $this->encounterCCDADispatchTable;
+        return $this->encounterccdadispatchTable;
     }
 
     public function getData(): string
@@ -54,12 +54,12 @@ class CcdaServiceRequestModelGenerator
         return $this->createdtime;
     }
 
-    private function getServiceStartDates($pid, $encounter, $document_type, $date_options)
+    private function getServiceStartDates($pid, $encounter, string $document_type, array $date_options): array
     {
         $start = $date_options['date_start'];
         $end = $date_options['date_end'];
         $document_type = $document_type ?? "ccd"; // default to ccd
-        if ($document_type == 'referral') {
+        if ($document_type === 'referral') {
             // we are basing things on a single encounter so we need to try and grab our encounter date
             if (!empty($encounter)) {
                 // we can adjust our dates here
@@ -73,14 +73,16 @@ class CcdaServiceRequestModelGenerator
                         // TODO: if we add encounter end dates we can populate this
                         $end = $end > $start ? $end : $start + 1800; // 30 minutes
                     }
+
                     $start = date('YmdHisO', $start);
                     $end = date('YmdHisO', $end);
                 }
             }
-        } elseif ($document_type == 'ccd' || $document_type == 'toc') {
+        } elseif ($document_type === 'ccd' || $document_type === 'toc') {
             if (empty($end)) {
                 $end = date('YmdHisO'); // current date
             }
+
             if (empty($start) && !empty($pid)) {
                 $patientService = new PatientService();
                 $patientRecord = $patientService->findByPid($pid);
@@ -88,6 +90,7 @@ class CcdaServiceRequestModelGenerator
                     $start = date('YmdHisO', strtotime($patientRecord['DOB']));
                 }
             }
+
             if (empty($end) && !empty($pid)) {
                 $encounterId = $this->getEncounterccdadispatchTable()->getLatestEncounter($pid);
                 if (!empty($encounterId)) {
@@ -99,22 +102,25 @@ class CcdaServiceRequestModelGenerator
                 }
             }
         }
+
         // TODO: this is the result of late night coding, hopefully we can come and fix this to be better in the future
         // we essentially need to handle the fall through case where we have a date range that's been sent us
         // that's not in our timestamp format
         if (strpos($start, "-") !== false) {
             $start = date('YmdHisO', strtotime($start));
         }
+
         if (strpos($end, "-") !== false) {
             $end = date('YmdHisO', strtotime($end));
         }
+
         return [
             'start' => $start ?? date('YmdHisO')
             ,'end' => $end ?? date('YmdHisO')
         ];
     }
 
-    public function create_data($pid, $encounter, $sections, $components, $recipients, $params, $document_type, $referral_reason, ?int $send, $date_options = [])
+    public function create_data($pid, $encounter, $sections, $components, $recipients, $params, string $document_type, $referral_reason, ?int $send, $date_options = []): void
     {
         global $assignedEntity;
         global $representedOrganization;
@@ -218,7 +224,7 @@ class CcdaServiceRequestModelGenerator
         }
 
         if ($this->exportwithDocuments) {
-            $this->data .= $this->getEncounterccdadispatchTable()->getDocumentsForExport($pid, $encounter);
+            $this->data .= $this->getEncounterccdadispatchTable()->getDocumentsForExport($pid);
         }
 
         /***************CCDA Body Information***************/
@@ -226,7 +232,7 @@ class CcdaServiceRequestModelGenerator
         $this->data .= "</CCDA>";
     }
 
-    public function getContinuityCareDocument($pid, $components_list, $encounter)
+    public function getContinuityCareDocument($pid, $components_list, $encounter): string
     {
         $ccd = '';
         if (in_array('allergies', $components_list)) {
@@ -272,19 +278,19 @@ class CcdaServiceRequestModelGenerator
         if (in_array('referral', $components_list)) {
             $ccd .= $this->getEncounterccdadispatchTable()->getReferrals($pid);
         }
+
         return $ccd;
     }
 
 
-    public function getDischargeSummary($pid, $encounter)
+    public function getDischargeSummary($pid, $encounter): string
     {
         $discharge_summary = '';
 
         $discharge_summary .= $this->getEncounterccdadispatchTable()->getHospitalCourse($pid, $encounter);
         $discharge_summary .= $this->getEncounterccdadispatchTable()->getDischargeDiagnosis($pid, $encounter);
-        $discharge_summary .= $this->getEncounterccdadispatchTable()->getDischargeMedications($pid, $encounter);
 
-        return $discharge_summary;
+        return $discharge_summary . $this->getEncounterccdadispatchTable()->getDischargeMedications($pid, $encounter);
     }
 
 
@@ -303,15 +309,14 @@ class CcdaServiceRequestModelGenerator
 
     * $return   string  $procedure_notes      XML which contains the details collected from the patient.
     */
-    public function getProcedureNotes($pid, $encounter)
+    public function getProcedureNotes($pid, $encounter): string
     {
         $procedure_notes = '<procedure_notes>';
         $procedure_notes .= $this->getEncounterccdadispatchTable()->getComplications($pid, $encounter);
         $procedure_notes .= $this->getEncounterccdadispatchTable()->getPostProcedureDiag($pid, $encounter);
         $procedure_notes .= $this->getEncounterccdadispatchTable()->getProcedureDescription($pid, $encounter);
         $procedure_notes .= $this->getEncounterccdadispatchTable()->getProcedureIndications($pid, $encounter);
-        $procedure_notes .= '</procedure_notes>';
-        return $procedure_notes;
+        return $procedure_notes . '</procedure_notes>';
     }
 
     /*
@@ -334,7 +339,7 @@ class CcdaServiceRequestModelGenerator
 
     * $return   string  $operative_notes      XML which contains the details collected from the patient.
     */
-    public function getOperativeNotes($pid, $encounter)
+    public function getOperativeNotes($pid, $encounter): string
     {
         $operative_notes = '<operative_notes>';
         $operative_notes .= $this->getEncounterccdadispatchTable()->getAnesthesia($pid, $encounter);
@@ -343,8 +348,7 @@ class CcdaServiceRequestModelGenerator
         $operative_notes .= $this->getEncounterccdadispatchTable()->getEstimatedBloodLoss($pid, $encounter);
         $operative_notes .= $this->getEncounterccdadispatchTable()->getProcedureFindings($pid, $encounter);
         $operative_notes .= $this->getEncounterccdadispatchTable()->getProcedureSpecimensTaken($pid, $encounter);
-        $operative_notes .= '</operative_notes>';
-        return $operative_notes;
+        return $operative_notes . '</operative_notes>';
     }
 
     /*
@@ -360,14 +364,13 @@ class CcdaServiceRequestModelGenerator
 
     * $return   string  $consultation_notes      XML which contains the details collected from the patient.
     */
-    public function getConsultationNote($pid, $encounter)
+    public function getConsultationNote($pid, $encounter): string
     {
         $consultation_notes = '';
         $consultation_notes .= "<consultation_notes>";
         $consultation_notes .= $this->getEncounterccdadispatchTable()->getHP($pid, $encounter);
         $consultation_notes .= $this->getEncounterccdadispatchTable()->getPhysicalExam($pid, $encounter);
-        $consultation_notes .= "</consultation_notes>";
-        return $consultation_notes;
+        return $consultation_notes . "</consultation_notes>";
     }
 
     /*
@@ -389,7 +392,7 @@ class CcdaServiceRequestModelGenerator
     * $return   string  $history_and_physical_notes      XML which contains the details collected from the patient.
     */
 
-    public function getHistoryAndPhysicalNotes($pid, $encounter, $components_list)
+    public function getHistoryAndPhysicalNotes($pid, $encounter, $components_list): string
     {
         $history_and_physical_notes = '';
         $history_and_physical_notes .= "<history_physical>";
@@ -404,8 +407,6 @@ class CcdaServiceRequestModelGenerator
         if (in_array('social_history', $components_list)) {
             $history_and_physical_notes .= $this->getEncounterccdadispatchTable()->getSocialHistory($pid);
         }
-
-        $history_and_physical_notes .= "</history_physical>";
-        return $history_and_physical_notes;
+        return $history_and_physical_notes . "</history_physical>";
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Clinical instructions form.
  *
@@ -13,16 +15,16 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
 $returnurl = 'encounter_top.php';
 $formid = (int) (isset($_GET['id']) ? $_GET['id'] : 0);
-$check_res = $formid ? formFetch("form_clinical_instructions", $formid) : array();
+$check_res = $formid !== 0 ? formFetch("form_clinical_instructions", $formid) : array();
 ?>
 <html>
     <head>

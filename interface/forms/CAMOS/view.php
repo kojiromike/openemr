@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS view.php
  *
@@ -23,7 +25,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("../../../library/api.inc.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -78,7 +80,7 @@ function show_edit(t) {
 <input type="submit" name="delete" value="<?php echo xla('Delete Selected Items'); ?>" />
 <input type="submit" name="update" value="<?php echo xla('Update Selected Items'); ?>" />
 <?php
-echo "<a href='{$GLOBALS['form_exit_url']}'>[" . xlt('do nothing') . "]</a>";
+echo sprintf("<a href='%s'>[", $GLOBALS['form_exit_url']) . xlt('do nothing') . "]</a>";
 ?>
 <br/><br/>
 <input type='button' value='<?php echo xla('Select All'); ?>'

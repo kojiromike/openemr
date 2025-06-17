@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Export table definition class for a table.  Responsible for retrieving the records for a given
  * table definition as well as holding all of the key values for the table.  The key values are used
@@ -15,7 +17,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\TableDefinitions;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -24,14 +25,15 @@ use OpenEMR\Modules\EhiExporter\Models\ExportKeyDefinition;
 class ExportTableDefinition
 {
     public ?string $table;
-    public string $selectClause;
+
+    public string $selectClause = '*';
 
     /**
      * @var string[]|int[]
      */
-    private array $keyColumnsHashmap;
+    private array $keyColumnsHashmap = [];
 
-    private bool $hasNewData;
+    private bool $hasNewData = false;
 
     /**
      * @var string[]
@@ -43,31 +45,29 @@ class ExportTableDefinition
     public function __construct(?string $table = null, array $pks = [])
     {
         $this->table = $table;
-        $this->keyColumnsHashmap = [];
-        $this->hasNewData = false;
-        $this->selectClause = '*';
         $this->primaryKeys = $pks;
     }
 
-    public function addPrimaryKey(string $key)
+    public function addPrimaryKey(string $key): void
     {
         $this->primaryKeys[] = $key;
     }
 
-    private function createPrimaryKeyHashFromRecord(&$record)
+    private function createPrimaryKeyHashFromRecord(array &$record): string
     {
         $hash = [];
-        foreach ($this->primaryKeys as $key) {
-            $hash[] = $record[$key];
+        foreach ($this->primaryKeys as $primaryKey) {
+            $hash[] = $record[$primaryKey];
         }
+
         return implode('::', $hash);
     }
 
-    public function addKeyValue(ExportKeyDefinition $keyDefinition, int|string $value)
+    public function addKeyValue(ExportKeyDefinition $exportKeyDefinition, int|string $value): void
     {
-        $key = $keyDefinition->foreignKeyColumn;
-        if ($keyDefinition->isDenormalized && is_string($value)) {
-            $valueList = explode($keyDefinition->denormalizedKeySeparator, $value);
+        $key = $exportKeyDefinition->foreignKeyColumn;
+        if ($exportKeyDefinition->isDenormalized && is_string($value)) {
+            $valueList = explode($exportKeyDefinition->denormalizedKeySeparator, $value);
             foreach ($valueList as $value) {
                 $this->addValueToHashmap($key, $value);
             }
@@ -76,50 +76,50 @@ class ExportTableDefinition
         }
     }
 
-    private function addValueToHashmap($key, $value)
+    private function addValueToHashmap(string $key, string|int $value): void
     {
         $hasValue = $this->keyColumnsHashmap[$key][$value] ?? null;
         if (!isset($hasValue)) {
             if (!isset($this->keyColumnsHashmap[$key])) {
                 $this->keyColumnsHashmap[$key] = [];
             }
+
             $this->keyColumnsHashmap[$key][$value] = $value;
             $this->hasNewData = true;
         }
     }
 
-    public function addKeyValueList(ExportKeyDefinition $key, array $values)
+    public function addKeyValueList(ExportKeyDefinition $exportKeyDefinition, array $values): void
     {
         foreach ($values as $value) {
-            $this->addKeyValue($key, $value);
+            $this->addKeyValue($exportKeyDefinition, $value);
         }
     }
 
-    public function hasNewData()
+    public function hasNewData(): bool
     {
         return $this->hasNewData;
     }
 
-    public function setSelectClause(string $clause)
+    public function setSelectClause(string $clause): void
     {
         $this->selectClause = $clause;
     }
 
     /**
      * @deprecated
-     * @param array $columns
-     * @return void
      */
-    public function setSelectColumns(array $columns)
+    public function setSelectColumns(array $columns): void
     {
         $select = [];
         foreach ($columns as $column) {
             $select[] = QueryUtils::escapeColumnName($column, [$this->table]);
         }
+
         $this->selectClause = implode(',', $columns);
     }
 
-    public function getSelectClause()
+    public function getSelectClause(): string
     {
         return $this->selectClause;
     }
@@ -129,7 +129,10 @@ class ExportTableDefinition
         return $this->keyColumnsHashmap[$key] ?? [];
     }
 
-    public function getRecords()
+    /**
+     * @return list
+     */
+    public function getRecords(): array
     {
         $maxIterations = 500; // always have a loop safety in case the loop logic breaks, which is 500 * 25000 = 12,500,000 records
         $iterations = 0;
@@ -147,13 +150,14 @@ class ExportTableDefinition
                 $fetchSize = min($batchSize, $bindColumnsCount - $pos);
                 // key has already been escaped when we created the table definitions so we can just search against the valid
                 // table columns, if it exists we are good to go, otherwise we fail.
-                if (array_search($key, $this->tableColumnNames) === false) {
-                    throw new \RuntimeException("Invalid key column name for table " . $this->table . ": $key");
+                if (!in_array($key, $this->tableColumnNames)) {
+                    throw new \RuntimeException("Invalid key column name for table " . $this->table . (': ' . $key));
                 }
-                $whereClause = "($key IN (" . str_repeat('?,', $fetchSize - 1) . "?))";
+
+                $whereClause = sprintf('(%s IN (', $key) . str_repeat('?,', $fetchSize - 1) . "?))";
                 $bindColumns = array_slice($items, $pos, $fetchSize);
 
-                $sql = "SELECT {$this->getSelectClause()} FROM {$this->table} WHERE $whereClause";
+                $sql = sprintf('SELECT %s FROM %s WHERE %s', $this->getSelectClause(), $this->table, $whereClause);
                 $records = QueryUtils::sqlStatementThrowException($sql, $bindColumns, false);
                 foreach ($records as $record) {
                     $pkHash = $this->createPrimaryKeyHashFromRecord($record);
@@ -162,22 +166,23 @@ class ExportTableDefinition
                         $resultRecords[] = $record;
                     }
                 }
+
                 $pos += $fetchSize;
             } while ($pos < $bindColumnsCount && $iterations++ < $maxIterations);
         }
+
         return $resultRecords;
     }
 
-    public function setHasNewData(bool $newData)
+    public function setHasNewData(bool $newData): void
     {
         $this->hasNewData = false;
     }
 
     /**
      * @param string[]  $safeColumnNames
-     * @return void
      */
-    public function setColumnNames(array $safeColumnNames)
+    public function setColumnNames(array $safeColumnNames): void
     {
         $this->tableColumnNames = $safeColumnNames;
     }

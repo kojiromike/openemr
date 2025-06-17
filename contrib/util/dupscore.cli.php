@@ -38,7 +38,7 @@
 // The number of scores to compute between tests for time expiration.
 $querylimit = 1000;
 
-if (php_sapi_name() !== 'cli') {
+if (PHP_SAPI !== 'cli') {
     die("This script must be run from the command line!\n");
 }
 
@@ -60,7 +60,7 @@ $ignoreAuth = 1;
 require_once($args['webdir'] . "/interface/globals.php");
 
 // Bring in the getDupScoreSQL() function.
-require_once("$srcdir/dupscore.inc.php");
+require_once($srcdir . '/dupscore.inc.php');
 
 $endtime = time() + 365 * 24 * 60 * 60; // a year from now
 if (!empty($args['maxmins'])) {
@@ -99,8 +99,8 @@ while (!$finished && time() < $endtime) {
         ++$count;
     }
 
-    if (!isset($args['q']) && count($scores) > 0) {
-        echo "$count... ";
+    if (!isset($args['q']) && $scores !== []) {
+        echo $count . '... ';
     }
     if (count($scores) < $querylimit) {
         $finished = true;
@@ -108,7 +108,7 @@ while (!$finished && time() < $endtime) {
 }
 
 if (!isset($args['q'])) {
-    if (!$count) {
+    if ($count === 0) {
         echo xl("No patients without scores were found.");
     }
     if ($finished) {

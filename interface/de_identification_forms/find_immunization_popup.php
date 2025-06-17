@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * find_immunization_popup.php
  *
@@ -12,9 +14,9 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("../../custom/code_types.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once(__DIR__ . "/../../custom/code_types.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -154,7 +156,6 @@ function check_search_str()
   <td colspan="4">
     <?php
     $search_term = $_REQUEST['search_term'];
-    {
     $query = "SELECT count(*) as count FROM list_options " .
       "WHERE (list_id = 'immunizations' and title LIKE ? AND activity = 1) " ;
     $res = sqlStatement($query, array('%' . $search_term . '%'));
@@ -176,14 +177,12 @@ function check_search_str()
         $res = sqlStatement($query, array('%' . $search_term . '%'));
         $row_count = 0;
         while ($row = sqlFetchArray($res)) {
-            $row_count = $row_count + 1;
+            $row_count += 1;
             $itercode = $row['option_id'];
             $itertext = ucfirst(strtolower(trim($row['title'])));
             ?>
        <input type="checkbox" id="chkbox" value= "<?php echo attr($itercode) . "-" . attr($itertext); ?>" > <?php echo text($itercode) . "    " . text($itertext) . "<br />";
         }
-    }
-
     }
     ?>
 </td>

@@ -1,11 +1,16 @@
 <?php
 
-require_once("../../../../globals.php");
-require_once("../../../../drugs/drugs.inc.php");
+declare(strict_types=1);
+
+require_once(__DIR__ . "/../../../../globals.php");
+require_once(__DIR__ . "/../../../../drugs/drugs.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;
 
-function find_contraceptive_methods($contraceptive_code)
+/**
+ * @return list<array{name: mixed, drug_id: mixed, selector: mixed}>
+ */
+function find_contraceptive_methods(string $contraceptive_code): array
 {
     $retval = array();
     $code = "IPPFCM:" . $contraceptive_code;
@@ -13,22 +18,25 @@ function find_contraceptive_methods($contraceptive_code)
               . " WHERE related_code like ? "
               . " AND drug_templates.drug_id=drugs.drug_id AND drugs.active = 1 AND drugs.consumable = 0 "
               . " ORDER BY drugs.name, drug_templates.selector, drug_templates.drug_id";
-    $results = sqlStatement($sqlSearch, array("%" . $code . "%"));
-    while ($row = sqlFetchArray($results)) {
+    $recordset = sqlStatement($sqlSearch, array("%" . $code . "%"));
+    while ($row = sqlFetchArray($recordset)) {
         if (!isProductSelectable($row['drug_id'])) {
             continue;
         }
+
         $rel_codes = explode(";", $row['related_code']);
         $match = false;
-        foreach ($rel_codes as $cur_code) {
-            if ($cur_code === $code) {
+        foreach ($rel_codes as $rel_code) {
+            if ($rel_code === $code) {
                 $match = true;
             }
         }
+
         if ($match) {
-            array_push($retval, array("name" => $row['name'], "drug_id" => $row['drug_id'], "selector" => $row['selector']));
+            $retval[] = array("name" => $row['name'], "drug_id" => $row['drug_id'], "selector" => $row['selector']);
         }
     }
+
     return $retval;
 }
 
@@ -37,11 +45,12 @@ function get_method_description($contraceptive_code)
     $sqlSearch = " SELECT code_text FROM codes "
                . " WHERE code_type = 32 "
                . " AND code = ? AND active = 1";
-    $results = sqlStatement($sqlSearch, array($contraceptive_code));
-    if ($results) {
-        $row = sqlFetchArray($results);
+    $recordset = sqlStatement($sqlSearch, array($contraceptive_code));
+    if ($recordset) {
+        $row = sqlFetchArray($recordset);
         return $row['code_text'];
     }
+    return null;
 }
 
 if (!AclMain::aclCheckCore('acct', 'bill')) {
@@ -54,13 +63,13 @@ $retval = array();
 $methods_lookup = array();
 if (isset($_REQUEST['methods'])) {
     $methods = $_REQUEST['methods'];
-    foreach ($methods as $method_code) {
-        if (!isset($methods_lookup[$method_code])) {
+    foreach ($methods as $method) {
+        if (!isset($methods_lookup[$method])) {
             $list = array();
-            $list['products'] = find_contraceptive_methods($method_code);
-            $list['method'] = get_method_description($method_code);
-            $methods_lookup[$method_code] = $list;
-            array_push($retval, $list);
+            $list['products'] = find_contraceptive_methods($method);
+            $list['method'] = get_method_description($method);
+            $methods_lookup[$method] = $list;
+            $retval[] = $list;
         }
     }
 }

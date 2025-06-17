@@ -1,4 +1,8 @@
-<?php return array(
+<?php
+
+declare(strict_types=1);
+
+return array(
     'root' => array(
         'name' => 'juggernautsei/oe-module-prior-authorizations',
         'pretty_version' => '1.0.0+no-version-set',

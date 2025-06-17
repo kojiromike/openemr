@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Saves and retrieves from the database TeleHealth user objects.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Repository;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser;
@@ -23,23 +24,20 @@ class TeleHealthUserRepository extends BaseService
 {
     const TABLE_NAME = "comlink_telehealth_auth";
 
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Common\Logging\SystemLogger $systemLogger;
 
     public function __construct()
     {
         parent::__construct(self::TABLE_NAME);
-        $this->logger = new SystemLogger();
+        $this->systemLogger = new SystemLogger();
     }
 
-    public function saveUser(TeleHealthUser $user)
+    public function saveUser(TeleHealthUser $teleHealthUser)
     {
-        $active = $user->getIsActive() ? 1 : 0;
-        $binds = [$user->getUsername(), $user->getAuthToken(), $active, $user->getRegistrationCode()];
+        $active = $teleHealthUser->getIsActive() ? 1 : 0;
+        $binds = [$teleHealthUser->getUsername(), $teleHealthUser->getAuthToken(), $active, $teleHealthUser->getRegistrationCode()];
 
-        if (empty($user->getId())) {
+        if (empty($teleHealthUser->getId())) {
             $sql = "INSERT INTO " . self::TABLE_NAME . "(`date_updated`, `username`,`auth_token`"
                 . ",`active`, `app_registration_code`, `user_id`,`patient_id`, `date_registered`) VALUES (NOW(),?,?,?,?,?,?,?)";
         } else {
@@ -49,29 +47,28 @@ class TeleHealthUserRepository extends BaseService
         }
 
         // grab the user first
-        if (empty($user->getUsername())) {
+        if (empty($teleHealthUser->getUsername())) {
             throw new \InvalidArgumentException("username cannot be empty");
         }
-        if (empty($user->getAuthToken())) {
+
+        if (empty($teleHealthUser->getAuthToken())) {
             throw new \InvalidArgumentException("authToken cannot be empty");
         }
 
-        if ($user->getIsPatient()) {
+        if ($teleHealthUser->getIsPatient()) {
             $binds[] = null; // no user id
-            $binds[] = $user->getDbRecordId(); // set patient id
+            $binds[] = $teleHealthUser->getDbRecordId(); // set patient id
         } else {
-            $binds[] = $user->getDbRecordId();
+            $binds[] = $teleHealthUser->getDbRecordId();
             $binds[] = null;
         }
 
-        if (!empty($user->getId())) {
-            $binds[] = $user->getId();
+        if (!empty($teleHealthUser->getId())) {
+            $binds[] = $teleHealthUser->getId();
+        } elseif ($teleHealthUser->getDateRegistered() instanceof \DateTime) {
+            $binds[] = $teleHealthUser->getDateRegistered()->format(DATE_ISO8601);
         } else {
-            if (!empty($user->getDateRegistered())) {
-                $binds[] = $user->getDateRegistered()->format(DATE_ISO8601);
-            } else {
-                $binds[] = (new \DateTime())->format(DATE_ISO8601);
-            }
+            $binds[] = (new \DateTime())->format(DATE_ISO8601);
         }
 
         return QueryUtils::sqlInsert($sql, $binds);
@@ -79,18 +76,19 @@ class TeleHealthUserRepository extends BaseService
 
     public function getUser($username): ?TeleHealthUser
     {
-        $result = $this->search(['username' => $username]);
-        if ($result->hasData()) {
-            return $result->getData()[0];
+        $processingResult = $this->search(['username' => $username]);
+        if ($processingResult->hasData()) {
+            return $processingResult->getData()[0];
         }
+
         return null;
     }
 
-    protected function createResultRecordFromDatabaseResult($row)
+    protected function createResultRecordFromDatabaseResult($row): \Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser
     {
         $dateFormat = "Y-m-d H:i:s";
-        $user = new TeleHealthUser();
-        $user->setId($row['id'])
+        $teleHealthUser = new TeleHealthUser();
+        $teleHealthUser->setId($row['id'])
             ->setUsername($row['username'])
             ->setAuthToken($row['auth_token'])
             ->setDbRecordId($row['patient_id'] ?? $row['user_id'])
@@ -101,28 +99,31 @@ class TeleHealthUserRepository extends BaseService
         if (isset($row['date_registered'])) {
             $date = \DateTime::createFromFormat($dateFormat, $row['date_registered']);
             if ($date !== false) {
-                $user->setDateRegistered($date);
+                $teleHealthUser->setDateRegistered($date);
             } else {
-                $this->logger->errorLogCaller('failed to create date_registered', ['value' => $row['date_registered']]);
+                $this->systemLogger->errorLogCaller('failed to create date_registered', ['value' => $row['date_registered']]);
             }
         }
+
         if (isset($row['date_created'])) {
             $date = \DateTime::createFromFormat($dateFormat, $row['date_created']);
             if ($date !== false) {
-                $user->setDateCreated($date);
+                $teleHealthUser->setDateCreated($date);
             } else {
-                $this->logger->errorLogCaller('failed to create date_created', ['value' => $row['date_created']]);
+                $this->systemLogger->errorLogCaller('failed to create date_created', ['value' => $row['date_created']]);
             }
         }
+
         if (isset($row['date_updated'])) {
             $date = \DateTime::createFromFormat($dateFormat, $row['date_updated']);
             if ($date !== false) {
-                $user->setDateUpdated($date);
+                $teleHealthUser->setDateUpdated($date);
             } else {
-                $this->logger->errorLogCaller('failed to create date_updated', ['value' => $row['date_updated']]);
+                $this->systemLogger->errorLogCaller('failed to create date_updated', ['value' => $row['date_updated']]);
             }
         }
-        return $user;
+
+        return $teleHealthUser;
     }
 
 
@@ -137,15 +138,15 @@ class TeleHealthUserRepository extends BaseService
      */
     public function createUniquePassword()
     {
-        $factory = new UuidFactory();
-        $uuidString = $factory->uuid4()->toString();
+        $uuidFactory = new UuidFactory();
+        $uuidString = $uuidFactory->uuid4()->toString();
         $cryptoGen = new CryptoGen();
         // we could make this even stronger by using the API password for the encryption password...
         // but this is probably good enough
         return $cryptoGen->encryptStandard($uuidString);
     }
 
-    public function decryptPassword($password)
+    public function decryptPassword(?string $password): string|false
     {
         $cryptoGen = new CryptoGen();
         return $cryptoGen->decryptStandard($password);

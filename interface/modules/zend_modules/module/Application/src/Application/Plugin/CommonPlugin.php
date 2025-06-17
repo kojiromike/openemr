@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Plugin/CommonPlugin.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
@@ -20,8 +21,9 @@ use Interop\Container\ContainerInterface;
 
 class CommonPlugin extends AbstractPlugin
 {
-    protected $application;
-    protected $listenerObject;
+    protected \Application\Model\ApplicationTable $application;
+
+    protected \Application\Listener\Listener $listenerObject;
 
     /**
      * Application Table Object
@@ -33,7 +35,7 @@ class CommonPlugin extends AbstractPlugin
     {
         // TODO: this is crazy... why do we grab the service locator so we can load the db adapter?
         // is there some db related state that is being loaded here in a global type of way that we aren't aware of?? Or can we just remove this line?
-        $container->get('Laminas\Db\Adapter\Adapter');
+        $container->get(\Laminas\Db\Adapter\Adapter::class);
         $this->application = new ApplicationTable();
         $this->listenerObject = new Listener();
     }
@@ -74,15 +76,13 @@ class CommonPlugin extends AbstractPlugin
         $str = str_ireplace(rtrim($var), "<?? ?='" . $style_i . "'>" . trim($keywords) . "</??>", $str);
         $str = str_ireplace('???', 'highlight_i', $str);
         $str = str_ireplace('??', 'span', $str);
-        $str = str_ireplace('?', 'class', $str);
-        return $str;
+        return str_ireplace('?', 'class', $str);
     }
 
     public function date_format($date, $output_format, $input_format)
     {
         $this->application = new ApplicationTable();
-        $date_formatted = $this->application->fixDate($date, $output_format, $input_format);
-        return $date_formatted;
+        return $this->application->fixDate($date, $output_format, $input_format);
     }
 
     public static function escapeLimit($val)
@@ -98,7 +98,7 @@ class CommonPlugin extends AbstractPlugin
   */
     public static function insert_ccr_into_audit_data($var, $isQrdaDocument = false, $isUnstructeredDocument = false)
     {
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
         $audit_master_id_to_delete = $var['audit_master_id_to_delete'] ?? null;
         $approval_status = $var['approval_status'];
         $type = $var['type'];
@@ -108,14 +108,14 @@ class CommonPlugin extends AbstractPlugin
 
         if ($audit_master_id_to_delete) {
             $qry = "DELETE from audit_details WHERE audit_master_id=?";
-            $appTable->zQuery($qry, array($audit_master_id_to_delete));
+            $applicationTable->zQuery($qry, array($audit_master_id_to_delete));
 
             $qry = "DELETE from audit_master WHERE id=?";
-            $appTable->zQuery($qry, array($audit_master_id_to_delete));
+            $applicationTable->zQuery($qry, array($audit_master_id_to_delete));
         }
 
         $master_query = "INSERT INTO audit_master SET pid = ?,approval_status = ?,ip_address = ?,type = ?, is_qrda_document = ?, is_unstructured_document = ?";
-        $result = $appTable->zQuery($master_query, array(0, $approval_status, $ip_address, $type, $isQrdaDocument, $isUnstructeredDocument));
+        $result = $applicationTable->zQuery($master_query, array(0, $approval_status, $ip_address, $type, $isQrdaDocument, $isUnstructeredDocument));
         $audit_master_id = $result->getGeneratedValue();
         $detail_query = "INSERT INTO `audit_details` (`table_name`, `field_name`, `field_value`, `audit_master_id`, `entry_identification`) VALUES ";
         $detail_query_array = array();
@@ -144,16 +144,17 @@ class CommonPlugin extends AbstractPlugin
         }
 
         $detail_query = substr($detail_query, 0, -1);
-        $detail_query = $detail_query . ';';
-        $appTable->zQuery($detail_query, $detail_query_array);
+        $detail_query .= ';';
+
+        $applicationTable->zQuery($detail_query, $detail_query_array);
         return $audit_master_id;
     }
 
     public function getList($list_id, $selected = '', $opt = '')
     {
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
         $this->listenerObject = new Listener();
-        $res = $appTable->zQuery("SELECT * FROM list_options WHERE list_id=? ORDER BY seq, title", array($list_id));
+        $type = $applicationTable->zQuery("SELECT * FROM list_options WHERE list_id=? ORDER BY seq, title", array($list_id));
         $i = 0;
         if ($opt == 'search') {
             $rows[$i] = array(
@@ -161,24 +162,24 @@ class CommonPlugin extends AbstractPlugin
                 'label' => $this->listenerObject->z_xlt('All'),
                 'selected' => true,
             );
-            $i++;
+            ++$i;
         } elseif ($opt == '') {
             $rows[$i] = array(
                 'value' => '',
                 'label' => $this->listenerObject->z_xlt('Unassigned'),
                 'disabled' => false
             );
-            $i++;
+            ++$i;
         }
 
-        foreach ($res as $row) {
-            $sel = ($row['option_id'] == $selected) ? true : false;
+        foreach ($type as $row) {
+            $sel = $row['option_id'] == $selected;
             $rows[$i] = array(
                 'value' => htmlspecialchars($row['option_id'], ENT_QUOTES),
                 'label' => $this->listenerObject->z_xlt($row['title']),
                 'selected' => $sel,
             );
-            $i++;
+            ++$i;
         }
 
         return $rows;
@@ -188,18 +189,17 @@ class CommonPlugin extends AbstractPlugin
     * $this->escapeHtml() cannot be used in any files other than view.
     * This function will enable a user to use escapeHtml in any files like controller model etc.
     */
-    public static function escape($string)
+    public static function escape($string): string
     {
         return htmlspecialchars($string, ENT_QUOTES);
     }
 
     public function getListtitle($listId, $listOptionId)
     {
-        $appTable = new ApplicationTable();
+        $applicationTable = new ApplicationTable();
         $sql = "SELECT title FROM list_options WHERE list_id = ? AND option_id = ? ";
-        $result = $appTable->zQuery($sql, array($listId, $listOptionId));
-        $row = $result->current();
-        $return = xl_list_label($row['title']);
-        return $return;
+        $type = $applicationTable->zQuery($sql, array($listId, $listOptionId));
+        $row = $type->current();
+        return xl_list_label($row['title']);
     }
 }

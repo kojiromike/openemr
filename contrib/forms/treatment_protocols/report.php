@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2006 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -10,7 +12,7 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function treatment_protocols_report($pid, $encounter, $cols, $id)
+function treatment_protocols_report($pid, $encounter, $cols, $id): void
 {
  /****
  $cols = 1; // force always 1 column

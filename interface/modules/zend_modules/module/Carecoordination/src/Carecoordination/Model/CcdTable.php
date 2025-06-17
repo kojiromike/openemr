@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Model/CcdTable.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Model;
 
 use Laminas\Db\TableGateway\AbstractTableGateway;
@@ -31,7 +32,7 @@ class CcdTable extends AbstractTableGateway
      *
      * @param   $components     Array of components
      */
-    public function import($xml, $document_id)
+    public function import(array $xml, $document_id): void
     {
         $audit_master_approval_status        = $this->ccd_data_array['approval_status'] = 1;
         $this->ccd_data_array['ip_address']  = $_SERVER['REMOTE_ADDR'];
@@ -56,15 +57,15 @@ class CcdTable extends AbstractTableGateway
         $this->update_document_table($document_id, $audit_master_id, $audit_master_approval_status);
     }
 
-    public function update_document_table($document_id, $audit_master_id, $audit_master_approval_status)
+    public function update_document_table($document_id, $audit_master_id, $audit_master_approval_status): void
     {
-        $appTable   = new ApplicationTable();
+        $applicationTable   = new ApplicationTable();
         $query = "UPDATE documents 
               SET audit_master_id = ?,
                   imported = ?,
                   audit_master_approval_status=? 
               WHERE id = ?";
-        $appTable->zQuery($query, array($audit_master_id,
+        $applicationTable->zQuery($query, array($audit_master_id,
                                     1,
                                     $audit_master_approval_status,
                                     $document_id));

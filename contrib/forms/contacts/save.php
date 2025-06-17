@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Forms generated from formsWiz
  *
@@ -15,8 +17,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -38,6 +40,7 @@ if ($_GET["mode"] == "new") {
     $_POST["od_axis"], $_POST["od_diameter"], $_POST["os_base_curve"], $_POST["os_sphere"], $_POST["os_cylinder"], $_POST["os_axis"], $_POST["os_diameter"],
     $_POST["material"], $_POST["color"], $_POST["bifocal_type"], $_POST["add_value"], $_POST["va_far"], $_POST["va_near"], $_POST["additional_notes"], $id));
 }
+
 formHeader("Redirecting....");
 formJump();
 formFooter();

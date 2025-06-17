@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+    /**
  * CCR Script.
  *
  * Copyright (C) 2010 Garden State Health Systems <http://www.gshsys.com/>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Global Configuration Override
  *
@@ -27,6 +29,7 @@ if (!$GLOBALS['disable_utf8_flag']) {
 } else {
     $tmp = "SET sql_mode = ''";
 }
+
 $tmp .= ", time_zone = '" . (new DateTime())->format("P") . "'";
 
 if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($_SESSION["enable_database_connection_pooling"])) && empty($GLOBALS['connection_pooling_off'])) {
@@ -51,7 +54,7 @@ if (file_exists($GLOBALS['OE_SITE_DIR'] . "/documents/certificates/mysql-ca")) {
 
 // Sets default factory using the default database
 $factories = array(
-    'Laminas\Db\Adapter\Adapter' => function ($containerInterface, $requestedName) {
+    \Laminas\Db\Adapter\Adapter::class => function ($containerInterface, $requestedName): \Laminas\Db\Adapter\Adapter {
         $adapterFactory = new Laminas\Db\Adapter\AdapterServiceFactory();
         $adapter = $adapterFactory($containerInterface, $requestedName);
         \Laminas\Db\TableGateway\Feature\GlobalAdapterFeature::setStaticAdapter($adapter);
@@ -81,8 +84,7 @@ if (!empty($GLOBALS['allow_multiple_databases'])) {
             // Create new factories using data from custom database
             $factories[$row['namespace']] = function ($serviceManager) use ($row) {
                 $adapterAbstractServiceFactory = new Laminas\Db\Adapter\AdapterAbstractServiceFactory();
-                $adapter = $adapterAbstractServiceFactory->createServiceWithName($serviceManager, '', $row['namespace']);
-                return $adapter;
+                return $adapterAbstractServiceFactory->createServiceWithName($serviceManager, '', $row['namespace']);
             };
         }
     }
@@ -118,7 +120,7 @@ return array(
  * DEPRECATED; just keeping this for backward compatibility.
  */
 
-function my_decrypt($data)
+function my_decrypt($data): string|false
 {
     // Remove the base64 encoding from our key
     $encryption_key = base64_decode($GLOBALS['safe_key_database']);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * trusted-messages.php displays the GUI and handles the interactions with the backend ajax processor for sending
  * messages and file attachments to Trusted email addresses using the Direct protocol.
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Core\Header;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -20,10 +22,8 @@ use OpenEMR\Services\PatientService;
 $message = '';
 if (isset($_REQUEST['message_code'])) {
     $message_code = $_REQUEST['message_code'] ?? null;
-    switch ($message_code) {
-        case 'success':
-            $message = xlt("Trusted message was sent");
-            break;
+    if ($message_code === 'success') {
+        $message = xlt("Trusted message was sent");
     }
 }
 
@@ -40,11 +40,7 @@ if (!empty($_SESSION['pid'])) {
     }
 }
 
-if ($GLOBALS['phimail_verifyrecipientreceived_enable'] == '1') {
-    $verifyMessageReceivedChecked = "checked";
-} else {
-    $verifyMessageReceivedChecked = '';
-}
+$verifyMessageReceivedChecked = $GLOBALS['phimail_verifyrecipientreceived_enable'] == '1' ? "checked" : '';
 ?>
 <!DOCTYPE html>
 <html>

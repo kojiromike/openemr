@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Util;
 
 class TelehealthAuthUtils
 {
-    public static function getFormattedPassword($password)
+    public static function getFormattedPassword($password): string
     {
-        $hash = hash('sha256', $password);
-        return $hash;
+        return hash('sha256', $password);
     }
 }

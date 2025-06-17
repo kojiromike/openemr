@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * gad-7 form using forms api     new.php    create a new form
  *
@@ -11,7 +13,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("gad7.inc.php"); //common strings, require_once(globals.php), other includes  etc
+require_once(__DIR__ . "/gad7.inc.php"); //common strings, require_once(globals.php), other includes  etc
 
 use OpenEMR\Common\Csrf\CsrfUtils;    // security module
 use OpenEMR\Core\Header;
@@ -125,7 +127,7 @@ function create_q8(question, menue){
 <table>
   <tr>
 <td>
-<span class="text"><?php echo xlt('Being so restless that it\'s hard to sit still'); ?></span>
+<span class="text"><?php echo xlt("Being so restless that it's hard to sit still"); ?></span>
 <select name="restless_score" onchange="update_score(4, my_form.restless_score.value);">
  <option selected value="undef" ><?php echo text($str_default); ?></option>
     <option value="0"><?php echo text($str_not); ?></option>

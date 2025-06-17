@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -17,10 +19,11 @@ require_once __DIR__ . "/../../../../globals.php";
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Modules\Dorn\LabCompendiumInstall;
 
-if (!empty($_GET)) {
+if ($_GET !== []) {
     if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
+
     $labGuid = $_REQUEST['labGuid'];
     echo "<div style='background-color: white; color: black'>" .
     "<div>" . xlt('Compendium Install') . "</div><ul>";

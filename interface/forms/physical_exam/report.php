@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * physical_exam report.php
  *
@@ -14,15 +16,15 @@
 
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-require_once("lines.php");
+require_once(__DIR__ . "/lines.php");
 
-function physical_exam_report($pid, $encounter, $cols, $id)
+function physical_exam_report($pid, $encounter, $cols, $id): void
 {
     global $pelines;
 
     $rows = array();
-    $res = sqlStatement("SELECT * FROM form_physical_exam WHERE forms_id = ?", array($id));
-    while ($row = sqlFetchArray($res)) {
+    $recordset = sqlStatement("SELECT * FROM form_physical_exam WHERE forms_id = ?", array($id));
+    while ($row = sqlFetchArray($recordset)) {
         $rows[$row['line_id']] = $row;
     }
 

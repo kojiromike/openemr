@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Module to handle the ONC certification (b)(10) requirement for
  * Electronic Health Information Export.
@@ -79,7 +81,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter;
 
 use OpenEMR\Core\ModulesClassLoader;

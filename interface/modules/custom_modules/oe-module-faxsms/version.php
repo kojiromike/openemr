@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Module FaxSMS SQL versioning flat file.
  * This file is used by the Modules installer for various reasons

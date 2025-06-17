@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  @package OpenEMR
  *  @link    http://www.open-emr.org
@@ -10,15 +12,15 @@
 
 require_once($GLOBALS['fileroot'] . "/library/classes/Controller.class.php");
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormDAP.class.php");
+require_once(__DIR__ . "/FormDAP.class.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
 class C_FormDAP extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -29,27 +31,23 @@ class C_FormDAP extends Controller
         $this->assign("CSRF_TOKEN_FORM", CsrfUtils::collectCsrfToken());
     }
 
-    function default_action()
+    public function default_action()
     {
-        $form = new FormDAP();
-        $this->assign("data", $form);
+        $formDAP = new FormDAP();
+        $this->assign("data", $formDAP);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
+    public function view_action($form_id)
     {
-        if (is_numeric($form_id)) {
-            $form = new FormDAP($form_id);
-        } else {
-            $form = new FormDAP();
-        }
+        $form = is_numeric($form_id) ? new FormDAP($form_id) : new FormDAP();
 
         $this->assign("data", $form);
 
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -62,10 +60,10 @@ class C_FormDAP extends Controller
         if ($GLOBALS['encounter'] == "") {
             $GLOBALS['encounter'] = date("Ymd");
         }
+
         if (empty($_POST['id'])) {
             addForm($GLOBALS['encounter'], "DAP", $this->form->id, "dap", $GLOBALS['pid'], $_SESSION['userauthorized']);
             $_POST['process'] = "";
         }
-        return;
     }
 }

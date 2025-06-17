@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  *  package OpenEMR
  *  link    https://www.open-emr.org
@@ -29,18 +31,10 @@ if (!empty($_POST['token'])) {
     }
 
     $postStartDate = DateToYYYYMMDD($_POST['start_date']);
-    if (isValid($postStartDate) === true) {
-        $startDate = $postStartDate ;
-    } else {
-        $startDate = $_POST['start_date'];
-    }
+    $startDate = isValid($postStartDate) === true ? $postStartDate : $_POST['start_date'];
 
     $postEndDate = DateToYYYYMMDD($_POST['end_date']);
-    if (isValid($postEndDate) === true) {
-        $endDate = $postEndDate;
-    } else {
-        $endDate = $_POST['end_date'];
-    }
+    $endDate = isValid($postEndDate) === true ? $postEndDate : $_POST['end_date'];
 
     $postData = new AuthorizationService();
     $postData->setId($_POST['id']);
@@ -146,7 +140,7 @@ const TABLE_TD = "</td><td>";
                     <th scope="col"></th>
                 </tr>
                 <?php
-                if (!empty($authList)) {
+                if ($authList !== [] && $authList !== false) {
                     while ($iter = sqlFetchArray($authList)) {
                         $editData = json_encode($iter);
                         $used = AuthorizationService::getUnitsUsed($iter['auth_num']);

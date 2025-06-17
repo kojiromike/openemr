@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * vitals report.php
  *
@@ -16,7 +18,7 @@ require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 require_once($GLOBALS['fileroot'] . "/library/patient.inc.php");
 
-function US_weight($pounds, $mode = 1)
+function US_weight(string $pounds, $mode = 1): string
 {
 
     if ($mode == 1) {
@@ -28,7 +30,7 @@ function US_weight($pounds, $mode = 1)
     }
 }
 
-function vitals_report($pid, $encounter, $cols, $id, $print = true)
+function vitals_report($pid, $encounter, $cols, $id, $print = true): ?string
 {
     $count = 0;
     $data = formFetch("form_vitals", $id);
@@ -64,29 +66,27 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
             $key = ucwords(str_replace("_", " ", $key));
 
             //modified by BM 06-2009 for required translation
-            if ($key == "Temp Method" || $key == "BMI Status") {
-                if ($key == "BMI Status") {
-                    if ($is_pediatric_patient) {
-                        $value = "See Growth-Chart";
-                    }
+            if ($key === "Temp Method" || $key === "BMI Status") {
+                if ($key == "BMI Status" && $is_pediatric_patient) {
+                    $value = "See Growth-Chart";
                 }
 
                 $vitals .= '<td><div class="bold" style="display:inline-block">' . xlt($key) . ': </div></td><td><div class="text" style="display:inline-block">' . xlt($value) . "</div></td>";
-            } elseif ($key == "Bps") {
+            } elseif ($key === "Bps") {
                 $bps = $value;
                 if (!empty($bpd)) {
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt('Blood Pressure') . ": </div></td><td><div class='text' style='display:inline-block'>" . text($bps) . "/" . text($bpd)  . "</div></td>";
                 } else {
                     continue;
                 }
-            } elseif ($key == "Bpd") {
+            } elseif ($key === "Bpd") {
                 $bpd = $value;
                 if ($bps) {
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt('Blood Pressure') . ": </div></td><td><div class='text' style='display:inline-block'>" . text($bps) . "/" . text($bpd)  . "</div></td>";
                 } else {
                     continue;
                 }
-            } elseif ($key == "Weight") {
+            } elseif ($key === "Weight") {
                 $value = floatval($value);
                 $convValue = number_format($value * 0.45359237, 2);
                 $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>";
@@ -103,7 +103,7 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
                 }
 
                 $vitals .= "</div></td>";
-            } elseif ($key == "Height" || $key == "Waist Circ"  || $key == "Head Circ") {
+            } elseif ($key === "Height" || $key === "Waist Circ"  || $key === "Head Circ") {
                 $value = floatval($value);
                 $convValue = number_format(round($value * 2.54, 1), 2);
                 // show appropriate units
@@ -116,7 +116,7 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
                 } else { // = 1 or not set
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($value) . " " . xlt('in') . " (" . text($convValue) . " " . xlt('cm')  . ")</div></td>";
                 }
-            } elseif ($key == "Temperature") {
+            } elseif ($key === "Temperature") {
                 $value = floatval($value);
                 $convValue = number_format((($value - 32) * 0.5556), 2);
                 // show appropriate units
@@ -129,28 +129,28 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
                 } else { // = 1 or not set
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($value) . " " . xlt('F') . " (" . text($convValue) . " " . xlt('C')  . ")</div></td>";
                 }
-            } elseif ($key == "Pulse" || $key == "Respiration"  || $key == "Oxygen Saturation" || $key == "BMI" || $key == "Oxygen Flow Rate") {
+            } elseif ($key === "Pulse" || $key === "Respiration"  || $key === "Oxygen Saturation" || $key === "BMI" || $key === "Oxygen Flow Rate") {
                 $value = floatval($value);
                 $c_value = number_format($value, 0);
-                if ($key == "Oxygen Saturation") {
+                if ($key === "Oxygen Saturation") {
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('%') . "</div></td>";
-                } elseif ($key == "Oxygen Flow Rate") {
+                } elseif ($key === "Oxygen Flow Rate") {
                     $c_value = number_format($value, 2);
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('l/min') . "</div></td>";
-                } elseif ($key == "BMI") {
+                } elseif ($key === "BMI") {
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('kg/m^2') . "</div></td>";
                 } else { //pulse and respirations
                     $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('per min') . "</div></td>";
                 }
-            } elseif ($key == "Ped Weight Height" || $key == 'Ped Bmi' || $key == 'Ped Head Circ') {
+            } elseif ($key === "Ped Weight Height" || $key === 'Ped Bmi' || $key === 'Ped Head Circ') {
                 $value = floatval($value);
                 if ($is_pediatric_patient) {
                     $c_value = number_format($value, 0);
-                    if ($key == "Ped Weight Height") {
+                    if ($key === "Ped Weight Height") {
                         $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt("Pediatric Height Weight Percentile") . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('%') . "</div></td>";
-                    } elseif ($key == "Ped Bmi") {
+                    } elseif ($key === "Ped Bmi") {
                         $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt("Pediatric BMI Percentile") . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('%') . "</div></td>";
-                    } elseif ($key == "Ped Head Circ") {
+                    } elseif ($key === "Ped Head Circ") {
                         $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt("Pediatric Head Circumference Percentile") . ": </div></td><td><div class='text' style='display:inline-block'>" . text($c_value) . " " . xlt('%') . "</div></td>";
                     }
                 }
@@ -158,7 +158,7 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
                 $vitals .= "<td><div class='font-weight-bold d-inline-block'>" . xlt($key) . ": </div></td><td><div class='text' style='display:inline-block'>" . text($value) . "</div></td>";
             }
 
-            $count++;
+            ++$count;
 
             if ($count == $cols) {
                 $count = 0;
@@ -174,4 +174,5 @@ function vitals_report($pid, $encounter, $cols, $id, $print = true)
     } else {
         return $vitals;
     }
+    return null;
 }

@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormReviewOfSystems.class.php");
+require_once(__DIR__ . "/FormReviewOfSystems.class.php");
 
 use OpenEMR\Billing\BillingUtilities;
 
 class C_FormReviewOfSystems extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -19,21 +21,17 @@ class C_FormReviewOfSystems extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
-        $review_of_systems = new FormReviewOfSystems();
-        $this->assign("review_of_systems", $review_of_systems);
-        $this->assign("checks", $review_of_systems->_form_layout());
+        $formReviewOfSystems = new FormReviewOfSystems();
+        $this->assign("review_of_systems", $formReviewOfSystems);
+        $this->assign("checks", $formReviewOfSystems->_form_layout());
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
+    public function view_action($form_id)
     {
-        if (is_numeric($form_id)) {
-            $review_of_systems = new FormReviewOfSystems($form_id);
-        } else {
-            $review_of_systems = new FormReviewOfSystems();
-        }
+        $review_of_systems = is_numeric($form_id) ? new FormReviewOfSystems($form_id) : new FormReviewOfSystems();
 
         $this->assign("VIEW", true);
         $this->assign("review_of_systems", $review_of_systems);
@@ -41,7 +39,7 @@ class C_FormReviewOfSystems extends Controller
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -68,6 +66,5 @@ class C_FormReviewOfSystems extends Controller
         }
 
         $_POST['process'] = "";
-        return;
     }
 }

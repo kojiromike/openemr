@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * C_InsuranceNumbers class
  *
@@ -9,40 +11,38 @@
  * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-
 class C_InsuranceNumbers extends Controller
 {
-        var $template_mod;
-        var $providers;
-        var $insurance_numbers;
+        public $template_mod;
 
-    function __construct($template_mod = "general")
+        public $providers = array();
+
+        public $insurance_numbers = array();
+
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $this->providers = array();
-        $this->insurance_numbers = array();
         $this->template_mod = $template_mod;
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
         $this->assign("CURRENT_ACTION", $GLOBALS['webroot'] . "/controller.php?" . "practice_settings&insurance_numbers&");
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
         return $this->list_action();
     }
 
-    function edit_action($id = "", $provider_id = "", $p_obj = null)
+    public function edit_action($id = "", $provider_id = "", $p_obj = null)
     {
 
         //case where a direct id is provided, doesn't matter if a provider id is available get it from the insurance_numbers record
-        if ((empty($this->insurance_numbers[0]) || !is_object($this->insurance_numbers[0]) || get_class($this->insurance_numbers[0]) != "insurancenumbers") && is_numeric($id)) {
+        if ((empty($this->insurance_numbers[0]) || !is_object($this->insurance_numbers[0]) || get_class($this->insurance_numbers[0]) !== "insurancenumbers") && is_numeric($id)) {
             $this->insurance_numbers[0] = new InsuranceNumbers($id);
             $this->providers[0] = new Provider($this->insurance_numbers[0]->get_provider_id());
         } elseif (is_numeric($provider_id)) {
             $this->providers[0] = new Provider($provider_id);
-            if (empty($this->insurance_numbers[0]) || !is_object($this->insurance_numbers[0]) || get_class($this->insurance_numbers[0]) != "insurancenumbers") {
+            if (empty($this->insurance_numbers[0]) || !is_object($this->insurance_numbers[0]) || get_class($this->insurance_numbers[0]) !== "insurancenumbers") {
                 if ($id == "default") {
                     $this->insurance_numbers[0] = $this->providers[0]->get_insurance_numbers_default();
                     if (!is_object($this->insurance_numbers[0])) {
@@ -63,27 +63,27 @@ class C_InsuranceNumbers extends Controller
             $this->assign("ERROR", "A provider must be specified. Check the link you you came from or the URL and try again.");
         }
 
-        $ic = new InsuranceCompany();
-        $icompanies =  $ic->insurance_companies_factory();
+        $insuranceCompany = new InsuranceCompany();
+        $icompanies =  $insuranceCompany->insurance_companies_factory();
 
         //It is possible to set a group and provider number to be used in the event that there is not direct hit on the insurance-provider lookup
         //Those numbers are entered uder default
         $ic_array = array("Default");
 
-        foreach ($icompanies as $ic_tmp) {
-            $ic_array[$ic_tmp->get_id()] = $ic_tmp->get_name();
+        foreach ($icompanies as $icompany) {
+            $ic_array[$icompany->get_id()] = $icompany->get_name();
         }
 
         $ic_type_options_array = array();
 
         foreach ($this->insurance_numbers[0]->provider_number_type_array as $type => $type_title) {
-            $ic_type_options_array[$type] = "$type  $type_title";
+            $ic_type_options_array[$type] = sprintf('%s  %s', $type, $type_title);
         }
 
         $ic_rendering_type_options_array = array();
 
         foreach ($this->insurance_numbers[0]->rendering_provider_number_type_array as $type => $type_title) {
-            $ic_rendering_type_options_array[$type] = "$type  $type_title";
+            $ic_rendering_type_options_array[$type] = sprintf('%s  %s', $type, $type_title);
         }
 
         $this->assign("ic_array", $ic_array);
@@ -102,27 +102,23 @@ class C_InsuranceNumbers extends Controller
         return $this->fetch($GLOBALS['template_dir'] . "insurance_numbers/" . $this->template_mod . "_edit.html");
     }
 
-    function list_action()
+    public function list_action()
     {
 
-        $p = new Provider();
-        $this->assign("providers", $p->providers_factory());
+        $provider = new Provider();
+        $this->assign("providers", $provider->providers_factory());
         return $this->fetch($GLOBALS['template_dir'] . "insurance_numbers/" . $this->template_mod . "_list.html");
     }
 
 
-    function edit_action_process()
+    public function edit_action_process(): void
     {
         if ($_POST['process'] != "true") {
                 return;
         }
 
         //print_r($_POST);
-        if (is_numeric($_POST['id'])) {
-            $this->insurance_numbers[0] = new InsuranceNumbers($_POST['id']);
-        } else {
-            $this->insurance_numbers[0] = new InsuranceNumbers();
-        }
+        $this->insurance_numbers[0] = is_numeric($_POST['id']) ? new InsuranceNumbers($_POST['id']) : new InsuranceNumbers();
 
         parent::populate_object($this->insurance_numbers[0]);
 

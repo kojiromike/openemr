@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Print billing report.
  *
@@ -12,10 +14,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/report.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/report.inc.php');
 
 use OpenEMR\Billing\BillingReport;
 use OpenEMR\Common\Acl\AclMain;
@@ -33,35 +35,11 @@ $COLS = 6;
 
 //global variables:
 if (!isset($_GET["mode"])) {
-    if (!isset($_GET["from_date"])) {
-        $from_date = date("Y-m-d");
-    } else {
-        $from_date = $_GET["from_date"];
-    }
-
-    if (!isset($_GET["to_date"])) {
-        $to_date = date("Y-m-d");
-    } else {
-        $to_date = $_GET["to_date"];
-    }
-
-    if (!isset($_GET["code_type"])) {
-        $code_type = "all";
-    } else {
-        $code_type = $_GET["code_type"];
-    }
-
-    if (!isset($_GET["unbilled"])) {
-        $unbilled = "on";
-    } else {
-        $unbilled = $_GET["unbilled"];
-    }
-
-    if (!isset($_GET["authorized"])) {
-        $my_authorized = "on";
-    } else {
-        $my_authorized = $_GET["authorized"];
-    }
+    $from_date = isset($_GET["from_date"]) ? $_GET["from_date"] : date("Y-m-d");
+    $to_date = isset($_GET["to_date"]) ? $_GET["to_date"] : date("Y-m-d");
+    $code_type = isset($_GET["code_type"]) ? $_GET["code_type"] : "all";
+    $unbilled = isset($_GET["unbilled"]) ? $_GET["unbilled"] : "on";
+    $my_authorized = isset($_GET["authorized"]) ? $_GET["authorized"] : "on";
 } else {
     $from_date = $_GET["from_date"];
     $to_date = $_GET["to_date"];
@@ -84,17 +62,9 @@ if (!isset($_GET["mode"])) {
 <br />
 
 <?php
-if ($my_authorized == "on") {
-    $my_authorized = 1;
-} else {
-    $my_authorized = "%";
-}
+$my_authorized = $my_authorized == "on" ? 1 : "%";
 
-if ($unbilled == "on") {
-    $unbilled = "0";
-} else {
-    $unbilled = "%";
-}
+$unbilled = $unbilled == "on" ? "0" : "%";
 
 if ($code_type == "all") {
     $code_type = "%";
@@ -103,35 +73,11 @@ if ($code_type == "all") {
 $list = BillingReport::getBillsListBetween($code_type);
 
 if (!isset($_GET["mode"])) {
-    if (!isset($_GET["from_date"])) {
-        $from_date = date("Y-m-d");
-    } else {
-        $from_date = $_GET["from_date"];
-    }
-
-    if (!isset($_GET["to_date"])) {
-        $to_date = date("Y-m-d");
-    } else {
-        $to_date = $_GET["to_date"];
-    }
-
-    if (!isset($_GET["code_type"])) {
-        $code_type = "all";
-    } else {
-        $code_type = $_GET["code_type"];
-    }
-
-    if (!isset($_GET["unbilled"])) {
-        $unbilled = "on";
-    } else {
-        $unbilled = $_GET["unbilled"];
-    }
-
-    if (!isset($_GET["authorized"])) {
-        $my_authorized = "on";
-    } else {
-        $my_authorized = $_GET["authorized"];
-    }
+    $from_date = isset($_GET["from_date"]) ? $_GET["from_date"] : date("Y-m-d");
+    $to_date = isset($_GET["to_date"]) ? $_GET["to_date"] : date("Y-m-d");
+    $code_type = isset($_GET["code_type"]) ? $_GET["code_type"] : "all";
+    $unbilled = isset($_GET["unbilled"]) ? $_GET["unbilled"] : "on";
+    $my_authorized = isset($_GET["authorized"]) ? $_GET["authorized"] : "on";
 } else {
     $from_date = $_GET["from_date"];
     $to_date = $_GET["to_date"];
@@ -140,17 +86,9 @@ if (!isset($_GET["mode"])) {
     $my_authorized = $_GET["authorized"];
 }
 
-if ($my_authorized == "on") {
-    $my_authorized = 1;
-} else {
-    $my_authorized = "%";
-}
+$my_authorized = $my_authorized == "on" ? 1 : "%";
 
-if ($unbilled == "on") {
-    $unbilled = "0";
-} else {
-    $unbilled = "%";
-}
+$unbilled = $unbilled == "on" ? "0" : "%";
 
 if ($code_type == "all") {
     $code_type = "%";
@@ -173,7 +111,7 @@ if ($ret = BillingReport::getBillsBetweenReport($code_type)) {
     foreach ($ret as $iter) {
         if ($old_pid != $iter["pid"]) {
             $name = getPatientData($iter["pid"]);
-            if (!$first_time) {
+            if ($first_time === 0) {
                 print "</tr></table>\n";
                 print "</td><td>";
                 print "<table border='0'><tr>\n";   // small table
@@ -207,11 +145,9 @@ if ($ret = BillingReport::getBillsBetweenReport($code_type)) {
         }
 
         print "<td width='100'><span class='text'>" . text($iter["code_type"]) . ": </span></td><td width='100'><span class='text'>" . text($iter["code"]) . "</span></td><td width='100'><span class='small'>(" . text(date("Y-m-d", strtotime($iter["date"]))) . ")</span></td>\n";
-        $res_count++;
-        if ($res_count == $N) {
-            print "</tr><tr>\n";
-            $res_count = 0;
-        }
+        ++$res_count;
+        print "</tr><tr>\n";
+        $res_count = 0;
 
         $itero = $iter;
     }

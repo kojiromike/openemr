@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Controller/EncountermanagerController.php
  *
@@ -12,7 +14,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination\Controller;
 
 use Application\Listener\Listener;
@@ -44,16 +45,16 @@ class EncountermanagerController extends AbstractActionController
     const VALID_CCDA_DOCUMENT_TYPES = ['ccd', 'referral', 'toc', 'careplan', 'unstructured'];
 
     const DEFAULT_DATE_SEARCH_TYPE = "encounter";
-    const DATE_SEARCH_TYPE_PATIENT_CREATION = "patient_date_created";
-    /**
-     * @var EncountermanagerTable
-     */
-    protected $encountermanagerTable;
-    protected $listenerObject;
 
-    public function __construct(EncountermanagerTable $table)
+    const DATE_SEARCH_TYPE_PATIENT_CREATION = "patient_date_created";
+
+    protected \Carecoordination\Model\EncountermanagerTable $encountermanagerTable;
+
+    protected \Application\Listener\Listener $listenerObject;
+
+    public function __construct(EncountermanagerTable $encountermanagerTable)
     {
-        $this->encountermanagerTable = $table;
+        $this->encountermanagerTable = $encountermanagerTable;
         $this->listenerObject = new Listener();
     }
 
@@ -62,6 +63,7 @@ class EncountermanagerController extends AbstractActionController
         $request = $this->getRequest();
         $fromDate = $request->getPost('form_date_from', null);
         $fromDate = $this->CommonPlugin()->date_format($fromDate, 'yyyy-mm-dd', $GLOBALS['date_display_format']);
+
         $toDate = $request->getPost('form_date_to', null);
         $toDate = $this->CommonPlugin()->date_format($toDate, 'yyyy-mm-dd', $GLOBALS['date_display_format']);
         // encounter_date
@@ -81,6 +83,7 @@ class EncountermanagerController extends AbstractActionController
 
         $results = $request->getPost('form_results', 500);
         $results = ($results > 0) ? $results : 500;
+
         $current_page = $request->getPost('form_current_page', 1);
         $expand_all = $request->getPost('form_expand_all', 0);
         $select_all = $request->getPost('form_select_all', 0);
@@ -94,13 +97,14 @@ class EncountermanagerController extends AbstractActionController
         $downloadqrda = $request->getPost('downloadqrda') ?: $request->getQuery()->downloadqrda;
         $downloadqrda3 = $request->getPost('downloadqrda3') ?: $request->getQuery()->downloadqrda3;
         $latest_ccda = $request->getPost('latestccda') ?: $this->getRequest()->getQuery('latest_ccda');
-        $reportController = new QrdaReportController();
-        $reportService = new QrdaReportService();
-        $measures = $reportController->reportMeasures;
-        $m_resolved = $reportService->resolveMeasuresPath($measures);
+        $qrdaReportController = new QrdaReportController();
+        $qrdaReportService = new QrdaReportService();
+        $measures = $qrdaReportController->reportMeasures;
+        $m_resolved = $qrdaReportService->resolveMeasuresPath($measures);
         foreach ($m_resolved as $k => $m) {
             $measures[$k]['measure_path'] = $m;
         }
+
         if (($downloadccda == 'download_ccda') || ($downloadqrda == 'download_qrda') || ($downloadqrda3 == 'download_qrda3')) {
             $pids = '';
             if ($request->getQuery('pid_ccda')) {
@@ -112,7 +116,7 @@ class EncountermanagerController extends AbstractActionController
                 $combination = $request->getPost('ccda_pid');
             }
 
-            for ($i = 0, $iMax = count($combination ?? []); $i < $iMax; $i++) {
+            for ($i = 0, $iMax = count($combination ?? []); $i < $iMax; ++$i) {
                 if ($i == ((count($combination ?? [])) - 1)) {
                     if ($combination == $pid) {
                         $pids = $pid;
@@ -123,6 +127,7 @@ class EncountermanagerController extends AbstractActionController
                     $pids .= $combination[$i] . '|';
                 }
             }
+
             $components = $request->getPost('components') ? $request->getPost('components') : $request->getQuery()->components;
             $send_params = array(
                 'action' => 'index',
@@ -142,6 +147,7 @@ class EncountermanagerController extends AbstractActionController
                     'downloadqrda' => $downloadqrda
                 );
             }
+
             if ($downloadqrda3 == 'download_qrda3') {
                 $send_params = array(
                     'action' => 'index',
@@ -150,8 +156,10 @@ class EncountermanagerController extends AbstractActionController
                     'downloadqrda3' => $downloadqrda3
                 );
             }
+
             $this->forward()->dispatch(EncounterccdadispatchController::class, $send_params);
         }
+
         // view
         $params = array(
             'from_date' => $fromDate,
@@ -193,8 +201,7 @@ class EncountermanagerController extends AbstractActionController
 
         $facilityService = new FacilityService();
         $billingLocations = $facilityService->getAllBillingLocations();
-
-        $index = new ViewModel(array(
+        return new ViewModel(array(
             'details' => $details,
             'form_data' => $params,
             'current_measures' => $measures,
@@ -205,14 +212,12 @@ class EncountermanagerController extends AbstractActionController
             'providers' => $practitioners,
             'billing_facilities' => $billingLocations
         ));
-        return $index;
     }
 
     /**
      * Action handle for previewing a ccda document.  Given the id of a document in
-     * @return ViewModel
      */
-    public function previewDocumentAction()
+    public function previewDocumentAction(): \Laminas\View\Model\ViewModel
     {
 
         $request = $this->getRequest();
@@ -220,21 +225,22 @@ class EncountermanagerController extends AbstractActionController
 
         $document = new \Document($docId);
         try {
-            $twig = new TwigContainer(null, $GLOBALS['kernel']);
+            $twigContainer = new TwigContainer(null, $GLOBALS['kernel']);
             // can_access will check session if no params are passed.
             if (!$document->can_access()) {
-                echo $twig->getTwig()->render("templates/error/400.html.twig", ['statusCode' => 401, 'errorMessage' => 'Access Denied']);
+                echo $twigContainer->getTwig()->render("templates/error/400.html.twig", ['statusCode' => 401, 'errorMessage' => 'Access Denied']);
                 exit;
             } elseif ($document->is_deleted()) {
-                echo $twig->getTwig()->render("templates/error/404.html.twig");
+                echo $twigContainer->getTwig()->render("templates/error/404.html.twig");
                 exit;
             }
 
             $content = $document->get_data();
             if (empty($content)) {
-                echo $twig->getTwig()->render("templates/error/404.html.twig");
+                echo $twigContainer->getTwig()->render("templates/error/404.html.twig");
                 exit;
             }
+
             $content = $document->get_data();
 
             $ccdaGlobalsConfiguration = new CcdaGlobalsConfiguration();
@@ -251,13 +257,14 @@ class EncountermanagerController extends AbstractActionController
             if (!file_exists($stylesheet)) {
                 throw new \RuntimeException("Could not find stylesheet file at location: " . $stylesheet);
             }
+
             $xmlDom = new DOMDocument();
             $xmlDom->loadXML($updatedContent);
             $ss = new DOMDocument();
             $ss->load($stylesheet);
-            $proc = new XSLTProcessor();
-            $proc->importStylesheet($ss);
-            $updatedContent = $proc->transformToXml($xmlDom);
+            $xsltProcessor = new XSLTProcessor();
+            $xsltProcessor->importStylesheet($ss);
+            $updatedContent = $xsltProcessor->transformToXml($xmlDom);
             echo $updatedContent;
         } catch (\Exception $exception) {
             echo "Failed to generate preview for docId " . text($docId);
@@ -266,9 +273,10 @@ class EncountermanagerController extends AbstractActionController
                 ['docId' => $docId, 'message' => $exception, 'trace' => $exception->getTraceAsString()]
             );
         }
-        $view = new ViewModel();
-        $view->setTerminal(true);
-        return $view;
+
+        $viewModel = new ViewModel();
+        $viewModel->setTerminal(true);
+        return $viewModel;
     }
 
     public function buildCCDAHtml($content)
@@ -276,22 +284,23 @@ class EncountermanagerController extends AbstractActionController
         return $this->getEncountermanagerTable()->getCcdaAsHTML($content);
     }
 
-    public function downloadAction()
+    public function downloadAction(): \Laminas\View\Model\ViewModel
     {
         $id = $this->getRequest()->getQuery('id');
-        $dir = sys_get_temp_dir() . "/CCDA_$id/";
-        $filename = "CCDA_$id.xml";
-        $filename_html = "CCDA_$id.html";
+        $dir = sys_get_temp_dir() . sprintf('/CCDA_%s/', $id);
+        $filename = sprintf('CCDA_%s.xml', $id);
+        $filename_html = sprintf('CCDA_%s.html', $id);
 
         if (!is_dir($dir)) {
             if (!mkdir($dir, true) && !is_dir($dir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
+
             chmod($dir, 0777);
         }
 
         $zip_dir = sys_get_temp_dir() . "/";
-        $zip_name = "CCDA_$id.zip";
+        $zip_name = sprintf('CCDA_%s.zip', $id);
 
         $ccdaDocument = new \Document($id);
         $content = $ccdaDocument->get_data();
@@ -313,7 +322,7 @@ class EncountermanagerController extends AbstractActionController
         ob_clean();
         header("Cache-Control: public");
         header("Content-Description: File Transfer");
-        header("Content-Disposition: attachment; filename=$zip_name");
+        header('Content-Disposition: attachment; filename=' . $zip_name);
         header("Content-Type: application/download");
         header("Content-Transfer-Encoding: binary");
         readfile($zip_dir . $zip_name);
@@ -322,12 +331,12 @@ class EncountermanagerController extends AbstractActionController
         // to have these files just hanging around in a tmp folder
         unlink($zip_dir . $zip_name);
 
-        $view = new ViewModel();
-        $view->setTerminal(true);
-        return $view;
+        $viewModel = new ViewModel();
+        $viewModel->setTerminal(true);
+        return $viewModel;
     }
 
-    public function downloadallAction()
+    public function downloadallAction(): \Laminas\View\Model\ViewModel|\Laminas\View\Model\JsonModel
     {
         $pids = $this->params('pids');
         $document_type = $this->params('document_type') ?? '';
@@ -338,6 +347,7 @@ class EncountermanagerController extends AbstractActionController
                 if (!mkdir($parent_dir, true) && !is_dir($parent_dir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $parent_dir));
                 }
+
                 chmod($parent_dir, 0777);
             }
 
@@ -351,19 +361,21 @@ class EncountermanagerController extends AbstractActionController
                     $id = $row_inner['id'];
                     // xml version for parsing or transfer.
                     $ccdaDocuments = \Document::getDocumentsForForeignReferenceId('ccda', $id);
-                    $content = !empty($ccdaDocuments) ? $ccdaDocuments[0]->get_data() : ""; // nothing here to export
+                    $content = empty($ccdaDocuments) ? "" : $ccdaDocuments[0]->get_data(); // nothing here to export
                     // From header oid for an unstructured document.
                     // used if the auto create patient document export is on in ccda service.
                     // else document_type is correctly set if purposely sent as unstructured from CCM
                     if (stripos($content, '2.16.840.1.113883.10.20.22.1.10') > 0) {
                         $doc_type = 'unstructured';
                     }
+
                     /* let's not have a dir per patient for now! though we'll keep for awhile.
                      * $dir = $parent_dir . "/CCDA_{$row_inner['lname']}_{$row_inner['fname']}/";*/
-                    $filename = "CCDA_{$row_inner['lname']}_{$row_inner['fname']}";
+                    $filename = sprintf('CCDA_%s_%s', $row_inner['lname'], $row_inner['fname']);
                     if (!empty($doc_type) && in_array($doc_type, self::VALID_CCDA_DOCUMENT_TYPES)) {
                         $filename .= "_" . $doc_type;
                     }
+
                     $filename .= "_" . date("Y_m_d_His"); // ensure somewhat unique
                     $filename_html = $filename . ".html";
                     $filename .= ".xml";
@@ -371,8 +383,10 @@ class EncountermanagerController extends AbstractActionController
                         if (!mkdir($dir, true) && !is_dir($dir)) {
                             throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
                         }
+
                         chmod($dir, 0777);
                     }
+
                     $f2 = fopen($dir . $filename, "w");
                     fwrite($f2, $content);
                     fclose($f2);
@@ -384,6 +398,7 @@ class EncountermanagerController extends AbstractActionController
                         fclose($f2);
                     }
                 }
+
                 copy(__DIR__ . "/../../../../../public/xsl/cda.xsl", $dir . "CDA.xsl");
             }
 
@@ -394,6 +409,7 @@ class EncountermanagerController extends AbstractActionController
             if (!empty($document_type) && in_array($document_type, self::VALID_CCDA_DOCUMENT_TYPES)) {
                 $zip_name .= "_All";
             }
+
             $zip_name .= "_" . date("Y_m_d_His") . ".zip";
             $zip->setArchive($zip_dir . $zip_name);
             $zip->compress($parent_dir);
@@ -401,7 +417,7 @@ class EncountermanagerController extends AbstractActionController
             ob_clean();
             header("Cache-Control: public");
             header("Content-Description: File Transfer");
-            header("Content-Disposition: attachment; filename=$zip_name");
+            header('Content-Disposition: attachment; filename=' . $zip_name);
             header("Content-Type: application/download");
             header("Content-Transfer-Encoding: binary");
             readfile($zip_dir . $zip_name);

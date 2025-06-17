@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This bootstrap file connects the module to the OpenEMR system hooking to the API, api scopes, and event notifications
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Controller\Admin\TeleHealthPatientAdminController;
@@ -54,96 +55,68 @@ class Bootstrap
     /**
      * @var EventDispatcherInterface The object responsible for sending and subscribing to events through the OpenEMR system
      */
-    private $eventDispatcher;
+    private \Symfony\Component\EventDispatcher\EventDispatcher $eventDispatcher;
 
-    private $moduleDirectoryName;
+    private string $moduleDirectoryName;
 
     /**
      * The OpenEMR Twig Environment
-     * @var Environment
      */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
-    /**
-     * @var TelehealthGlobalConfig
-     */
-    private $globalsConfig;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig $telehealthGlobalConfig;
 
     const COMLINK_VIDEO_TELEHEALTH_API = 'comlink_telehealth_video_uri';
 
-    /**
-     * @var TeleHealthPatientPortalController
-     */
-    private $patientPortalController;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthPatientPortalController $teleHealthPatientPortalController = null;
 
-    /**
-     * @var TeleHealthVideoRegistrationController
-     */
-    private $registrationController;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthVideoRegistrationController $teleHealthVideoRegistrationController = null;
 
-    /**
-     * @var TeleHealthUserAdminController
-     */
-    private $adminSettingsController;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Controller\Admin\TeleHealthUserAdminController $teleHealthUserAdminController = null;
 
-    /**
-     * @var TeleHealthPatientAdminController
-     */
-    private $patientAdminSettingsController;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Controller\Admin\TeleHealthPatientAdminController $teleHealthPatientAdminController = null;
 
-    /**
-     * @var TeleHealthPersonSettingsRepository
-     */
-    private $personSettingsRepository;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthPersonSettingsRepository $teleHealthPersonSettingsRepository = null;
 
-    /**
-     * @var TeleHealthProviderRepository
-     */
-    private $providerRepository;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthProviderRepository $teleHealthProviderRepository = null;
 
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Common\Logging\SystemLogger $systemLogger;
 
-    /**
-     * @var TeleHealthCalendarController
-     */
-    private $calendarController;
+    private ?\Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthCalendarController $teleHealthCalendarController = null;
 
     /**
      * @var array Hashmap of Service classname => Service used for dependency injection
      */
-    private $serviceRegistry = [];
+    private array $serviceRegistry = [];
 
-    public function __construct(EventDispatcher $dispatcher, ?Kernel $kernel = null)
+    public function __construct(EventDispatcher $eventDispatcher, ?Kernel $kernel = null)
     {
         global $GLOBALS;
 
-        if (empty($kernel)) {
+        if (!$kernel instanceof \OpenEMR\Core\Kernel) {
             $kernel = new Kernel();
         }
-        $this->eventDispatcher = $dispatcher;
-        $twig = new TwigContainer($this->getTemplatePath(), $kernel);
-        $twigEnv = $twig->getTwig();
-        $this->twig = $twigEnv;
+        $this->eventDispatcher = $eventDispatcher;
+        $twigContainer = new TwigContainer($this->getTemplatePath(), $kernel);
+        $twigEnvironment = $twigContainer->getTwig();
+        $this->twigEnvironment = $twigEnvironment;
 
         $this->moduleDirectoryName = basename(dirname(__DIR__));
-        $this->logger = new SystemLogger();
-        $this->globalsConfig = new TelehealthGlobalConfig($this->getURLPath(), $this->moduleDirectoryName, $this->twig);
+        $this->systemLogger = new SystemLogger();
+        $this->telehealthGlobalConfig = new TelehealthGlobalConfig($this->getURLPath(), $this->moduleDirectoryName, $this->twigEnvironment);
     }
 
     public function getGlobalConfig(): TelehealthGlobalConfig
     {
-        return $this->globalsConfig;
+        return $this->telehealthGlobalConfig;
     }
 
-    public function getTemplatePath()
+    public function getTemplatePath(): string
     {
         return \dirname(__DIR__) . DIRECTORY_SEPARATOR . "templates" . DIRECTORY_SEPARATOR;
     }
 
-    public function getURLPath()
+    public function getURLPath(): string
     {
         return $GLOBALS['webroot'] . self::MODULE_INSTALLATION_PATH . $this->moduleDirectoryName . "/public/";
     }
@@ -153,14 +126,14 @@ class Bootstrap
      */
     public function getTwig()
     {
-        return $this->twig;
+        return $this->twigEnvironment;
     }
 
-    public function subscribeToEvents()
+    public function subscribeToEvents(): void
     {
         $this->addGlobalSettings();
         // we only show the telehealth settings if all of the telehealth configuration has been configured.
-        if ($this->globalsConfig->isTelehealthConfigured()) {
+        if ($this->telehealthGlobalConfig->isTelehealthConfigured()) {
             $this->subscribeToTemplateEvents();
             $this->subscribeToProviderEvents();
             // note we need to subscribe at the admin controller as it must precede the registration controller
@@ -178,16 +151,16 @@ class Bootstrap
 
     public function getCalendarController()
     {
-        if (empty($this->calendarController)) {
-            $this->calendarController = new TeleHealthCalendarController(
-                $this->globalsConfig,
+        if (empty($this->teleHealthCalendarController)) {
+            $this->teleHealthCalendarController = new TeleHealthCalendarController(
+                $this->telehealthGlobalConfig,
                 $this->getTwig(),
-                $this->logger,
+                $this->systemLogger,
                 $this->getAssetPath(),
                 $this->getCurrentLoggedInUser()
             );
         }
-        return $this->calendarController;
+        return $this->teleHealthCalendarController;
     }
 
     public function getCurrentLoggedInUser()
@@ -195,60 +168,60 @@ class Bootstrap
         return $_SESSION['authUserID'] ?? null;
     }
 
-    public function subscribeToProviderEvents()
+    public function subscribeToProviderEvents(): void
     {
         $this->eventDispatcher->addListener(AppointmentSetEvent::EVENT_HANDLE, [$this, 'createSessionRecord'], 10);
     }
 
-    public function createSessionRecord(AppointmentSetEvent $event)
+    public function createSessionRecord(AppointmentSetEvent $appointmentSetEvent): void
     {
-        $pc_catid = $event->givenAppointmentData()['pc_catid'] ?? null;
-        $calCatRepo = new CalendarEventCategoryRepository();
-        if (empty($calCatRepo->getEventCategoryForId($pc_catid))) {
+        $pc_catid = $appointmentSetEvent->givenAppointmentData()['pc_catid'] ?? null;
+        $calendarEventCategoryRepository = new CalendarEventCategoryRepository();
+        if (empty($calendarEventCategoryRepository->getEventCategoryForId($pc_catid))) {
             // not a telehealth category so we will just skip this.
             return;
         }
 
-        $sessionRepo = new TeleHealthSessionRepository();
-        $sessionRepo->getSessionByAppointmentId($event->eid);
+        $teleHealthSessionRepository = new TeleHealthSessionRepository();
+        $teleHealthSessionRepository->getSessionByAppointmentId($appointmentSetEvent->eid);
     }
 
-    public function subscribeToTemplateEvents()
+    public function subscribeToTemplateEvents(): void
     {
         $this->eventDispatcher->addListener(TwigEnvironmentEvent::EVENT_CREATED, [$this, 'addTemplateOverrideLoader']);
         $this->eventDispatcher->addListener(RenderEvent::EVENT_BODY_RENDER_POST, [$this, 'renderMainBodyTelehealthScripts']);
     }
 
 
-    public function addTemplateOverrideLoader(TwigEnvironmentEvent $event)
+    public function addTemplateOverrideLoader(TwigEnvironmentEvent $twigEnvironmentEvent): void
     {
-        $twig = $event->getTwigEnvironment();
-        if ($twig === $this->twig) {
+        $twigEnvironment = $twigEnvironmentEvent->getTwigEnvironment();
+        if ($twigEnvironment === $this->twigEnvironment) {
             // we do nothing if its our own twig environment instantiated that we already setup
             return;
         }
         // we make sure we can override our file system directory here.
-        $loader = $twig->getLoader();
+        $loader = $twigEnvironment->getLoader();
         if ($loader instanceof FilesystemLoader) {
             $loader->prependPath($this->getTemplatePath());
         }
     }
 
-    private function getPublicPathFQDN()
+    private function getPublicPathFQDN(): string
     {
         // return the public path with the fully qualified domain name in it
         // qualified_site_addr already has the webroot in it.
         return $GLOBALS['qualified_site_addr'] . self::MODULE_INSTALLATION_PATH . ($this->moduleDirectoryName ?? '') . '/' . 'public' . '/';
     }
 
-    private function getAssetPath()
+    private function getAssetPath(): string
     {
         return $this->getURLPath() . 'assets' . '/';
     }
 
-    public function renderMainBodyTelehealthScripts()
+    public function renderMainBodyTelehealthScripts(): void
     {
-        $scriptMinExtension = $this->globalsConfig->isDebugModeEnabled() ? ".js" : ".min.js";
+        $scriptMinExtension = $this->telehealthGlobalConfig->isDebugModeEnabled() ? ".js" : ".min.js";
         ?>
         <script src="<?php echo $this->getAssetPath();?>../<?php echo CacheUtils::addAssetCacheParamToPath("index.php"); ?>&action=get_telehealth_settings"></script>
         <link rel="stylesheet" href="<?php echo $this->getAssetPath();?>css/<?php echo CacheUtils::addAssetCacheParamToPath("telehealth.css"); ?>">
@@ -257,15 +230,15 @@ class Bootstrap
         <?php
     }
 
-    public function addGlobalSettings()
+    public function addGlobalSettings(): void
     {
         $this->eventDispatcher->addListener(GlobalsInitializedEvent::EVENT_HANDLE, [$this, 'addGlobalTeleHealthSettings']);
     }
 
-    public function addGlobalTeleHealthSettings(GlobalsInitializedEvent $event)
+    public function addGlobalTeleHealthSettings(GlobalsInitializedEvent $globalsInitializedEvent): void
     {
-        $service = $event->getGlobalsService();
-        $this->globalsConfig->setupConfiguration($service);
+        $globalsService = $globalsInitializedEvent->getGlobalsService();
+        $this->telehealthGlobalConfig->setupConfiguration($globalsService);
     }
 
     public function getTeleconferenceRoomController($isPatient): TeleconferenceRoomController
@@ -276,7 +249,7 @@ class Bootstrap
             $this->getRegistrationController(),
             $this->getMailerService(),
             $this->getFrontendSettingsController(),
-            $this->globalsConfig,
+            $this->telehealthGlobalConfig,
             $this->getProvisioningService(),
             $this->getParticipantListService(),
             $this->getAssetPath(),
@@ -310,88 +283,87 @@ class Bootstrap
 
     public function getRegistrationController(): TeleHealthVideoRegistrationController
     {
-        $globalsConfig = $this->globalsConfig;
-        if (empty($this->registrationController)) {
-            $this->registrationController = new TeleHealthVideoRegistrationController(
+        if (empty($this->teleHealthVideoRegistrationController)) {
+            $this->teleHealthVideoRegistrationController = new TeleHealthVideoRegistrationController(
                 $this->getRemoteRegistrationService(),
                 $this->getProviderRepository()
             );
         }
-        return $this->registrationController;
+        return $this->teleHealthVideoRegistrationController;
     }
     public function getPatientPortalController(): TeleHealthPatientPortalController
     {
-        if (empty($this->patientPortalController)) {
-            $this->patientPortalController = new TeleHealthPatientPortalController($this->twig, $this->getAssetPath(), $this->globalsConfig);
+        if (empty($this->teleHealthPatientPortalController)) {
+            $this->teleHealthPatientPortalController = new TeleHealthPatientPortalController($this->twigEnvironment, $this->getAssetPath(), $this->telehealthGlobalConfig);
         }
-        return $this->patientPortalController;
+        return $this->teleHealthPatientPortalController;
     }
 
     private function getTeleHealthPatientAdminController()
     {
-        if (empty($this->patientAdminSettingsController)) {
-            $this->patientAdminSettingsController = new TeleHealthPatientAdminController(
-                $this->globalsConfig,
+        if (empty($this->teleHealthPatientAdminController)) {
+            $this->teleHealthPatientAdminController = new TeleHealthPatientAdminController(
+                $this->telehealthGlobalConfig,
                 $this->getUserRepository(),
                 $this->getRemoteRegistrationService()
             );
         }
-        return $this->patientAdminSettingsController;
+        return $this->teleHealthPatientAdminController;
     }
 
     private function getTeleHealthUserAdminController()
     {
-        if (empty($this->adminSettingsController)) {
-            $this->adminSettingsController = new TeleHealthUserAdminController(
-                $this->globalsConfig,
+        if (empty($this->teleHealthUserAdminController)) {
+            $this->teleHealthUserAdminController = new TeleHealthUserAdminController(
+                $this->telehealthGlobalConfig,
                 $this->getTwig(),
                 $this->getPersonSettingsRepository()
             );
         }
-        return $this->adminSettingsController;
+        return $this->teleHealthUserAdminController;
     }
 
     private function getPersonSettingsRepository(): TeleHealthPersonSettingsRepository
     {
-        if (empty($this->personSettingsRepository)) {
-            $this->personSettingsRepository = new TeleHealthPersonSettingsRepository($this->logger);
+        if (empty($this->teleHealthPersonSettingsRepository)) {
+            $this->teleHealthPersonSettingsRepository = new TeleHealthPersonSettingsRepository($this->systemLogger);
         }
-        return $this->personSettingsRepository;
+        return $this->teleHealthPersonSettingsRepository;
     }
 
     private function getProviderRepository(): TeleHealthProviderRepository
     {
-        if (empty($this->providerRepository)) {
-            $this->providerRepository = new TeleHealthProviderRepository($this->logger, $this->globalsConfig);
+        if (empty($this->teleHealthProviderRepository)) {
+            $this->teleHealthProviderRepository = new TeleHealthProviderRepository($this->systemLogger, $this->telehealthGlobalConfig);
         }
-        return $this->providerRepository;
+        return $this->teleHealthProviderRepository;
     }
 
     private function getRegistrationCodeService()
     {
         $service = $this->getService(TelehealthRegistrationCodeService::class);
         if (empty($service)) {
-            $service = new TelehealthRegistrationCodeService($this->globalsConfig, $this->getUserRepository());
+            $service = new TelehealthRegistrationCodeService($this->telehealthGlobalConfig, $this->getUserRepository());
             $this->storeService(TelehealthRegistrationCodeService::class, $service);
         }
         return $service;
     }
 
-    private function getMailerService()
+    private function getMailerService(): \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TeleHealthParticipantInvitationMailerService
     {
-        return new TeleHealthParticipantInvitationMailerService($this->eventDispatcher, $this->getTwig(), $this->getPublicPathFQDN(), $this->globalsConfig);
+        return new TeleHealthParticipantInvitationMailerService($this->eventDispatcher, $this->getTwig(), $this->getPublicPathFQDN(), $this->telehealthGlobalConfig);
     }
 
-    private function getFrontendSettingsController()
+    private function getFrontendSettingsController(): \Comlink\OpenEMR\Modules\TeleHealthModule\Controller\TeleHealthFrontendSettingsController
     {
-        return new TeleHealthFrontendSettingsController($this->getAssetPath(), $this->getTwig(), $this->globalsConfig);
+        return new TeleHealthFrontendSettingsController($this->getAssetPath(), $this->getTwig(), $this->telehealthGlobalConfig);
     }
 
     private function getRemoteRegistrationService()
     {
         $service = $this->getService(TeleHealthRemoteRegistrationService::class);
         if (empty($service)) {
-            $service = new TeleHealthRemoteRegistrationService($this->globalsConfig, $this->getRegistrationCodeService());
+            $service = new TeleHealthRemoteRegistrationService($this->telehealthGlobalConfig, $this->getRegistrationCodeService());
             $this->storeService(TeleHealthRemoteRegistrationService::class, $service);
         }
         return $service;
@@ -406,12 +378,12 @@ class Bootstrap
         return $service;
     }
 
-    private function storeService($className, $obj)
+    private function storeService(string $className, \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TeleHealthProvisioningService|\Comlink\OpenEMR\Modules\TeleHealthModule\Services\ParticipantListService|\Comlink\OpenEMR\Modules\TeleHealthModule\Services\TelehealthRegistrationCodeService|\Comlink\OpenEMR\Modules\TeleHealthModule\Services\TeleHealthRemoteRegistrationService|\Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository $obj): void
     {
         $this->serviceRegistry[$className] = $obj;
     }
 
-    private function getService($className)
+    private function getService(string $className)
     {
         if (isset($this->serviceRegistry[$className])) {
             return $this->serviceRegistry[$className];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  php/taskman_functions.php
  *
@@ -26,7 +28,7 @@ $facilityService = new FacilityService();
 /**
  *  This function creates a task as a record in the form_taskman DB_table.
  */
-function make_task($ajax_req)
+function make_task($ajax_req): void
 {
     global $send;
 
@@ -141,7 +143,7 @@ function process_tasks($task)
  /**
  *  This function updates the taskman record in the form_taskman table.
  */
-function update_taskman($task, $action, $value)
+function update_taskman(array $task, $action, $value): void
 {
     global $send;
     if ($action == 'created') {
@@ -178,7 +180,7 @@ function update_taskman($task, $action, $value)
  *      Some suggest the fax server to fax machine portion of efaxing is not HIPPA compliant, no matter how it is done.
  *      Thus faxing is not HIPPA compliant, and if that affects you, don't deliver this way.
  */
-function deliver_document($task)
+function deliver_document(array $task): bool
 {
     global $facilityService;
     $facility_data  = $facilityService->getPrimaryBillingLocation();
@@ -228,7 +230,7 @@ function deliver_document($task)
  *  This function will display the form_taskman table as requested, by date or by status?
  *  Currently it is not used.
  */
-function show_task($ajax_req)
+function show_task($ajax_req): void
 {
     //$_REQUEST['show_task'] = task_id, or all or by date range?
     //Could be a HTML5 table layout?
@@ -239,7 +241,7 @@ function show_task($ajax_req)
 /**
  *  This function makes and stores a document that we want to deliver.
  */
-function make_document($task)
+function make_document(array $task): array
 {
     global $providerNAME;
     global $encounter;
@@ -275,9 +277,6 @@ function make_document($task)
     $pt_name        = $patientData['fname'] . ' ' . $patientData['lname'];
 
     $encounter      = $task['ENC_ID'];
-
- //   $mail           = new MyMailer();
-    $to_email       = $to_fax . "@" . $GLOBALS['hylafax_server'];
 
     $query = "select  *,form_encounter.date as encounter_date
 
@@ -331,7 +330,7 @@ function make_document($task)
         $filename       = "Fax_" . $encounter . "_" . $to_data['lname'] . ".pdf";
         $count          = 0;
         while (file_exists($filepath . '/' . $filename)) {
-            $count++;
+            ++$count;
             $filename = "FAX_" . $encounter . "_" . $to_data['lname'] . "_" . $count . ".pdf";
         }
     } else {
@@ -548,7 +547,7 @@ mpdf-->
     }
 </style>';
 
-    $stylesheet = file_get_contents('/var/www/localhost/htdocs/openemr/interface/forms/eye_mag/css/report.css');
+    file_get_contents('/var/www/localhost/htdocs/openemr/interface/forms/eye_mag/css/report.css');
 
     //$pdf->WriteHTML($stylesheet,\Mpdf\HTMLParserMode::HEADER_CSS);
     $pdf->WriteHTML($header);

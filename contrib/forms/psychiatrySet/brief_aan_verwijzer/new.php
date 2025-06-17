@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * brief_aan_verwijzer
  * letter to verwijzer - Dutch specific form
@@ -22,8 +24,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -177,11 +179,7 @@ if ($obj_bav['advies_beleid'] != '') {
 
 <?php
 
-if ($vectAutosaveBAV['id']) {
-    $brief_aan_verwijzer_id = $vectAutosaveBAV['id'];
-} else {
-    $brief_aan_verwijzer_id = "0";
-}
+$brief_aan_verwijzer_id = $vectAutosaveBAV['id'] ? $vectAutosaveBAV['id'] : "0";
 
 ?>
 <script>
@@ -287,7 +285,7 @@ function autosave( )
 <br /><br />
 <a href="javascript:document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
-<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt('Don\'t Save'); ?>]</a>
+<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt("Don't Save"); ?>]</a>
 </form>
 
 

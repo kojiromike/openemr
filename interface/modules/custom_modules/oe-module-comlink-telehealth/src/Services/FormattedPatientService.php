@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // TODO: missing header
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
@@ -9,7 +11,7 @@ use OpenEMR\Services\PatientService;
 
 class FormattedPatientService
 {
-    public function getPatientForPid($pid)
+    public function getPatientForPid(string $pid)
     {
         // TODO: @adunsulag since patient service hits the db to grab the schema... do we want to put this in our
         // Boostrap DI system to make sure we only have a single instance of it?

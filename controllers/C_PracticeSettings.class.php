@@ -1,15 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
 
 class C_PracticeSettings extends Controller
 {
-    var $template_mod;
+    public $template_mod;
 
-    var $direction;
+    /**
+     * @var 'right'|'left'
+     */
+    public $direction;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -24,16 +29,16 @@ class C_PracticeSettings extends Controller
         }
     }
 
-    function default_action($display = "")
+    public function default_action($display = ""): void
     {
         $this->assign("display", $display);
         $this->assign("direction", $this->direction);
         $this->display($GLOBALS['template_dir'] . "practice_settings/" . $this->template_mod . "_list.html");
     }
 
-    function pharmacy_action($arg)
+    public function pharmacy_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -42,16 +47,17 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("pharmacy" => "", $arg => ""), $fga);
         $this->assign("direction", $this->direction);
-        $display = $c->act($args);
+        $display = $controller->act($args);
         $this->assign("ACTION_NAME", xl("Pharmacies"));
         $this->default_action($display);
     }
 
-    function insurance_company_action($arg)
+    public function insurance_company_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -60,17 +66,18 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("insurance_company" => "", $arg => ""), $fga);
 
-        $display = $c->act($args);
+        $display = $controller->act($args);
         $this->assign("direction", $this->direction);
         $this->assign("ACTION_NAME", xl("Insurance Companies"));
         $this->default_action($display);
     }
 
-    function insurance_numbers_action($arg)
+    public function insurance_numbers_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -79,18 +86,19 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("insurance_numbers" => "", $arg => ""), $fga);
 
-        $display = $c->act($args);
+        $display = $controller->act($args);
 
         $this->assign("ACTION_NAME", xl("Insurance Numbers"));
         $this->assign("direction", $this->direction);
         $this->default_action($display);
     }
 
-    function document_action($arg)
+    public function document_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -99,18 +107,19 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("document" => "", $arg => ""), $fga);
 
-        $display = $c->act($args);
+        $display = $controller->act($args);
 
         $this->assign("ACTION_NAME", xl("Documents"));
         $this->assign("direction", $this->direction);
         $this->default_action($display);
     }
 
-    function document_category_action($arg)
+    public function document_category_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -119,18 +128,19 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("document_category" => "", $arg => ""), $fga);
 
-        $display = $c->act($args);
+        $display = $controller->act($args);
 
         $this->assign("ACTION_NAME", xl("Documents"));
         $this->assign("direction", $this->direction);
         $this->default_action($display);
     }
 
-    function x12_partner_action($arg)
+    public function x12_partner_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -139,9 +149,10 @@ class C_PracticeSettings extends Controller
         $fga = func_get_args();
 
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("x12_partner" => "", $arg => ""), $fga);
 
-        $display = $c->act($args);
+        $display = $controller->act($args);
 
         $this->assign("ACTION_NAME", xl("X12 Partners"));
         $this->assign("direction", $this->direction);
@@ -149,9 +160,9 @@ class C_PracticeSettings extends Controller
     }
 
 
-    function hl7_action($arg)
+    public function hl7_action($arg): void
     {
-        $c = new Controller();
+        $controller = new Controller();
 
         //this dance is so that the controller system which only cares about the name part of the first two arguments get what it wants
         //and the rest gets passed as normal argument values, really this all goes back to workarounds for problems with call_user_func
@@ -159,8 +170,9 @@ class C_PracticeSettings extends Controller
 
         $fga = func_get_args();
         $fga = array_slice($fga, 1);
+
         $args = array_merge(array("hl7" => "", $arg => ""), $fga);
-        $display = $c->act($args);
+        $display = $controller->act($args);
         $this->assign("ACTION_NAME", xl("HL7 Viewer"));
         $this->assign("direction", $this->direction);
         $this->default_action($display);

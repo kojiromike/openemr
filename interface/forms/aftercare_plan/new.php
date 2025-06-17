@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * aftercare_plan new.php
  *
@@ -13,9 +15,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -23,7 +25,7 @@ use OpenEMR\Core\Header;
 formHeader("Form:AfterCare Planning");
 $returnurl = 'encounter_top.php';
 $formid = (int) (isset($_GET['id']) ? $_GET['id'] : 0);
-$obj = $formid ? formFetch("form_aftercare_plan", $formid) : array();
+$obj = $formid !== 0 ? formFetch("form_aftercare_plan", $formid) : array();
 
 ?>
 <html>
@@ -52,7 +54,7 @@ $obj = $formid ? formFetch("form_aftercare_plan", $formid) : array();
 <br />
 <?php
 echo "<form method='post' name='my_form' " .
-  "action='$rootdir/forms/aftercare_plan/save.php?id=" . attr_url($formid) . "'>\n";
+  sprintf("action='%s/forms/aftercare_plan/save.php?id=", $rootdir) . attr_url($formid) . "'>\n";
 ?>
 <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
 

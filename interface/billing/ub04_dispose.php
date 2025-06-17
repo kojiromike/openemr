@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * UB04 Functions
  *
@@ -10,13 +12,13 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Billing\BillingUtilities;
 use OpenEMR\Billing\Claim;
 use OpenEMR\Pdf\PdfCreator;
 
-function ub04_dispose()
+function ub04_dispose(): void
 {
     $dispose = ($_POST['handler'] ?? null) ? $_POST['handler'] : ($_GET['handler'] ?? null);
     if ($dispose) {
@@ -48,12 +50,14 @@ function ub04_dispose()
             if ($flg === true) {
                 BillingUtilities::updateClaim(false, $pid, $encounter, -1, -1, -1, -1, '', 'ub04', -1, 0, "");
             }
+
             $ub04id = get_ub04_array($pid, $encounter);
             $ub04id = json_encode($ub04id);
 
             echo $ub04id;
             exit();
         }
+
         die(xlt('Do not know what to do!'));
     }
 }
@@ -68,16 +72,16 @@ function get_payer_defaults($payerid)
     }
 }
 
-function savePayerTemplate($payerid, $ubo4id)
+function savePayerTemplate($payerid, $ubo4id): void
 {
-    $ub04id = json_encode($ub04id);
+    json_encode($ub04id);
     sqlStatement("update insurance_companies set claim_template = ? where id = ?", array(
         $ubo4id,
         $payerid
     ));
 }
 
-function saveTemplate($encounter, $pid, $ub04id, $action = 'form')
+function saveTemplate($encounter, $pid, $ub04id, $action = 'form'): void
 {
     global $isAuthorized;
     if ($action != 'batch_save') {
@@ -89,6 +93,7 @@ function saveTemplate($encounter, $pid, $ub04id, $action = 'form')
         $isAuthorized = false;
         ub04Dispose('download', $htmlin, "ub04_download.pdf", $action);
     }
+
     $flg = exist_ub04_claim($pid, $encounter, true);
     if ($flg === true) {
         BillingUtilities::updateClaim(false, $pid, $encounter, - 1, - 1, - 1, - 1, '', 'ub04', - 1, 0, $ub04id);
@@ -97,13 +102,14 @@ function saveTemplate($encounter, $pid, $ub04id, $action = 'form')
     }
 }
 
-function buildTemplate(string $pid = null, string $encounter = null, $htmlin, string $action = null, &$log)
+function buildTemplate($htmlin, &$log, string $pid = null, string $encounter = null, string $action = null): string|false
 {
     global $srcdir, $isAuthorized;
 
     if (!$action) {
         $action = 'form';
     }
+
     $ub04id = get_ub04_array($pid, $encounter, $log);
 
     $ub04id = json_encode($ub04id);
@@ -117,11 +123,10 @@ function buildTemplate(string $pid = null, string $encounter = null, $htmlin, st
     return $htmlin;
 }
 
-function ub04Dispose($dispose = 'download', $htmlin = "", $filename = "ub04.pdf", $form_action = "")
+function ub04Dispose($dispose = 'download', $htmlin = "", string $filename = "ub04.pdf", $form_action = ""): bool
 {
     $top = $_POST["left_ubmargin"] ?? $GLOBALS['left_ubmargin_default'];
     $side = $_POST["top_ubmargin"] ?? $GLOBALS['top_ubmargin_default'];
-    $form_filename = $GLOBALS['OE_SITE_DIR'] . "/documents/edi/$filename";
     // convert points to inches-some tricky calculus here! 72 pts/inch
     $top = round($top / 72.00, 2) . "in";
     $side = round($side / 72.00, 2) . "in";
@@ -132,6 +137,7 @@ function ub04Dispose($dispose = 'download', $htmlin = "", $filename = "ub04.pdf"
             if ($form_action == "noform") {
                 $isnotform = true;
             }
+
             $options = array(
                 'margin-top' => $top,
                 'margin-bottom' => '0in',
@@ -165,13 +171,14 @@ function ub04Dispose($dispose = 'download', $htmlin = "", $filename = "ub04.pdf"
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             header('Content-Type: application/pdf');
-            header("Content-Disposition: download; filename=$filename");
+            header('Content-Disposition: download; filename=' . $filename);
             header("Content-Description: File Transfer");
             echo $pdfwkout;
         }
-    } catch (Exception $e) {
-        echo xlt($e->getMessage());
+    } catch (Exception $exception) {
+        echo xlt($exception->getMessage());
     }
+
     return true;
 }
 
@@ -194,10 +201,11 @@ function exist_ub04_claim($pid, $encounter, $flag = false)
             return false;
         }
     }
+
     return false;
 }
 
-function get_ub04_array($pid, $encounter, &$log = "")
+function get_ub04_array(string $pid, string $encounter, &$log = "")
 {
 
     $exist_ub04 = exist_ub04_claim($pid, $encounter);
@@ -205,6 +213,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
         $log .= "*** Info: Using saved edited claim.";
         return json_decode($exist_ub04, true);
     }
+
     $log .= "*** Generating UB04 Claim.";
     $today = time();
     $claim = new Claim($pid, $encounter, false);
@@ -219,7 +228,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
     $ub04id[10] = substr($tmp, 0, 3) . '-' . substr($tmp, 3, 3) . '-' . substr($tmp, 6);
     $ub04id[3] = $pid . ' ' . $encounter; /* 3a. PATIENT CONTROL NUMBER */
     $ub04id[6] = $pid; /* 3b. MEDICAL/HEALTH RECORD NUMBER */
-    $ub04id[7] = ! empty($ub04id[7]) ? $ub04id[7] : '831'; /* 4. TYPE OF BILL */
+    $ub04id[7] = empty($ub04id[7]) ? '831' : $ub04id[7]; /* 4. TYPE OF BILL */
     $ub04id[12] = $claim->facilityETIN(); /* 5. FEDERAL TAX NUMBER */
 
     $tmp = $claim->serviceDate();
@@ -230,6 +239,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
     if ($claim->patientMiddleName()) {
         $tmp .= ', ' . substr($claim->patientMiddleName(), 0, 1);
     }
+
     $ub04id[18] = $tmp; /* 8b. PATIENT NAME */
     $ub04id[17] = $claim->patientStreet(); /* 9a. PATIENT STREET ADDRESS */
     $ub04id[19] = $claim->patientCity(); /* 9b. PATIENT CITY */
@@ -246,30 +256,29 @@ function get_ub04_array($pid, $encounter, &$log = "")
     $proccount = $claim->procCount();
     $clm_total_charges = 0;
     $clm_amount_adjusted = 0;
-    $clm_amount_paid = $ub04_proc_index ? 0 : $claim->patientPaidAmount();
+    $clm_amount_paid = $ub04_proc_index !== 0 ? 0 : $claim->patientPaidAmount();
     for ($tlh = 0; $tlh < $proccount; ++$tlh) {
         $tmp = $claim->procs[$tlh]['code_text'];
-        if ($claim->procs[$tlh]['code_type'] == 'HCPCS') {
-            $tmpcode = '3';
-        } else {
-            $tmpcode = '1';
-        }
+        $tmpcode = $claim->procs[$tlh]['code_type'] == 'HCPCS' ? '3' : '1';
+
         $getrevcd = $claim->cptCode($tlh);
         $sql = "SELECT * FROM codes WHERE code_type = ? and code = ? ORDER BY revenue_code DESC";
         $revcode[$tlh] = sqlQuery($sql, array(
             $tmpcode,
             $getrevcd
         ));
-        if (!empty($revcode[$tlh])) {
+        if (isset($revcode[$tlh]) && $revcode[$tlh] !== []) {
             $claim->procs[$tlh]['revenue_code'] = $claim->procs[$tlh]['revenue_code'] ? $claim->procs[$tlh]['revenue_code'] : $revcode[$tlh]['revenue_code'];
             $revcode2[$tlh] = array_merge($revcode[$tlh], $claim->procs[$tlh]);
         }
     }
+
     foreach ($revcode as $key => $row) {
         if (!empty($row)) {
             $revcod[$key] = $row['revenue_code'];
         }
     }
+
     array_multisort($revcod, SORT_ASC, $revcode2);
     // Procedure loop starts here.
     $os = 99; // Line 1 - 23 offset
@@ -280,19 +289,23 @@ function get_ub04_array($pid, $encounter, &$log = "")
         if (! $claim->cptCharges($ub04_proc_index)) {
             $log .= "*** Procedure '" . $claim->cptKey($ub04_proc_index) . "' has no charges!\n";
         }
+
         if (empty($dia)) {
             $log .= "*** Procedure '" . $claim->cptKey($ub04_proc_index) . "' is not justified!\n";
         }
+
         $clm_total_charges += $claim->cptCharges($ub04_proc_index);
         // Compute prior payments and "hard" adjustments.
         for ($ins = 1; $ins < $claim->payerCount(); ++$ins) {
             if ($claim->payerSequence($ins) > $claim->payerSequence()) {
                 continue; // skip future payers
             }
+
             $payerpaid = $claim->payerTotals($ins, $claim->cptKey($ub04_proc_index));
             $clm_amount_paid += $payerpaid[1];
             $clm_amount_adjusted += $payerpaid[2];
         }
+
         ++$svccount;
         $mcnt = $ub04_proc_index;
 
@@ -305,8 +318,10 @@ function get_ub04_array($pid, $encounter, &$log = "")
             if ($dos == 388) {
                 $dos = 393;
             }
-            $pcnt++;
+
+            ++$pcnt;
         }
+
         // @todo Deal with code modifiers $revcode2[$mcnt][modifier]
         $tmp = $claim->serviceDate();
         $sdate = substr($tmp, 4, 2) . substr($tmp, 6, 2) . substr($tmp, 2, 2);
@@ -319,6 +334,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
         $ub04id[++$os] = ''; /* 48. NON-COVERED CHARGES, Line 1-23 */
         $os += 2;
     }
+
     $ub04id[275] = '0001'; /* 42. REVENUE CODE, Line 23 */
     $ub04id[276] = '1'; /* 43. CLAIM PAGE NUMBER */
     $ub04id[277] = '1'; /* 43. TOTAL NUMBER OF CLAIM PAGES */
@@ -327,6 +343,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
     if (! $clm_total_charges) {
         $log .= "* Claim total is zero charges!\n";
     }
+
     // Diagnosis Should be ICD10
     $ub04id[347] = '0'; /* 66. DIAGNOSIS AND PROCEDURE CODE QUALIFIER (ICD VERSION INDICATOR) */
     $os = 328; /* 67. PRINCIPAL DIAGNOSIS CODE AND POA INDICATOR */
@@ -339,16 +356,20 @@ function get_ub04_array($pid, $encounter, &$log = "")
                 $ub04id[366] = "";
                 continue;
             }
+
             $ub04id[$os++] = substr($diag, 0, 7);
             $ub04id[$os++] = "";
         }
+
         if ($os == 346) {
             $os = 348;
         }
+
         if ($os == 365) {
             break;
         }
     }
+
     // @todo Not sure
     $ub04id[367] = $diagnosis[0] ?? '' ? substr($diagnosis[0], 0, 7) : ''; /* 69. ADMITTING DIAGNOSIS CODE */
     $ub04id[368] = $diagnosis[1] ?? '' ? substr($diagnosis[1], 0, 7) : ''; /* 70a. PATIENT'S REASON FOR VISIT */
@@ -359,6 +380,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
     if (empty($claim->payerName(0))) {
         $payer_os = 1;
     }
+
     $ub04id[282] = $claim->facilityNPI(); /* 56. NATIONAL PROVIDER IDENTIFIER - BILLING PROVIDER */
     $ub04id[283] = $claim->payerName($payer_os); /* 50a. PRIMARY PAYER NAME */
     $ub04id[284] = $claim->planName($payer_os); /* 51a. PRIMARY PAYER HEALTH PLAN ID */
@@ -380,6 +402,7 @@ function get_ub04_array($pid, $encounter, &$log = "")
     } else {
         $tmp = $claim->insuredLastName() . ', ' . $claim->insuredFirstName();
     }
+
     $ub04id[304] = $tmp; /* 58a. INSURED'S NAME - PRIMARY PLAN */
     $ub04id[305] = $claim->insuredRelationship(); /* 59a. PATIENT'S RELATIONSHIP TO INSURED - PRIMARY PLAN */
     $ub04id[306] = $claim->policyNumber(); /* 60a. INSURED'S UNIQUE IDENTIFIER - PRIMARY PLAN */

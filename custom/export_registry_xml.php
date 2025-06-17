@@ -1,6 +1,8 @@
 <?php
 
- // Copyright (C) 2011 Ensoftek
+ declare(strict_types=1);
+
+// Copyright (C) 2011 Ensoftek
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -10,10 +12,10 @@
  // This program exports report to PQRI 2009 XML format.
 
 
-require_once("../interface/globals.php");
-require_once("../library/patient.inc.php");
-require_once "../library/options.inc.php";
-require_once("../library/clinical_rules.php");
+require_once(__DIR__ . "/../interface/globals.php");
+require_once(__DIR__ . "/../library/patient.inc.php");
+require_once __DIR__ . "/../library/options.inc.php";
+require_once(__DIR__ . "/../library/clinical_rules.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -33,7 +35,7 @@ if (!empty($GLOBALS['cdr_report_nice'])) {
     proc_nice($GLOBALS['cdr_report_nice']);
 }
 
-function getLabelNumber($label)
+function getLabelNumber($label): string
 {
 
     if (strlen($label) == 0) {
@@ -42,11 +44,9 @@ function getLabelNumber($label)
 
     $tokens = explode(" ", $label);
 
-    $num_tokens = sizeof($tokens);
-    if ($tokens[$num_tokens - 1] != null) {
-        if (is_numeric($tokens[$num_tokens - 1])) {
-            return $tokens[$num_tokens - 1];
-        }
+    $num_tokens = count($tokens);
+    if ($tokens[$num_tokens - 1] != null && is_numeric($tokens[$num_tokens - 1])) {
+        return $tokens[$num_tokens - 1];
     }
 
     return "1";
@@ -65,6 +65,7 @@ function getMeasureNumber($row)
     } else {
         return "";
     }
+    return null;
 }
 
 
@@ -80,7 +81,7 @@ $xml->open_submission();
 $xml->add_file_audit_data();
 
 // Add the registry entries
-if ($nested == 'false') {
+if ($nested === 'false') {
     $xml->add_registry('A');
 } else {
     $xml->add_registry('E');
@@ -88,7 +89,7 @@ if ($nested == 'false') {
 
 
 // Add the measure groups.
-if ($nested == 'false') {
+if ($nested === 'false') {
         // Collect results (note using the batch method to decrease memory overhead and improve performance)
     $dataSheet = test_rules_clinic_batch_method('collate_outer', 'cqm_2011', $target_date, 'report', '', '');
 } else {
@@ -100,7 +101,7 @@ $firstProviderFlag = true;
 $firstPlanFlag = true;
 $existProvider = false;
 
-if ($nested == 'false') {
+if ($nested === 'false') {
      $xml->open_measure_group('X');
 }
 
@@ -120,7 +121,7 @@ foreach ($dataSheet as $row) {
             $pqri_measures['performance-not-met-instances'] = (string)$performance_not_met_instances;
             $pqri_measures['performance-rate'] = $row['percentage'];
             $pqri_measures['reporting-rate'] = (($row['pass_filter'] - $row['excluded']) / $row['pass_filter']) * 100;
-                $pqri_measures['reporting-rate'] = $pqri_measures['reporting-rate'] . '%';
+                $pqri_measures['reporting-rate'] .= '%';
             $xml->add_pqri_measures($pqri_measures);
         } else { // $row[0] == "sub"
         }
@@ -153,12 +154,12 @@ foreach ($dataSheet as $row) {
                 $xml->close_provider();
             }
 
-            if ($nested == 'true') {
+            if ($nested === 'true') {
                 $xml->close_measure_group();
             }
         }
 
-        if ($nested == 'true') {
+        if ($nested === 'true') {
             $xml->open_measure_group($row['cqm_measure_group']);
         }
 

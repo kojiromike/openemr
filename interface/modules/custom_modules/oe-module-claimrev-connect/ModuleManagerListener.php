@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Class to be called from Laminas Module Manager for reporting management actions.
  * Example is if the module is enabled, disabled or unregistered ect.
@@ -44,7 +46,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param        $methodName
      * @param        $modId
-     * @param string $currentActionStatus
      * @return string On method success a $currentAction status should be returned or error string.
      */
     public function moduleManagerAction($methodName, $modId, string $currentActionStatus = 'Success'): string
@@ -61,10 +62,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * Required method to return namespace
      * If namespace isn't provided return empty string
      * and register namespace at top of this script..
-     *
-     * @return string
      */
-    public static function getModuleNamespace(): string
+    protected static function getModuleNamespace(): string
     {
         // Module Manager will register this namespace.
         return 'OpenEMR\\Modules\\ClaimRevConnector\\';
@@ -73,10 +72,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * Required method to return this class object
      * so it will be instantiated in Laminas Manager.
-     *
-     * @return ModuleManagerListener
      */
-    public static function initListenerSelf(): ModuleManagerListener
+    protected static function initListenerSelf(): ModuleManagerListener
     {
         return new self();
     }
@@ -84,24 +81,23 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function help_requested($modId, $currentActionStatus): mixed
+    private function help_requested($currentActionStatus): mixed
     {
         // must call a script that implements a dialog to show help.
         // I can't find a way to override the Lamina's UI except using a dialog.
         if (file_exists(__DIR__ . '/show_help.php')) {
             include __DIR__ . '/show_help.php';
         }
+
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function enable($modId, $currentActionStatus): mixed
+    private function enable($currentActionStatus): mixed
     {
         $logMessage = 'Claimrev Background tasks have been enabled';
         // Register background services
@@ -115,9 +111,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function disable($modId, $currentActionStatus): mixed
+    private function disable($currentActionStatus): mixed
     {
         $logMessage = 'Claimrev Background tasks have been disabled';
         // Unregister background services
@@ -132,7 +127,7 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * @param $currentActionStatus
      * @return mixed
      */
-    private function unregister($modId, $currentActionStatus)
+    private function unregister($currentActionStatus)
     {
         $logMessage = 'Claimrev Background tasks have been removed'; // Initialize an empty string to store log messages
         $sql = "DELETE FROM `background_services` WHERE `name` = ? OR `name` = ? OR `name` = ?";

@@ -1,5 +1,7 @@
 <?php
 
+ declare(strict_types=1);
+ 
  // Copyright (C) 2005 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
@@ -12,8 +14,8 @@
  // them to an Atlas LabWorks server to facilitate lab requisitions.
  /////////////////////////////////////////////////////////////////////
 
- require_once("../interface/globals.php");
- require_once("../library/patient.inc.php");
+ require_once(__DIR__ . "/../interface/globals.php");
+ require_once(__DIR__ . "/../library/patient.inc.php");
 
  use OpenEMR\Core\Header;
 
@@ -33,7 +35,7 @@
  $out = "";
 
  // Add a string to output with some basic sanitizing.
-function Add($field)
+function Add($field): void
 {
     global $out;
     $out .= "^" . trim(str_replace(array("\r", "\n", "\t"), " ", $field));
@@ -46,10 +48,10 @@ function Digits($field)
 }
 
  // Translate sex.
-function Sex($field)
+function Sex($field): string
 {
     $sex = strtoupper(substr(trim($field), 0, 1));
-    if ($sex != "M" && $sex != "F") {
+    if ($sex !== "M" && $sex !== "F") {
         $sex = "U";
     }
 
@@ -57,14 +59,14 @@ function Sex($field)
 }
 
  // Translate a date.
-function LWDate($field)
+function LWDate($field): string
 {
     $tmp = fixDate($field);
     return substr($tmp, 5, 2) . substr($tmp, 8, 2) . substr($tmp, 0, 4);
 }
 
  // Translate insurance type.
-function InsType($field)
+function InsType($field): string
 {
     if (! $field) {
         return "";
@@ -82,10 +84,10 @@ function InsType($field)
 }
 
  // Error abort function that does not leave the system locked.
-function mydie($msg)
+function mydie($msg): void
 {
     global $EXPORT_PATH;
-    rename("$EXPORT_PATH/locked", "$EXPORT_PATH/unlocked");
+    rename($EXPORT_PATH . '/locked', $EXPORT_PATH . '/unlocked');
     die($msg);
 }
 
@@ -136,7 +138,7 @@ foreach (array('primary','secondary') as $value) {
  $sqlBindArray = array();
 if ($row['providerID']) {
     $query .= " AND id = ?";
-    array_push($sqlBindArray, $row['providerID']);
+    $sqlBindArray[] = $row['providerID'];
 } else {
     $query .= " ORDER BY id LIMIT 1";
 }
@@ -165,7 +167,7 @@ if ($row['providerID']) {
  // Guarantor Section.  OpenEMR does not have guarantors so we use the primary
  // insurance subscriber if there is one, otherwise the patient.
  //
-if (trim($row['lname1'])) {
+if (trim($row['lname1']) !== '' && trim($row['lname1']) !== '0') {
     Add($row['lname1']);
     Add($row['fname1']);
     Add(substr($row['mname1'], 0, 1));
@@ -231,18 +233,18 @@ if (trim($row['lname1'])) {
  // In case this is the very first time.
 if (! file_exists($EXPORT_PATH)) {
     mkdir($EXPORT_PATH);
-    @touch("$EXPORT_PATH/unlocked");
+    @touch($EXPORT_PATH . '/unlocked');
 }
 
  // Serialize the following code; collisions would be very bad.
-if (! rename("$EXPORT_PATH/unlocked", "$EXPORT_PATH/locked")) {
+if (! rename($EXPORT_PATH . '/unlocked', $EXPORT_PATH . '/locked')) {
     die("Export seems to be in use by someone else; please try again.");
 }
 
  // Figure out what to use for the target filename.
  $dh = opendir($EXPORT_PATH);
 if (! $dh) {
-    mydie("Cannot read $EXPORT_PATH");
+    mydie('Cannot read ' . $EXPORT_PATH);
 }
 
  $nextnumber = 1;
@@ -259,8 +261,8 @@ while (false !== ($filename = readdir($dh))) {
  $fnprefix = sprintf("PMI%08.0f.", $nextnumber);
  $initialname = $fnprefix . "creating";
  $finalname   = $fnprefix . "DEM";
- $initialpath = "$EXPORT_PATH/$initialname";
- $finalpath   = "$EXPORT_PATH/$finalname";
+ $initialpath = sprintf('%s/%s', $EXPORT_PATH, $initialname);
+ $finalpath   = sprintf('%s/%s', $EXPORT_PATH, $finalname);
 
  // Write the file locally with a temporary version of the name.
  @touch($initialpath); // work around possible php bug
@@ -277,24 +279,25 @@ if (! $fh) {
 
  // Delete old stuff to avoid uncontrolled growth.
 if ($nextnumber > 5) {
-    @unlink("$EXPORT_PATH/PMI%08.0f.DEM", $nextnumber - 5);
+    @unlink($EXPORT_PATH . '/PMI%08.0f.DEM', $nextnumber - 5);
 }
 
  // End of serialized code.
- rename("$EXPORT_PATH/locked", "$EXPORT_PATH/unlocked");
-
- // If we have an ftp server, send it there and then rename it.
-if ($FTP_SERVER) {
-    $ftpconn = ftp_connect($FTP_SERVER) or die("FTP connection failed");
-    ftp_login($ftpconn, $FTP_USER, $FTP_PASS) or die("FTP login failed");
-    if ($FTP_DIR) {
-        ftp_chdir($ftpconn, $FTP_DIR) or die("FTP chdir failed");
-    }
-
-    ftp_put($ftpconn, $initialname, $finalpath, FTP_BINARY) or die("FTP put failed");
-    ftp_rename($ftpconn, $initialname, $finalname) or die("FTP rename failed");
-    ftp_close($ftpconn);
-}
+ rename($EXPORT_PATH . '/locked', $EXPORT_PATH . '/unlocked');
+ $ftpconn = ftp_connect($FTP_SERVER) or die("FTP connection failed");
+ if (!ftp_login($ftpconn, $FTP_USER, $FTP_PASS)) {
+     die("FTP login failed");
+ }
+ if ($FTP_DIR !== '' && !ftp_chdir($ftpconn, $FTP_DIR)) {
+     die("FTP chdir failed");
+ }
+ if (!ftp_put($ftpconn, $initialname, $finalpath, FTP_BINARY)) {
+     die("FTP put failed");
+ }
+ if (!ftp_rename($ftpconn, $initialname, $finalname)) {
+     die("FTP rename failed");
+ }
+ ftp_close($ftpconn);
 ?>
 <html>
 <head>

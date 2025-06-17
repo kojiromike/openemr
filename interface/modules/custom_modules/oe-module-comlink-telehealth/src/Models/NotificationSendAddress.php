@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Models;
 
 class NotificationSendAddress
 {
     const TYPE_EMAIL = "Email";
+
     const TYPE_SMS = "SMS";
+
     const TYPE_OTHER = "Other";
+
     /**
      * @var string
      */
@@ -29,17 +34,11 @@ class NotificationSendAddress
         $this->type = $type;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getDestination(): string
     {
         return $this->destination;

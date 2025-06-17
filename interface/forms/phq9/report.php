@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * PHQ-9 report.php
  * display a form's values in the encounter summary page
@@ -15,7 +17,7 @@
 require_once(dirname(__FILE__) . '/../../../library/api.inc.php');
 
 
-function phq9_report($pid, $encounter, $cols, $id)
+function phq9_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $phq9_total = 0;
@@ -38,6 +40,7 @@ function phq9_report($pid, $encounter, $cols, $id)
             if ($key == "id" || $key == "pid" || $key == "user" || $key == "groupname" || $key == "authorized" || $key ==  "activity" || $key == "date" || $value == "" || $key == "scores_array" || $key == "total" || $value == "0000-00-00 00:00:00") {
                 continue;
             }
+
             if ($key == "difficulty") {
                 print "<td><span class=bold>" . text($str_issues[$key]) . ": </span><span class=text>" . text($str_difficulty_values[$value]) . "</span></td>";
             } else {
@@ -46,12 +49,14 @@ function phq9_report($pid, $encounter, $cols, $id)
                     $phq9_total += $value;
                 }
             }
-            $count++;
+
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";
             }
         }
+
         // print the total
         switch (intdiv($phq9_total, 5)) {
             case 0:

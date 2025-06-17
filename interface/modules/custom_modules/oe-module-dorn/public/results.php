@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -28,13 +30,11 @@ if (!AclMain::aclCheckCore('patients', 'lab')) {
     exit;
 }
 
-if (!empty($_POST)) {
-    if (isset($_POST['SubmitButton'])) {
-        //check if form was submitted
-        $datas = ConnectorApi::searchPendingLabResults($_POST['form_labAcctNumber'], $_POST['form_startDateTime'], $_POST['form_endDateTime']);
-        if ($datas == null) {
-            $datas = [];
-        }
+if (!($_POST === []) && isset($_POST['SubmitButton'])) {
+    //check if form was submitted
+    $datas = ConnectorApi::searchPendingLabResults($_POST['form_labAcctNumber'], $_POST['form_startDateTime'], $_POST['form_endDateTime']);
+    if ($datas == null) {
+        $datas = [];
     }
 }
 ?>
@@ -74,7 +74,7 @@ if (!empty($_POST)) {
     <div class="row">
         <div class="col">
             <?php
-            require '../templates/navbar.php';
+            require __DIR__ . '/../templates/navbar.php';
             ?>
         </div>
     </div>

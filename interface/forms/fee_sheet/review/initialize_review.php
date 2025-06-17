@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Basic PHP setup for the fee sheet review features
  *
@@ -15,7 +17,7 @@
 use OpenEMR\Common\Csrf\CsrfUtils;
 
 if (!$isBilled) {
-    require_once("code_check.php");
+    require_once(__DIR__ . "/code_check.php");
     ?>
 <script>
     var webroot = <?php echo js_escape($web_root); ?>;
@@ -47,8 +49,8 @@ if (!$isBilled) {
 
     <?php
     // knockoutjs template files
-    include_once("views/review.php");
-    include_once("views/procedure_select.php");
-    include_once("views/justify_display.php");
+    include_once(__DIR__ . "/views/review.php");
+    include_once(__DIR__ . "/views/procedure_select.php");
+    include_once(__DIR__ . "/views/justify_display.php");
 }
 ?>

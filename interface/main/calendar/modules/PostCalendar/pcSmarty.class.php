@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -30,7 +32,7 @@ require_once(dirname(__FILE__) . '/../../../../../library/smarty_legacy/smarty/S
 
 class pcSmarty extends Smarty_Legacy
 {
-    function __construct()
+    public function __construct()
     {
         global $bgcolor1,$bgcolor2,$bgcolor3,$bgcolor4,$bgcolor5,$bgcolor6,$textcolor1,$textcolor2;
 
@@ -39,7 +41,7 @@ class pcSmarty extends Smarty_Legacy
 
         // gather module information
         $pcModInfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
-        $pcDir = pnVarPrepForOS($pcModInfo['directory']);
+        $prepared = pnVarPrepForOS($pcModInfo['directory']);
         $pcDisplayName = $pcModInfo['displayname'];
         unset($pcModInfo);
 
@@ -47,10 +49,10 @@ class pcSmarty extends Smarty_Legacy
         $this->compile_check    =   true;
         $this->force_compile    =   false;
         $this->debugging        =   false;
-        $this->template_dir     =   "modules/$pcDir/pntemplates";
-        array_push($this->plugins_dir, "modules/$pcDir/pnincludes/Smarty/plugins");
-        array_push($this->plugins_dir, "modules/$pcDir/plugins");
-        array_push($this->plugins_dir, "../../../../library/smarty/plugins");
+        $this->template_dir     =   sprintf('modules/%s/pntemplates', $prepared);
+        $this->plugins_dir[] = sprintf('modules/%s/pnincludes/Smarty/plugins', $prepared);
+        $this->plugins_dir[] = sprintf('modules/%s/plugins', $prepared);
+        $this->plugins_dir[] = "../../../../library/smarty/plugins";
         $this->compile_dir      =   $GLOBALS['OE_SITE_DIR'] . '/documents/smarty/main';
         $this->caching      =   0;
         $this->left_delimiter   =   '[-';
@@ -64,12 +66,8 @@ class pcSmarty extends Smarty_Legacy
         $safe_mode_gid  = ini_get('safe_mode_gid');
         $open_basedir   = ini_get('open_basedir');
 
-        $use_safe_mode = ((bool)$safe_mode || (bool)$safe_mode_gid || !empty($open_basedir));
-        if ($use_safe_mode) {
-            $this->use_sub_dirs = false;
-        } else {
-            $this->use_sub_dirs = true;
-        }
+        $use_safe_mode = ((bool)$safe_mode || (bool)$safe_mode_gid || !($open_basedir === '' || $open_basedir === '0' || $open_basedir === false));
+        $this->use_sub_dirs = !$use_safe_mode;
 
         unset($use_safe_mode, $safe_mode, $safe_mode_gid, $open_basedir);
 
@@ -98,7 +96,7 @@ class pcSmarty extends Smarty_Legacy
         $this->assign('HIGHLIGHT_COLOR', _SETTING_DAY_HICOLOR);
         $this->assign('24HOUR_TIME', _SETTING_TIME_24HOUR);
         $this->assign_by_ref('MODULE_NAME', $pcDisplayName);
-        $this->assign_by_ref('MODULE_DIR', $pcDir);
+        $this->assign_by_ref('MODULE_DIR', $prepared);
         //=================================================================
         //  Find out what Template we're using
         //=================================================================
@@ -115,11 +113,11 @@ class pcSmarty extends Smarty_Legacy
             $template_view = 'default';
         }
 
-        $this->config_dir = "modules/$pcDir/pntemplates/$template_name/config/";
+        $this->config_dir = sprintf('modules/%s/pntemplates/%s/config/', $prepared, $template_name);
         $this->assign_by_ref('TPL_NAME', $template_name);
         $this->assign_by_ref('TPL_VIEW', $template_view);
-        $this->assign('TPL_IMAGE_PATH', $GLOBALS['rootdir'] . "/main/calendar/modules/$pcDir/pntemplates/$template_name/images");
+        $this->assign('TPL_IMAGE_PATH', $GLOBALS['rootdir'] . sprintf('/main/calendar/modules/%s/pntemplates/%s/images', $prepared, $template_name));
         $this->assign('TPL_ROOTDIR', $GLOBALS['rootdir']);
-        $this->assign('TPL_STYLE_PATH', "modules/$pcDir/pntemplates/$template_name/style");
+        $this->assign('TPL_STYLE_PATH', sprintf('modules/%s/pntemplates/%s/style', $prepared, $template_name));
     }
 }

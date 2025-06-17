@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Work/School Note Form view.php
  *
@@ -15,7 +17,7 @@
 
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -67,7 +69,7 @@ function PrintForm() {
 
 <div style="margin: 10px;">
 <input type="button" class="save" value="    <?php echo xla('Save'); ?>    "> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
 <input type="button" class="printform" value="<?php echo xla('View Printable Version'); ?>"> &nbsp;
 </div>
 
@@ -98,7 +100,7 @@ function PrintForm() {
 
 <div style="margin: 10px;">
 <input type="button" class="save" value="    <?php echo xla('Save'); ?>    "> &nbsp;
-<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+<input type="button" class="dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
 <input type="button" class="printform" value="<?php echo xla('View Printable Version'); ?>"> &nbsp;
 </div>
 

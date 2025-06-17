@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Clinical Notes form new.php Borrowed from Care Plan
  *
@@ -17,11 +19,11 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/formatting.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/formatting.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 require_once($GLOBALS['srcdir'] . '/csv_like_join.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -36,7 +38,7 @@ $formid = (int) ($_GET['id'] ?? 0);
 
 $clinicalNotesService = new ClinicalNotesService();
 $alertMessage = '';
-if (empty($formid)) {
+if ($formid === 0) {
     $sql = "SELECT form_id, encounter FROM `forms` WHERE formdir = 'clinical_notes' AND pid = ? AND encounter = ? AND deleted = 0 LIMIT 1";
     $formid = sqlQuery($sql, array($_SESSION["pid"], $_SESSION["encounter"]))['form_id'] ?? 0;
     if (!empty($formid)) {
@@ -47,10 +49,10 @@ if (empty($formid)) {
 $clinical_notes_type = $clinicalNotesService->getClinicalNoteTypes();
 $clinical_notes_category = $clinicalNotesService->getClinicalNoteCategories();
 $getDefaultValue = function ($items) {
-    $selectedItem = array_filter($items, function ($val) {
+    $selectedItem = array_filter($items, function (array $val) {
         return $val['selected'];
     });
-    if (empty($selectedItem)) {
+    if ($selectedItem === []) {
         return ''; // default to an empty value if there is no default option
     } else {
         return array_pop($selectedItem)['value'] ?? '';
@@ -68,10 +70,12 @@ if ($formid) {
             $record['uuid'] = UuidRegistry::uuidToString($record['uuid']);
             $check_res[] = $record;
         }
+
         // if we don't have a type_title or type_category, we are going to set them to the default values as we don't have a matching list option type / category
         if (empty($record['type_title'])) {
             $record['clinical_notes_type'] = $defaultType;
         }
+
         if (empty($record['type_category'])) {
             $record['clinical_notes_category'] = $defaultCategory;
         }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * prior auth form
  *
@@ -11,8 +13,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("C_FormPriorAuth.class.php");
+require_once($srcdir . '/api.inc.php');
+require_once(__DIR__ . "/C_FormPriorAuth.class.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -20,9 +22,9 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
     CsrfUtils::csrfNotVerified();
 }
 
-$_POST['date_from']  = (!empty($_POST['date_from'])) ? DateToYYYYMMDD($_POST['date_from']) : null;
-$_POST['date_to']  = (!empty($_POST['date_to'])) ? DateToYYYYMMDD($_POST['date_to']) : null;
+$_POST['date_from']  = (empty($_POST['date_from'])) ? null : DateToYYYYMMDD($_POST['date_from']);
+$_POST['date_to']  = (empty($_POST['date_to'])) ? null : DateToYYYYMMDD($_POST['date_to']);
 
 $c = new C_FormPriorAuth();
-echo $c->default_action_process($_POST);
+echo $c->default_action_process();
 @formJump();

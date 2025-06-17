@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormSOAP.class.php");
+require_once(__DIR__ . "/FormSOAP.class.php");
 
 class C_FormSOAP extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -17,27 +19,21 @@ class C_FormSOAP extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
-        $form = new FormSOAP();
+        $formSOAP = new FormSOAP();
+        $this->assign("data", $formSOAP);
+        return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
+    }
+
+    public function view_action($form_id)
+    {
+        $form = is_numeric($form_id) ? new FormSOAP($form_id) : new FormSOAP();
         $this->assign("data", $form);
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
-    {
-        if (is_numeric($form_id)) {
-            $form = new FormSOAP($form_id);
-        } else {
-            $form = new FormSOAP();
-        }
-
-        $dbconn = $GLOBALS['adodb']['db'];
-        $this->assign("data", $form);
-        return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
-    }
-
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -61,7 +57,5 @@ class C_FormSOAP extends Controller
             );
             $_POST['process'] = "";
         }
-
-        return;
     }
 }

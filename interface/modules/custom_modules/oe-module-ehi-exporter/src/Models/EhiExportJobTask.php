@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the representation of a foreign key definition for a table.  This is used to
  * handle the retrieval of the foreign key values for a table as well as the local key values.
@@ -11,67 +13,65 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Models;
 
 use OpenEMR\Modules\EhiExporter\Models\ExportResult;
 
 class EhiExportJobTask
 {
-    public ?EhiExportJob $ehiExportJob;
+    public ?EhiExportJob $ehiExportJob = null;
 
-    public ?\Document $document;
+    public ?\Document $document = null;
 
     public ?int $ehi_task_id;
+
     public ?int $ehi_export_job_id;
+
     public string $creation_date;
+
     public ?string $completion_date;
 
     /**
      * @var "pending"|"processing"|"failed"|"completed"
      */
-    private $status;
+    private string $status = "pending";
 
-    public ?int $export_document_id;
-    public ?string $error_message;
-    private array $pids;
+    public ?int $export_document_id = null;
 
-    public ?ExportResult $exportedResult;
+    public ?string $error_message = null;
+
+    private array $pids = [];
+
+    public ?ExportResult $exportedResult = null;
 
 
     public function __construct()
     {
         $this->creation_date = date("Y-m-d H:i:s");
         $this->setStatus('pending');
-        $this->export_document_id = null;
-        $this->document = null;
-        $this->error_message = null;
-        $this->pids = [];
-        $this->status = "pending";
-        $this->ehiExportJob = null;
-        $this->exportedResult = null;
     }
 
-    public function setId(int $id)
+    public function setId(int $id): void
     {
         $this->ehi_task_id = $id;
     }
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->ehi_task_id;
     }
 
-    public function isCompleted()
+    public function isCompleted(): bool
     {
         return $this->status == 'completed';
     }
 
-    public function setStatus(string $status)
+    public function setStatus(string $status): void
     {
         if (!in_array($status, ['pending', 'processing', 'completed', 'failed'])) {
             throw new \InvalidArgumentException("Invalid status");
         }
+
         $this->status = $status;
     }
 
@@ -80,24 +80,30 @@ class EhiExportJobTask
         return $this->status;
     }
 
-    public function addPatientId($pid)
+    public function addPatientId($pid): void
     {
         $this->pids[] = $pid;
     }
-    public function addPatientIdList(array $pids)
+
+    public function addPatientIdList(array $pids): void
     {
         $this->pids = array_map('intval', $pids); // make sure we don't get invalid pids here
     }
-    public function getPatientIds()
+
+    public function getPatientIds(): array
     {
         return $this->pids;
     }
-    public function hasPatientIds()
+
+    public function hasPatientIds(): bool
     {
-        return !empty($this->pids);
+        return $this->pids !== [];
     }
 
-    public function getJSON()
+    /**
+     * @return mixed[]
+     */
+    public function getJSON(): array
     {
         $data = [
             'status' => $this->status
@@ -107,18 +113,21 @@ class EhiExportJobTask
         if (isset($this->ehiExportJob)) {
             $data['includePatientDocuments'] = $this->ehiExportJob->include_patient_documents;
         }
+
         if (isset($this->exportedResult)) {
             // so we can update progress on the client side
             $data['exportedResult'] = $this->exportedResult;
         }
+
         if ($this->status == 'completed') {
             $data['hashAlgoTitle'] = $this->document->get_hash_algo_title();
             $data['hash'] = $this->document->get_hash();
             $data['downloadLink'] = $this->exportedResult->downloadLink;
             $data['downloadName'] = $this->document->get_name();
-        } else if ($this->status == 'failed') {
+        } elseif ($this->status == 'failed') {
             $data['errorMessage'] = $this->error_message;
         }
+
         return $data;
     }
 }

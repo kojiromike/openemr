@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/logview/erx_logview.php Display NewCrop errors.
  *
@@ -49,7 +51,7 @@ if ($filename) {
 
     preg_match('/erx_error-\d{4}-\d{1,2}-\d{1,2}\.log/', $filename, $matches);
 
-    if ($matches) {
+    if ($matches !== []) {
         if ($fd = fopen($error_log_path . '/' . $filename, 'r')) {
             $bat_content = fread($fd, filesize($error_log_path . '/' . $filename));
         }
@@ -117,7 +119,7 @@ if (array_key_exists('search_logs', $_POST)) {
         while (false !== ($file = readdir($handle))) {
             $file_as_in_folder = 'erx_error-' . $start_date . '.log';
 
-            if ($file != '.' && $file != '..' && $file_as_in_folder == $file) {
+            if ($file !== '.' && $file !== '..' && $file_as_in_folder === $file) {
                 $check_for_file = 1;
                 $fd = fopen($error_log_path . '/' . $file, 'r');
                 $bat_content = fread($fd, filesize($error_log_path . '/' . $file));

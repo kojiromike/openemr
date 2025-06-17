@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form for entering clinical data as a scanned document.
  * Added webcam capture option. 2024
@@ -18,8 +20,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -47,7 +49,8 @@ if (($_POST['delete'] ?? null) == 'delete' || ($_POST['back'] ?? null) == 'back'
 $extensionLoaded = extension_loaded('imagick');
 $isMagickInstalled = false;
 $isMagickExtensionInstalled = false;
-$magickVersion = $magickExtensionVersion = "";
+$magickVersion = "";
+$magickExtensionVersion = "";
 // Check using exec
 exec("magick -version", $output, $execReturnCode);
 if ($execReturnCode === 0) {
@@ -70,7 +73,10 @@ if ($extensionLoaded) {
 
 $formid = $_GET['id'] ?? '0';
 $imagedir = $GLOBALS['OE_SITE_DIR'] . "/documents/" . check_file_dir_name($pid) . "/encounters";
-$tmpName = $tmp_name = $imagePath = $imageUrl = "";
+$tmpName = "";
+$tmp_name = "";
+$imagePath = "";
+$imageUrl = "";
 
 // Check if image data is sent. Generally, this is sent when the image is captured from the webcam.
 // If the image data is sent, extract the base64 data, validate the file type, decode the base64 data,
@@ -118,21 +124,19 @@ if ($_POST['bn_save'] ?? null) {
 
     // Upload new or replacement document.
     // Always convert it to jpeg.
-    if ($_FILES['fileUpload']['size'] || !empty($tmpName)) {
+    if ($_FILES['fileUpload']['size'] || $tmpName !== '' && $tmpName !== '0') {
         // If the patient's encounter image directory does not yet exist, create it.
         if (!is_dir($imagedir)) {
             mkdir($imagedir, 0755, true);
         }
         // Remove any previous image files for this encounter and form ID.
         for ($i = -1; true; ++$i) {
-            $suffix = ($i < 0) ? "" : "-$i";
+            $suffix = ($i < 0) ? "" : '-' . $i;
             $path = $imagedir . "/" . check_file_dir_name($encounter) . "_" . check_file_dir_name($formid) . check_file_dir_name($suffix) . ".jpg";
             if (is_file($path)) {
                 unlink($path);
-            } else {
-                if ($i >= 0) {
-                    break;
-                }
+            } elseif ($i >= 0) {
+                break;
             }
         }
         // Set the temporary file name between webcam or uploaded.
@@ -151,28 +155,26 @@ if ($_POST['bn_save'] ?? null) {
             // Handle errors
             if ($tmp2 !== 0) {
                 // Log the error for debugging
-                error_log("ImageMagick command failed: $cmd" . " Command output: " . implode("\n", $tmp1));
+                error_log('ImageMagick command failed: ' . $cmd . " Command output: " . implode("\n", $tmp1));
                 // Attempt to save the temporary file directly to $imagePath
                 if (!copy($tmp_name, $imagePath)) {
                     echo xlt("Failed to save the image directly from temporary file.");
                 } else {
-                    error_log("Image saved directly from temporary file to $imagePath.");
+                    error_log(sprintf('Image saved directly from temporary file to %s.', $imagePath));
                 }
             }
-        } else {
+        } elseif (!copy($tmp_name, $imagePath)) {
             // Attempt to save the temporary file directly to $imagePath so that the image is saved in the system.
             // In case ImageMagick is not installed.
-            if (!copy($tmp_name, $imagePath)) {
-                echo xlt("Failed to save the image directly from temporary file.");
-            } else {
-                error_log("Image saved directly from temporary file to $imagePath.");
-            }
+            echo xlt("Failed to save the image directly from temporary file.");
+        } else {
+            error_log(sprintf('Image saved directly from temporary file to %s.', $imagePath));
         }
     }
 }
 
 $imagePath = $imagedir . "/" . check_file_dir_name($encounter . "_" . $formid . ".jpg");
-$imageUrl = "$web_root/sites/" . $_SESSION['site_id'] .
+$imageUrl = $web_root . '/sites/' . $_SESSION['site_id'] .
     "/documents/" . check_file_dir_name($pid) . "/encounters/" . check_file_dir_name($encounter . "_" . $formid . ".jpg");
 
 if ($formid) {

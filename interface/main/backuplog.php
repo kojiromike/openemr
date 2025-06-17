@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  backuplog.php
  *
@@ -16,11 +18,11 @@
  */
 
 // Ensure running from command line only
-if (php_sapi_name() !== 'cli') {
+if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-require_once("$argv[1]/library/sqlconf.php");
+require_once($argv[1] . '/library/sqlconf.php');
 $backuptime = date("Ymd_His");
 $BACKUP_EVENTLOG_DIR = $argv[2] . "/emr_eventlog_backup";
 if (!file_exists($BACKUP_EVENTLOG_DIR)) {

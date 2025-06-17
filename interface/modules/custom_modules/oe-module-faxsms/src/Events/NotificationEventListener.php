@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\Events;
 
 use MyMailer;
@@ -49,11 +50,7 @@ class NotificationEventListener implements EventSubscriberInterface
         ];
     }
 
-    /**
-     * @param EventDispatcher $eventDispatcher
-     * @return void
-     */
-    public function subscribeToEvents(EventDispatcher $eventDispatcher)
+    public function subscribeToEvents(EventDispatcher $eventDispatcher): void
     {
         $eventDispatcher->addListener('sendNotification.send', [$this, 'onNotifySendEvent']);
         $eventDispatcher->addListener('sendNotification.service.onetime', [$this, 'onNotifyDocumentRenderOneTime']);
@@ -65,17 +62,15 @@ class NotificationEventListener implements EventSubscriberInterface
     /**
      * Send a onetime link to SMS and/or email.
      *
-     * @param SendNotificationEvent $event
-     * @return string
      * @throws \Exception
      */
-    public function onNotifyDocumentRenderOneTime(SendNotificationEvent $event): string
+    public function onNotifyDocumentRenderOneTime(SendNotificationEvent $sendNotificationEvent): string
     {
-        $status = 'Starting request.' . ' ';
+        $status = 'Starting request. ';
         $site_id = ($_SESSION['site_id'] ?? null) ?: 'default';
-        $pid = $event->getPid();
-        $data = $event->getEventData() ?? [];
-        $patient = $event->fetchPatientDetails($pid);
+        $pid = $sendNotificationEvent->getPid();
+        $data = $sendNotificationEvent->getEventData() ?? [];
+        $patient = $sendNotificationEvent->fetchPatientDetails($pid);
         $text_message = $data['text_message'] ?? xl("Click link to complete document.");
         $html_message = $data['html_message'] ?? '';
         $recipientEmail = $patient['email'];
@@ -94,14 +89,14 @@ class NotificationEventListener implements EventSubscriberInterface
             'email' => '',
             'expiry_interval' => $data['expiry_interval'] ?? 'PT60M',
         ];
-        $service = new OneTimeAuth();
-        $oneTime = $service->createPortalOneTime($parameters);
+        $oneTimeAuth = new OneTimeAuth();
+        $oneTime = $oneTimeAuth->createPortalOneTime($parameters);
         if (!isset($oneTime['encoded_link'])) {
             (new SystemLogger())->errorLogCaller("Failed to generate encoded_link with onetime service");
             return 'Failed! Redirect link.';
         }
 
-        $status .= "Send Method: $sendMethod\n";
+        $status .= sprintf('Send Method: %s%s', $sendMethod, PHP_EOL);
         $text_message = $text_message . "\n" . $oneTime['encoded_link'];
         if (empty($html_message)) {
             $html_message = "<html><body><div class='wrapper'>" . nl2br($text_message) . "</div></body></html>";
@@ -153,26 +148,24 @@ class NotificationEventListener implements EventSubscriberInterface
      * // Dispatch the event. In this case, the onetime is created and emailed to the recipient.
      * $GLOBALS["kernel"]->getEventDispatcher()->dispatch(new SendNotificationEvent($e_pid, $data), SendNotificationEvent::SEND_NOTIFICATION_SERVICE_UNIVERSAL_ONETIME);
      *
-     * @param SendNotificationEvent $event
-     * @return string
      * @throws \Exception
      */
-    public function onNotifyUniversalOneTime(SendNotificationEvent $event): string
+    public function onNotifyUniversalOneTime(SendNotificationEvent $sendNotificationEvent): string
     {
         // TODO: Move Implement onNotifyUniversalOneTime() method
-        $status = 'Starting request.' . ' ';
+        $status = 'Starting request. ';
         $site_id = ($_SESSION['site_id'] ?? null) ?: 'default';
-        $pid = $event->getPid();
+        $pid = $sendNotificationEvent->getPid();
         $defaultUrl = $GLOBALS['web_root'] . "/portal/home.php?site=" . urlencode($site_id) . "&landOn=MakePayment";
         $redirectURL = $data['redirect_url'] ?? $defaultUrl;
-        $data = $event->getEventData() ?? [];
-        $patient = $event->fetchPatientDetails($pid);
+        $data = $sendNotificationEvent->getEventData() ?? [];
+        $patient = $sendNotificationEvent->fetchPatientDetails($pid);
 
         $recipientEmail = $data['email'] ?? $patient['email'];
         $recipientPhone = $patient['phone'];
-        $sendMethod = $event->getSendNotificationMethod();
-        $includeSMS = ($sendMethod == 'sms' || $sendMethod == 'both') && $this->isSmsEnabled;
-        $includeEmail = $sendMethod == 'email' || $sendMethod == 'both';
+        $sendMethod = $sendNotificationEvent->getSendNotificationMethod();
+        $includeSMS = ($sendMethod === 'sms' || $sendMethod === 'both') && $this->isSmsEnabled;
+        $includeEmail = $sendMethod === 'email' || $sendMethod === 'both';
         // default actions.
         $actionDefaults = [
             'enforce_onetime_use' => false, // Enforces the onetime token to be used only once.
@@ -193,15 +186,15 @@ class NotificationEventListener implements EventSubscriberInterface
             'actions' => $actions,
         ];
         // get token.
-        $service = new OneTimeAuth();
-        $oneTime = $service->createPortalOneTime($parameters); // create the token.
+        $oneTimeAuth = new OneTimeAuth();
+        $oneTime = $oneTimeAuth->createPortalOneTime($parameters); // create the token.
 
         if (!isset($oneTime['encoded_link'])) {
             (new SystemLogger())->errorLogCaller("Failed to generate encoded_link with onetime service");
             return 'Failed! Redirect link.';
         }
 
-        $status .= "Send Method: $sendMethod\n";
+        $status .= sprintf('Send Method: %s%s', $sendMethod, PHP_EOL);
 
         $canned = "\n\n" . xlt("PIN") . ": " . $oneTime['pin'] ?? '';
         $canned .= "\n" . xlt("Link") . ": " . $oneTime['encoded_link'];
@@ -243,15 +236,12 @@ class NotificationEventListener implements EventSubscriberInterface
 
     /**
      * Use for SMS send and email
-     *
-     * @param SendNotificationEvent $event
-     * @return string
      */
-    public function onNotifySendEvent(SendNotificationEvent $event): string
+    public function onNotifySendEvent(SendNotificationEvent $sendNotificationEvent): string
     {
-        $id = $event->getPid();
-        $data = $event->getEventData() ?? [];
-        $patient = $event->fetchPatientDetails($id);
+        $id = $sendNotificationEvent->getPid();
+        $data = $sendNotificationEvent->getEventData() ?? [];
+        $patient = $sendNotificationEvent->fetchPatientDetails($id);
         $data['recipient_phone'] = $data['recipient_phone'] ?? null;
         $recipientPhone = $data['recipient_phone'] ?: $patient['phone'];
         $status = '';
@@ -287,65 +277,56 @@ class NotificationEventListener implements EventSubscriberInterface
      * @param $email
      * @param $body
      * @param $file
-     * @return string
      */
     public function emailNotification($email, $content, $file = null): string
     {
         $send = '';
         try {
             $from_name = ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? '');
-            $mail = new MyMailer(true);
-            $smtpEnabled = $mail::isConfigured();
+            $myMailer = new MyMailer(true);
+            $smtpEnabled = $myMailer::isConfigured();
             if (!$smtpEnabled) {
                 return 'Error: ' . xlt("Mail was not sent. A SMTP client is not set up in Config Notifications!.");
             }
             $isHtml = (stripos($content, '<html') !== false) || (stripos($content, '<body') !== false);
-            if (!$isHtml) {
-                $html = "<html><body><div class='wrapper'>" . nl2br($content) . "</div></body></html>";
-            } else {
-                $html = $content;
-            }
+            $html = $isHtml ? $content : "<html><body><div class='wrapper'>" . nl2br($content) . "</div></body></html>";
             $from_name = text($from_name);
             $from = $GLOBALS["practice_return_email_path"];
-            $mail->addReplyTo($from, $from_name);
-            $mail->setFrom($from, $from);
+            $myMailer->addReplyTo($from, $from_name);
+            $myMailer->setFrom($from, $from);
             $to = $email;
             $to_name = $email;
-            $mail->addAddress($to, $to_name);
+            $myMailer->addAddress($to, $to_name);
             $subject = xl("Your clinic asks for your attention.");
-            $mail->Subject = $subject;
-            $mail->msgHTML($html);
-            $mail->isHTML(true);
+            $myMailer->Subject = $subject;
+            $myMailer->msgHTML($html);
+            $myMailer->isHTML(true);
             if (!empty($file)) {
-                $mail->addAttachment($file);
+                $myMailer->addAttachment($file);
             }
-            $send = $mail->Send();
-            $mail->smtpClose();
+            $send = $myMailer->Send();
+            $myMailer->smtpClose();
             if (!$send) {
-                error_log("Failed to send email: " . $mail->ErrorInfo);
+                error_log("Failed to send email: " . $myMailer->ErrorInfo);
             }
-        } catch (Exception $e) {
-            error_log("Failed to send email: " . $e->getMessage());
+        } catch (Exception $exception) {
+            error_log("Failed to send email: " . $exception->getMessage());
         }
         return $send ? xlt("Email sent.") : xlt("Email failed to send.");
     }
 
-    /**
-     * @param SendNotificationEvent $notificationEvent
-     * @return void
-     */
-    public function notificationButton(SendNotificationEvent $notificationEvent): void
+    public function notificationButton(SendNotificationEvent $sendNotificationEvent): void
     {
-        $p_data = $notificationEvent->fetchPatientDetails($notificationEvent->getPid());
-        $template = $notificationEvent->getEventData()['id'] ?? '';
-        $name = $notificationEvent->getEventData()['template_name'] ?? '';
+        $p_data = $sendNotificationEvent->fetchPatientDetails($sendNotificationEvent->getPid());
+        $template = $sendNotificationEvent->getEventData()['id'] ?? '';
+        $name = $sendNotificationEvent->getEventData()['template_name'] ?? '';
         $p_data = $p_data ?: [];
-        $details = array_merge($p_data, $notificationEvent->getEventData());
-        $buttonName = $notificationEvent->getEventData()['is_universal'] == 1 ? xlt('Compose New Email') : xlt('Notify');
+        $details = array_merge($p_data, $sendNotificationEvent->getEventData());
+        $buttonName = $sendNotificationEvent->getEventData()['is_universal'] == 1 ? xlt('Compose New Email') : xlt('Notify');
         ?>
         <button type="button" class="sendsms float-right btn btn-link btn-send-msg"
             onclick="sendNotification(
-            <?php echo attr_js($notificationEvent->getPid()); ?>,
+            <?php echo attr_js($sendNotificationEvent->getPid()); ?>,
             <?php echo attr_js($name); ?>,
             <?php echo attr_js($template); ?>,
             <?php echo attr_js(json_encode($details)); ?>
@@ -354,28 +335,21 @@ class NotificationEventListener implements EventSubscriberInterface
 
     /**
      * Available button to use.
-     * @param SendNotificationEvent $notificationEvent
-     * @return void
      */
-    public function universalSubmitButton(SendNotificationEvent $notificationEvent): void
+    public function universalSubmitButton(SendNotificationEvent $sendNotificationEvent): void
     {
-        $e_pid = $notificationEvent->getPid();
-        $p_data = $notificationEvent->fetchPatientDetails($e_pid);
-        $eData = $notificationEvent->getEventData();
+        $e_pid = $sendNotificationEvent->getPid();
+        $sendNotificationEvent->fetchPatientDetails($e_pid);
+        $eData = $sendNotificationEvent->getEventData();
         $buttonName = $eData['button_name'] ?? xlt('Submit');
         ?>
         <button type="button" class="btn btn-success btn-sm btn-send-msg" onclick="sendUniversalNotification(<?php echo attr_js($e_pid) ?>)"><?php echo $buttonName; ?></button>
     <?php }
 
-    /**
-     * @param SendNotificationEvent $event
-     * @return void
-     */
-    public function notificationDialogFunction(SendNotificationEvent $event): void
+    public function notificationDialogFunction(SendNotificationEvent $sendNotificationEvent): void
     {
-        $e = $event->getEventData();
+        $e = $sendNotificationEvent->getEventData();
         $baseUrl = "/interface/modules/custom_modules/oe-module-faxsms/contact.php?";
-        $type = $_REQUEST['type'] ?? 'sms';
         $queryParams = [];
         $queryParams['xmitMode'] = (($this->isSmsEnabled ?? false) && ($this->isEmailEnabled ?? false)) ? 'both' : 'sms';
         $queryParams['isSMS'] = $this->isSmsEnabled;

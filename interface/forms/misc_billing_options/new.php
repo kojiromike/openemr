@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This program creates the misc_billing_form
  *
@@ -20,11 +22,11 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/user.inc.php");
-require_once("$srcdir/pid.inc.php");
-require_once("$srcdir/encounter.inc.php");
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/user.inc.php');
+require_once($srcdir . '/pid.inc.php');
+require_once($srcdir . '/encounter.inc.php');
 
 use OpenEMR\Billing\MiscBillingOptions;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -57,7 +59,7 @@ if (!$encounter) { // comes from globals.php
 }
 //only one misc billing form per encounter so grab if exists
 $formid = (int) (isset($_GET['id']) ? $_GET['id'] : 0);
-if (empty($formid)) {
+if ($formid === 0) {
     $mboquery = sqlquery("SELECT `fmbo`.`id` FROM `form_misc_billing_options` AS `fmbo`
                           INNER JOIN `forms` ON (`fmbo`.`id` = `forms`.`form_id`) WHERE
                           `forms`.`deleted` = 0 AND `forms`.`formdir` = 'misc_billing_options' AND
@@ -66,7 +68,7 @@ if (empty($formid)) {
         $formid = (int) $mboquery['id'];
     }
 }
-$obj = $formid ? formFetch("form_misc_billing_options", $formid) : array();
+$obj = $formid !== 0 ? formFetch("form_misc_billing_options", $formid) : array();
 ?>
 <html>
 <head>
@@ -92,7 +94,7 @@ $obj = $formid ? formFetch("form_misc_billing_options", $formid) : array();
         <div class="row">
             <div class="col-sm-12">
                 <?php echo  $oemr_ui->pageHeading() . "\r\n"; ?>
-            <form method=post <?php echo "name='my_form' " . "action='$rootdir/forms/misc_billing_options/save.php?id=" . attr_url($formid) . "'\n"; ?>>
+            <form method=post <?php echo "name='my_form' " . sprintf("action='%s/forms/misc_billing_options/save.php?id=", $rootdir) . attr_url($formid) . "'\n"; ?>>
                 <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
                 <fieldset>
                     <legend><?php echo xlt('Select Options for Current Encounter') ?></legend>

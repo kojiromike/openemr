@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * @package OpenEMR
  * @link    http://www.open-emr.org
@@ -27,7 +29,7 @@ if (!$thisauth) {
     exit();
 }
 
-require_once("translation_utilities.php");
+require_once(__DIR__ . "/translation_utilities.php");
 
 if (!isset($_FILES['language_file'])) {
     die(xlt('No file specified'));
@@ -50,7 +52,7 @@ if ($handle) {
     }
 }
 
-if (count($file_contents) === 0) {
+if ($file_contents === []) {
     die(xlt('Unable to Parse file! Verify File encoding'));
 }
 
@@ -79,8 +81,9 @@ if (count($file_contents) === 0) {
                 </tr>
             </thead>
             <tbody>
-                <?php
-                for ($idx = 1; $idx < count($file_contents); $idx++) {
+                
+$counter = count($file_contents);<?php
+                for ($idx = 1; $idx < $counter; ++$idx) {
                     $row = $file_contents[$idx];
                     echo "<tr>";
                     foreach ($row as $cell) {

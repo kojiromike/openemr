@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS rx_print.php
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once('../../globals.php');
+require_once(__DIR__ . '/../../globals.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -106,8 +108,8 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
     }
 
     $camos_content = array();
-    foreach ($_POST as $key => $val) {
-        if (substr($key, 0, 3) == 'ch_') {
+    foreach (array_keys($_POST) as $key) {
+        if (substr($key, 0, 3) === 'ch_') {
             $query = sqlStatement("select content from " . mitigateSqlTableUpperCase("form_CAMOS") . " where id =?", array(substr($key, 3)));
             if ($result = sqlFetchArray($query)) {
                 if ($_POST['print_html']) { //do this change to formatting only for html output
@@ -117,11 +119,11 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
                         $content = $result['content'];
                 }
 
-                  array_push($camos_content, $content);
+                  $camos_content[] = $content;
             }
         }
 
-        if (substr($key, 0, 5) == 'chrx_') {
+        if (substr($key, 0, 5) === 'chrx_') {
             $rx = new Prescription(substr($key, 5));
             //$content = $rx->drug.' '.$rx->form.' '.$rx->dosage;
             $content = ''
@@ -138,7 +140,7 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
             . 'refills:' . text($rx->refills) . '';
       //      . $rx->substitute_array[$rx->substitute]. ''
       //      . $rx->per_refill . '';
-            array_push($camos_content, $content);
+            $camos_content[] = $content;
         }
     }
 
@@ -158,7 +160,7 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
         if ($camos_content[0]) { //decide if we are printing this rx
             ?>
             <?php
-            function topHeaderRx()
+            function topHeaderRx(): void
             {
                 global $physician_name,$practice_address,$practice_city,$practice_state,$practice_zip,$practice_phone,$practice_fax,$practice_dea;
                 print text($physician_name) . "<br/>\n";
@@ -169,7 +171,7 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
                 print xlt('Voice') . ': ' . text($practice_phone) . ' / ' . xlt('Fax') . ': ' . text($practice_fax) . "<br/>\n";
                 print xlt('DEA') . ': ' . text($practice_dea);
             }
-            function bottomHeaderRx()
+            function bottomHeaderRx(): void
             {
                 global $patient_name,$patient_address,$patient_city,$patient_state,$patient_zip,$patient_phone,$patient_dob;
                 print "<span class='mytagname'> " . xlt('Name') . ":</span>\n";
@@ -508,12 +510,12 @@ return count_turnoff;
     while ($result = sqlFetchArray($query)) {
         $checked = '';
         if ($result['category'] == 'prescriptions' && $count < 4) {
-            $count++;
+            ++$count;
             $checked = 'checked';
         }
 
         echo "<div>\n";
-        echo "<input type=checkbox name='ch_" . attr($result['id']) . "' $checked><span>" .
+        echo "<input type=checkbox name='ch_" . attr($result['id']) . sprintf("' %s><span>", $checked) .
         text($result['category']) . '</span>:' . text($result['subcategory']) . ':' . text($result['item']) . "<br/>\n";
         echo "</div>\n";
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Responsible for filtering and customizing an ExportKeyDefinition for custom table logic especially our list_options
  * table where the foreign keys are not unique or need special processing such as denormalized keys.
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Services;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -104,45 +105,47 @@ class ExportKeyDefinitionFilterer
         ]
     ];
 
-    public function filterKey(ExportKeyDefinition $key)
+    public function filterKey(ExportKeyDefinition $exportKeyDefinition): ExportKeyDefinition
     {
         // override our table settings so we can get better exports here.
         if (
-            isset(self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$key->localTable])
-            && isset(self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$key->localTable][$key->localColumn])
+            isset(self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$exportKeyDefinition->localTable])
+            && isset(self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$exportKeyDefinition->localTable][$exportKeyDefinition->localColumn])
         ) {
-            $keyDef = self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$key->localTable][$key->localColumn];
-            $key->localValueOverride = $keyDef['localValueOverride'];
-            $key->foreignKeyColumn = $keyDef['foreignKeyColumn'];
+            $keyDef = self::LIST_OPTIONS_KEY_FILTER_DEFINITIONS[$exportKeyDefinition->localTable][$exportKeyDefinition->localColumn];
+            $exportKeyDefinition->localValueOverride = $keyDef['localValueOverride'];
+            $exportKeyDefinition->foreignKeyColumn = $keyDef['foreignKeyColumn'];
         }
-        return $key;
+
+        return $exportKeyDefinition;
     }
 
-    public function hasMultipleKeysForColumn(ExportKeyDefinition $key)
+    public function hasMultipleKeysForColumn(ExportKeyDefinition $exportKeyDefinition): bool
     {
-        if ($key->localTable == 'lists' && $key->localColumn == 'list_option_id') {
-            return true;
-        }
-        return false;
+        return $exportKeyDefinition->localTable === 'lists' && $exportKeyDefinition->localColumn === 'list_option_id';
     }
 
-    public function filterMultipleKeys(ExportKeyDefinition $key)
+    /**
+     * @return list<\OpenEMR\Modules\EhiExporter\Models\ExportKeyDefinition>
+     */
+    public function filterMultipleKeys(ExportKeyDefinition $exportKeyDefinition): array
     {
         $keys = [];
-        if ($key->localTable == 'lists') {
-            if (!isset($this->issueTypes)) {
+        if ($exportKeyDefinition->localTable === 'lists') {
+            if ($this->issueTypes === null) {
                 $this->issueTypes = QueryUtils::fetchTableColumn("select type from issue_types", 'type');
             }
 
             if (!empty($this->issueTypes)) {
-                foreach ($this->issueTypes as $type) {
-                    $newKey = clone $key;
+                foreach ($this->issueTypes as $issueType) {
+                    $newKey = clone $exportKeyDefinition;
                     $newKey->foreignKeyColumn = 'list_id';
-                    $newKey->localValueOverride = $type . '_issue_list';
+                    $newKey->localValueOverride = $issueType . '_issue_list';
                     $keys[] = $newKey;
                 }
             }
         }
+
         return $keys;
     }
 }

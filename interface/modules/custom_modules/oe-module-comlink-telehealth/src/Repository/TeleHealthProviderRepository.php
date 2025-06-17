@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the mapping and retrieving of telehealth providers in the OpenEMR system.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Repository;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthPersonSettings;
@@ -20,10 +21,18 @@ use OpenEMR\Validators\ProcessingResult;
 
 class TeleHealthProviderRepository
 {
-    public function __construct(SystemLogger $logger, TelehealthGlobalConfig $config)
+    /**
+     * @var \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthPersonSettingsRepository
+     */
+    public $personSettings;
+    /**
+     * @var \Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig
+     */
+    public $config;
+    public function __construct(SystemLogger $systemLogger, TelehealthGlobalConfig $telehealthGlobalConfig)
     {
-        $this->personSettings = new TeleHealthPersonSettingsRepository($logger);
-        $this->config = $config;
+        $this->personSettings = new TeleHealthPersonSettingsRepository($systemLogger);
+        $this->config = $telehealthGlobalConfig;
     }
 
     public function isEnabledProvider($providerId)
@@ -36,6 +45,7 @@ class TeleHealthProviderRepository
         if (!empty($setting)) {
             return $setting->getIsEnabled();
         }
+
         return false;
     }
 
@@ -45,12 +55,13 @@ class TeleHealthProviderRepository
         // if we auto provision we need to grab our entire provider array
         if ($this->config->shouldAutoProvisionProviders()) {
             // grab all the providers and return them as enabled settings
-            $service = new UserService();
+            $userService = new UserService();
             $facility = $_SESSION['pc_facility'] ?? "";
-            $dataArray = $service->getUsersForCalendar($facility);
+            $dataArray = $userService->getUsersForCalendar($facility);
             if (empty($dataArray)) { // if our facility came back with nothing we will try to hit the current logged in user
-                $service->getUsersForCalendar($_SESSION['authUserID']);
+                $userService->getUsersForCalendar($_SESSION['authUserID']);
             }
+
             if (!empty($dataArray)) {
                 $providers = array_map(function ($provider) {
                     return $this->mapProviderToPersonSetting($provider);
@@ -60,15 +71,16 @@ class TeleHealthProviderRepository
             // just grab all of our enabled users
             $providers = $this->personSettings->getEnabledUsers();
         }
+
         return $providers;
     }
 
-    private function mapProviderToPersonSetting($provider)
+    private function mapProviderToPersonSetting(array $provider): \Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthPersonSettings
     {
-        $personSetting = new TeleHealthPersonSettings();
-        $personSetting->setIsPatient(false);
-        $personSetting->setDbRecordId($provider['id']);
-        $personSetting->setIsEnabled(true);
-        return $personSetting;
+        $teleHealthPersonSettings = new TeleHealthPersonSettings();
+        $teleHealthPersonSettings->setIsPatient(false);
+        $teleHealthPersonSettings->setDbRecordId($provider['id']);
+        $teleHealthPersonSettings->setIsEnabled(true);
+        return $teleHealthPersonSettings;
     }
 }

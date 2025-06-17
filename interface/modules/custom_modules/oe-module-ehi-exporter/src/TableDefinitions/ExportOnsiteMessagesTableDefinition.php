@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Export table definition for the onsite_messages table.  Handles the custom query for exporting
  * this table since the table does not have a direct foreign key to the patient_data table.  The table
@@ -16,7 +18,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\TableDefinitions;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -26,7 +27,7 @@ class ExportOnsiteMessagesTableDefinition extends ExportTableDefinition
 {
     const TABLE_NAME = 'onsite_messages';
 
-    public function getRecords()
+    public function getRecords(): array
     {
         $selectQuery = $this->getSelectClause(); // make sure we only grab the clauses we allow
 
@@ -39,9 +40,9 @@ class ExportOnsiteMessagesTableDefinition extends ExportTableDefinition
 
         // recip_id is a json array of pids if the message originates from a user in the users table
         // recip_id is a josn array of usernames if the message originates from a patient in the patient_data table
-        $query = "SELECT $selectQuery FROM onsite_messages WHERE $likeClause";
-        $bindParams = array_map(function ($pid) {
-            return "%\"$pid\"%";
+        $query = sprintf('SELECT %s FROM onsite_messages WHERE %s', $selectQuery, $likeClause);
+        $bindParams = array_map(function ($pid): string {
+            return sprintf('%%"%s"%%', $pid);
         }, $patientPids);
         $records = QueryUtils::fetchRecords($query, $bindParams);
         $resultRecords = [];
@@ -65,13 +66,12 @@ class ExportOnsiteMessagesTableDefinition extends ExportTableDefinition
 
         // if the patient is the sender... the recipient_ids will then be user_ids...
         // note if its a provider sending the message, the sender_id is the username
-        $senderSql = "SELECT $selectQuery FROM onsite_messages WHERE sender_id IN (" . str_repeat('?,', count($patientPids) - 1) . "?)";
+        $senderSql = sprintf('SELECT %s FROM onsite_messages WHERE sender_id IN (', $selectQuery) . str_repeat('?,', count($patientPids) - 1) . "?)";
         $senderRecords = QueryUtils::fetchRecords($senderSql, $patientPids);
-        $resultRecords = array_merge($resultRecords, $senderRecords);
 
         // TODO: @adunsulag if for some reason the user ends up not being collected in the export somewhere else, we will need to
         // make sure they get added in a special way to the keys.
 
-        return $resultRecords;
+        return array_merge($resultRecords, $senderRecords);
     }
 }

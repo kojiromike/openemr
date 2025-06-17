@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,19 +11,22 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+namespace OpenEMR\Modules\ClaimRevConnector;
 
-    namespace OpenEMR\Modules\ClaimRevConnector;
-
-    use OpenEMR\Services\BaseService;
-    use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
-    use OpenEMR\Modules\ClaimRevConnector\EligibilityData;
+use OpenEMR\Services\BaseService;
+use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
+use OpenEMR\Modules\ClaimRevConnector\EligibilityData;
 
 class EligibilityTransfer extends BaseService
 {
     public const STATUS_WAITING = 'waiting';
+
     public const STATUS_SUCCESS = 'success';
+
     public const STATUS_SEND_ERROR = 'senderror';
+
     public const STATUS_SEND_RETRY = 'retry';
+
     public const TABLE_NAME = 'mod_claimrev_eligibility';
 
     public function __construct()
@@ -29,7 +34,7 @@ class EligibilityTransfer extends BaseService
         parent::__construct(self::TABLE_NAME);
     }
 
-    public static function sendWaitingEligibility()
+    public static function sendWaitingEligibility(): void
     {
         $token = ClaimRevApi::GetAccessToken();
         $waitingEligibility = EligibilityData::getEligibilityCheckByStatus(self::STATUS_WAITING);
@@ -39,7 +44,7 @@ class EligibilityTransfer extends BaseService
         EligibilityTransfer::retryEligibility($retryEligibility, $token);
     }
 
-    public static function retryEligibility($retryEligibility, $token)
+    public static function retryEligibility($retryEligibility, $token): void
     {
         foreach ($retryEligibility as $eligibility) {
             $eid = $eligibility['id'];
@@ -47,7 +52,8 @@ class EligibilityTransfer extends BaseService
             EligibilityTransfer::saveEligibility($result, $eid);
         }
     }
-    public static function sendEligibility($waitingEligibility, $token)
+
+    public static function sendEligibility($waitingEligibility, $token): void
     {
         foreach ($waitingEligibility as $eligibility) {
             $eid = $eligibility['id'];
@@ -58,18 +64,21 @@ class EligibilityTransfer extends BaseService
             EligibilityTransfer::saveEligibility($result, $eid);
         }
     }
-    public static function saveEligibility($result, $eid)
+
+    public static function saveEligibility($result, $eid): void
     {
         if (false === $result) {
             EligibilityData::updateEligibilityRecord($eid, self::STATUS_SEND_ERROR, null, null, true, 'no results', null, null, null);
             return;
         }
+
         $payload = json_encode($result, JSON_UNESCAPED_SLASHES);
 
         if (!property_exists($result, 'responseMessage')) {
             EligibilityData::updateEligibilityRecord($eid, self::STATUS_SEND_ERROR, null, $payload, true, 'missing responseMessage Property', null, null, null);
             return;
         }
+
         if (!property_exists($result, 'mappedData')) {
             EligibilityData::updateEligibilityRecord($eid, self::STATUS_SEND_ERROR, null, $payload, true, ' missing MappedData Property', null, null, null);
             return;
@@ -82,6 +91,7 @@ class EligibilityTransfer extends BaseService
             EligibilityData::updateEligibilityRecord($eid, self::STATUS_SEND_ERROR, null, $payload, true, $responseMessage, null, null, null);
             return;
         }
+
         if (!property_exists($mappedData, 'individuals')) {
             EligibilityData::updateEligibilityRecord($eid, self::STATUS_SEND_ERROR, null, $payload, true, $responseMessage . ' missing individuals Property', null, null, null);
             return;

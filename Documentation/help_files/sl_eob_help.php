@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Access Control List Help.
  *
@@ -13,7 +15,7 @@
 
 use OpenEMR\Core\Header;
 
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 ?>
 <!DOCTYPE html>
 <html>
@@ -159,8 +161,8 @@ require_once("../../interface/globals.php");
                     <span><strong>
                     <?php
                     $url = (!empty($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on')) ? 'https' : 'http';
-                    $url .= "://" . $_SERVER['HTTP_HOST'] . "$web_root/sites/" . $_SESSION['site_id'] . "/documents/era/";
-                    echo "$url";
+                    $url .= "://" . $_SERVER['HTTP_HOST'] . ($web_root . '/sites/') . $_SESSION['site_id'] . "/documents/era/";
+                    echo $url;
                     ?>
                     </strong></span>
                 </p>

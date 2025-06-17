@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * phq-9 form using forms api     view.php    create a new form
  *
@@ -13,4 +15,4 @@
  */
 
 $viewmode = 'update';
-require_once("common.php");
+require_once(__DIR__ . "/common.php");

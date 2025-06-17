@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/forms/group_attendance/report.php
  *
@@ -14,16 +16,16 @@
 
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-require_once("{$GLOBALS['srcdir']}/group.inc.php");
-require_once("functions.php");
-function group_attendance_report($pid, $encounter, $cols, $id)
+require_once($GLOBALS['srcdir'] . '/group.inc.php');
+require_once(__DIR__ . "/functions.php");
+function group_attendance_report($pid, $encounter, $cols, $id): void
 {
 
     global $therapy_group;
     $encounter = $_SESSION["encounter"];
     $sql = "SELECT * FROM `form_group_attendance` WHERE id=? AND group_id = ? AND encounter_id = ?";
-    $res = sqlStatement($sql, array($id,$therapy_group, $encounter));
-    $form_data = sqlFetchArray($res);
+    $recordset = sqlStatement($sql, array($id,$therapy_group, $encounter));
+    $form_data = sqlFetchArray($recordset);
     $group_data = getGroup($therapy_group);
     $group_name = $group_data['group_name'];
     $result = get_form_id_of_existing_attendance_form($encounter, $therapy_group);
@@ -48,7 +50,7 @@ function group_attendance_report($pid, $encounter, $cols, $id)
                 <td><span class='font-weight-bold'><?php echo xlt('Comments'); ?></span></td>
             </tr>
             <?php
-            if ($participants) {
+            if ($participants !== []) {
                 foreach ($participants as $participant) {
                     $name = $participant['lname'] . ', ' . $participant['fname'];
                     $attnStatus = getAttendanceStatus($participant['meeting_patient_status'])

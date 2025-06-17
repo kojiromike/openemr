@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Psychiatrisch Onderzoek
  * Report of Research psihiatric - Dutch specific form
@@ -22,8 +24,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
 use OpenEMR\Core\Header;
 
 $returnurl = 'encounter_top.php';
@@ -70,7 +72,7 @@ if ($vectAutosave['id'] && $vectAutosave['id'] != "" && $vectAutosave['id'] > 0)
 }
 
 $tmpDate = stripslashes($obj["datum_onderzoek"]);
-if ($tmpDate && $tmpDate != '0000-00-00 00:00:00') {
+if ($tmpDate && $tmpDate !== '0000-00-00 00:00:00') {
     $m_strEventDate = $tmpDate;
 }
 
@@ -106,11 +108,7 @@ if ($tmpDate && $tmpDate != '0000-00-00 00:00:00') {
 
 <?php
 
-if ($_GET["id"]) {
-    $psychiatrisch_onderzoek_id = $_GET["id"];
-} else {
-    $psychiatrisch_onderzoek_id = "0";
-}
+$psychiatrisch_onderzoek_id = $_GET["id"] ? $_GET["id"] : "0";
 
 ?>
 <script>
@@ -195,7 +193,7 @@ function autosave( )
 </script>
 
 <?php
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 //$obj = formFetch("form_psychiatrisch_onderzoek", (int)$_GET["id"]);
 ?>
 
@@ -241,7 +239,7 @@ require_once("$srcdir/api.inc.php");
 <a href="javascript:document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit"
- onclick="delete_autosave();top.restoreSession()">[<?php echo xlt('Don\'t Save Changes'); ?>]</a>
+ onclick="delete_autosave();top.restoreSession()">[<?php echo xlt("Don't Save Changes"); ?>]</a>
 </form>
 
 <div id="timestamp"></div>

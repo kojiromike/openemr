@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * phq-9.inc - common includes and constants for the gad-7 form
  * version 1.0.0  July 2020

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\Common\ORDataObject\ORDataObject;
 
 define("EVENT_VEHICLE", 1);
@@ -14,6 +16,7 @@ define("EVENT_OTHER", 4);
  */
 class FormSOAP extends ORDataObject
 {
+    public $objective;
     /**
      *
      * @access public
@@ -24,35 +27,56 @@ class FormSOAP extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $authorized;
-    var $activity;
-    var $subjective;
+    public $id;
+
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $authorized;
+
+    public $activity;
+
+    public $subjective;
+
     //var $objective;
-    var $assessment;
-    var $general;
-    var $heent;
-    var $neck;
-    var $cardio;
-    var $respiratory;
-    var $breasts;
-    var $abdomen;
-    var $gastro;
-    var $extremities;
-    var $skin;
-    var $neurological;
-    var $mentalstatus;
-    var $plan;
+    public $assessment;
+
+    public $general;
+
+    public $heent;
+
+    public $neck;
+
+    public $cardio;
+
+    public $respiratory;
+
+    public $breasts;
+
+    public $abdomen;
+
+    public $gastro;
+
+    public $extremities;
+
+    public $skin;
+
+    public $neurological;
+
+    public $mentalstatus;
+
+    public $plan;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         if (is_numeric($id)) {
             $this->id = $id;
@@ -69,94 +93,109 @@ class FormSOAP extends ORDataObject
             //$this->date = $this->get_date();
         }
     }
-    function populate()
+
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function toString($html = false)
+    public function toString($html = false): string
     {
         $string = "\n" . "ID: " . $this->id . "\n";
         return $html ? nl2br($string) : $string;
     }
-    function set_id($id)
+
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
-    function set_date($dt)
+
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
-    function get_user()
+
+    public function get_user()
     {
         return $this->user;
     }
-    function set_user($u)
+
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
-    function get_subjective()
+
+    public function get_subjective()
     {
         return $this->subjective;
     }
-    function set_subjective($data)
+
+    public function set_subjective($data): void
     {
         if (!empty($data)) {
             $this->subjective = $data;
         }
     }
-    function get_objective()
+
+    public function get_objective()
     {
         return $this->objective;
     }
-    function set_objective($data)
+
+    public function set_objective($data): void
     {
         if (!empty($data)) {
             $this->objective = $data;
         }
     }
 
-    function get_assessment()
+    public function get_assessment()
     {
         return $this->assessment;
     }
-    function set_assessment($data)
+
+    public function set_assessment($data): void
     {
         if (!empty($data)) {
             $this->assessment = $data;
@@ -171,11 +210,12 @@ class FormSOAP extends ORDataObject
 
 
     // **** General *****
-    function get_general()
+    public function get_general()
     {
         return $this->general;
     }
-    function set_general($data)
+
+    public function set_general($data): void
     {
         if (!empty($data)) {
             $this->general = $data;
@@ -183,11 +223,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** HEENT  ******
-    function get_heent()
+    public function get_heent()
     {
         return $this->heent;
     }
-    function set_heent($data)
+
+    public function set_heent($data): void
     {
         if (!empty($data)) {
             $this->heent = $data;
@@ -195,11 +236,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Neck *****
-    function get_neck()
+    public function get_neck()
     {
         return $this->neck;
     }
-    function set_neck($data)
+
+    public function set_neck($data): void
     {
         if (!empty($data)) {
             $this->neck = $data;
@@ -207,11 +249,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** CV *****
-    function get_cardio()
+    public function get_cardio()
     {
         return $this->cardio;
     }
-    function set_cardio($data)
+
+    public function set_cardio($data): void
     {
         if (!empty($data)) {
             $this->cardio = $data;
@@ -219,11 +262,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Lungs *****
-    function get_respiratory()
+    public function get_respiratory()
     {
         return $this->respiratory;
     }
-    function set_respiratory($data)
+
+    public function set_respiratory($data): void
     {
         if (!empty($data)) {
             $this->respiratory = $data;
@@ -232,11 +276,12 @@ class FormSOAP extends ORDataObject
 
     // **** Breasts *****
     // * my personal favorite :>  ***
-    function get_breasts()
+    public function get_breasts()
     {
         return $this->breasts;
     }
-    function set_breasts($data)
+
+    public function set_breasts($data): void
     {
         if (!empty($data)) {
             $this->breasts = $data;
@@ -244,11 +289,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Abdomen *****
-    function get_abdomen()
+    public function get_abdomen()
     {
         return $this->abdomen;
     }
-    function set_abdomen($data)
+
+    public function set_abdomen($data): void
     {
         if (!empty($data)) {
             $this->abdomen = $data;
@@ -256,11 +302,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** GU *****
-    function get_gastro()
+    public function get_gastro()
     {
         return $this->gastro;
     }
-    function set_gastro($data)
+
+    public function set_gastro($data): void
     {
         if (!empty($data)) {
             $this->gastro = $data;
@@ -268,11 +315,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Bones/Joints/Extremities *****
-    function get_extremities()
+    public function get_extremities()
     {
         return $this->extremities;
     }
-    function set_extremities($data)
+
+    public function set_extremities($data): void
     {
         if (!empty($data)) {
             $this->extremities = $data;
@@ -280,11 +328,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Skin *****
-    function get_skin()
+    public function get_skin()
     {
         return $this->skin;
     }
-    function set_skin($data)
+
+    public function set_skin($data): void
     {
         if (!empty($data)) {
             $this->skin = $data;
@@ -292,11 +341,12 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Neuro/Psych *****
-    function get_neurological()
+    public function get_neurological()
     {
         return $this->neurological;
     }
-    function set_neurological($data)
+
+    public function set_neurological($data): void
     {
         if (!empty($data)) {
             $this->neurological = $data;
@@ -304,29 +354,31 @@ class FormSOAP extends ORDataObject
     }
 
     // **** Mental Status *****
-    function get_mentalstatus()
+    public function get_mentalstatus()
     {
         return $this->mentalstatus;
     }
-    function set_mentalstatus($data)
+
+    public function set_mentalstatus($data): void
     {
         if (!empty($data)) {
             $this->mentalstatus = $data;
         }
     }
 
-    function get_plan()
+    public function get_plan()
     {
         return $this->plan;
     }
-    function set_plan($data)
+
+    public function set_plan($data): void
     {
         if (!empty($data)) {
             $this->plan = $data;
         }
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }

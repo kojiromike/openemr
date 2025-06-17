@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form for entering procedure orders.
  *
@@ -12,4 +14,4 @@
 
 $mode = 'update';
 $viewmode = true;
-require("common.php");
+require(__DIR__ . "/common.php");

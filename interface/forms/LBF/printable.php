@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * LBF form.
  *
@@ -15,9 +17,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/encounter.inc.php");
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/encounter.inc.php');
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 use Mpdf\Mpdf;
@@ -77,10 +79,8 @@ if ($lobj['grp_diags'   ]) {
 if (!empty($lobj['aco_spec'])) {
     $LBF_ACO = explode('|', $lobj['aco_spec']);
 }
-if (!AclMain::aclCheckCore('admin', 'super') && !empty($LBF_ACO)) {
-    if (!AclMain::aclCheckCore($LBF_ACO[0], $LBF_ACO[1])) {
-        die(xlt('Access denied'));
-    }
+if (!AclMain::aclCheckCore('admin', 'super') && !empty($LBF_ACO) && !AclMain::aclCheckCore($LBF_ACO[0], $LBF_ACO[1])) {
+    die(xlt('Access denied'));
 }
 
 // Html2pdf fails to generate checked checkboxes properly, so write plain HTML
@@ -91,8 +91,8 @@ $PDF_OUTPUT = ($formid && $isblankform) ? false : true;
 
 if ($PDF_OUTPUT) {
     $config_mpdf = Config_Mpdf::getConfigMpdf();
-    $config_mpdf['margin_top'] = $config_mpdf['margin_top'] * 1.5;
-    $config_mpdf['margin_bottom'] = $config_mpdf['margin_bottom'] * 1.5;
+    $config_mpdf['margin_top'] *= 1.5;
+    $config_mpdf['margin_bottom'] *= 1.5;
     $config_mpdf['margin_header'] = $GLOBALS['pdf_top_margin'];
     $config_mpdf['margin_footer'] =  $GLOBALS['pdf_bottom_margin'];
     $pdf = new mPDF($config_mpdf);
@@ -104,7 +104,7 @@ if ($PDF_OUTPUT) {
 }
 
 if ($visitid && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION) || isset($LBF_PRODUCTS_SECTION))) {
-    require_once("$srcdir/FeeSheetHtml.class.php");
+    require_once($srcdir . '/FeeSheetHtml.class.php');
     $fs = new FeeSheetHtml($pid, $encounter);
 }
 
@@ -162,7 +162,7 @@ div.section {
   // Our temporary solution is to turn off the borders in the case where this
   // is likely to happen (i.e. where all form options are listed).
   // TODO - now use mPDF, so should test if still need this fix
-if (!$isblankform) {
+if ($isblankform === 0) {
     ?>
 border-style: solid;
 border-width: 1px;
@@ -176,7 +176,7 @@ div.section table {
 }
 div.section td.stuff {
  vertical-align: top;
-<?php if ($isblankform) { ?>
+<?php if ($isblankform !== 0) { ?>
  height: 16pt;
 <?php } ?>
 }
@@ -187,8 +187,8 @@ for ($lcols = 1; $lcols < $CPR; ++$lcols) {
     $dcols = $CPR - $lcols;
     $lpct = intval(100 * $lcols / $CPR);
     $dpct = 100 - $lpct;
-    echo "td.lcols$lcols { width: $lpct%; text-align: right; }\n";
-    echo "td.dcols$dcols { width: $dpct%; }\n";
+    echo "td.lcols{$lcols} { width: {$lpct}%; text-align: right; }\n";
+    echo "td.dcols{$dcols} { width: {$dpct}%; }\n";
 }
 ?>
 
@@ -258,8 +258,8 @@ for ($lcols = 1; $lcols < $CPR; ++$lcols) {
 // Generate header with optional logo.
 $logo = '';
 $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
-if (is_file("$webserver_root/$ma_logo_path")) {
-    $logo = "$web_root/$ma_logo_path";
+if (is_file(sprintf('%s/%s', $webserver_root, $ma_logo_path))) {
+    $logo = sprintf('%s/%s', $web_root, $ma_logo_path);
 }
 
 echo genFacilityTitle($formtitle, -1, $logo);
@@ -269,7 +269,7 @@ if ($PDF_OUTPUT) {
 }
 ?>
 
-<?php if ($isblankform) { ?>
+<?php if ($isblankform !== 0) { ?>
 <span class='subhead'>
     <?php echo xlt('Patient') ?>: ________________________________________ &nbsp;
     <?php echo xlt('Clinic') ?>: ____________________ &nbsp;
@@ -279,7 +279,7 @@ if ($PDF_OUTPUT) {
 
 <?php
 
-function end_cell()
+function end_cell(): void
 {
     global $item_count, $cell_count;
     if ($item_count > 0) {
@@ -288,7 +288,7 @@ function end_cell()
     }
 }
 
-function end_row()
+function end_row(): void
 {
     global $cell_count, $CPR;
     end_cell();
@@ -302,10 +302,9 @@ function end_row()
     }
 }
 
-function getContent()
+function getContent(): string|false
 {
-    $content = ob_get_clean();
-    return $content;
+    return ob_get_clean();
 }
 
 $cell_count = 0;
@@ -346,7 +345,7 @@ while ($frow = sqlFetchArray($fres)) {
     }
 
     // Skip this field if its do-not-print option is set.
-    if (isOption($edit_options, 'X') !== false) {
+    if (isOption($edit_options, 'X')) {
         continue;
     }
 
@@ -359,7 +358,7 @@ while ($frow = sqlFetchArray($fres)) {
     // $i is now the number of initial matching levels.
 
     // If ending a group or starting a subgroup, terminate the current row and its table.
-    if ($group_table_active && ($i != strlen($group_levels) || $i != strlen($this_levels))) {
+    if ($group_table_active && ($i !== strlen($group_levels) || $i !== strlen($this_levels))) {
         end_row();
         echo " </table>\n";
         $group_table_active = false;
@@ -393,7 +392,7 @@ while ($frow = sqlFetchArray($fres)) {
         echo " <table border='0' cellpadding='0'>\n";
         echo "  <tr>";
         for ($i = 1; $i <= $CPR; ++$i) {
-            $tmp = $i % 2 ? 'lcols1' : 'dcols1';
+            $tmp = $i % 2 !== 0 ? 'lcols1' : 'dcols1';
             echo "<td class='" . attr($tmp) . "'></td>";
         }
         echo "</tr>\n";
@@ -477,7 +476,7 @@ while ($frow = sqlFetchArray($fres)) {
 
     ++$item_count;
 
-    if ($isblankform) {
+    if ($isblankform !== 0) {
         generate_print_field($frow, $currvalue);
     } else {
         $s = generate_display_field($frow, $currvalue);
@@ -508,7 +507,7 @@ if ($fs && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION))) {
 
 if ($fs && isset($LBF_SERVICES_SECTION)) {
     $s = '';
-    foreach ($fs->serviceitems as $lino => $li) {
+    foreach ($fs->serviceitems as $li) {
         // Skip diagnoses; those would be in the Diagnoses section below.
         if ($code_types[$li['codetype']]['diag']) {
             continue;
@@ -518,7 +517,7 @@ if ($fs && isset($LBF_SERVICES_SECTION)) {
         $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
         $s .= "  </tr>\n";
     }
-    if ($s) {
+    if ($s !== '' && $s !== '0') {
         echo "<nobreak>\n";
         // echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
         echo "<div class='grpheader'>" . xlt('Services') . "</div>\n";
@@ -534,13 +533,13 @@ if ($fs && isset($LBF_SERVICES_SECTION)) {
 if ($fs && isset($LBF_PRODUCTS_SECTION)) {
     $s = '';
     $fs->loadProductItems();
-    foreach ($fs->productitems as $lino => $li) {
+    foreach ($fs->productitems as $li) {
         $s .= "  <tr>\n";
         $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
         $s .= "   <td class='text' align='right'>" . text($li['units']) . "&nbsp;</td>\n";
         $s .= "  </tr>\n";
     }
-    if ($s) {
+    if ($s !== '' && $s !== '0') {
         echo "<nobreak>\n";
         // echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
         echo "<div class='grpheader'>" . xlt('Products') . "</div>\n";
@@ -555,7 +554,7 @@ if ($fs && isset($LBF_PRODUCTS_SECTION)) {
 
 if ($fs && isset($LBF_DIAGS_SECTION)) {
     $s = '';
-    foreach ($fs->serviceitems as $lino => $li) {
+    foreach ($fs->serviceitems as $li) {
         // Skip anything that is not a diagnosis; those are in the Services section above.
         if (!$code_types[$li['codetype']]['diag']) {
             continue;
@@ -565,7 +564,7 @@ if ($fs && isset($LBF_DIAGS_SECTION)) {
         $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
         $s .= "  </tr>\n";
     }
-    if ($s) {
+    if ($s !== '' && $s !== '0') {
         echo "<nobreak>\n";
         // echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
         echo "<div class='grpheader'>" . xlt('Diagnoses') . "</div>\n";

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Class to be called from Laminas Module Manager for reporting management actions.
  * Example is if the module is enabled, disabled or unregistered ect.
@@ -45,7 +47,6 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param        $methodName
      * @param        $modId
-     * @param string $currentActionStatus
      * @return string On method success a $currentAction status should be returned or error string.
      */
     public function moduleManagerAction($methodName, $modId, string $currentActionStatus = 'Success'): string
@@ -62,10 +63,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * Required method to return namespace
      * If namespace isn't provided return empty string
      * and register namespace at top of this script..
-     *
-     * @return string
      */
-    public static function getModuleNamespace(): string
+    protected static function getModuleNamespace(): string
     {
         // Module Manager will register this namespace.
         return 'Juggernaut\\OpenEMR\\Modules\\PriorAuthModule\\';
@@ -74,10 +73,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * Required method to return this class object
      * so it will be instantiated in Laminas Manager.
-     *
-     * @return ModuleManagerListener
      */
-    public static function initListenerSelf(): ModuleManagerListener
+    protected static function initListenerSelf(): ModuleManagerListener
     {
         return new self();
     }
@@ -85,24 +82,23 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function help_requested($modId, $currentActionStatus): mixed
+    private function help_requested($currentActionStatus): mixed
     {
         // must call a script that implements a dialog to show help.
         // I can't find a way to override the Lamina's UI except using a dialog.
         if (file_exists(__DIR__ . '/show_help.php')) {
             include __DIR__ . '/show_help.php';
         }
+
         return $currentActionStatus;
     }
 
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function enable($modId, $currentActionStatus): mixed
+    private function enable($currentActionStatus): mixed
     {
         // Return the current action status from Module Manager in case of error from its action.
         return $currentActionStatus;
@@ -111,9 +107,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
     /**
      * @param $modId
      * @param $currentActionStatus
-     * @return mixed
      */
-    private function disable($modId, $currentActionStatus): mixed
+    private function disable($currentActionStatus): mixed
     {
         return $currentActionStatus;
     }
@@ -123,7 +118,7 @@ class ModuleManagerListener extends AbstractModuleActionListener
      * @param $currentActionStatus
      * @return mixed
      */
-    private function unregister($modId, $currentActionStatus)
+    private function unregister($currentActionStatus)
     {
         $records = sqlQuery("SELECT * FROM `module_prior_authorizations` ORDER BY id DESC LIMIT 1"); // Query the database for all records in the module_prior_authorizations table
         if (empty($records)) { // Check if the records array is empty
@@ -131,6 +126,7 @@ class ModuleManagerListener extends AbstractModuleActionListener
             sqlStatement($sql); // Execute the SQL statement
             (new SystemLogger())->error('Prior Auth table have been removed if empty else manually remove'); // Log the status of the SQL statement
         }
+
         return $currentActionStatus;
     }
 }

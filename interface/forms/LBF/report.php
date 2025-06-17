@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * LBF form.
  *
@@ -21,7 +23,7 @@ use OpenEMR\Common\Acl\AclMain;
 // when viewing a "comprehensive patient report".  Also from
 // interface/patient_file/encounter/forms.php.
 
-function lbf_report($pid, $encounter, $cols, $id, $formname, $no_wrap = false)
+function lbf_report($pid, $encounter, $cols, $id, $formname, $no_wrap = false): void
 {
     global $CPR;
     require_once($GLOBALS["srcdir"] . "/options.inc.php");
@@ -32,10 +34,9 @@ function lbf_report($pid, $encounter, $cols, $id, $formname, $no_wrap = false)
     if (!empty($grparr['']['grp_aco_spec'])) {
         $LBF_ACO = explode('|', $grparr['']['grp_aco_spec']);
     }
-    if (!AclMain::aclCheckCore('admin', 'super') && !empty($LBF_ACO)) {
-        if (!AclMain::aclCheckCore($LBF_ACO[0], $LBF_ACO[1])) {
-            die(xlt('Access denied'));
-        }
+
+    if (!AclMain::aclCheckCore('admin', 'super') && !empty($LBF_ACO) && !AclMain::aclCheckCore($LBF_ACO[0], $LBF_ACO[1])) {
+        die(xlt('Access denied'));
     }
 
     $arr = array();
@@ -46,7 +47,7 @@ function lbf_report($pid, $encounter, $cols, $id, $formname, $no_wrap = false)
     while ($frow = sqlFetchArray($fres)) {
         $field_id  = $frow['field_id'];
         $currvalue = '';
-        if (isOption($frow['edit_options'], 'H') !== false) {
+        if (isOption($frow['edit_options'], 'H')) {
             if (isset($shrow[$field_id])) {
                 $currvalue = $shrow[$field_id];
             }

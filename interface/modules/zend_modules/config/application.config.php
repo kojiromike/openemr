@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  You can see the default application configuration options here
  *  as well as how the individual module.config.php files should operate.
@@ -26,7 +28,7 @@ $plugin_modules = \OpenEMR\Core\ModulesApplication::oemr_zend_load_modules_from_
     $webRootPath ?? '',
     $zendConfigurationPath ?? ''
 );
-$vendor_path = !empty($GLOBALS['vendor_dir']) ? $GLOBALS['vendor_dir'] : (realpath(__DIR__) . '/../vendor');
+$vendor_path = empty($GLOBALS['vendor_dir']) ? realpath(__DIR__) . '/../vendor' : ($GLOBALS['vendor_dir']);
 
 return [
     'modules' =>  array_merge($core_modules, $plugin_modules)

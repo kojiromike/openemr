@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package   OpenEMR Modules setup_facilities
  * @author    Jerry Padgett <sjpadgett@gmail.com>
  * @copyright Copyright (c) 2024 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule\Services;
 
 require_once(dirname(__DIR__, 4) . "/globals.php");
@@ -24,7 +25,7 @@ if (!AclMain::aclCheckCore('patients', 'rx')) {
 
 $wenoLog = new WenoLogService();
 
-if ($_POST) {
+if ($_POST !== []) {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token"])) {
         CsrfUtils::csrfNotVerified();
     }

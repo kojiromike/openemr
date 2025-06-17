@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * dictation report.php
  *
@@ -13,9 +15,9 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function dictation_report($pid, $encounter, $cols, $id)
+function dictation_report($pid, $encounter, $cols, $id): void
 {
-    $cols = 1; // force always 1 column
+    // force always 1 column
     $count = 0;
     $data = formFetch("form_dictation", $id);
     if ($data) {
@@ -35,7 +37,7 @@ function dictation_report($pid, $encounter, $cols, $id)
             $key = ucwords(str_replace("_", " ", $key));
             print "<h3>" . xlt($key) . ": </h3>" .
                 "<p>" . nl2br(text($value)) . "</p>";
-            $count++;
+            ++$count;
         }
     }
 }

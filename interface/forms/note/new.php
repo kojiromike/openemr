@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Work/School Note Form new.php
  *
@@ -16,7 +18,7 @@
 
 
 require_once dirname(__FILE__, 3) . "/globals.php";
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -59,7 +61,7 @@ $form_name = "note";
 
                     <div style="margin: 10px;">
                         <input type="button" class="btn btn-primary save" value="    <?php echo xla('Save'); ?>    "> &nbsp;
-                        <input type="button" class="btn btn-warning dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+                        <input type="button" class="btn btn-warning dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
                     </div>
 
                     <select class="form-control" name="note_type">
@@ -91,7 +93,7 @@ $form_name = "note";
                     </table>
                     <div style="margin: 10px;">
                         <input type="button" class="btn btn-primary save" value="    <?php echo xla('Save'); ?>    "> &nbsp;
-                        <input type="button" class="btn btn-warning dontsave" value="<?php echo xla('Don\'t Save'); ?>"> &nbsp;
+                        <input type="button" class="btn btn-warning dontsave" value="<?php echo xla("Don't Save"); ?>"> &nbsp;
                     </div>
                 </form>
             </div>

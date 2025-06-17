@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Helper/SendToHieHelper.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
@@ -20,14 +21,11 @@ use Application\Controller\SendtoController;
 
 class SendToHieHelper extends \Laminas\View\Helper\AbstractHelper
 {
-  /**
-   * @var \Application\Controller\SendtoController
-   */
-    private $sendController;
+  private \Application\Controller\SendtoController $sendtoController;
 
-    public function __construct(SendtoController $sendController)
+    public function __construct(SendtoController $sendtoController)
     {
-        $this->sendController = $sendController;
+        $this->sendtoController = $sendtoController;
     }
 
   /**
@@ -44,9 +42,9 @@ class SendToHieHelper extends \Laminas\View\Helper\AbstractHelper
    * @author  Basil PT <basil@zhservices.com>
    **/
 
-    public function __invoke($layoutName, array $required_buttons, $send_via, $download_format = null)
+    public function __invoke($layoutName, array $required_buttons, $send_via, $download_format = null): string
     {
-        $viewModel = $this->sendController->sendAction();
+        $viewModel = $this->sendtoController->sendAction();
         $arr = $viewModel->getVariables();
         $arr['required_butons'] = $required_buttons;
         $arr['send_via']        = $send_via;
@@ -60,13 +58,12 @@ class SendToHieHelper extends \Laminas\View\Helper\AbstractHelper
     }
 
   /**
-   * Set the service locator.
-   *
-   * @param ServiceLocatorInterface $serviceLocator
-   * @return AbstractHelper
-   *
-   */
-    public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+     * Set the service locator.
+     *
+     * @return AbstractHelper
+     *
+     */
+    public function setServiceLocator(ServiceLocatorInterface $serviceLocator): static
     {
         $this->serviceLocator = $serviceLocator;
         return $this;

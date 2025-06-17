@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the API communication with the Comlink telehealth provisioning service.  Activation, suspension, updating,
  * creation of telehealth services for patients and users are handled here.
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig;
@@ -26,9 +27,11 @@ use Ramsey\Uuid\Rfc4122\UuidV4;
 class TeleHealthRemoteRegistrationService
 {
     /**
-     * @var TelehealthRegistrationCodeService
+     * @var \Comlink\OpenEMR\Modules\TeleHealthModule\Repository\TeleHealthUserRepository
      */
-    private $codeService;
+    public $userRepository;
+    public $providerRepository;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TelehealthRegistrationCodeService $telehealthRegistrationCodeService;
 
     /**
      * API url endpoint to send registration requests to.
@@ -58,7 +61,7 @@ class TeleHealthRemoteRegistrationService
     /**
      * Client
      */
-    private $httpClient;
+    private \GuzzleHttp\Client $httpClient;
 
     /**
      * Unique installation id of the OpenEMR Institution
@@ -72,62 +75,58 @@ class TeleHealthRemoteRegistrationService
      */
     private $institutionName;
 
-    /**
-     * @var SystemLogger
-     */
-    private $logger;
+    private \OpenEMR\Common\Logging\SystemLogger $systemLogger;
 
-    public function __construct(TelehealthGlobalConfig $config, TelehealthRegistrationCodeService $codeService)
+    public function __construct(TelehealthGlobalConfig $telehealthGlobalConfig, TelehealthRegistrationCodeService $telehealthRegistrationCodeService)
     {
-        $this->apiURL = $config->getRegistrationAPIURI();
-        $this->apiId = $config->getRegistrationAPIUserId();
-        $this->apiPassword = $config->getRegistrationAPIPassword();
-        $this->apiCMSID = $config->getRegistrationAPICmsId();
-        $this->institutionId = $config->getInstitutionId();
-        $this->institutionName = $config->getInstitutionName();
+        $this->apiURL = $telehealthGlobalConfig->getRegistrationAPIURI();
+        $this->apiId = $telehealthGlobalConfig->getRegistrationAPIUserId();
+        $this->apiPassword = $telehealthGlobalConfig->getRegistrationAPIPassword();
+        $this->apiCMSID = $telehealthGlobalConfig->getRegistrationAPICmsId();
+        $this->institutionId = $telehealthGlobalConfig->getInstitutionId();
+        $this->institutionName = $telehealthGlobalConfig->getInstitutionName();
         $this->userRepository = new TeleHealthUserRepository();
         $this->httpClient = new Client();
-        $this->logger = new SystemLogger();
-        $this->codeService = $codeService;
+        $this->systemLogger = new SystemLogger();
+        $this->telehealthRegistrationCodeService = $telehealthRegistrationCodeService;
     }
 
-    public function createPatientRegistration($patient)
+    public function createPatientRegistration($patient): bool
     {
-        $registrationRequest = new UserVideoRegistrationRequest();
-        $registrationRequest->setDbRecordId($patient['id']);
-        $registrationRequest->setIsPatient(true);
-        $registrationRequest->setUsername($patient['uuid']);
-        $registrationRequest->setPassword($this->userRepository->createUniquePassword());
-        $registrationRequest->setInstituationId($this->institutionId);
-        $registrationRequest->setInstitutionName($this->institutionName);
-        $registrationRequest->setFirstName($patient['fname'] ?? null);
-        $registrationRequest->setLastName($patient['lname'] ?? null);
-        $registrationRequest->setRegistrationCode($this->codeService->generateRegistrationCode());
-        $this->logger->debug("createPatientRegistration called");
-        $userId = $this->addNewUser($registrationRequest);
+        $userVideoRegistrationRequest = new UserVideoRegistrationRequest();
+        $userVideoRegistrationRequest->setDbRecordId($patient['id']);
+        $userVideoRegistrationRequest->setIsPatient(true);
+        $userVideoRegistrationRequest->setUsername($patient['uuid']);
+        $userVideoRegistrationRequest->setPassword($this->userRepository->createUniquePassword());
+        $userVideoRegistrationRequest->setInstituationId($this->institutionId);
+        $userVideoRegistrationRequest->setInstitutionName($this->institutionName);
+        $userVideoRegistrationRequest->setFirstName($patient['fname'] ?? null);
+        $userVideoRegistrationRequest->setLastName($patient['lname'] ?? null);
+        $userVideoRegistrationRequest->setRegistrationCode($this->telehealthRegistrationCodeService->generateRegistrationCode());
+
+        $this->systemLogger->debug("createPatientRegistration called");
+        $userId = $this->addNewUser($userVideoRegistrationRequest);
         return !empty($userId);
     }
 
-    public function createUserRegistration($user)
+    public function createUserRegistration($user): bool
     {
-        $registrationRequest = new UserVideoRegistrationRequest();
-        $registrationRequest->setDbRecordId($user['id']);
-        $registrationRequest->setIsPatient(false);
-        $registrationRequest->setUsername($user['uuid']);
-        $registrationRequest->setPassword($this->userRepository->createUniquePassword());
-        $registrationRequest->setInstituationId($this->institutionId);
-        $registrationRequest->setInstitutionName($this->institutionName);
-        $registrationRequest->setFirstName($user['fname'] ?? null);
-        $registrationRequest->setLastName($user['lname'] ?? null);
-        $registrationRequest->setRegistrationCode($this->codeService->generateRegistrationCode());
-        $this->logger->debug("createUserRegistration called");
-        $userId = $this->addNewUser($registrationRequest);
+        $userVideoRegistrationRequest = new UserVideoRegistrationRequest();
+        $userVideoRegistrationRequest->setDbRecordId($user['id']);
+        $userVideoRegistrationRequest->setIsPatient(false);
+        $userVideoRegistrationRequest->setUsername($user['uuid']);
+        $userVideoRegistrationRequest->setPassword($this->userRepository->createUniquePassword());
+        $userVideoRegistrationRequest->setInstituationId($this->institutionId);
+        $userVideoRegistrationRequest->setInstitutionName($this->institutionName);
+        $userVideoRegistrationRequest->setFirstName($user['fname'] ?? null);
+        $userVideoRegistrationRequest->setLastName($user['lname'] ?? null);
+        $userVideoRegistrationRequest->setRegistrationCode($this->telehealthRegistrationCodeService->generateRegistrationCode());
+
+        $this->systemLogger->debug("createUserRegistration called");
+        $userId = $this->addNewUser($userVideoRegistrationRequest);
         return !empty($userId);
     }
 
-    /**
-     * @return TeleHealthUserRepository
-     */
     public function getUserRepository(): TeleHealthUserRepository
     {
         return $this->userRepository;
@@ -144,20 +143,18 @@ class TeleHealthRemoteRegistrationService
 
     /**
      * Allows the http client used for api requests to be set for testing or extension purposes
-     * @param Client $client
      */
-    public function setHttpClient(Client $client)
+    public function setHttpClient(Client $client): void
     {
         $this->httpClient = $client;
     }
 
     /**
      * Allows the user repository to be set for testing or extension purposes
-     * @param TeleHealthUserRepository $userRepository
      */
-    public function setTelehealthUserRepository(TeleHealthUserRepository $userRepository)
+    public function setTelehealthUserRepository(TeleHealthUserRepository $teleHealthUserRepository): void
     {
-        $this->userRepository = $userRepository;
+        $this->userRepository = $teleHealthUserRepository;
     }
 
     /**
@@ -173,96 +170,95 @@ class TeleHealthRemoteRegistrationService
 
     /**
      * Provisions a new user with the Comlink video api system
-     * @param UserVideoRegistrationRequest $request
      * @return false|int returns false if the user fails to add, otherwise returns the integer id of the provisioned user
      */
-    public function addNewUser(UserVideoRegistrationRequest $request)
+    public function addNewUser(UserVideoRegistrationRequest $userVideoRegistrationRequest)
     {
-        if (!$request->isValid()) {
+        if (!$userVideoRegistrationRequest->isValid()) {
             throw new \InvalidArgumentException("request is missing username, password, or institutionId");
         }
 
-        $securePassword = $request->getPassword();
-        $request->setPassword($this->userRepository->decryptPassword($securePassword));
-        $httpDataRequest = $request->toArray();
+        $securePassword = $userVideoRegistrationRequest->getPassword();
+        $userVideoRegistrationRequest->setPassword($this->userRepository->decryptPassword($securePassword));
+        $httpDataRequest = $userVideoRegistrationRequest->toArray();
 
         $response = $this->sendAPIRequest($this->getEndpointUrl("userprovision"), $httpDataRequest);
 
         if ($response['status'] != 200) {
-            (new SystemLogger())->errorLogCaller("Failed to provision user", ['username' => $request->getUsername()
+            (new SystemLogger())->errorLogCaller("Failed to provision user", ['username' => $userVideoRegistrationRequest->getUsername()
                 , 'response' => $response]);
             return false;
         } else {
             try {
-                $userSaveRecord = new TeleHealthUser();
-                $userSaveRecord->setIsPatient($request->isPatient());
-                $userSaveRecord->setDbRecordId($request->getDbRecordId());
-                $userSaveRecord->setUsername($request->getUsername());
-                $userSaveRecord->setAuthToken($securePassword);
-                $userSaveRecord->setDateRegistered(new \DateTime());
-                $userSaveRecord->setIsActive(true);
-                $userSaveRecord->setRegistrationCode($request->getRegistrationCode());
-                $userId = $this->userRepository->saveUser($userSaveRecord);
-                $this->logger->debug("Registered user on comlink api ", ['username' => $request->getUsername(), 'id' => $userId]);
+                $teleHealthUser = new TeleHealthUser();
+                $teleHealthUser->setIsPatient($userVideoRegistrationRequest->isPatient());
+                $teleHealthUser->setDbRecordId($userVideoRegistrationRequest->getDbRecordId());
+                $teleHealthUser->setUsername($userVideoRegistrationRequest->getUsername());
+                $teleHealthUser->setAuthToken($securePassword);
+                $teleHealthUser->setDateRegistered(new \DateTime());
+                $teleHealthUser->setIsActive(true);
+                $teleHealthUser->setRegistrationCode($userVideoRegistrationRequest->getRegistrationCode());
+                $userId = $this->userRepository->saveUser($teleHealthUser);
+                $this->systemLogger->debug("Registered user on comlink api ", ['username' => $userVideoRegistrationRequest->getUsername(), 'id' => $userId]);
             } catch (SqlQueryException $exception) {
-                $this->logger->errorLogCaller("User registered on comlink api but did not save to database", ['record' => $userSaveRecord]);
+                $this->systemLogger->errorLogCaller("User registered on comlink api but did not save to database", ['record' => $teleHealthUser]);
                 throw $exception;
             }
+
             return $userId;
         }
     }
 
-    private function getEndpointUrl($endpoint)
+    private function getEndpointUrl(string $endpoint): string
     {
         return $this->apiURL . $endpoint;
     }
 
-    public function populateRequestFromUser(TeleHealthUser $user): UserVideoRegistrationRequest
+    public function populateRequestFromUser(TeleHealthUser $teleHealthUser): UserVideoRegistrationRequest
     {
-        $request = new UserVideoRegistrationRequest();
-        $request->setRegistrationCode($user->getRegistrationCode())
-            ->setUsername($user->getUsername())
-            ->setPassword($user->getAuthToken())
-            ->setDbRecordId($user->getId())
-            ->setIsPatient($user->getIsPatient())
+        $userVideoRegistrationRequest = new UserVideoRegistrationRequest();
+        $userVideoRegistrationRequest->setRegistrationCode($teleHealthUser->getRegistrationCode())
+            ->setUsername($teleHealthUser->getUsername())
+            ->setPassword($teleHealthUser->getAuthToken())
+            ->setDbRecordId($teleHealthUser->getId())
+            ->setIsPatient($teleHealthUser->getIsPatient())
             ->setInstitutionName($this->institutionName)
             ->setInstituationId($this->institutionId);
-        return $request;
+        return $userVideoRegistrationRequest;
     }
 
     /**
      * Updates an existing provisioned user with the Comlink video api system.  Everything but username can be changed
-     * @param UserVideoRegistrationRequest $request
      * @return false|int returns false if the user fails to update, otherwise returns the integer id of the updated user
      */
-    public function updateUserFromRequest(UserVideoRegistrationRequest $request)
+    public function updateUserFromRequest(UserVideoRegistrationRequest $userVideoRegistrationRequest)
     {
-        if (!$request->isValid()) {
+        if (!$userVideoRegistrationRequest->isValid()) {
             throw new \InvalidArgumentException("request is missing username, password, or institutionId");
         }
 
         // first make sure we can do the api request
-        $dbUserRecord = $this->userRepository->getUser($request->getUsername());
+        $dbUserRecord = $this->userRepository->getUser($userVideoRegistrationRequest->getUsername());
         if (empty($dbUserRecord)) {
-            throw new \BadMethodCallException("user does not exist for username " . $request->getUsername());
+            throw new \BadMethodCallException("user does not exist for username " . $userVideoRegistrationRequest->getUsername());
         }
 
-        $securePassword = $request->getPassword();
-        $request->setPassword($this->userRepository->decryptPassword($securePassword));
-        $httpDataRequest = $request->toArray();
+        $securePassword = $userVideoRegistrationRequest->getPassword();
+        $userVideoRegistrationRequest->setPassword($this->userRepository->decryptPassword($securePassword));
+        $httpDataRequest = $userVideoRegistrationRequest->toArray();
 
         $response = $this->sendAPIRequest($this->getEndpointUrl("userupdate"), $httpDataRequest);
 
         if ($response['status'] != 200) {
-            $this->logger->errorLogCaller("Failed to update provisioned user", ['username' => $request->getUsername()
+            $this->systemLogger->errorLogCaller("Failed to update provisioned user", ['username' => $userVideoRegistrationRequest->getUsername()
                 , 'response' => $response]);
             return false;
         } else {
             $dbUserRecord->setAuthToken($securePassword);
             $dbUserRecord->setIsActive(true);
-            $dbUserRecord->setRegistrationCode($request->getRegistrationCode());
+            $dbUserRecord->setRegistrationCode($userVideoRegistrationRequest->getRegistrationCode());
             $userId = $this->userRepository->saveUser($dbUserRecord);
-            $this->logger->debug("Updated user on comlink api ", ['username' => $request->getUsername(), 'id' => $userId]);
+            $this->systemLogger->debug("Updated user on comlink api ", ['username' => $userVideoRegistrationRequest->getUsername(), 'id' => $userId]);
             return $userId;
         }
     }
@@ -277,17 +273,17 @@ class TeleHealthRemoteRegistrationService
 
         $decryptedPassword = $this->userRepository->decryptPassword($password);
         $httpDataRequest = ['userName' => $username, 'passwordString' => $decryptedPassword];
-        $decryptedPassword = null;
 
         $response = $this->sendAPIRequest($this->getEndpointUrl("usersuspend"), $httpDataRequest);
         unset($httpDataRequest['passwordString']);
 
         if ($response['status'] != 200) {
-            $this->logger->errorLogCaller("Failed to suspend user", ['username' => $username, 'response' => $response]);
+            $this->systemLogger->errorLogCaller("Failed to suspend user", ['username' => $username, 'response' => $response]);
             return false;
         } else {
-            $this->logger->debug("Suspended user on comlink api ", ['username' => $username]);
+            $this->systemLogger->debug("Suspended user on comlink api ", ['username' => $username]);
         }
+
         $dbUserRecord->setIsActive(false);
         $this->userRepository->saveUser($dbUserRecord);
         return true;
@@ -302,23 +298,22 @@ class TeleHealthRemoteRegistrationService
         }
 
         $passwordString = $this->userRepository->decryptPassword($password);
-        $httpDataRequest = ['userName' => $username, 'passwordString' => $passwordString];
-        $passwordString = null; // clear out passwords in memory
+        $httpDataRequest = ['userName' => $username, 'passwordString' => $passwordString]; // clear out passwords in memory
 
-        $response = $this->sendAPIRequest($this->getEndpointUrl("userresume"), $httpDataRequest);
-        $httpDataRequest = null; // clear out passwords in memory
+        $response = $this->sendAPIRequest($this->getEndpointUrl("userresume"), $httpDataRequest); // clear out passwords in memory
         if ($response['status'] != 200) {
-            $this->logger->errorLogCaller("Failed to resume user", ['username' => $username, 'response' => $response]);
+            $this->systemLogger->errorLogCaller("Failed to resume user", ['username' => $username, 'response' => $response]);
             return false;
         } else {
-            $this->logger->debug("Resumed user on comlink api ", ['username' => $username]);
+            $this->systemLogger->debug("Resumed user on comlink api ", ['username' => $username]);
         }
+
         $dbUserRecord->setIsActive(true);
         $this->userRepository->saveUser($dbUserRecord);
         return true;
     }
 
-    public function deactivateUser(string $username, string $password)
+    public function deactivateUser(string $username, string $password): bool
     {
         // first make sure we can do the api request
         $dbUserRecord = $this->userRepository->getUser($username);
@@ -331,17 +326,18 @@ class TeleHealthRemoteRegistrationService
         $response = $this->sendAPIRequest($this->getEndpointUrl("userresume"), $httpDataRequest);
 
         if ($response['status'] != 200) {
-            $this->logger->errorLogCaller("Failed to deactivate user", ['username' => $username, 'response' => $response]);
+            $this->systemLogger->errorLogCaller("Failed to deactivate user", ['username' => $username, 'response' => $response]);
             return false;
         } else {
-            $this->logger->debug("Deactivated user on comlink api ", ['username' => $username]);
+            $this->systemLogger->debug("Deactivated user on comlink api ", ['username' => $username]);
         }
+
         $dbUserRecord->setIsActive(false);
         $this->userRepository->saveUser($dbUserRecord);
         return true;
     }
 
-    public function verifyProvisioningServiceIsValid()
+    public function verifyProvisioningServiceIsValid(): array
     {
         $randomUuid = UuidV4::uuid4()->toString();
         $randomPassword = UuidV4::uuid4()->toString();
@@ -351,7 +347,7 @@ class TeleHealthRemoteRegistrationService
         return ['status' => $response['internalStatus'], 'message' => $response['internalError']];
     }
 
-    private function sendAPIRequest($endpointUrl, array $body)
+    private function sendAPIRequest($endpointUrl, array $body): array
     {
         if (empty($this->httpClient)) {
             throw new \BadMethodCallException("httpClient must be setup in order to send request");
@@ -378,16 +374,17 @@ class TeleHealthRemoteRegistrationService
             $statusCode = $response->getStatusCode();
             $response->getBody()->rewind();
             $bodyResponse = $response->getBody()->getContents();
-        } catch (GuzzleException $exception) {
-            $this->logger->errorLogCaller(
-                "Failed to send registration request Exception: " . $exception->getMessage(),
-                ['trace' => $exception->getTraceAsString(), 'endUrl' => $endpointUrl]
+        } catch (GuzzleException $guzzleException) {
+            $this->systemLogger->errorLogCaller(
+                "Failed to send registration request Exception: " . $guzzleException->getMessage(),
+                ['trace' => $guzzleException->getTraceAsString(), 'endUrl' => $endpointUrl]
             );
-            if ($exception->getCode() == 401) { // unauthorized exception meaning the credentials are incorrect
+            if ($guzzleException->getCode() == 401) { // unauthorized exception meaning the credentials are incorrect
                 $statusCode = 401;
             }
-            $internalErrorResponse = $exception->getMessage();
-            $internalStatusCode = $exception->getCode();
+
+            $internalErrorResponse = $guzzleException->getMessage();
+            $internalStatusCode = $guzzleException->getCode();
         }
 
         return ['status' => $statusCode, 'internalStatus' => $internalStatusCode, 'bodyResponse' => $bodyResponse, 'internalError' => $internalErrorResponse];

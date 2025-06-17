@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -25,11 +27,12 @@ $isPortal = CoreFormToPortalUtility::isPatientPortalSession($_GET);
 if ($isPortal) {
     $ignoreAuth_onsite_portal = true;
 }
+
 $patientPortalOther = CoreFormToPortalUtility::isPatientPortalOther($_GET);
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
     CsrfUtils::csrfNotVerified();
@@ -50,6 +53,7 @@ unset($_POST['select_item']);
 if ($isPortal && $mode == 'update' && !empty($formid)) {
     CoreFormToPortalUtility::confirmFormBootstrapPatient($isPortal, $formid, 'questionnaire_assessments', $_SESSION['pid']);
 }
+
 if (($_REQUEST['formOrigin'] ?? null) == 2) {
     $encounter = 0;
 }
@@ -61,6 +65,7 @@ if ($mode !== 'new' && $mode !== 'new_repository_form') {
         if (!empty($_POST['response_meta'])) {
             $qr_json = $responseService->insertResponseMetaData($qr_json, $_POST['response_meta']);
         }
+
         $qrsaveid = $responseService->saveQuestionnaireResponse($qr_json, $pid, $encounter, null, null, $q_json, null, $lform_response, true);
         $_POST['response_id'] = $qrsaveid['response_id'] ?? null;
         if (empty($_POST['response_meta']) || $qrsaveid['new']) {
@@ -74,6 +79,7 @@ if ($mode !== 'new' && $mode !== 'new_repository_form') {
         echo("<p>" . xlt("Questionnaire Response save failed because") . '<br />' . text($e->getMessage()) . '<br /><h3>' . xlt("Will attempt to save using backed up answers.") . "</h3></p>");
     }
 }
+
 // register new form
 if (isset($_POST['save_registry'])) {
     unset($_POST['save_registry']);
@@ -85,6 +91,7 @@ if (isset($_POST['save_registry'])) {
         } catch (Exception $e) {
             die(xlt("New Questionnaire insert failed") . '<br />' . text($e->getMessage()));
         }
+
         $rtn = sqlInsert("Insert Into `registry` Set
         `name`=?,
         `state`=?,
@@ -101,6 +108,7 @@ if (isset($_POST['save_registry'])) {
         $msg .= "<script>setTimeout(() => {history.back();}, 4000)</script>";
         die($msg);
     }
+
     formHeader("Redirecting....");
     formJump();
     formFooter();

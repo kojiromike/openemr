@@ -1,6 +1,8 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -11,7 +13,7 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once('gacl_admin.inc.php');
+require_once(__DIR__ . '/gacl_admin.inc.php');
 
 switch (strtolower($_GET['object_type'])) {
 	case 'axo':
@@ -26,7 +28,7 @@ switch ($_GET['action']) {
 		$gacl_api->debug_text('Submit!!');
 
 		//Function to pass array_walk to trim all entries in an array.
-		function array_walk_trim(&$array_field) {
+		function array_walk_trim(&$array_field): void {
 			$array_field = $db->qstr(strtolower(trim($array_field)));
 		}
 
@@ -36,16 +38,16 @@ switch ($_GET['action']) {
 		$exploded_value_search_str = explode("\n", $value_search_str);
 		$exploded_name_search_str = explode("\n", $name_search_str);
 
-		if (count($exploded_value_search_str) > 1 OR count($exploded_name_search_str) > 1) {
+		if (count($exploded_value_search_str) > 1 || count($exploded_name_search_str) > 1) {
 			//Given a list, lets try to match all lines in it.
 			array_walk($exploded_value_search_str, 'array_walk_trim');
 			array_walk($exploded_name_search_str, 'array_walk_trim');
 		} else {
-			if ($value_search_str != '') {
+			if ($value_search_str !== '') {
 				$value_search_str .= '%';
 			}
 
-			if ($name_search_str != '') {
+			if ($name_search_str !== '') {
 				$name_search_str .= '%';
 			}
 		}

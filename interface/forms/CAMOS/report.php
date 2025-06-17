@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS report.php
  *
@@ -13,10 +15,10 @@
  */
 
 require_once(dirname(__FILE__) . '/../../globals.php');
-require_once("../../../library/api.inc.php");
-require_once("content_parser.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
+require_once(__DIR__ . "/content_parser.php");
 
-function CAMOS_report($pid, $encounter, $cols, $id)
+function CAMOS_report($pid, $encounter, $cols, $id): void
 {
     $data = formFetch("form_CAMOS", $id);
     if ($data) {

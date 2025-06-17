@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -21,5 +23,6 @@ if (count($route ?? []) === 2) {
     $serviceType = $route[0];
     $action = $route[1] ?: $action;
 }
+
 $serviceType = $serviceType ?: $_REQUEST['type'];
 AppDispatch::setApiService($serviceType);

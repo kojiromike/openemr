@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form to track any clinical parameter.
  *
@@ -11,8 +13,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 
@@ -33,7 +35,7 @@ $dbaction = isset($_POST['dbaction']) ? trim($_POST['dbaction']) : '';
 
 // save new item to a track
 //-----------------------------
-if ($dbaction == 'add') {
+if ($dbaction === 'add') {
         $the_name   = $_POST['name'];
         $the_descr  = $_POST['description'];
         $the_pos    = $_POST['position'];
@@ -66,7 +68,7 @@ if ($dbaction == 'add') {
 
 // edit existing track/items
 //-----------------------------
-if ($dbaction == 'edit') {
+if ($dbaction === 'edit') {
         $the_name   = $_POST['name'];
         $the_descr  = $_POST['description'];
         $the_pos    = $_POST['position'];
@@ -88,7 +90,7 @@ if ($dbaction == 'edit') {
 // end edit -----------------------------
 
 //-----------------------------
-if ($dbaction == 'delete' && AclMain::aclCheckCore('admin', 'super')) {
+if ($dbaction === 'delete' && AclMain::aclCheckCore('admin', 'super')) {
         $the_item   = $_POST['itemid'];
         $deletespell  = "DELETE FROM form_track_anything_type ";
         $deletespell .= "WHERE track_anything_type_id = ? ";
@@ -102,7 +104,7 @@ if ($dbaction == 'delete' && AclMain::aclCheckCore('admin', 'super')) {
 
 // Create a new track
 $create_track = isset($_POST['create_track']) ? trim($_POST['create_track']) : '';
-if ($create_track) {
+if ($create_track !== '' && $create_track !== '0') {
     echo "<table class='create'><tr><td>\n";
     echo "<b>" . xlt('Create a new track')  . " </b><br />&nbsp;";
     echo "<form method='post' action='" . $rootdir . "/forms/track_anything/create.php' onsubmit='return top.restoreSession()'>\n";
@@ -131,7 +133,7 @@ if ($create_track) {
 
 // user clicked some buttons...
 $the_item = isset($_POST['typeid']) ? trim($_POST['typeid']) : '';
-if ($the_item) {
+if ($the_item !== '' && $the_item !== '0') {
     $add        = $_POST['add'] ?? null;
     $edit       = $_POST['edit'] ?? null;
     $delete     = $_POST['delete'] ?? null;
@@ -350,9 +352,9 @@ echo "<input type='button' name='stop' value='" . xla('Back') . "' ";
 if ($encounter) {
     ?> onclick="top.restoreSession();location='<?php echo $web_root ?>/interface/forms/track_anything/new.php'"<?php
 // if not in an encounter, go back to "demographics"
-} elseif (!$encounter and $pid) {
+} elseif (!$encounter && $pid) {
     ?> onclick="top.restoreSession();location='<?php echo $web_root ?>/interface/patient_file/summary/demographics.php'"<?php
-} elseif (!$encounter and !$pid) {
+} elseif (!$encounter && !$pid) {
     ?> onclick="top.restoreSession();location='<?php echo $web_root ?>/interface/new/new.php'"<?php
 }
 

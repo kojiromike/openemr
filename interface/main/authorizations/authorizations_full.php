@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Authorizations full script.
  *
@@ -10,8 +12,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Logging\EventAuditLogger;
@@ -47,7 +49,7 @@ if (isset($_GET["mode"]) && $_GET["mode"] == "authorize") {
 
 //fetch billing information:
 if ($res = sqlStatement("select *, concat(u.fname,' ', u.lname) as user from billing LEFT JOIN users as u on billing.user = u.id where billing.authorized=0 and groupname=?", array ($groupname))) {
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $result[$iter] = $row;
     }
 
@@ -63,7 +65,7 @@ if ($res = sqlStatement("select *, concat(u.fname,' ', u.lname) as user from bil
 
 //fetch transaction information:
 if ($res = sqlStatement("select * from transactions where authorized=0 and groupname=?", array($groupname))) {
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $result2[$iter] = $row;
     }
 
@@ -77,27 +79,24 @@ if ($res = sqlStatement("select * from transactions where authorized=0 and group
     }
 }
 
-if (empty($GLOBALS['ignore_pnotes_authorization'])) {
-  //fetch pnotes information, exclude ALL deleted notes
-    if ($res = sqlStatement("select * from pnotes where authorized=0 and deleted!=1 and groupname=?", array($groupname))) {
-        for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
-            $result3[$iter] = $row;
-        }
-
-        if ($result3) {
-            foreach ($result3 as $iter) {
-                $authorize[$iter["pid"]]["pnotes"] .= "<span class=small>" .
-                text($iter["user"]) . ": </span><span class=text>" .
-                text(strterm($iter["body"], 25) . " " . date("n/j/Y", strtotime($iter["date"]))) .
-                "</span><br />\n";
-            }
+//fetch pnotes information, exclude ALL deleted notes
+if (empty($GLOBALS['ignore_pnotes_authorization']) && $res = sqlStatement("select * from pnotes where authorized=0 and deleted!=1 and groupname=?", array($groupname))) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
+        $result3[$iter] = $row;
+    }
+    if ($result3) {
+        foreach ($result3 as $iter) {
+            $authorize[$iter["pid"]]["pnotes"] .= "<span class=small>" .
+            text($iter["user"]) . ": </span><span class=text>" .
+            text(strterm($iter["body"], 25) . " " . date("n/j/Y", strtotime($iter["date"]))) .
+            "</span><br />\n";
         }
     }
 }
 
 //fetch forms information:
 if ($res = sqlStatement("select * from forms where authorized=0 and groupname=?", array($groupname))) {
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $result4[$iter] = $row;
     }
 

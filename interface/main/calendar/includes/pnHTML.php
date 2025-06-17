@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // File: $Id$
 // ----------------------------------------------------------------------
 // POST-NUKE Content Management System
@@ -124,7 +126,7 @@ class pnHTML
      * @access private
      * @var string $header
      */
-    var $header;
+    public $header = array ();
 
     /**
      * The pending HTML output
@@ -132,7 +134,7 @@ class pnHTML
      * @access private
      * @var string $output
      */
-    var $output;
+    public $output = '';
 
     /**
      * Return output?
@@ -140,7 +142,7 @@ class pnHTML
      * @access private
      * @var integer $return
      */
-    var $return;
+    public $return = _PNH_KEEPOUTPUT;
 
     /**
      * Parse text for output?
@@ -148,7 +150,7 @@ class pnHTML
      * @access private
      * @var integer $parse
      */
-    var $parse;
+    public $parse = _PNH_PARSEINPUT;
 
     /**
      * Current tab index value
@@ -156,7 +158,7 @@ class pnHTML
      * @access private
      * @var integer $tabindex
      */
-    var $tabindex;
+    public $tabindex = 0;
 
     /**
      * File upload mode
@@ -165,26 +167,7 @@ class pnHTML
      * @since 1.13 - 2002/01/23
      * @var integer $fileupload
      */
-    var $fileupload;
-
-    /*==============================================================================*
-     |                             Methods: Base                                    |
-     *==============================================================================*/
-
-
-    /**
-     * pnHTML constructor.
-     */
-    function __construct()
-    {
-        $this->header = array ();
-        $this->output = '';
-        $this->return = _PNH_KEEPOUTPUT;
-        $this->parse = _PNH_PARSEINPUT;
-        $this->tabindex = 0;
-        $this->fileupload = 0;
-        return true;
-    }
+    public $fileupload = 0;
 
     /**
      * Return the current state of the output stream
@@ -194,7 +177,7 @@ class pnHTML
      * @return integer Current output state
      * @see SetOutputMode()
      */
-    function GetOutputMode()
+    public function GetOutputMode()
     {
         // The ONLY time this should be accessed directly
         return $this->return;
@@ -209,7 +192,7 @@ class pnHTML
      * @return integer Previous state
      * @see GetOutputMode()
      */
-    function SetOutputMode($st)
+    public function SetOutputMode($st)
     {
         $pre = $this->GetOutputMode();
         switch ($st) {
@@ -235,7 +218,7 @@ class pnHTML
      * @return integer Current input state
      * @see SetInputMode()
      */
-    function GetInputMode()
+    public function GetInputMode()
     {
         // The ONLY time this should be accessed directly
         return $this->parse;
@@ -250,7 +233,7 @@ class pnHTML
      * @return integer Previous state
      * @see GetInputMode()
      */
-    function SetInputMode($st)
+    public function SetInputMode($st)
     {
         $pre = $this->GetInputMode();
         switch ($st) {
@@ -282,7 +265,7 @@ class pnHTML
      * @since 1.15 - 2002/01/30
      * @return string An HTML string
      */
-    function GetOutput()
+    public function GetOutput(): string
     {
         return implode("\n", $this->header) . "\n" . $this->output;
     }
@@ -294,7 +277,7 @@ class pnHTML
      *
      * @access public
      */
-    function PrintPage()
+    public function PrintPage(): void
     {
         // Headers set by the system
         foreach ($this->header as $headerline) {
@@ -320,10 +303,10 @@ class pnHTML
      * otherwise null
      * @see EndPage()
      */
-    function StartPage()
+    public function StartPage(): string|false|null
     {
         ob_start();
-        include 'header.php';
+        include __DIR__ . '/header.php';
         print '<table class="w-100 border-0" cellpadding="0" cellspacing="0"><tr><td class="text-left align-top">';
 
         $output = ob_get_contents();
@@ -334,6 +317,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
     /**
@@ -344,18 +328,14 @@ class pnHTML
      * otherwise null
      * @see StartPage()
      */
-    function EndPage()
+    public function EndPage(): string|false|null
     {
         global $index;
-        if (pnVarCleanFromInput('module')) {
-            $index = 0;
-        } else {
-            $index = 1;
-        }
+        $index = pnVarCleanFromInput('module') ? 0 : 1;
 
         ob_start();
         print '</td></tr></table>';
-        include 'footer.php';
+        include __DIR__ . '/footer.php';
         $output = ob_get_contents();
         @ob_end_clean();
 
@@ -364,6 +344,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
 
@@ -379,7 +360,7 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function Text($text)
+    public function Text($text)
     {
         if ($this->GetInputMode() == _PNH_PARSEINPUT) {
             $text = pnVarPrepForDisplay($text);
@@ -390,6 +371,7 @@ class pnHTML
         } else {
             $this->output .= $text;
         }
+        return null;
     }
 
 
@@ -401,10 +383,10 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function Linebreak($numbreaks = 1)
+    public function Linebreak($numbreaks = 1)
     {
         $out = '';
-        for ($i = 0; $i < $numbreaks; $i++) {
+        for ($i = 0; $i < $numbreaks; ++$i) {
             $out .= '<br />';
         }
 
@@ -413,6 +395,7 @@ class pnHTML
         } else {
             $this->output .= $out;
         }
+        return null;
     }
 
 
@@ -428,7 +411,7 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function FormStart($action)
+    public function FormStart($action): ?string
     {
         $output = '<form'
             . ' action="' . pnVarPrepForDisplay($action) . '"'
@@ -441,6 +424,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
     /**
@@ -450,7 +434,7 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function FormEnd()
+    public function FormEnd(): ?string
     {
         $output = '</form>';
 
@@ -459,6 +443,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
     /**
@@ -471,9 +456,9 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function FormSubmit($label = 'Submit', $accesskey = '')
+    public function FormSubmit($label = 'Submit', $accesskey = ''): ?string
     {
-        $this->tabindex++;
+        ++$this->tabindex;
         $output = '<input class="btn btn-primary"'
             . ' type="submit"'
             . ' value="' . pnVarPrepForDisplay($label) . '"'
@@ -487,6 +472,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
 
@@ -499,10 +485,10 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function FormHidden($fieldname, $value = '')
+    public function FormHidden($fieldname, $value = ''): ?string
     {
         if (empty($fieldname)) {
-            return;
+            return null;
         }
 
         if (is_array($fieldname)) {
@@ -531,6 +517,7 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 
     /**
@@ -555,10 +542,10 @@ class pnHTML
      * @return string An HTML string if <code>ReturnHTML()</code> has been called,
      * otherwise null
      */
-    function FormSelectMultiple($fieldname, $data, $multiple = 0, $size = 1, $selected = '', $accesskey = '', $disable = false, $readonly = false)
+    public function FormSelectMultiple($fieldname, $data, $multiple = 0, $size = 1, $selected = '', $accesskey = '', $disable = false, $readonly = false): ?string
     {
         if (empty($fieldname)) {
-            return;
+            return null;
         }
 
         $disable_text = "";
@@ -570,11 +557,11 @@ class pnHTML
             $disable_text = " disabled  ";
         }
 
-        $this->tabindex++;
+        ++$this->tabindex;
 
         // Set up selected if required
         if (!empty($selected)) {
-            for ($i = 0; !empty($data[$i]); $i++) {
+            for ($i = 0; !empty($data[$i]); ++$i) {
                 if ($data[$i]['id'] == $selected) {
                     $data[$i]['selected'] = 1;
                 }
@@ -612,5 +599,6 @@ class pnHTML
         } else {
             $this->output .= $output;
         }
+        return null;
     }
 }

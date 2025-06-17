@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -11,4 +13,4 @@
 
 $mode = 'update';
 $form_id = $_GET['id'] ?? 0;
-require("questionnaire_assessments.php");
+require(__DIR__ . "/questionnaire_assessments.php");

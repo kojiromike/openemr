@@ -1,15 +1,17 @@
 <?php
 
- // Copyright (C) 2006-2021 Rod Roark <rod@sunsetsystems.com>
+ declare(strict_types=1);
+
+// Copyright (C) 2006-2021 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
  // as published by the Free Software Foundation; either version 2
  // of the License, or (at your option) any later version.
 
-require_once("../globals.php");
-require_once("drugs.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/drugs.inc.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -49,7 +51,7 @@ $ORDERHASH = array(
   'exp'  => 'di.expiration, d.name, d.drug_id, di.lot_number',
 );
 
-$form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
+$form_facility = 0 + empty($_REQUEST['form_facility']) !== 0 ? 0 : $_REQUEST['form_facility'];
 $form_show_empty = empty($_REQUEST['form_show_empty']) ? 0 : 1;
 $form_show_inactive = empty($_REQUEST['form_show_inactive']) ? 0 : 1;
 $form_consumable = isset($_REQUEST['form_consumable']) ? intval($_REQUEST['form_consumable']) : 0;
@@ -70,14 +72,14 @@ if ($form_facility) {
     $where .= " AND lo.option_value IS NOT NULL AND lo.option_value = ?";
     $binds[] = $form_facility;
 }
-if ($form_warehouse) {
+if ($form_warehouse !== '' && $form_warehouse !== '0') {
     $where .= " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = ?";
     $binds[] = $form_warehouse;
 }
-if (!$form_show_inactive) {
+if ($form_show_inactive === 0) {
     $where .= " AND d.active = 1";
 }
-if ($form_consumable) {
+if ($form_consumable !== 0) {
     if ($form_consumable == 1) {
         $where .= " AND d.consumable = '1'";
     } else {
@@ -85,7 +87,7 @@ if ($form_consumable) {
     }
 }
 
-$dion = $form_show_empty ? "" : "AND di.on_hand != 0";
+$dion = $form_show_empty !== 0 ? "" : "AND di.on_hand != 0";
 
 // get drugs
 $res = sqlStatement(
@@ -94,26 +96,26 @@ $res = sqlStatement(
     "di.warehouse_id, lo.title, lo.option_value AS facid, f.name AS facname " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    "AND di.destroy_date IS NULL $dion " .
+    sprintf('AND di.destroy_date IS NULL %s ', $dion) .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = lo.option_value " .
     "LEFT JOIN list_options AS lof ON lof.list_id = 'drug_form' AND " .
     "lof.option_id = d.form AND lof.activity = 1 " .
-    "$where ORDER BY d.active DESC, $orderby",
+    sprintf('%s ORDER BY d.active DESC, %s', $where, $orderby),
     $binds
 );
 
-function generateEmptyTd($n)
+function generateEmptyTd($n): void
 {
     $temp = '';
     while ($n > 0) {
         $temp .= "<td></td>";
-        $n--;
+        --$n;
     }
     echo $temp;
 }
-function processData($data)
+function processData(array $data): array
 {
     $data['inventory_id'] = [$data['inventory_id']];
     $data['lot_number'] = [$data['lot_number']];
@@ -123,7 +125,7 @@ function processData($data)
     $data['expiration'] = [$data['expiration']];
     return $data;
 }
-function mergeData($d1, $d2)
+function mergeData(array $d1, array $d2): array
 {
     $d1['inventory_id'] = array_merge($d1['inventory_id'], $d2['inventory_id']);
     $d1['lot_number'] = array_merge($d1['lot_number'], $d2['lot_number']);
@@ -133,11 +135,11 @@ function mergeData($d1, $d2)
     $d1['expiration'] = array_merge($d1['expiration'], $d2['expiration']);
     return $d1;
 }
-function mapToTable($row)
+function mapToTable(array $row): void
 {
     global $auth_admin, $auth_lots;
     $today = date('Y-m-d');
-    if ($row) {
+    if ($row !== []) {
         echo " <tr class='detail'>\n";
         $lastid = $row['drug_id'];
         if ($auth_admin) {
@@ -204,7 +206,7 @@ function mapToTable($row)
             foreach ($row['expiration'] as $value) {
                 // Make the expiration date red if expired.
                 $expired = !empty($value) && strcmp($value, $today) <= 0;
-                $value = !empty($value) ? oeFormatShortDate($value) : xl('N/A');
+                $value = empty($value) ? xl('N/A') : oeFormatShortDate($value);
                 echo "<div" . ($expired ? " style='color:red'" : "") . ">" . text($value) . "</div>";
             }
             echo "</td>\n";
@@ -335,7 +337,7 @@ while ($lrow = sqlFetchArray($lres)) {
     if ($is_user_restricted && !isWarehouseAllowed($facid, $whid)) {
         continue;
     }
-    echo "    <option value='" . attr("$whid/$facid") . "'";
+    echo "    <option value='" . attr(sprintf('%s/%s', $whid, $facid)) . "'";
     echo " id='fac" . attr($facid) . "'";
     if (strlen($form_warehouse)  > 0 && $whid == $form_warehouse) {
         echo " selected";
@@ -364,10 +366,10 @@ foreach (
    </select>&nbsp;
   </td>
   <td>
-   <input type='checkbox' name='form_show_empty' value='1'<?php if ($form_show_empty) {
+   <input type='checkbox' name='form_show_empty' value='1'<?php if ($form_show_empty !== 0) {
         echo " checked";} ?> />
    <?php echo xlt('Show empty lots'); ?><br />
-   <input type='checkbox' name='form_show_inactive' value='1'<?php if ($form_show_inactive) {
+   <input type='checkbox' name='form_show_inactive' value='1'<?php if ($form_show_inactive !== 0) {
         echo " checked";} ?> />
    <?php echo xlt('Show inactive'); ?>
   </td>

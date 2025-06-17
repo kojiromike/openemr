@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * clinic_note report.php
  *
@@ -15,9 +17,9 @@
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function clinic_note_report($pid, $encounter, $cols, $id)
+function clinic_note_report($pid, $encounter, $cols, $id): void
 {
-    $cols = 1; // force always 1 column
+    // force always 1 column
     $count = 0;
     $data = sqlQuery("SELECT * " .
     "FROM form_clinic_note WHERE " .
@@ -46,11 +48,9 @@ function clinic_note_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td valign='top'><span class='bold'>" . xlt($key) . ": </span><span class='text'>" . text($value) . "&nbsp;</span></td>\n";
-            $count++;
-            if ($count == $cols) {
-                $count = 0;
-                print "</tr>\n<tr>\n";
-            }
+            ++$count;
+            $count = 0;
+            print "</tr>\n<tr>\n";
         }
 
         print "</tr>\n</table>\n";

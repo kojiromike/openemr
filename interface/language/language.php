@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * language.php script
  *
@@ -10,15 +12,15 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/registry.inc.php");
-require_once("language.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/registry.inc.php');
+require_once(__DIR__ . "/language.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
 // Generates a Javascript section to activate the specified tab.
-function activate_lang_tab($linkid)
+function activate_lang_tab($linkid): string
 {
     $s = "<script>\n";
     foreach (
@@ -30,10 +32,9 @@ function activate_lang_tab($linkid)
         'csv-link',
         ) as $id
     ) {
-        $s .= "\$('#$id')." . ($id == $linkid ? 'addClass' : 'removeClass') . "('active');\n";
+        $s .= sprintf("\$('#%s').", $id) . ($id == $linkid ? 'addClass' : 'removeClass') . "('active');\n";
     }
-    $s .= "</script>\n";
-    return $s;
+    return $s . "</script>\n";
 }
 
 //START OUT OUR PAGE....
@@ -93,22 +94,22 @@ function activate_lang_tab($linkid)
 
                             switch ($_GET['m']) :
                                 case 'definition':
-                                    require_once('lang_definition.php');
+                                    require_once(__DIR__ . '/lang_definition.php');
                                     break;
                                 case 'constant':
-                                    require_once('lang_constant.php');
+                                    require_once(__DIR__ . '/lang_constant.php');
                                     break;
                                 case 'language':
-                                    require_once('lang_language.php');
+                                    require_once(__DIR__ . '/lang_language.php');
                                     break;
                                 case 'manage':
-                                    require_once('lang_manage.php');
+                                    require_once(__DIR__ . '/lang_manage.php');
                                     break;
                                 case 'csv':
-                                    require_once('csv/load_csv_file.php');
+                                    require_once(__DIR__ . '/csv/load_csv_file.php');
                                     break;
                                 case 'csvval':
-                                    require_once('csv/validate_csv.php');
+                                    require_once(__DIR__ . '/csv/validate_csv.php');
                                     break;
                             endswitch;
                         } else {

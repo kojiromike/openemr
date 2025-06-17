@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * evaluation report.php
  *
@@ -11,8 +13,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require("C_FormEvaluation.class.php");
+require_once($srcdir . '/api.inc.php');
+require(__DIR__ . "/C_FormEvaluation.class.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -21,5 +23,5 @@ if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
 }
 
 $c = new C_FormEvaluation();
-echo $c->default_action_process($_POST);
+echo $c->default_action_process();
 @formJump();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Controller/IndexController.php
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -19,11 +20,9 @@ use Application\Listener\Listener;
 
 class IndexController extends AbstractActionController
 {
-    /**
-     * @var \Application\Model\ApplicationTable
-     */
-    protected $applicationTable;
-    protected $listenerObject;
+    protected \Application\Model\ApplicationTable $applicationTable;
+
+    protected \Application\Listener\Listener $listenerObject;
 
     public function __construct(\Application\Model\ApplicationTable $applicationTable)
     {
@@ -31,7 +30,7 @@ class IndexController extends AbstractActionController
         $this->applicationTable = $applicationTable;
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         // you can uncomment this to test the index action.
         // $request  = $this->getRequest();
@@ -44,16 +43,13 @@ class IndexController extends AbstractActionController
      /**
      * Function ajaxZXL
      * All JS Mesages to xl Translation
-     *
-     * @return \Laminas\View\Model\JsonModel
      */
-    public function ajaxZxlAction()
+    public function ajaxZxlAction(): \Laminas\View\Model\JsonModel
     {
         $request  = $this->getRequest();
         $message  = $request->getPost()->msg;
         $array    = array('msg' => $this->listenerObject->z_xl($message));
-        $return   = new JsonModel($array);
-        return $return;
+        return new JsonModel($array);
     }
 
     /**
@@ -74,14 +70,13 @@ class IndexController extends AbstractActionController
      */
     public function searchAction()
     {
-        $request      = $this->getRequest();
-        $result       = $this->forward()->dispatch(IndexController::class, array(
+        $this->getRequest();
+        return $this->forward()->dispatch(IndexController::class, array(
                                                       'action' => 'auto-suggest'
                                                  ));
-        return $result;
     }
 
-    public function autoSuggestAction()
+    public function autoSuggestAction(): \Laminas\View\Model\ViewModel
     {
         $request      = $this->getRequest();
         $post         = $request->getPost();
@@ -93,9 +88,9 @@ class IndexController extends AbstractActionController
         $limit        = 20;
         $result       = $this->getApplicationTable()->listAutoSuggest($post, $limit);
       /** disable layout **/
-        $index        = new ViewModel();
-        $index->setTerminal(true);
-        $index->setVariables(array(
+        $viewModel        = new ViewModel();
+        $viewModel->setTerminal(true);
+        $viewModel->setVariables(array(
                                         'result'        => $result,
                                         'keyword'       => $keyword,
                                         'page'          => $page,
@@ -106,6 +101,6 @@ class IndexController extends AbstractActionController
                                         'CommonPlugin'  => $this->CommonPlugin(),
                                         'listenerObject' => $this->listenerObject,
                                     ));
-        return $index;
+        return $viewModel;
     }
 }

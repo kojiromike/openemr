@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Message and Reminder Center UI
  *
@@ -18,13 +20,13 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/pnotes.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/gprelations.inc.php");
-require_once "$srcdir/user.inc.php";
-require_once("$srcdir/MedEx/API.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/pnotes.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/gprelations.inc.php');
+require_once $srcdir . '/user.inc.php';
+require_once($srcdir . '/MedEx/API.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -34,11 +36,7 @@ use OpenEMR\OeUI\OemrUI;
 
 //Gets validation rules from Page Validation list.
 $collectthis = collectValidationPageRules("/interface/main/messages/messages.php");
-if (empty($collectthis)) {
-    $collectthis = "{}";
-} else {
-    $collectthis = json_sanitize($collectthis[array_keys($collectthis)[0]]["rules"]);
-}
+$collectthis = empty($collectthis) ? "{}" : json_sanitize($collectthis[array_keys($collectthis)[0]]["rules"]);
 
 $MedEx = new MedExApi\MedEx('MedExBank.com');
 
@@ -86,7 +84,7 @@ if (
     <script>
         var xljs1 = '<?php echo xla('Preferences updated successfully'); ?>';
         var format_date_moment_js = '<?php echo attr(DateFormatRead("validateJS")); ?>';
-        <?php require_once "$srcdir/restoreSession.php"; ?>
+        <?php require_once $srcdir . '/restoreSession.php'; ?>
     </script>
 
     <script src="<?php echo $GLOBALS['web_root']; ?>/interface/main/messages/js/reminder_appts.js?v=<?php echo $v_js_includes; ?>"></script>
@@ -207,11 +205,7 @@ if (!empty($_REQUEST['go'])) { ?>
                     <?php
                     // Check to see if the user has Admin rights, and if so, allow access to See All.
                     $showall = isset($_GET['show_all']) ? $_GET['show_all'] : "";
-                    if ($showall == "yes") {
-                        $show_all = $showall;
-                    } else {
-                        $show_all = "no";
-                    }
+                    $show_all = $showall == "yes" ? $showall : "no";
                     // Collect active variable and applicable html code for links
                     $form_active = (isset($_REQUEST['form_active']) ? $_REQUEST['form_active'] : false);
                     $form_inactive = (isset($_REQUEST['form_inactive']) ? $_REQUEST['form_inactive'] : false);
@@ -255,21 +249,21 @@ if (!empty($_REQUEST['go'])) { ?>
                         //show the activity links
                         if (empty($task) || $task == "add" || $task == "delete") { ?>
                             <li class="nav-item">
-                                <?php if ($active == "all") : ?>
+                                <?php if ($active === "all") : ?>
                                     <span class="nav-link disabled"><?php echo xlt('All Messages'); ?></span>
                                 <?php else : ?>
                                     <a href="messages.php?show_all=yes" class="nav-link active" onclick="top.restoreSession()"><?php echo xlt('Show All'); ?></a>
                                 <?php endif; ?>
                             </li>
                             <li class="nav-item">
-                                <?php if ($active == '1') { ?>
+                                <?php if ($active === '1') { ?>
                                     <span class="nav-link disabled"><?php echo xlt('Active Messages'); ?></span>
                                 <?php } else { ?>
                                     <a href="messages.php?form_active=1" class="nav-link" onclick="top.restoreSession()"><?php echo xlt('Show Active'); ?></a>
                                 <?php } ?>
                             </li>
                             <li class="nav-item">
-                                <?php if ($active == '0') { ?>
+                                <?php if ($active === '0') { ?>
                                     <span class="nav-link disabled"><?php echo xlt('Inactive Messages'); ?></span>
                                 <?php } else { ?>
                                     <a href="messages.php?form_inactive=1" class="nav-link" onclick="top.restoreSession()"><?php echo xlt('Show Inactive'); ?></a>
@@ -299,7 +293,7 @@ if (!empty($_REQUEST['go'])) { ?>
                             $assigned_to_list = explode(';', $_POST['assigned_to']);
                             $datetime = isset($_POST['form_datetime']) ? DateTimeToYYYYMMDDHHMMSS($_POST['form_datetime']) : '';
                             foreach ($assigned_to_list as $assigned_to) {
-                                if ($noteid && $assigned_to != '-patient-') {
+                                if ($noteid && $assigned_to !== '-patient-') {
                                     if (checkPnotesNoteId($noteid, $_SESSION['authUser'])) {
                                         updatePnote($noteid, $note, $form_note_type, $assigned_to, $form_message_status, $datetime);
                                         $noteid = '';
@@ -307,7 +301,7 @@ if (!empty($_REQUEST['go'])) { ?>
                                         die("Message is not assigned to you. Adding is disallowed.");
                                     }
                                 } else {
-                                    if ($noteid && $assigned_to == '-patient-') {
+                                    if ($noteid && $assigned_to === '-patient-') {
                                         // When $assigned_to == '-patient-' we don't update the current note, but
                                         // instead create a new one with the current note's body prepended and
                                         // attributed to the patient.  This seems to be all for the patient portal.
@@ -318,7 +312,7 @@ if (!empty($_REQUEST['go'])) { ?>
                                         $pres = sqlQuery("SELECT lname, fname " .
                                             "FROM patient_data WHERE pid = ?", array($reply_to[0]));
                                         $patientname = $pres['lname'] . ", " . $pres['fname'];
-                                        $note .= "\n\n$patientname on " . $row['date'] . " wrote:\n\n";
+                                        $note .= "\n\n{$patientname} on " . $row['date'] . " wrote:\n\n";
                                         $note .= $row['body'];
                                     }
                                     // There's no note ID, and/or it's assigned to the patient.
@@ -350,7 +344,7 @@ if (!empty($_REQUEST['go'])) { ?>
                             break;
                         case "edit":
                             $noteid = (int) $_GET['noteid'];
-                            if (empty($noteid)) {
+                            if ($noteid === 0) {
                                 die("There was an error processing your request.");
                             }
                             // Check to make sure the noteid is assigned to the user
@@ -360,13 +354,11 @@ if (!empty($_REQUEST['go'])) { ?>
                             // Update the message if it already exists; it's appended to an existing note in Patient Notes.
                             $result = getPnoteById($noteid);
                             if ($result) {
-                                if (empty($title)) {
-                                    $title = $result['title'];
-                                }
+                                $title = $result['title'];
                                 $body = $result['body'];
                                 // if our reply-to is 0 it breaks multi patient select and other functionality
                                 // this most likely didn't break before due to php implicit type conversion of 0 to ""
-                                if (empty($reply_to) && $result['pid'] != 0) {
+                                if ($result['pid'] != 0) {
                                     $reply_to = $result['pid'];
                                 }
                                 $form_message_status = $result['message_status'];
@@ -376,7 +368,8 @@ if (!empty($_REQUEST['go'])) { ?>
                         case "delete":
                             // Delete selected message(s) from the Messages box (only).
                             $delete_id = $_POST['delete_id'];
-                            for ($i = 0; $i < count($delete_id); $i++) {
+                            $counter = count($delete_id);
+                            for ($i = 0; $i < $counter; ++$i) {
                                 deletePnote($delete_id[$i]);
                                 EventAuditLogger::instance()->newEvent("delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "pnotes: id " . $delete_id[$i]);
                             }
@@ -388,11 +381,11 @@ if (!empty($_REQUEST['go'])) { ?>
                     $sortorder = (isset($_REQUEST['sortorder']) && ($_REQUEST['sortorder'] != "")) ? $_REQUEST['sortorder'] : "desc";
                     $begin = isset($_REQUEST['begin']) ? $_REQUEST['begin'] : 0;
 
-                    if ($task == "addnew" or $task == "edit") {
+                    if ($task == "addnew" || $task == "edit") {
                         // Display the Messages page layout.
                         echo "<form name='form_patient' id='new_note'
                                 class='form-horizontal'
-                                action=\"messages.php?showall=" . attr_url($showall) . "&sortby=" . attr_url($sortby) . "&sortorder=" . attr_url($sortorder) . "&begin=" . attr_url($begin) . "&$activity_string_html\"
+                                action=\"messages.php?showall=" . attr_url($showall) . "&sortby=" . attr_url($sortby) . "&sortorder=" . attr_url($sortorder) . "&begin=" . attr_url($begin) . "&{$activity_string_html}\"
                                 method='post'>
                                 <input type='hidden' name='noteid' id='noteid' value='" . attr($noteid) . "' />
 
@@ -515,7 +508,7 @@ if (!empty($_REQUEST['go'])) { ?>
                                     <div class='col-12 oe-margin-t-3'>
                                     <?php
                                     if ($noteid) {
-                                        include "templates/linked_documents.php";
+                                        include __DIR__ . "/templates/linked_documents.php";
 
                                         // Get the related procedure order IDs if any.
                                         $tmp = sqlStatement(
@@ -573,58 +566,57 @@ if (!empty($_REQUEST['go'])) { ?>
                         </form>
                         <?php
                     } else {
-                        for ($i = 0; $i < count($sort); $i++) {
-                            $sortlink[$i] = "<a  class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sort[$i]) . "&sortorder=asc&$activity_string_html\" onclick=\"top.restoreSession()\" alt=\"" . xla('Sort Up') . "\"><i class='fa fa-sort-down fa-lg' aria-hidden='true'></i></a>";
-                        }
-                        for ($i = 0; $i < count($sort); $i++) {
-                            if ($sortby == $sort[$i]) {
-                                switch ($sortorder) {
-                                    case "asc":
-                                        $sortlink[$i] = "<a class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=desc&$activity_string_html\" onclick=\"top.restoreSession()\" alt=\"" . xla('Sort Up') . "\"><i class='fa fa-sort-up fa-lg' aria-hidden='true'></i></a>";
-                                        break;
-                                    case "desc":
-                                        $sortlink[$i] = "<a class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=asc&$activity_string_html\" onclick=\"top.restoreSession()\"  alt=\"" . xla('Sort Down') . "\"><i class='fa fa-sort-down fa-lg' aria-hidden='true'></i></a>";
-                                        break;
-                                } break;
-                            }
-                        }
-                        // Manage page numbering and display beneath the Messages table.
-                        $listnumber = 25;
-                        $total = getPnotesByUser($active, $show_all, $_SESSION['authUser'], true);
-                        if ($begin == "" or $begin == 0) {
-                            $begin = 0;
-                        }
-                        $prev = $begin - $listnumber;
-                        $next = $begin + $listnumber;
-                        $start = $begin + 1;
-                        $end = $listnumber + $start - 1;
-
-                        $chevron_icon_left = $_SESSION['language_direction'] == 'ltr' ? 'fa-chevron-circle-left' : 'fa-chevron-circle-right';
-                        $chevron_icon_right = $_SESSION['language_direction'] == 'ltr' ? 'fa-chevron-circle-right' : 'fa-chevron-circle-left';
-
-                        if ($end >= $total) {
-                            $end = $total;
-                        }
-                        if ($end < $start) {
-                            $start = 0;
-                        }
-                        if ($prev >= 0) {
-                            $prevlink = "<a href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($prev) . "&$activity_string_html\" onclick=\"top.restoreSession()\"><i class=\"fa " . $chevron_icon_left . " chevron_color\" aria-hidden=\"true\"></i></a>";
-                        } else {
-                            $prevlink = "<i class=\"fa " . $chevron_icon_left . " text-muted\" aria-hidden=\"true\" title=\"" . xla("On first page") . "\"></i>";
-                        }
-
-                        if ($next < $total) {
-                            $nextlink = "<a href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($next) . "&$activity_string_html\" onclick=\"top.restoreSession()\"><i class=\"fa . $chevron_icon_right . chevron_color\" aria-hidden=\"true\"></i></a>";
-                        } else {
-                            $nextlink = "<i class=\"fa " . $chevron_icon_right . " text-muted\" aria-hidden=\"true\" title=\"" . xla("On first page") . "\"></i>";
-                        }
-                        // Display the Messages table header.
-                        echo "
+                                            $counter = count($sort);
+                                            for ($i = 0; $i < $counter; ++$i) {
+                                                $sortlink[$i] = "<a  class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sort[$i]) . sprintf('&sortorder=asc&%s" onclick="top.restoreSession()" alt="', $activity_string_html) . xla('Sort Up') . "\"><i class='fa fa-sort-down fa-lg' aria-hidden='true'></i></a>";
+                                            }
+                                            $counter = count($sort);
+                                            for ($i = 0; $i < $counter; ++$i) {
+                                                if ($sortby == $sort[$i]) {
+                                                    switch ($sortorder) {
+                                                        case "asc":
+                                                            $sortlink[$i] = "<a class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . sprintf('&sortorder=desc&%s" onclick="top.restoreSession()" alt="', $activity_string_html) . xla('Sort Up') . "\"><i class='fa fa-sort-up fa-lg' aria-hidden='true'></i></a>";
+                                                            break;
+                                                        case "desc":
+                                                            $sortlink[$i] = "<a class='arrowhead' href=\"messages.php?show_all=" . attr($showall) . "&sortby=" . attr($sortby) . sprintf('&sortorder=asc&%s" onclick="top.restoreSession()"  alt="', $activity_string_html) . xla('Sort Down') . "\"><i class='fa fa-sort-down fa-lg' aria-hidden='true'></i></a>";
+                                                            break;
+                                                    } break;
+                                                }
+                                            }
+                                            // Manage page numbering and display beneath the Messages table.
+                                            $listnumber = 25;
+                                            $total = getPnotesByUser($active, $show_all, $_SESSION['authUser'], true);
+                                            if ($begin == "" || $begin == 0) {
+                                                $begin = 0;
+                                            }
+                                            $prev = $begin - $listnumber;
+                                            $next = $begin + $listnumber;
+                                            $start = $begin + 1;
+                                            $end = $listnumber + $start - 1;
+                                            $chevron_icon_left = $_SESSION['language_direction'] == 'ltr' ? 'fa-chevron-circle-left' : 'fa-chevron-circle-right';
+                                            $chevron_icon_right = $_SESSION['language_direction'] == 'ltr' ? 'fa-chevron-circle-right' : 'fa-chevron-circle-left';
+                                            if ($end >= $total) {
+                                                $end = $total;
+                                            }
+                                            if ($end < $start) {
+                                                $start = 0;
+                                            }
+                                            if ($prev >= 0) {
+                                                $prevlink = '<a href="messages.php?show_all=' . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($prev) . sprintf('&%s" onclick="top.restoreSession()"><i class="fa ', $activity_string_html) . $chevron_icon_left . ' chevron_color" aria-hidden="true"></i></a>';
+                                            } else {
+                                                $prevlink = '<i class="fa ' . $chevron_icon_left . ' text-muted" aria-hidden="true" title="' . xla("On first page") . '"></i>';
+                                            }
+                                            if ($next < $total) {
+                                                $nextlink = '<a href="messages.php?show_all=' . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($next) . sprintf('&%s" onclick="top.restoreSession()"><i class="fa . %s . chevron_color" aria-hidden="true"></i></a>', $activity_string_html, $chevron_icon_right);
+                                            } else {
+                                                $nextlink = '<i class="fa ' . $chevron_icon_right . ' text-muted" aria-hidden="true" title="' . xla("On first page") . '"></i>';
+                                            }
+                                            // Display the Messages table header.
+                                            echo "
                             <table class=\"w-100\">
                                 <tr>
                                     <td>
-                                        <form name='MessageList' id='MessageList' action=\"messages.php?showall=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($begin) . "&$activity_string_html\" method='post'>
+                                        <form name='MessageList' id='MessageList' action=\"messages.php?showall=" . attr($showall) . "&sortby=" . attr($sortby) . "&sortorder=" . attr($sortorder) . "&begin=" . attr($begin) . "&{$activity_string_html}\" method='post'>
                                             <table class='table table-sm table-hover w-100'>
                                                 <input type='hidden' name='task' value='delete' />
                                                 <thead class='table-primary'>
@@ -637,41 +629,40 @@ if (!empty($_REQUEST['go'])) { ?>
                                                         <th width='15%' class='font-weight-bold'>&nbsp;" . xlt('Status') . " $sortlink[4]</th>
                                                     </tr>
                                                 </thead>";
-                        // Display the Messages table body.
-                        $count = 0;
-                        $result = getPnotesByUser($active, $show_all, $_SESSION['authUser'], false, $sortby, $sortorder, $begin, $listnumber);
-                        while ($myrow = sqlFetchArray($result)) {
-                            $name = $myrow['user'];
-                            $name = $myrow['users_lname'];
-                            if ($myrow['users_fname']) {
-                                $name .= ", " . $myrow['users_fname'];
-                            }
-                            $patient = $myrow['pid'];
-                            if ($patient > 0) {
-                                $patient = $myrow['patient_data_lname'];
-                                if ($myrow['patient_data_fname']) {
-                                    $patient .= ", " . $myrow['patient_data_fname'];
-                                }
-                            } else {
-                                $patient = "* " . xl('Patient must be set manually') . " *";
-                            }
-                            $count++;
-                            echo "
+                                            // Display the Messages table body.
+                                            $count = 0;
+                                            $result = getPnotesByUser($active, $show_all, $_SESSION['authUser'], false, $sortby, $sortorder, $begin, $listnumber);
+                                            while ($myrow = sqlFetchArray($result)) {
+                                                $name = $myrow['users_lname'];
+                                                if ($myrow['users_fname']) {
+                                                    $name .= ", " . $myrow['users_fname'];
+                                                }
+                                                $patient = $myrow['pid'];
+                                                if ($patient > 0) {
+                                                    $patient = $myrow['patient_data_lname'];
+                                                    if ($myrow['patient_data_fname']) {
+                                                        $patient .= ", " . $myrow['patient_data_fname'];
+                                                    }
+                                                } else {
+                                                    $patient = "* " . xl('Patient must be set manually') . " *";
+                                                }
+                                                ++$count;
+                                                echo "
                                 <tr id=\"row" . attr($count) . "\" height='24' class='messages-item-row' role='button'>
                                     <td align='center'>
-                                        <input type='checkbox' id=\"check" . attr($count) . "\" name=\"delete_id[]\" value=\"" .
-                                        attr($myrow['id']) . "\" onclick=\"if(this.checked==true){ selectRow('row" . attr(addslashes($count)) . "'); }else{ deselectRow('row" . attr(addslashes($count)) . "'); }\"></td>
+                                        <input type='checkbox' id=\"check" . attr($count) . '" name="delete_id[]" value="' .
+                                                            attr($myrow['id']) . "\" onclick=\"if(this.checked==true){ selectRow('row" . attr(addslashes($count)) . "'); }else{ deselectRow('row" . attr(addslashes($count)) . "'); }\"></td>
                                     <td>
                                         <div>" . text($name) . "</div>
                                     </td>
                                     <td>
                                         <div><a class=\"messages-item-link\" href=\"messages.php?showall=" . attr_url($showall) . "&sortby=" . attr_url($sortby) . "&sortorder=" . attr_url($sortorder) . "&begin=" . attr_url($begin) . "&task=edit&noteid=" .
-                                        attr_url($myrow['id']) . "&$activity_string_html\" onclick=\"top.restoreSession()\">" .
-                                        text($patient) . "</a></div>
+                                                            attr_url($myrow['id']) . sprintf('&%s" onclick="top.restoreSession()">', $activity_string_html) .
+                                                            text($patient) . "</a></div>
                                     </td>
                                     <td>
                                         <div>" .
-                                            xlt($myrow['title']) . "</div>
+                                                                xlt($myrow['title']) . "</div>
                                     <td>
                                         <div>" . text(oeFormatDateTime($myrow['date'])) . "</div>
                                     </td>
@@ -679,30 +670,28 @@ if (!empty($_REQUEST['go'])) { ?>
                                         <div>" . text(getListItemTitle('message_status', $myrow['message_status'])) . "</div>
                                     </td>
                                 </tr>";
-                        }
-                        // Display the Messages table footer.
-
-                        echo "  </table>
+                                            }
+                                            // Display the Messages table footer.
+                                            echo "  </table>
                                         </form>
                                         <div class='row oe-margin-t-10'>
 
-                                            <div class=\"col-12 col-md-12 col-lg-12\"><a href=\"messages.php?showall=" . attr_url($showall) . "&sortby=" . attr_url($sortby) . "&sortorder=" . attr_url($sortorder) . "&begin=" . attr_url($begin) . "&task=addnew&$activity_string_html\" class=\"btn btn-primary btn-add\" onclick=\"top.restoreSession()\">" .
-                                            xlt('Add New{{Message}}') . "</a> &nbsp; <a href=\"javascript:confirmDeleteSelected()\" class=\"btn btn-danger btn-delete\" onclick=\"top.restoreSession()\">" .
-                                            xlt('Delete') . "</a>";
-
-                        if ($GLOBALS['phimail_enable']) {
-                            echo "&nbsp; <a href='trusted-messages.php' onclick='top.restoreSession()' class='btn btn-secondary btn-mail'>" . xlt("Compose Trusted Direct Message") . "</a>";
-                            echo "&nbsp; <button class='btn btn-secondary btn-refresh trusted-messages-force-check'>" . xlt("Check New Trusted Messages") . "</button>";
-                        }
-                        echo "
-                                            <div  class=\"text-right\">$prevlink &nbsp; " . text($end) . " " . xlt('of') . " " . text($total) . " &nbsp; $nextlink</div>
+                                            <div class=\"col-12 col-md-12 col-lg-12\"><a href=\"messages.php?showall=" . attr_url($showall) . "&sortby=" . attr_url($sortby) . "&sortorder=" . attr_url($sortorder) . "&begin=" . attr_url($begin) . sprintf('&task=addnew&%s" class="btn btn-primary btn-add" onclick="top.restoreSession()">', $activity_string_html) .
+                                                                xlt('Add New{{Message}}') . '</a> &nbsp; <a href="javascript:confirmDeleteSelected()" class="btn btn-danger btn-delete" onclick="top.restoreSession()">' .
+                                                                xlt('Delete') . "</a>";
+                                            if ($GLOBALS['phimail_enable']) {
+                                                echo "&nbsp; <a href='trusted-messages.php' onclick='top.restoreSession()' class='btn btn-secondary btn-mail'>" . xlt("Compose Trusted Direct Message") . "</a>";
+                                                echo "&nbsp; <button class='btn btn-secondary btn-refresh trusted-messages-force-check'>" . xlt("Check New Trusted Messages") . "</button>";
+                                            }
+                                            echo "
+                                            <div  class=\"text-right\">{$prevlink} &nbsp; " . text($end) . " " . xlt('of') . " " . text($total) . " &nbsp; {$nextlink}</div>
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
                             </table>
                             <br />";
-                        ?>
+                                            ?>
 
                         <script>
                             // This is to confirm delete action.
@@ -716,11 +705,15 @@ if (!empty($_REQUEST['go'])) { ?>
                                         }
                                     }
                                     if (int_checked > 0){
-                                        if (confirm(<?php echo xlj('Do you really want to delete the selection?'); ?>)) {
+                                        if (confirm(<?php 
+                                            echo xlj('Do you really want to delete the selection?');
+                                            ?>)) {
                                             document.MessageList.submit();
                                         }
                                     } else {
-                                        alert(<?php echo xlj('Please select message(s) to delete'); ?>);
+                                        alert(<?php 
+                                            echo xlj('Please select message(s) to delete');
+                                            ?>);
                                     }
                                 }
 
@@ -728,15 +721,17 @@ if (!empty($_REQUEST['go'])) { ?>
                             // This is to allow selection of all items in Messages table for deletion.
                             function selectAll() {
                                 if (document.getElementById("checkAll").checked === true) {
-                                    document.getElementById("checkAll").checked = true;<?php
-                                    for ($i = 1; $i <= $count; $i++) {
-                                        echo "document.getElementById(\"check$i\").checked=true; document.getElementById(\"row$i\").style.background='var(--gray200)';  ";
-                                    } ?>
+                                    document.getElementById("checkAll").checked = true;<?php 
+                                            for ($i = 1; $i <= $count; ++$i) {
+                                                            echo sprintf("document.getElementById(\"check%d\").checked=true; document.getElementById(\"row%d\").style.background='var(--gray200)';  ", $i, $i);
+                                                        }
+                                            ?>
                                 } else {
-                                    document.getElementById("checkAll").checked = false;<?php
-                                    for ($i = 1; $i <= $count; $i++) {
-                                        echo "document.getElementById(\"check$i\").checked=false; document.getElementById(\"row$i\").style.background='var(--light)';  ";
-                                    } ?>
+                                    document.getElementById("checkAll").checked = false;<?php 
+                                            for ($i = 1; $i <= $count; ++$i) {
+                                                echo sprintf("document.getElementById(\"check%d\").checked=false; document.getElementById(\"row%d\").style.background='var(--light)';  ", $i, $i);
+                                            }
+                                            ?>
                                 }
                             }
 
@@ -770,8 +765,8 @@ if (!empty($_REQUEST['go'])) { ?>
                                 makeMessageRowsClickable();
                             })
                         </script>
-                        <?php
-                    }
+                        <?php 
+                                        }
                     ?>
                 </div>
             </div><!--end of messages div-->
@@ -780,7 +775,7 @@ if (!empty($_REQUEST['go'])) { ?>
                     <div class="mb-3">
                         <h4><?php echo xlt('Reminders'); ?></h4>
                     </div>
-                    <?php require_once '../dated_reminders/dated_reminders.php'; ?>
+                    <?php require_once __DIR__ . '/../dated_reminders/dated_reminders.php'; ?>
                 </div>
             </div><!--end of reminders div-->
             <?php if ($GLOBALS['disable_rcb'] != '1') { ?>
@@ -815,7 +810,7 @@ if (!empty($_REQUEST['go'])) { ?>
     if ($GLOBALS['enable_help'] == 1) {
         echo "<script>var helpFile = 'message_center_help.php'</script>";
         //help_modal.php lives in interface, set path accordingly
-        require "../../help_modal.php";
+        require __DIR__ . "/../../help_modal.php";
     }
     ?>
     <script>

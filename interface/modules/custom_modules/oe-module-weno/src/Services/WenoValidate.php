@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OpenEMR\Modules\WenoModule\Services;
 
 use GuzzleHttp\Client;
@@ -8,10 +10,15 @@ use GuzzleHttp\Exception\GuzzleException;
 class WenoValidate extends ModuleService
 {
     private string $requestUrl = 'https://online.wenoexchange.com/webapi/restapi/WenoManage';
+
     private string $messageID;
+
     private string $userEmail;
+
     private string $md5UserPassword;
+
     private mixed $encryptionKey;
+
     private Client $client;
 
     public function __construct()
@@ -22,9 +29,6 @@ class WenoValidate extends ModuleService
         $this->client = new Client();
     }
 
-    /**
-     * @return void
-     */
     private function generateMessageID(): void
     {
         $random_string = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 5);
@@ -32,9 +36,6 @@ class WenoValidate extends ModuleService
         $this->messageID = substr($timestamp . $random_string, 0, 10);
     }
 
-    /**
-     * @return void
-     */
     private function setMessageProperties(): void
     {
         $settings = $this->getVendorGlobals();
@@ -45,7 +46,6 @@ class WenoValidate extends ModuleService
 
     /**
      * @param $key
-     * @return void
      */
     public function setNewEncryptionKey($key): void
     {
@@ -58,9 +58,6 @@ class WenoValidate extends ModuleService
         error_log('A new encryption key was created and saved: ' . date('Y-m-d H:i:s', time()));
     }
 
-    /**
-     * @return string
-     */
     private function buildVerifyEncryptionKey(): string
     {
         $this->setMessageProperties();
@@ -85,9 +82,6 @@ class WenoValidate extends ModuleService
         </MessageType>";
     }
 
-    /**
-     * @return string
-     */
     private function buildResetEncryptionKey(): string
     {
         $this->setMessageProperties();
@@ -114,25 +108,23 @@ class WenoValidate extends ModuleService
 
     /**
      * @param        $code
-     * @param string $desc
-     * @return void
      */
-    private function handleValidationFailure($code, string $desc = 'invalid'): void
+    private function handleValidationFailure(string $code, string $desc = 'invalid'): void
     {
         error_log($desc . ': ' . date('Y-d-m H:i:s', time()));
-        $wenoLog = new WenoLogService();
-        $wenoLog->insertWenoLog($code, $desc);
+        $wenoLogService = new WenoLogService();
+        $wenoLogService->insertWenoLog($code, $desc);
     }
 
     /**
      * @param $response
-     * @return string|bool
      */
-    private function extractValidationResult($response): string|bool
+    private function extractValidationResult(string|array $response): string|bool
     {
         if (isset($response['Body']['Error'])) {
-            return $response['Body']['Error']['Description'] ?? '0' . ' ' . 'error.';
+            return $response['Body']['Error']['Description'] ?? '0 error.';
         }
+
         return $response['Body']['Success']['EncryptionKeyValid'] ?? '0';
     }
 
@@ -150,8 +142,10 @@ class WenoValidate extends ModuleService
                 if (stripos($response, 'notconnected') !== false) {
                     return 999;
                 }
+
                 return 998;
             }
+
             if (isset($response['Body']['Error'])) {
                 $this->handleValidationFailure('reset_encryption_key', $response['Body']['Error']['Description'] ?? 'reset_failed');
                 return false;
@@ -159,15 +153,12 @@ class WenoValidate extends ModuleService
 
             $newKey = $response['Body']['Success']['NewEncryptionKey'] ?? '';
             return ($response !== false && !empty($newKey)) ? trim($newKey) : false;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             // Handle Exception
             return false;
         }
     }
 
-    /**
-     * @return bool|int|string
-     */
     public function verifyEncryptionKey(): bool|int|string
     {
         $payload = $this->buildVerifyEncryptionKey();
@@ -179,6 +170,7 @@ class WenoValidate extends ModuleService
                 if (stripos($response, 'notconnected') !== false) {
                     return 999;
                 }
+
                 return 998;
             }
 
@@ -187,6 +179,7 @@ class WenoValidate extends ModuleService
                 $this->handleValidationFailure('verify_encryption_key', 'empty_response');
                 return false;
             }
+
             // extract the result
             $valid = $this->extractValidationResult($response);
             // check for valid response
@@ -197,10 +190,11 @@ class WenoValidate extends ModuleService
                 $this->handleValidationFailure('verify_encryption_key', $valid);
                 return (int)$code;
             } else {
-                $valid = (strtolower($valid) === 'true') || ($valid == '1') && !empty($valid);
+                $valid = (strtolower($valid) === 'true') || ($valid == '1') && !($valid === '' || $valid === '0' || $valid === false);
             }
+
             return $valid;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             return false;
         }
     }
@@ -209,7 +203,7 @@ class WenoValidate extends ModuleService
      * @param $payload
      * @return array|false
      */
-    private function sendRequest($payload): false|array|string
+    private function sendRequest(string $payload): false|array|string
     {
         try {
             $response = $this->client->post($this->requestUrl, [
@@ -230,18 +224,17 @@ class WenoValidate extends ModuleService
                 $result = json_decode(json_encode($result), true); // make associative array.
                 return $result ?: [];
             } else {
-                error_log(text("invalid_http_status_$httpCode"));
-                return "connection_problem_$httpCode";
+                error_log(text('invalid_http_status_' . $httpCode));
+                return 'connection_problem_' . $httpCode;
             }
-        } catch (GuzzleException $e) {
-            error_log(errorLogEscape($e->getMessage()));
+        } catch (GuzzleException $guzzleException) {
+            error_log(errorLogEscape($guzzleException->getMessage()));
             return 'connection_problem_notconnected';
         }
     }
 
     /**
      * @param $resetOnInvalid
-     * @return bool
      */
     public function validateAdminCredentials($resetOnInvalid = false, $where = "Sync Report"): bool
     {
@@ -250,17 +243,20 @@ class WenoValidate extends ModuleService
         if ($isKeyValid >= 998) {
             return $isKeyValid;
         }
+
         if (!$isKeyValid && $resetOnInvalid) {
             $newKey = $this->requestEncryptionKeyReset();
-            if (!empty($newKey)) {
+            if (!($newKey === 0 || ($newKey === '' || $newKey === '0') || $newKey === false)) {
                 // save new admin production key.
                 $this->setNewEncryptionKey($newKey);
-                $wenoLog = new WenoLogService();
-                $wenoLog->insertWenoLog(text("$where"), "reset_encryption_key");
+                $wenoLogService = new WenoLogService();
+                $wenoLogService->insertWenoLog(text($where), "reset_encryption_key");
             }
+
             return false;
         }
+
         // return new key or encrypted key status (default).
-        return !empty($newKey) ? trim($newKey) : $isKeyValid;
+        return $newKey === false ? $isKeyValid : trim($newKey);
     }
 }

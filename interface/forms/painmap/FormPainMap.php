@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file contains the FormPainMap class, used to model the data contents of a clickmap based form.
  *
@@ -28,7 +30,7 @@ class FormPainMap extends AbstractClickmapModel
     static $TABLE_NAME = "form_painmap";
 
     /* Initializer. just calls parent's initializer. */
-    function __construct($id = "")
+    public function __construct($id = "")
     {
         parent::__construct(FormPainMap::$TABLE_NAME, $id);
     }

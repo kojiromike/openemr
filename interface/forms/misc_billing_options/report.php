@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * report.php displays the misc_billing_form in the encounter view
  *
@@ -18,7 +20,7 @@ use OpenEMR\Billing\MiscBillingOptions;
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function misc_billing_options_report($pid, $encounter, $cols, $id)
+function misc_billing_options_report($pid, $encounter, $cols, $id): void
 {
     $MBO = new OpenEMR\Billing\MiscBillingOptions();
     $count = 0;
@@ -78,7 +80,7 @@ function misc_billing_options_report($pid, $encounter, $cols, $id)
 
             $key = ucwords(str_replace("_", " ", $key));
             print "<td><span class=bold>" . xlt($key) . ": </span><span class=text>" . text($value) . "</span></td>";
-            $count++;
+            ++$count;
 
             if ($count == $cols) {
                 $count = 0;

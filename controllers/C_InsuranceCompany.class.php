@@ -1,18 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Services\InsuranceCompanyService;
 
 class C_InsuranceCompany extends Controller
 {
-    var $template_mod;
-    var $icompanies;
-    var $InsuranceCompany;
+    public $template_mod;
+
+    public $icompanies = array();
+
+    /**
+     * @var \InsuranceCompany
+     */
+    public $InsuranceCompany;
 
     public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $this->icompanies = array();
         $this->template_mod = $template_mod;
         $this->template_dir = __DIR__ . "/templates/insurance_companies/";
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
@@ -36,22 +42,22 @@ class C_InsuranceCompany extends Controller
             $this->icompanies[0] = new InsuranceCompany($id);
         }
 
-        $x = new X12Partner();
-        $this->assign("x12_partners", $x->_utility_array($x->x12_partner_factory()));
+        $x12Partner = new X12Partner();
+        $this->assign("x12_partners", $x12Partner->_utility_array($x12Partner->x12_partner_factory()));
 
         $this->assign("insurancecompany", $this->icompanies[0]);
         return $this->fetch($GLOBALS['template_dir'] . "insurance_companies/" . $this->template_mod . "_edit.html");
     }
 
-    public function list_action()
+    public function list_action(): string
     {
-        $twig = new TwigContainer(null, $GLOBALS['kernel']);
+        $twigContainer = new TwigContainer(null, $GLOBALS['kernel']);
 
         $insuranceCompanyService = new InsuranceCompanyService();
-        $results = $insuranceCompanyService->search([]);
+        $processingResult = $insuranceCompanyService->search([]);
         $iCompanies = [];
-        if ($results->hasData()) {
-            foreach ($results->getData() as $record) {
+        if ($processingResult->hasData()) {
+            foreach ($processingResult->getData() as $record) {
                 $company = [
                     'id' => $record['id'],
                     'name' => $record['name'],
@@ -68,30 +74,28 @@ class C_InsuranceCompany extends Controller
                 ];
                 $iCompanies[] = $company;
             }
-            usort($iCompanies, function ($a, $b) {
+
+            usort($iCompanies, function ($a, $b): int {
                 return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
             });
         }
+
         $templateVars = [
             'CURRENT_ACTION' => $GLOBALS['webroot'] . "/controller.php?" . "practice_settings&insurance_company&"
             ,'icompanies' => $iCompanies
         ];
 
-        return $twig->getTwig()->render('insurance_companies/general_list.html.twig', $templateVars);
+        return $twigContainer->getTwig()->render('insurance_companies/general_list.html.twig', $templateVars);
     }
 
 
-    public function edit_action_process()
+    public function edit_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
         }
 
-        if (is_numeric($_POST['id'])) {
-            $this->icompanies[0] = new InsuranceCompany($_POST['id']);
-        } else {
-            $this->icompanies[0] = new InsuranceCompany();
-        }
+        $this->icompanies[0] = is_numeric($_POST['id']) ? new InsuranceCompany($_POST['id']) : new InsuranceCompany();
 
         self::populate_object($this->icompanies[0]);
 

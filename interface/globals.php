@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Default values for optional variables that are allowed to be set by callers.
  *
@@ -28,6 +30,7 @@ if (!(extension_loaded('openssl'))) {
     error_log("OPENEMR ERROR: OpenEMR is not working since the php openssl module is not installed.", 0);
     die("OpenEMR Error : OpenEMR is not working since the php openssl module is not installed.");
 }
+
 // Throw error if the openssl aes-256-cbc cipher is not available.
 if (!(in_array('aes-256-cbc', openssl_get_cipher_methods()))) {
     error_log("OPENEMR ERROR: OpenEMR is not working since the openssl aes-256-cbc cipher is not available.", 0);
@@ -87,28 +90,31 @@ if (preg_match("/^[^\/]/", $web_root)) {
 //   $webserver_root = "/var/www/openemr";
 //   $web_root =  "/openemr";
 
-$ResolveServerHost = static function () {
+$ResolveServerHost = static function (): string {
     $scheme = ($_SERVER['REQUEST_SCHEME'] ?? 'https') . "://";
     $possibleHostSources = array('HTTP_X_FORWARDED_HOST', 'HTTP_HOST', 'SERVER_NAME', 'SERVER_ADDR');
     $sourceTransformations = array(
-        "HTTP_X_FORWARDED_HOST" => function ($value) {
+        "HTTP_X_FORWARDED_HOST" => function ($value): string {
             $elements = explode(',', $value);
             return trim(end($elements));
         }
     );
     $host = '';
-    foreach ($possibleHostSources as $source) {
+    foreach ($possibleHostSources as $possibleHostSource) {
         if (!empty($host)) {
             break;
         }
-        if (empty($_SERVER[$source])) {
+
+        if (empty($_SERVER[$possibleHostSource])) {
             continue;
         }
-        $host = $_SERVER[$source];
-        if (array_key_exists($source, $sourceTransformations)) {
-            $host = $sourceTransformations[$source]($host);
+
+        $host = $_SERVER[$possibleHostSource];
+        if (array_key_exists($possibleHostSource, $sourceTransformations)) {
+            $host = $sourceTransformations[$possibleHostSource]($host);
         }
     }
+
     return rtrim(trim($scheme . $host), "/");
 };
 
@@ -121,7 +127,7 @@ function GetCallingScriptName()
 
 // This is the directory that contains site-specific data.  Change this
 // only if you have some reason to.
-$GLOBALS['OE_SITES_BASE'] = "$webserver_root/sites";
+$GLOBALS['OE_SITES_BASE'] = $webserver_root . '/sites';
 
 /*
 * If a session does not yet exist, then will start the core OpenEMR session.
@@ -155,13 +161,14 @@ if (empty($_SESSION['site_id']) || !empty($_GET['site'])) {
             if ((isset($_GET['auth'])) && ($_GET['auth'] == "logout")) {
                 $GLOBALS['login_screen'] = "login_screen.php";
                 $srcdir = "../library";
-                require_once("$srcdir/auth.inc.php");
+                require_once($srcdir . '/auth.inc.php');
             }
+
             die("Site ID is missing from session data!");
         }
 
         $tmp = $_SERVER['HTTP_HOST'];
-        if (!is_dir($GLOBALS['OE_SITES_BASE'] . "/$tmp")) {
+        if (!is_dir($GLOBALS['OE_SITES_BASE'] . ('/' . $tmp))) {
             $tmp = "default";
         }
     }
@@ -203,32 +210,32 @@ $GLOBALS['OE_SITE_WEBROOT'] = $web_root . "/sites/" . $_SESSION['site_id'];
 
 
 // Root directory, relative to the webserver root:
-$GLOBALS['rootdir'] = "$web_root/interface";
+$GLOBALS['rootdir'] = $web_root . '/interface';
 $rootdir = $GLOBALS['rootdir'];
 // Absolute path to the source code include and headers file directory (Full path):
-$GLOBALS['srcdir'] = "$webserver_root/library";
+$GLOBALS['srcdir'] = $webserver_root . '/library';
 // Absolute path to the location of documentroot directory for use with include statements:
-$GLOBALS['fileroot'] = "$webserver_root";
+$GLOBALS['fileroot'] = $webserver_root;
 // Absolute path to the location of interface directory for use with include statements:
-$include_root = "$webserver_root/interface";
+$include_root = $webserver_root . '/interface';
 // Absolute path to the location of documentroot directory for use with include statements:
 $GLOBALS['webroot'] = $web_root;
 
 // Static assets directory, relative to the webserver root.
 // (it is very likely that this path will be changed in the future))
-$GLOBALS['assets_static_relative'] = "$web_root/public/assets";
+$GLOBALS['assets_static_relative'] = $web_root . '/public/assets';
 
 // Relative themes directory, relative to the webserver root.
-$GLOBALS['themes_static_relative'] = "$web_root/public/themes";
+$GLOBALS['themes_static_relative'] = $web_root . '/public/themes';
 
 // Relative images directory, relative to the webserver root.
-$GLOBALS['images_static_relative'] = "$web_root/public/images";
+$GLOBALS['images_static_relative'] = $web_root . '/public/images';
 
 // Static images directory, absolute to the webserver root.
-$GLOBALS['images_static_absolute'] = "$webserver_root/public/images";
+$GLOBALS['images_static_absolute'] = $webserver_root . '/public/images';
 
 //Composer vendor directory, absolute to the webserver root.
-$GLOBALS['vendor_dir'] = "$webserver_root/vendor";
+$GLOBALS['vendor_dir'] = $webserver_root . '/vendor';
 $GLOBALS['template_dir'] = $GLOBALS['fileroot'] . "/templates/";
 $GLOBALS['incdir'] = $include_root;
 // Location of the login screen file
@@ -238,23 +245,18 @@ $GLOBALS['login_screen'] = $GLOBALS['rootdir'] . "/login_screen.php";
 $GLOBALS['edi_271_file_path'] = $GLOBALS['OE_SITE_DIR'] . "/documents/edi/";
 
 //  Check necessary writable paths (add them if do not exist)
-if (! is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/smarty/gacl')) {
-    if (!mkdir($concurrentDirectory = $GLOBALS['OE_SITE_DIR'] . '/documents/smarty/gacl', 0755, true) && !is_dir($concurrentDirectory)) {
-        throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
-    }
+if (!is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/smarty/gacl') && (!mkdir($concurrentDirectory = $GLOBALS['OE_SITE_DIR'] . '/documents/smarty/gacl', 0755, true) && !is_dir($concurrentDirectory))) {
+    throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
 }
-if (! is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/smarty/main')) {
-    if (!mkdir($concurrentDirectory = $GLOBALS['OE_SITE_DIR'] . '/documents/smarty/main', 0755, true) && !is_dir($concurrentDirectory)) {
-        throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
-    }
+
+if (!is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/smarty/main') && (!mkdir($concurrentDirectory = $GLOBALS['OE_SITE_DIR'] . '/documents/smarty/main', 0755, true) && !is_dir($concurrentDirectory))) {
+    throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
 }
 
 //  Set and check that necessary writeable path exist for mPDF tool
 $GLOBALS['MPDF_WRITE_DIR'] = $GLOBALS['OE_SITE_DIR'] . '/documents/mpdf/pdf_tmp';
-if (! is_dir($GLOBALS['MPDF_WRITE_DIR'])) {
-    if (!mkdir($concurrentDirectory = $GLOBALS['MPDF_WRITE_DIR'], 0755, true) && !is_dir($concurrentDirectory)) {
-        throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
-    }
+if (!is_dir($GLOBALS['MPDF_WRITE_DIR']) && (!mkdir($concurrentDirectory = $GLOBALS['MPDF_WRITE_DIR'], 0755, true) && !is_dir($concurrentDirectory))) {
+    throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
 }
 
 // Includes composer autoload
@@ -277,7 +279,7 @@ require_once $GLOBALS['vendor_dir'] . "/autoload.php";
  *
  * @link http://open-emr.org/wiki/index.php/Dotenv_Usage
  */
-if (file_exists("{$webserver_root}/.env")) {
+if (file_exists($webserver_root . '/.env')) {
     $dotenv = Dotenv::createImmutable($webserver_root);
     $dotenv->load();
 }
@@ -290,10 +292,9 @@ if (file_exists("{$webserver_root}/.env")) {
 $GLOBALS["log_level"] = "OFF";
 
 try {
-    /** @var Kernel */
     $GLOBALS["kernel"] = new Kernel();
-} catch (\Exception $e) {
-    error_log(errorLogEscape($e->getMessage()));
+} catch (\Exception $exception) {
+    error_log(errorLogEscape($exception->getMessage()));
     die();
 }
 
@@ -332,15 +333,13 @@ if (!empty($glrow)) {
   // Collect the user id first
     $temp_authuserid = '';
     if (!empty($_SESSION['authUserID'])) {
-      //Set the user id from the session variable
+        //Set the user id from the session variable
         $temp_authuserid = $_SESSION['authUserID'];
-    } else {
-        if (!empty($_POST['authUser'])) {
-            $temp_sql_ret = sqlQueryNoLog("SELECT `id` FROM `users` WHERE BINARY `username` = ?", array($_POST['authUser']));
-            if (!empty($temp_sql_ret['id'])) {
-              //Set the user id from the login variable
-                $temp_authuserid = $temp_sql_ret['id'];
-            }
+    } elseif (!empty($_POST['authUser'])) {
+        $temp_sql_ret = sqlQueryNoLog("SELECT `id` FROM `users` WHERE BINARY `username` = ?", array($_POST['authUser']));
+        if (!empty($temp_sql_ret['id'])) {
+          //Set the user id from the login variable
+            $temp_authuserid = $temp_sql_ret['id'];
         }
     }
 
@@ -352,7 +351,7 @@ if (!empty($glrow)) {
             "AND `setting_label` LIKE 'global:%'",
             array($temp_authuserid)
         );
-        for ($iter = 0; $row = sqlFetchArray($glres_user); $iter++) {
+        for ($iter = 0; $row = sqlFetchArray($glres_user); ++$iter) {
           //remove global_ prefix from label
             $row['setting_label'] = substr($row['setting_label'], 7);
             $gl_user[$iter] = $row;
@@ -371,11 +370,9 @@ if (!empty($glrow)) {
         $gl_name  = $glrow['gl_name'];
         $gl_value = $glrow['gl_value'];
       // Adjust for user specific settings
-        if (!empty($gl_user)) {
-            foreach ($gl_user as $setting) {
-                if ($gl_name == $setting['setting_label']) {
-                    $gl_value = $setting['setting_value'];
-                }
+        foreach ($gl_user as $setting) {
+            if ($gl_name == $setting['setting_label']) {
+                $gl_value = $setting['setting_value'];
             }
         }
 
@@ -386,6 +383,7 @@ if (!empty($glrow)) {
             if (!file_exists($webserver_root . '/public/themes/' . attr($gl_value))) {
                 $gl_value = 'style_light.css';
             }
+
             $GLOBALS[$gl_name] = $web_root . '/public/themes/' . attr($gl_value) . '?v=' . $v_js_includes;
             $GLOBALS['compact_header'] = $web_root . '/public/themes/compact_' . attr($gl_value) . '?v=' . $v_js_includes;
             $compact_header = $GLOBALS['compact_header'];
@@ -434,6 +432,7 @@ if (!empty($glrow)) {
             $GLOBALS[$gl_name] = $gl_value;
         }
     }
+
     // Set any user settings that are not also in GLOBALS.
     // This is for modules support.
     foreach ($gl_user as $setting) {
@@ -518,6 +517,7 @@ if (!empty($glrow)) {
             error_log("Missing theme file " . errorLogEscape($webserver_root) . '/public/themes/' . errorLogEscape($new_theme));
         }
     }
+
     unset($temp_css_theme_name, $new_theme, $rtl_override, $rtl_portal_override, $portal_temp_css_theme_name);
     // end of RTL section
 
@@ -539,9 +539,9 @@ if (!empty($glrow)) {
     $GLOBALS['translate_appt_categories'] = true;
     $GLOBALS['timeout'] = 7200;
     $openemr_name = 'OpenEMR';
-    $css_header = "$web_root/public/themes/style_default.css";
+    $css_header = $web_root . '/public/themes/style_default.css';
     $GLOBALS['css_header'] = $css_header;
-    $compact_header = "$web_root/public/themes/style_default.css";
+    $compact_header = $web_root . '/public/themes/style_default.css';
     $GLOBALS['compact_header'] = $compact_header;
     $GLOBALS['schedule_start'] = 8;
     $GLOBALS['schedule_end'] = 17;
@@ -559,6 +559,7 @@ require_once($GLOBALS['OE_SITE_DIR'] . "/config.php");
 if (empty($GLOBALS['site_addr_oath'])) {
     $GLOBALS['site_addr_oath'] = $ResolveServerHost();
 }
+
 if (empty($GLOBALS['qualified_site_addr'])) {
     $GLOBALS['qualified_site_addr'] = rtrim($GLOBALS['site_addr_oath'] . trim($GLOBALS['webroot']), "/");
 }
@@ -627,7 +628,7 @@ if (($ignoreAuth_onsite_portal === true) && ($GLOBALS['portal_onsite_two_enable'
 }
 
 if (!$ignoreAuth) {
-    require_once("$srcdir/auth.inc.php");
+    require_once($srcdir . '/auth.inc.php');
 }
 
 // This is the background color to apply to form fields that are searchable.
@@ -638,8 +639,8 @@ $GLOBALS['layout_search_color'] = '#ff9919';
 // upgrade fails for versions prior to 4.2.0 since no modules table
 try {
     $checkModulesTableExists = sqlQueryNoLog('SELECT 1 FROM `modules`', false, true);
-} catch (\Exception $ex) {
-    error_log(errorLogEscape($ex->getMessage() . $ex->getTraceAsString()));
+} catch (\Exception $exception) {
+    error_log(errorLogEscape($exception->getMessage() . $exception->getTraceAsString()));
 }
 
 if (!empty($checkModulesTableExists)) {
@@ -663,8 +664,8 @@ if (!empty($checkModulesTableExists)) {
         // this occurs when the current SCRIPT_PATH is to a module that is not currently allowed to be accessed
         http_response_code(401);
         error_log(errorLogEscape($accessDeniedException->getMessage() . $accessDeniedException->getTraceAsString()));
-    } catch (\Exception $ex) {
-        error_log(errorLogEscape($ex->getMessage() . $ex->getTraceAsString()));
+    } catch (\Exception $exception) {
+        error_log(errorLogEscape($exception->getMessage() . $exception->getTraceAsString()));
         die();
     }
 }
@@ -698,18 +699,19 @@ function strterm($string, $length)
 }
 
 // Helper function to generate an image URL that defeats browser/proxy caching when needed.
-function UrlIfImageExists($filename, $append = true)
+function UrlIfImageExists(string $filename, $append = true): string
 {
     global $webserver_root, $web_root;
-    $path = "sites/" . $_SESSION['site_id'] . "/images/$filename";
+    $path = "sites/" . $_SESSION['site_id'] . ('/images/' . $filename);
     // @ in next line because a missing file is not an error.
-    if ($stat = @stat("$webserver_root/$path")) {
+    if ($stat = @stat(sprintf('%s/%s', $webserver_root, $path))) {
         if ($append) {
-            return "$web_root/$path?v=" . $stat['mtime'];
+            return sprintf('%s/%s?v=', $web_root, $path) . $stat['mtime'];
         } else {
-            return "$web_root/$path";
+            return sprintf('%s/%s', $web_root, $path);
         }
     }
+
     return '';
 }
 
@@ -722,4 +724,5 @@ if (!empty($GLOBALS['user_debug']) && ((int) $GLOBALS['user_debug'] > 1)) {
     error_reporting(error_reporting() & ~E_WARNING & ~E_NOTICE & ~E_USER_WARNING & ~E_USER_DEPRECATED);
     ini_set('display_errors', 1);
 }
+
 EventAuditLogger::instance()->logHttpRequest();

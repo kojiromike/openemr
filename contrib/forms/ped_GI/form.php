@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
 Pediatric GI assesment
 This form works as new and editing,

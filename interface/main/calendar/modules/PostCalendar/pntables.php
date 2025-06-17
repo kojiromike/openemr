@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,19 +27,18 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-
 /**
  * This function is called internally by the core whenever the module is
  * loaded.  It adds in the information
  */
-function postcalendar_pntables()
+function postcalendar_pntables(): array
 {
     // Initialise table array
     $pntable = array();
-    $prefix = pnConfigGetVar('prefix');
+    $value = pnConfigGetVar('prefix');
     //$prefix = 'Rogue';
 
-    $pc_events = $prefix . '_postcalendar_events';
+    $pc_events = $value . '_postcalendar_events';
     $pntable['postcalendar_events'] = $pc_events;
     $pntable['postcalendar_events_column'] = array(
         'eid'           => 'pc_eid',
@@ -73,7 +74,7 @@ function postcalendar_pntables()
 
     // @since version 3.1
     // new category table
-    $pc_categories = $prefix . '_postcalendar_categories';
+    $pc_categories = $value . '_postcalendar_categories';
     $pntable['postcalendar_categories'] = $pc_categories;
     $pntable['postcalendar_categories_column'] = array(
         'catid'         => 'pc_catid',

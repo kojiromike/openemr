@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Logout script.
  *
@@ -20,4 +22,4 @@
 $_GET['auth'] = "logout";
 // Set $sessionAllowWrite to true to prevent session concurrency issues during authorization/logout related code
 $sessionAllowWrite = true;
-require_once("globals.php");
+require_once(__DIR__ . "/globals.php");

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Review of Systems Checks form
  *
@@ -15,7 +17,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -468,7 +470,7 @@ $obj = formFetch("form_reviewofs", $_GET["id"]);
                                     </div>
                                     <div class="checkbox">
                                         <label>
-                                            <input type="checkbox" name="crohns_disease" <?php echo ($obj["crohns_disease"] == "on") ? "checked" : ""; ?>><?php echo xlt('Crohn\'s Disease');?>
+                                            <input type="checkbox" name="crohns_disease" <?php echo ($obj["crohns_disease"] == "on") ? "checked" : ""; ?>><?php echo xlt("Crohn's Disease");?>
                                         </label>
                                     </div>
                                 </div>

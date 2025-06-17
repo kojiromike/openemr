@@ -1,15 +1,17 @@
 <?php
 
- // Copyright (C) 2006-2021 Rod Roark <rod@sunsetsystems.com>
+ declare(strict_types=1);
+
+// Copyright (C) 2006-2021 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
  // as published by the Free Software Foundation; either version 2
  // of the License, or (at your option) any later version.
 
-require_once("../globals.php");
-require_once("drugs.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/drugs.inc.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -28,7 +30,7 @@ if (!AclMain::aclCheckCore('admin', 'drugs')) {
 
 // Write a line of data for one template to the form.
 //
-function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $prices, $taxrates, $pkgqty)
+function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $prices, string $taxrates, $pkgqty): void
 {
     global $tmpl_line_no;
     ++$tmpl_line_no;
@@ -68,12 +70,12 @@ function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $pr
         echo "</td>\n";
     }
 
-    $pres = sqlStatement("SELECT option_id FROM list_options " .
+    $recordset = sqlStatement("SELECT option_id FROM list_options " .
     "WHERE list_id = 'taxrate' AND activity = 1 ORDER BY seq");
-    while ($prow = sqlFetchArray($pres)) {
+    while ($prow = sqlFetchArray($recordset)) {
         echo "  <td class='tmplcell'>";
         echo "<input type='checkbox' name='form_tmpl[" . attr($tmpl_line_no) . "][taxrate][" . attr($prow['option_id']) . "]' value='1'";
-        if (strpos(":$taxrates", $prow['option_id']) !== false) {
+        if (strpos(':' . $taxrates, $prow['option_id']) !== false) {
             echo " checked";
         }
 
@@ -234,7 +236,8 @@ if ((!empty($_POST['form_save']) || !empty($_POST['form_delete'])) && !$alertmsg
 
     $new_drug = false;
     if ($drug_id) {
-        if ($_POST['form_save']) { // updating an existing drug
+        if ($_POST['form_save']) {
+            // updating an existing drug
             sqlStatement(
                 "UPDATE drugs SET " .
                 "name = ?, " .
@@ -277,13 +280,12 @@ if ((!empty($_POST['form_save']) || !empty($_POST['form_delete'])) && !$alertmsg
                 )
             );
             sqlStatement("DELETE FROM drug_templates WHERE drug_id = ?", array($drug_id));
-        } else { // deleting
-            if (AclMain::aclCheckCore('admin', 'super')) {
-                sqlStatement("DELETE FROM drug_inventory WHERE drug_id = ?", array($drug_id));
-                sqlStatement("DELETE FROM drug_templates WHERE drug_id = ?", array($drug_id));
-                sqlStatement("DELETE FROM drugs WHERE drug_id = ?", array($drug_id));
-                sqlStatement("DELETE FROM prices WHERE pr_id = ? AND pr_selector != ''", array($drug_id));
-            }
+        } elseif (AclMain::aclCheckCore('admin', 'super')) {
+            // deleting
+            sqlStatement("DELETE FROM drug_inventory WHERE drug_id = ?", array($drug_id));
+            sqlStatement("DELETE FROM drug_templates WHERE drug_id = ?", array($drug_id));
+            sqlStatement("DELETE FROM drugs WHERE drug_id = ?", array($drug_id));
+            sqlStatement("DELETE FROM prices WHERE pr_id = ? AND pr_selector != ''", array($drug_id));
         }
     } elseif ($_POST['form_save']) { // saving a new drug
         $new_drug = true;
@@ -341,14 +343,14 @@ if ((!empty($_POST['form_save']) || !empty($_POST['form_delete'])) && !$alertmsg
         }
 
         sqlStatement("DELETE FROM prices WHERE pr_id = ? AND pr_selector != ''", array($drug_id));
-        for ($lino = 1; isset($tmpl["$lino"]['selector']); ++$lino) {
-            $iter = $tmpl["$lino"];
+        for ($lino = 1; isset($tmpl['' . $lino]['selector']); ++$lino) {
+            $iter = $tmpl['' . $lino];
             $selector = trim($iter['selector']);
-            if ($selector) {
+            if ($selector !== '' && $selector !== '0') {
                 $taxrates = "";
                 if (!empty($iter['taxrate'])) {
                     foreach ($iter['taxrate'] as $key => $value) {
-                        $taxrates .= "$key:";
+                        $taxrates .= $key . ':';
                     }
                 }
 
@@ -372,7 +374,7 @@ if ((!empty($_POST['form_save']) || !empty($_POST['form_delete'])) && !$alertmsg
                 // Add prices for this drug ID and selector.
                 foreach ($iter['price'] as $key => $value) {
                     if ($value) {
-                         $value = $value + 0;
+                         $value += 0;
                          sqlStatement(
                              "INSERT INTO prices ( " .
                              "pr_id, pr_selector, pr_level, pr_price ) VALUES ( " .
@@ -399,7 +401,7 @@ if ((!empty($_POST['form_save']) || !empty($_POST['form_delete'])) && !$alertmsg
   // Close this window and redisplay the updated list of drugs.
   //
     echo "<script>\n";
-    if ($info_msg) {
+    if ($info_msg !== '') {
         echo " alert('" . addslashes($info_msg) . "');\n";
     }
 
@@ -504,7 +506,7 @@ $title = $drug_id ? xl("Update Drug") : xl("Add Drug");
         <table class="table table-borderless pl-5">
             <tr>
                 <td class="align-top ">
-                    <?php echo !empty($GLOBALS['gbl_min_max_months']) ? xlt('Months') : xlt('Units'); ?>
+                    <?php echo empty($GLOBALS['gbl_min_max_months']) ? xlt('Units') : xlt('Months'); ?>
                 </td>
                 <td class="align-top"><?php echo xlt('Global'); ?></td>
 <?php

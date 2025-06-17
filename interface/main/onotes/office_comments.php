@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Viewing of office notes.
  *
@@ -10,7 +12,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
+require_once(__DIR__ . "/../../globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -54,7 +56,7 @@ $oNoteService = new ONoteService();
                         //we have more active notes to print, but we've reached our display maximum (defined at top of this file)
                         $notice = '';
                         $notice .= '<div class="alert alert-info">';
-                        $notice .= '  <a href=\'office_comments_full.php?active=-1\' onclick=\'top.restoreSession()\'>' . xlt("Some office notes were not displayed. Click here to view all.") . '</a>';
+                        $notice .= "  <a href='office_comments_full.php?active=-1' onclick='top.restoreSession()'>" . xlt("Some office notes were not displayed. Click here to view all.") . '</a>';
                         $notice .= '</div>';
                         print $notice;
                         break;
@@ -79,7 +81,7 @@ $oNoteService = new ONoteService();
 
                     print $card;
 
-                    $notes_count++;
+                    ++$notes_count;
                 }
             }
             ?>

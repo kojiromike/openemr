@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 //
 
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function ped_fever_report($pid, $encounter, $cols, $id)
+function ped_fever_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_ped_fever", $id);
@@ -24,7 +26,7 @@ function ped_fever_report($pid, $encounter, $cols, $id)
 
             print "<td><span class=bold>" . text($key) . ": </span><span class=text>" . text($value) . "</span></td>";
 
-            $count++;
+            ++$count;
             if ($count == $cols) {
                 $count = 0;
                 print "</tr><tr>\n";

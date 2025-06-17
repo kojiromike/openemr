@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    PSYCHIATRISCH ONDERZOEK
 // Package: Research psihiatric - Dutch specific form
@@ -15,7 +17,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 // Purpose: callback func?
 // Input:   pid? encounter, cols, id ?
 ////////////////////////////////////////////////////////////////////
-function psychiatrisch_onderzoek_report($pid, $encounter, $cols, $id)
+function psychiatrisch_onderzoek_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_psychiatrisch_onderzoek", $id);
@@ -86,7 +88,7 @@ function psychiatrisch_onderzoek_report($pid, $encounter, $cols, $id)
             }
 
             // increment records counter
-            $count++;
+            ++$count;
             // check if not at the end close/open new row
             if ($count == $cols) {
                 $count = 0;

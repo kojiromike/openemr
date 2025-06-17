@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @package openemr
  * @link      http://www.open-emr.org
@@ -7,28 +9,21 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Models;
 
 class TeleHealthPersonSettings
 {
     private $id;
+
     private $isPatient;
+
     private $dbRecordId;
-    /**
-     * @var \DateTime
-     */
-    private $dateCreated;
 
-    /**
-     * @var \DateTime
-     */
-    private $dateRegistered;
+    private ?\DateTime $dateCreated = null;
 
-    /**
-     * @var \DateTime
-     */
-    private $dateUpdated;
+    private ?\DateTime $dateRegistered = null;
+
+    private ?\DateTime $dateUpdated = null;
 
     /**
      * @var bool
@@ -38,14 +33,7 @@ class TeleHealthPersonSettings
     /**
      * @var string Encrypted mobile app registration code used to identify the app registration location from Comlink's servers
      */
-    private $appRegistrationCode;
-
-    /**
-     * TeleHealthPersonSettings constructor.
-     */
-    public function __construct()
-    {
-    }
+    private ?string $appRegistrationCode = null;
 
     /**
      * @return mixed
@@ -57,9 +45,8 @@ class TeleHealthPersonSettings
 
     /**
      * @param mixed $id
-     * @return TeleHealthPersonSettings
      */
-    public function setId($id)
+    public function setId($id): static
     {
         $this->id = $id;
         return $this;
@@ -75,9 +62,8 @@ class TeleHealthPersonSettings
 
     /**
      * @param mixed $isPatient
-     * @return TeleHealthPersonSettings
      */
-    public function setIsPatient($isPatient)
+    public function setIsPatient($isPatient): static
     {
         $this->isPatient = $isPatient;
         return $this;
@@ -93,62 +79,40 @@ class TeleHealthPersonSettings
 
     /**
      * @param mixed $dbRecordId
-     * @return TeleHealthPersonSettings
      */
-    public function setDbRecordId($dbRecordId)
+    public function setDbRecordId($dbRecordId): static
     {
         $this->dbRecordId = $dbRecordId;
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getDateCreated(): \DateTime
     {
         return $this->dateCreated;
     }
 
-    /**
-     * @param \DateTime $dateCreated
-     * @return TeleHealthPersonSettings
-     */
     public function setDateCreated(\DateTime $dateCreated): TeleHealthPersonSettings
     {
         $this->dateCreated = $dateCreated;
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getDateRegistered(): \DateTime
     {
         return $this->dateRegistered;
     }
 
-    /**
-     * @param \DateTime $dateRegistered
-     * @return TeleHealthPersonSettings
-     */
     public function setDateRegistered(\DateTime $dateRegistered): TeleHealthPersonSettings
     {
         $this->dateRegistered = $dateRegistered;
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getDateUpdated(): \DateTime
     {
         return $this->dateUpdated;
     }
 
-    /**
-     * @param \DateTime $dateUpdated
-     * @return TeleHealthPersonSettings
-     */
     public function setDateUpdated(\DateTime $dateUpdated): TeleHealthPersonSettings
     {
         $this->dateUpdated = $dateUpdated;
@@ -165,26 +129,18 @@ class TeleHealthPersonSettings
 
     /**
      * @param mixed $isEnabled
-     * @return TeleHealthPersonSettings
      */
-    public function setIsEnabled($isEnabled)
+    public function setIsEnabled($isEnabled): static
     {
         $this->isEnabled = $isEnabled;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getAppRegistrationCode(): string
     {
         return $this->appRegistrationCode;
     }
 
-    /**
-     * @param string $appRegistrationCode
-     * @return TeleHealthPersonSettings
-     */
     public function setAppRegistrationCode(string $appRegistrationCode): TeleHealthPersonSettings
     {
         $this->appRegistrationCode = $appRegistrationCode;

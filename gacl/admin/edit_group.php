@@ -1,15 +1,15 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 //ensure user has proper access
@@ -18,20 +18,12 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once('gacl_admin.inc.php');
+require_once(__DIR__ . '/gacl_admin.inc.php');
 
 // GET takes precedence.
-if (empty($_GET['group_type'])) {
-	$group_type = $_POST['group_type'];
-} else {
-	$group_type = $_GET['group_type'];
-}
+$group_type = empty($_GET['group_type']) ? $_POST['group_type'] : $_GET['group_type'];
 
-if (empty($_GET['return_page'])) {
-	$return_page = $_POST['return_page'];
-} else {
-	$return_page = $_GET['return_page'];
-}
+$return_page = empty($_GET['return_page']) ? $_POST['return_page'] : $_GET['return_page'];
 
 switch(strtolower(trim($group_type))) {
 	case 'axo':
@@ -74,14 +66,10 @@ switch ($postAction) {
 	case 'Submit':
 		$gacl_api->debug_text('Submit');
 
-		if (empty($_POST['parent_id'])) {
-			$parent_id = 0;
-		} else {
-			$parent_id = $_POST['parent_id'];
-		}
+		$parent_id = empty($_POST['parent_id']) ? 0 : $_POST['parent_id'];
 
 		//Make sure we're not reparenting to ourself.
-		if (!empty($_POST['group_id']) AND $parent_id == $_POST['group_id']) {
+		if (!empty($_POST['group_id']) && $parent_id == $_POST['group_id']) {
 			echo "Sorry, can't reparent to self!<br />\n";
 			exit;
 		}

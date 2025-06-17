@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/src/Application/Helper/Javascript.php
  *
@@ -9,14 +11,13 @@
  * @copyright Copyright (c) 2014 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
 
 class Javascript extends AbstractHelper
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         switch (true) {
             case (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] === true)):

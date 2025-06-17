@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Message Center Help.
  *
@@ -12,7 +14,7 @@
 
 use OpenEMR\Core\Header;
 
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 ?>
 <!DOCTYPE html>
 <html>

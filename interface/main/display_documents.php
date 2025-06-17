@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Displays the documents
  * Only Lab documents for now.
@@ -15,8 +17,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once('../globals.php');
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . '/../globals.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -50,7 +52,7 @@ $display_div = "style='display:block;'";
 <head>
 <?php
     Header::setupHeader(['datetime-picker', 'common']);
-    require_once("$srcdir/payment_jav.inc.php");
+    require_once($srcdir . '/payment_jav.inc.php');
 ?>
 
 <script>
@@ -171,13 +173,13 @@ $display_div = "style='display:block;'";
         if ($form_from_doc_date) {
             $form_from_doc_date = DateToYYYYMMDD($form_from_doc_date);
             $date_filter = " DATE(d.date) >= ? ";
-                    array_push($query_array, $form_from_doc_date);
+                    $query_array[] = $form_from_doc_date;
         }
 
         if ($form_to_doc_date) {
             $form_to_doc_date = DateToYYYYMMDD($form_to_doc_date);
             $date_filter .= " AND DATE(d.date) <= ? ";
-                    array_push($query_array, $form_to_doc_date);
+                    $query_array[] = $form_to_doc_date;
         }
 
         // Get the category ID for lab reports.
@@ -217,8 +219,9 @@ $display_div = "style='display:block;'";
                             $notes = explode("|", $row['docNotes']);
                             $dates = explode("|", $row['docDates']);
                         }
+                        $counter = count($notes);
 
-                        for ($i = 0; $i < count($notes); $i++) {
+                        for ($i = 0; $i < $counter; ++$i) {
                             $note .= text(oeFormatShortDate(date('Y-m-d', strtotime($dates[$i])))) . " : " . text($notes[$i]) . "<br />";
                         }
                         ?>

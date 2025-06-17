@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * utility.php
  * Borrowed from new.php
@@ -12,8 +14,8 @@
  */
 
 require_once(__DIR__ . "/../../../../globals.php");
-require_once("$srcdir/pid.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/pid.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -50,7 +52,7 @@ if ($_POST['form_create'] ?? null) {
             "pubpid = ?", array($form_pubpid));
         if ($result['count']) {
             unset($_POST['form_create']);
-            require_once("./utility.php");
+            require_once(__DIR__ . "/utility.php");
         }
     }
 
@@ -63,11 +65,7 @@ if ($_POST['form_create'] ?? null) {
     if ($pid == null) {
         $pid = 0;
     }
-    if (isset($_POST["pubpid"]) && ($_POST["pubpid"] != "")) {
-        $mypubpid = $_POST["pubpid"] ?? '';
-    } else {
-        $mypubpid = $pid;
-    }
+    $mypubpid = isset($_POST["pubpid"]) && $_POST["pubpid"] != "" ? $_POST["pubpid"] ?? '' : $pid;
 
     $form_fname = ucwords(trim($_POST["fname"] ?? ''));
     $form_lname = ucwords(trim($_POST["lname"] ?? ''));
@@ -110,7 +108,7 @@ if ($_POST['form_create'] ?? null) {
         "", // monthly_income
         "", // homeless
         "", // financial_review
-        "$mypubpid",
+        $mypubpid,
         $pid,
         "", // providerID
         "", // genericname1
@@ -150,13 +148,13 @@ if ($_POST['form_create'] ?? null) {
     }
 }
 
-function getLayoutUOR($form_id, $field_id)
+function getLayoutUOR($form_id, $field_id): int|float
 {
     $crow = sqlQuery("SELECT uor FROM layout_options WHERE " .
         "form_id = ? AND field_id = ? LIMIT 1", array($form_id, $field_id));
     return 0 + $crow['uor'];
 }
-if (empty($_POST) && !empty($data)) {
+if ($_POST === [] && !empty($data)) {
     $_POST = $data;
     unset($data);
 }
@@ -258,7 +256,7 @@ $form_regdate = $_POST['regdate'] ?? '' ? trim($_POST['regdate']) : date('Y-m-d'
                         continue;
                     }
                     $data_type = $lrow['data_type'];
-                    $fldname = "$field_id";
+                    $fldname = $field_id;
                     if (!in_array($lrow['field_id'], ['lname','fname','mname','DOB','sex'])) {
                         continue;
                     }
@@ -395,7 +393,7 @@ $form_regdate = $_POST['regdate'] ?? '' ? trim($_POST['regdate']) : date('Y-m-d'
     </div>
     <script>
         <?php
-        if ($form_pubpid) {
+        if ($form_pubpid !== '' && $form_pubpid !== '0') {
             echo "alert(" . xlj('This patient public ID is already in use!') . ");\n";
         }
         ?>

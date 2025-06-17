@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This processes X12 835 remittances and produces a report.
  *
@@ -17,7 +19,7 @@
 // Buffer all output so we can archive it to a file.
 ob_start();
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Billing\BillingUtilities;
 use OpenEMR\Billing\InvoiceSummary;
@@ -34,12 +36,11 @@ $encount = 0;
 $last_ptname = '';
 $last_invnumber = '';
 $last_code = '';
-$invoice_total = 0.00;
-$InsertionId; // last inserted ID of
+$invoice_total = 0.00; // last inserted ID of
 
 ///////////////////////// Assorted Functions /////////////////////////
 
-function parse_date($date)
+function parse_date($date): string
 {
     $date = substr(trim($date), 0, 10);
     if (preg_match('/^(\d\d\d\d)\D*(\d\d)\D*(\d\d)$/', $date, $matches)) {
@@ -49,7 +50,7 @@ function parse_date($date)
     return '';
 }
 
-function writeMessageLine($bgcolor, $class, $description, $nl2br_process = "false")
+function writeMessageLine($bgcolor, $class, $description, $nl2br_process = "false"): void
 {
     $dline =
     " <tr bgcolor='" . attr($bgcolor) . "'>\n" .
@@ -75,7 +76,7 @@ function writeDetailLine(
     $description,
     $amount,
     $balance
-) {
+): void {
 
     global $last_ptname, $last_invnumber, $last_code;
     if ($ptname == $last_ptname) {
@@ -120,7 +121,7 @@ function writeDetailLine(
     // This writes detail lines that were already in SQL-Ledger for a given
     // charge item.
     //
-function writeOldDetail(&$prev, $ptname, $invnumber, $dos, $code, $bgcolor)
+function writeOldDetail(array &$prev, $ptname, $invnumber, $dos, $code, $bgcolor): void
 {
     global $invoice_total;
     // $prev['total'] = 0.00; // to accumulate total charges
@@ -128,7 +129,7 @@ function writeOldDetail(&$prev, $ptname, $invnumber, $dos, $code, $bgcolor)
     foreach ($prev['dtl'] as $dkey => $ddata) {
         $ddate = substr($dkey, 0, 10);
         $description = ($ddata['src'] ?? '') . ($ddata['rsn'] ?? '');
-        if ($ddate == '          ') { // this is the service item
+        if ($ddate === '          ') { // this is the service item
             $ddate = $dos;
             $description = 'Service Item';
         }
@@ -153,7 +154,7 @@ function writeOldDetail(&$prev, $ptname, $invnumber, $dos, $code, $bgcolor)
     //
 
 // TODO: Sort colors here for Bootstrap themes
-function era_callback_check(&$out)
+function era_callback_check(array &$out): void
 {
     // last inserted ID of ar_session table
     global $InsertionId;
@@ -171,12 +172,8 @@ function era_callback_check(&$out)
         $StringToEcho .= "</thead>";
         $StringToEcho .= "<tbody>";
         $WarningFlag = false;
-        for ($check_count = 1; $check_count <= $out['check_count']; $check_count++) {
-            if ($check_count % 2 == 1) {
-                $bgcolor = '#ddddff';
-            } else {
-                $bgcolor = '#ffdddd';
-            }
+        for ($check_count = 1; $check_count <= $out['check_count']; ++$check_count) {
+            $bgcolor = $check_count % 2 == 1 ? '#ddddff' : '#ffdddd';
 
             $rs = sqlQ("select reference from ar_session where reference=?", array($out['check_number' . $check_count]));
 
@@ -207,7 +204,7 @@ function era_callback_check(&$out)
         $StringToEcho .= "</tbody>";
         $StringToEcho .= "</table>";
     } else {
-        for ($check_count = 1; $check_count <= $out['check_count']; $check_count++) {
+        for ($check_count = 1; $check_count <= $out['check_count']; ++$check_count) {
             $chk_num = $out['check_number' . $check_count];
             $chk_num = str_replace(' ', '_', $chk_num);
             if (isset($_REQUEST['chk' . $chk_num])) {
@@ -219,7 +216,7 @@ function era_callback_check(&$out)
         }
     }
 }
-function era_callback(&$out)
+function era_callback(&$out): void
 {
     global $encount, $debug;
     global $invoice_total, $last_code, $paydate;
@@ -247,7 +244,7 @@ function era_callback(&$out)
 
         $last_code = '';
         $invoice_total = 0.00;
-        $bgcolor = (++$encount & 1) ? "#ddddff" : "#ffdddd";
+        $bgcolor = ((++$encount & 1) !== 0) ? "#ddddff" : "#ffdddd";
         list($pid, $encounter, $invnumber) = SLEOB::slInvoiceNumber($out);
 
         // Get details, if we have them, for the invoice.
@@ -260,8 +257,9 @@ function era_callback(&$out)
             "e.pid = ? AND e.encounter = ? AND " .
             "p.pid = e.pid", array($pid, $encounter));
             if (empty($ferow)) {
-                  $pid = $encounter = 0;
-                  $invnumber = $out['our_claim_id'];
+                $pid = 0;
+                $encounter = 0;
+                $invnumber = $out['our_claim_id'];
             } else {
                   $inverror = false;
                   $codes = InvoiceSummary::arGetInvoiceSummary($pid, $encounter, true);
@@ -284,11 +282,11 @@ function era_callback(&$out)
             $inslabel = 'Ins3';
         }
 
-        $primary = ($inslabel == 'Ins1');
+        $primary = ($inslabel === 'Ins1');
         writeMessageLine(
             $bgcolor,
             'infdetail',
-            "Claim status $csc: " . BillingUtilities::CLAIM_STATUS_CODES_CLP02[$csc]
+            sprintf('Claim status %s: ', $csc) . BillingUtilities::CLAIM_STATUS_CODES_CLP02[$csc]
         );
 
     // Show an error message if the claim is missing or already posted.
@@ -311,20 +309,17 @@ function era_callback(&$out)
 
         if ($csc == '4') {//Denial case, code is stored in the claims table for display in the billing manager screen with reason explained.
             $inverror = true;
-            if (!$debug) {
-                if ($pid && $encounter) {
-                    $code_value = '';
-                    foreach ($out['svc'] as $svc) {
-                        foreach ($svc['adj'] as $adj) {//Per code and modifier the reason will be showed in the billing manager.
-                            $code_value .= $svc['code'] . '_' . $svc['mod'] . '_' . $adj['group_code'] . '_' . $adj['reason_code'] . ',';
-                        }
+            if (!$debug && ($pid && $encounter)) {
+                $code_value = '';
+                foreach ($out['svc'] as $svc) {
+                    foreach ($svc['adj'] as $adj) {//Per code and modifier the reason will be showed in the billing manager.
+                        $code_value .= $svc['code'] . '_' . $svc['mod'] . '_' . $adj['group_code'] . '_' . $adj['reason_code'] . ',';
                     }
-
-                    $code_value = substr($code_value, 0, -1);
-                    //We store the reason code to display it with description in the billing manager screen.
-                    //process_file is used as for the denial case file name will not be there, and extra field(to store reason) can be avoided.
-                    BillingUtilities::updateClaim(true, $pid, $encounter, $_REQUEST['InsId'], substr($inslabel, 3), 7, 0, $code_value);
                 }
+                $code_value = substr($code_value, 0, -1);
+                //We store the reason code to display it with description in the billing manager screen.
+                //process_file is used as for the denial case file name will not be there, and extra field(to store reason) can be avoided.
+                BillingUtilities::updateClaim(true, $pid, $encounter, $_REQUEST['InsId'], substr($inslabel, 3), 7, 0, $code_value);
             }
 
             writeMessageLine(
@@ -361,12 +356,12 @@ function era_callback(&$out)
 
         // create array of cpts and mods for complex matching
         $codes_arr_keys = array_keys($codes);
-        foreach ($codes_arr_keys as $key => $value) {
-            $tmp = explode(":", $value);
+        foreach ($codes_arr_keys as $code_arr_key) {
+            $tmp = explode(":", $code_arr_key);
             $count = count($tmp) - 1;
             $cpt = $tmp[0];
             $cpts[] = $cpt;
-            for ($i = 1; $i <= $count; $i++) {
+            for ($i = 1; $i <= $count; ++$i) {
                 $mods[$cpt][] = $tmp[$i] ?? null;
             }
         }
@@ -384,12 +379,10 @@ function era_callback(&$out)
             // However sometimes a secondary insurance doesn't return the modifier that was on the service item
             // that was processed by the primary payer so try to deal with that
             if (!$prev) {
-                if (!$svc['mod']) {
-                    if (in_array($svc['code'], $cpts ?? [])) {
-                        foreach ($cpts as $k => $v) {
-                            if ($v == $codekey) {
-                                $codekey = $cpt . ':' . implode(':', $mods[$v] ?? []);
-                            }
+                if (!$svc['mod'] && in_array($svc['code'], $cpts ?? [])) {
+                    foreach ($cpts as $v) {
+                        if ($v == $codekey) {
+                            $codekey = $cpt . ':' . implode(':', $mods[$v] ?? []);
                         }
                     }
                 }
@@ -419,10 +412,10 @@ function era_callback(&$out)
                 // was inserted, or in red if we are in error mode).
                 // Check the global to see if this is preferred to be an error.
                 if ($GLOBALS['add_unmatched_code_from_ins_co_era_to_billing'] ?? '') {
-                    $description = "CPT4:$codekey Added by $inslabel $production_date";
+                    $description = sprintf('CPT4:%s Added by %s %s', $codekey, $inslabel, $production_date);
                 } else {
                     $error = true;
-                    $description = "CPT4:$codekey returned by $inslabel $production_date";
+                    $description = sprintf('CPT4:%s returned by %s %s', $codekey, $inslabel, $production_date);
                 }
                 if (!$error && !$debug) {
                     SLEOB::arPostCharge(
@@ -435,8 +428,7 @@ function era_callback(&$out)
                         $codekey,
                         $description,
                         $debug,
-                        '',
-                        $codetype ?? ''
+                        ''
                     );
                     $invoice_total += $svc['chg'];
                 }
@@ -469,7 +461,7 @@ function era_callback(&$out)
             // Report miscellaneous remarks.
             if ($svc['remark'] ?? '') {
                 $rmk = $svc['remark'];
-                writeMessageLine($bgcolor, 'infdetail', "$rmk: " .
+                writeMessageLine($bgcolor, 'infdetail', $rmk . ': ' .
                     BillingUtilities::REMITTANCE_ADVICE_REMARK_CODES[$rmk]);
             }
 
@@ -495,7 +487,7 @@ function era_callback(&$out)
                     $invoice_total -= $svc['paid'];
                 }
 
-                $description = "$inslabel/" . $out['check_number'] . ' payment';
+                $description = $inslabel . '/' . $out['check_number'] . ' payment';
                 if ($svc['paid'] < 0) {
                     $description .= ' reversal';
                 }
@@ -528,18 +520,18 @@ function era_callback(&$out)
                     else if ($adj['reason_code'] == '2') $reason = 'Coinsurance: ';
                     else if ($adj['reason_code'] == '3') $reason = 'Co-pay: ';
                 ****/
-                        $reason = "$inslabel ptresp: "; // Reasons should be 25 chars or less.
+                        $reason = $inslabel . ' ptresp: '; // Reasons should be 25 chars or less.
                         if ($adj['reason_code'] == '1') {
-                            $reason = "$inslabel dedbl: ";
+                            $reason = $inslabel . ' dedbl: ';
                         } elseif ($adj['reason_code'] == '2') {
-                            $reason = "$inslabel coins: ";
+                            $reason = $inslabel . ' coins: ';
                         } elseif ($adj['reason_code'] == '3') {
-                            $reason = "$inslabel copay: ";
+                            $reason = $inslabel . ' copay: ';
                         }
                     } else { // Non-primary insurance adjustments are garbage, either repeating
                         // the primary or are not adjustments at all.  Report them as notes
                         // but do not post any amounts.
-                        $reason = "$inslabel note " . $adj['reason_code'] . ': ';
+                        $reason = $inslabel . ' note ' . $adj['reason_code'] . ': ';
                 /****
                     $reason .= sprintf("%.2f", $adj['amount']);
                 ****/
@@ -558,8 +550,7 @@ function era_callback(&$out)
                             $reason,
                             $debug,
                             '',
-                            $codetype,
-                            $out['payer_claim_id']
+                            $codetype
                         );
                     }
 
@@ -588,8 +579,7 @@ function era_callback(&$out)
                         "Adjust code " . $adj['reason_code'],
                         $debug,
                         '',
-                        $codetype ?? '',
-                        $out['payer_claim_id']
+                        $codetype ?? ''
                     );
                     $invoice_total -= $adj['amount'];
                 }
@@ -650,7 +640,7 @@ function era_callback(&$out)
             if ($primary && SLEOB::arGetPayerID($pid, $service_date, 2)) {
                 SLEOB::arSetupSecondary($pid, $encounter, $debug, $out['crossover']);
 
-                if ($out['crossover'] <> 1) {
+                if ($out['crossover'] != 1) {
                     writeMessageLine(
                         $bgcolor,
                         'infdetail',
@@ -680,14 +670,14 @@ if (! $eraname) {
     // bunch of stuff without saving the report.  Also be sure to retain any old
     // report files.  Do not save the report if this is a no-update situation.
     //
-if (!$debug) {
-    $nameprefix = $GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname";
+if ($debug === 0) {
+    $nameprefix = $GLOBALS['OE_SITE_DIR'] . ('/documents/era/' . $eraname);
     $namesuffix = '';
-    for ($i = 1; is_file("$nameprefix$namesuffix.html"); ++$i) {
-        $namesuffix = "_$i";
+    for ($i = 1; is_file(sprintf('%s%s.html', $nameprefix, $namesuffix)); ++$i) {
+        $namesuffix = '_' . $i;
     }
 
-    $fnreport = "$nameprefix$namesuffix.html";
+    $fnreport = sprintf('%s%s.html', $nameprefix, $namesuffix);
     $fhreport = fopen($fnreport, 'w');
     if (!$fhreport) {
         die(xlt("Cannot create") . " '" . text($fnreport) . "'");
@@ -741,7 +731,7 @@ if (!$debug) {
 
 <?php
 if (!empty($_GET['original']) && $_GET['original'] == 'original') {
-    $alertmsg = ParseERA::parseERAForCheck($GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.edi", 'era_callback');
+    $alertmsg = ParseERA::parseERAForCheck($GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.edi', $eraname));
     echo $StringToEcho;
 } else {
     ?>
@@ -775,9 +765,9 @@ if (!empty($_GET['original']) && $_GET['original'] == 'original') {
     global $InsertionId;
 
     $eraname = $_REQUEST['eraname'];
-    $alertmsg = ParseERA::parseERAForCheck($GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.edi");
-    $alertmsg = ParseERA::parseERA($GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.edi", 'era_callback');
-    if (!$debug) {
+    $alertmsg = ParseERA::parseERAForCheck($GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.edi', $eraname));
+    $alertmsg = ParseERA::parseERA($GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.edi', $eraname), 'era_callback');
+    if ($debug === 0) {
           $StringIssue = xl("Total Distribution for following check number is not full") . ': ';
           $StringPrint = 'No';
         if (is_countable($InsertionId)) {
@@ -792,14 +782,14 @@ if (!empty($_GET['original']) && $_GET['original'] == 'original') {
                 $row = sqlFetchArray($rs);
                 $pay_amount = $row['sum_pay_amount'];
 
-                if (($pay_total - $pay_amount) <> 0) {
+                if ($pay_total - $pay_amount != 0) {
                     $StringIssue .= $key . ' ';
                     $StringPrint = 'Yes';
                 }
             }
         }
 
-        if ($StringPrint == 'Yes') {
+        if ($StringPrint === 'Yes') {
             echo "<script>alert(" . js_escape($StringIssue) . ")</script>";
         }
     }
@@ -836,7 +826,7 @@ function checkAll(checked) {
 </html>
 <?php
     // Save all of this script's output to a report file.
-if (!$debug) {
+if ($debug === 0) {
     fwrite($fhreport, ob_get_contents());
     fclose($fhreport);
 }

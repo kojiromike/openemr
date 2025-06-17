@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormHpTjePrimary.class.php");
+require_once(__DIR__ . "/FormHpTjePrimary.class.php");
 
 class C_FormHpTje extends Controller
 {
-    var $template_dir;
+    public $template_dir;
 
-    function __construct($template_mod = "general")
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -17,21 +19,17 @@ class C_FormHpTje extends Controller
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
-        $hptje_primary = new FormHpTjePrimary();
-        $this->assign("hptje_primary", $hptje_primary);
-        $this->assign("checks", $hptje_primary->_form_layout());
+        $formHpTjePrimary = new FormHpTjePrimary();
+        $this->assign("hptje_primary", $formHpTjePrimary);
+        $this->assign("checks", $formHpTjePrimary->_form_layout());
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function view_action($form_id)
+    public function view_action($form_id)
     {
-        if (is_numeric($form_id)) {
-            $hptje_primary = new FormHpTjePrimary($form_id);
-        } else {
-            $hptje_primary = new FormHpTjePrimary();
-        }
+        $hptje_primary = is_numeric($form_id) ? new FormHpTjePrimary($form_id) : new FormHpTjePrimary();
 
         $this->assign("hptje_primary", $hptje_primary);
         $this->assign("checks", $hptje_primary->_form_layout());
@@ -39,7 +37,7 @@ class C_FormHpTje extends Controller
         return $this->fetch($this->template_dir . $this->template_mod . "_new.html");
     }
 
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -55,6 +53,5 @@ class C_FormHpTje extends Controller
 
         addForm($GLOBALS['encounter'], "Head Pain TJE", $this->form->id, "hp_tje_primary", $GLOBALS['pid'], $_SESSION['userauthorized']);
         $_POST['process'] = "";
-        return;
     }
 }

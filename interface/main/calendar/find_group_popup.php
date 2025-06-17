@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/main/calendar/find_group_popup.php
  *
@@ -16,17 +18,15 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once('../../globals.php');
-require_once("$srcdir/group.inc.php");
-require_once("../../therapy_groups/therapy_groups_controllers/therapy_groups_controller.php");
+require_once(__DIR__ . '/../../globals.php');
+require_once($srcdir . '/group.inc.php');
+require_once(__DIR__ . "/../../therapy_groups/therapy_groups_controllers/therapy_groups_controller.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 $info_msg = "";
@@ -39,9 +39,9 @@ if ($searchby && $searchparm) {
     $searchparm = trim($searchparm);
 
     if ($searchby == "Name") {
-        $result = getGroupData("$searchparm", "*", 'group_name');
+        $result = getGroupData($searchparm, "*", 'group_name');
     } elseif ($searchby == "ID") {
-        $result = getGroupData("$searchparm", "*", 'group_id');
+        $result = getGroupData($searchparm, "*", 'group_id');
     }
 }
 ?>

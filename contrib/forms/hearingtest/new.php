@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Generated DocBlock
  *
@@ -20,7 +22,7 @@
 <!-- Form generated from formsWiz  -->
 <?php
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
 use OpenEMR\Core\Header;
 

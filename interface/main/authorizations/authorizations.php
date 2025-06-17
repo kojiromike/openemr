@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Authorizations script.
  *
@@ -10,12 +12,12 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/transactions.inc.php");
-require_once("$srcdir/lists.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/transactions.inc.php');
+require_once($srcdir . '/lists.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Logging\EventAuditLogger;
@@ -100,7 +102,7 @@ if ($imauthorized && $see_auth > 1) {
         "billing.authorized = 0 and billing.activity = 1 and " .
         "groupname = ?", array($groupname))
     ) {
-        for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+        for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
             $result1[$iter] = $row;
         }
 
@@ -118,7 +120,7 @@ if ($imauthorized && $see_auth > 1) {
         $res = sqlStatement("select * from transactions where " .
         "authorized = 0 and groupname = ?", array($groupname))
     ) {
-        for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+        for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
             $result2[$iter] = $row;
         }
 
@@ -131,22 +133,17 @@ if ($imauthorized && $see_auth > 1) {
         }
     }
 
-    if (empty($GLOBALS['ignore_pnotes_authorization'])) {
-          //fetch pnotes information:
-        if (
-            $res = sqlStatement("select * from pnotes where authorized = 0 and " .
-            "groupname = ?", array($groupname))
-        ) {
-            for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
-                $result3[$iter] = $row;
-            }
-
-            if ($result3) {
-                foreach ($result3 as $iter) {
-                    $authorize[$iter["pid"]]["pnotes"] .= "<span class='text'>" .
-                    text((strterm($iter["body"], 25)) . " " . date("n/j/Y", strtotime($iter["date"]))) .
-                    "</span><br />\n";
-                }
+    //fetch pnotes information:
+    if (empty($GLOBALS['ignore_pnotes_authorization']) && $res = sqlStatement("select * from pnotes where authorized = 0 and " .
+    "groupname = ?", array($groupname))) {
+        for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
+            $result3[$iter] = $row;
+        }
+        if ($result3) {
+            foreach ($result3 as $iter) {
+                $authorize[$iter["pid"]]["pnotes"] .= "<span class='text'>" .
+                text((strterm($iter["body"], 25)) . " " . date("n/j/Y", strtotime($iter["date"]))) .
+                "</span><br />\n";
             }
         }
     }
@@ -156,7 +153,7 @@ if ($imauthorized && $see_auth > 1) {
         $res = sqlStatement("select * from forms where authorized = 0 and " .
         "groupname = ?", array($groupname))
     ) {
-        for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+        for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
             $result4[$iter] = $row;
         }
 
@@ -197,7 +194,7 @@ if ($imauthorized && $see_auth > 1) {
             echo "<tr><td valign='top'>";
             // Clicking the patient name will load both frames for that patient,
             // as demographics.php takes care of loading the bottom frame.
-            echo "<a href='$rootdir/patient_file/summary/demographics.php?set_pid=" .
+            echo sprintf("<a href='%s/patient_file/summary/demographics.php?set_pid=", $rootdir) .
             attr_url($ppid) . "' target='RTop' onclick='top.restoreSession()'>";
 
             echo "<span class='font-weight-bold'>" . text($name["fname"]) . " " .
@@ -233,7 +230,7 @@ if ($imauthorized && $see_auth > 1) {
               $patient["forms"] . "</td>\n";
             echo "</tr>\n";
 
-            $count++;
+            ++$count;
         }
     }
     ?>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * soap form
  * @package   OpenEMR
@@ -12,13 +14,14 @@
  */
 
 require_once($GLOBALS['fileroot'] . "/library/forms.inc.php");
-require_once("FormSOAP.class.php");
+require_once(__DIR__ . "/FormSOAP.class.php");
 
 use OpenEMR\Common\Twig\TwigContainer;
 
 class C_FormSOAP extends Controller
 {
     private TwigContainer $twig;
+
     public function __construct()
     {
         $path = $this->getTemplatePath();
@@ -30,9 +33,23 @@ class C_FormSOAP extends Controller
      * @throws \Twig\Error\SyntaxError
      * @throws \Twig\Error\LoaderError
      */
-    function default_action()
+    public function default_action(): string
     {
-        $form = new FormSOAP();
+        $formSOAP = new FormSOAP();
+        return $this->twig->getTwig()->render(
+            'soap_form.twig',
+            [
+                "FORM_ACTION" => $GLOBALS['web_root'],
+                "DONT_SAVE_LINK" => $GLOBALS['form_exit_url'],
+                "data" => $formSOAP
+            ]
+        );
+    }
+
+    public function view_action($form_id): string
+    {
+        $form = is_numeric($form_id) ? new FormSOAP($form_id) : new FormSOAP();
+
         return $this->twig->getTwig()->render(
             'soap_form.twig',
             [
@@ -43,25 +60,7 @@ class C_FormSOAP extends Controller
         );
     }
 
-    function view_action($form_id)
-    {
-        if (is_numeric($form_id)) {
-            $form = new FormSOAP($form_id);
-        } else {
-            $form = new FormSOAP();
-        }
-
-        return $this->twig->getTwig()->render(
-            'soap_form.twig',
-            [
-                "FORM_ACTION" => $GLOBALS['web_root'],
-                "DONT_SAVE_LINK" => $GLOBALS['form_exit_url'],
-                "data" => $form
-            ]
-        );
-    }
-
-    function default_action_process()
+    public function default_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
@@ -87,9 +86,7 @@ class C_FormSOAP extends Controller
             $_POST['process'] = "";
         }
     }
-    /**
-     * @return string
-     */
+
     private function getTemplatePath(): string
     {
         return \dirname(__DIR__) . DIRECTORY_SEPARATOR . "soap/templates" . DIRECTORY_SEPARATOR;

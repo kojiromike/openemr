@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  Lab Requisition Form
  *
@@ -13,10 +15,10 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/lab.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/lab.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -25,7 +27,7 @@ formHeader("Form:Lab Requisition");
 $returnurl = 'encounter_top.php';
 
 $formid = (int) ($_GET['id'] ?? 0);
-$obj = $formid ? formFetch("form_requisition", $formid) : array();
+$obj = $formid !== 0 ? formFetch("form_requisition", $formid) : array();
 
 global $pid ;
 
@@ -134,7 +136,7 @@ table, th, td {
 <body>
 <div class="container">
     <?php
-    if (empty($order)) {
+    if ($order === []) {
             echo "<div class='text-center mt-5'><span>" .
                 xlt('procedure order not found in database contact tech support') . "</span></div></div></body></html>";
             exit;
@@ -154,7 +156,7 @@ table, th, td {
                    $lab_id = $order[0];
                    $storeBar = getBarId($lab_id, $pid);
 
-                if (!empty($storeBar)) {
+                if (!($storeBar === false || ($storeBar === '' || $storeBar === '0') || $storeBar === [] || $storeBar === null)) {
                     $bar = $storeBar['req_id'];
                 } else {
                     $bar = rand(1000, 999999);
@@ -262,7 +264,7 @@ table, th, td {
                         <?php echo xlt('City,St,Zip') ?>:<br />
                         <?php echo xlt('Subscriber/Policy') ?>#:<br />
                         <?php echo xlt('Group') ?> #:<br />
-                        <?php echo xlt('Physician\'s UPIN') ?>:<br />
+                        <?php echo xlt("Physician's UPIN") ?>:<br />
                         <?php echo xlt('Employer') ?>:<br />
                         <?php echo xlt('Relationship') ?>:<br />
                       </div>
@@ -294,7 +296,7 @@ table, th, td {
                         <?php echo xlt('City,St,Zip') ?>:<br />
                         <?php echo xlt('Subscriber/Policy') ?>#:<br />
                         <?php echo xlt('Group') ?> #:<br />
-                        <?php echo xlt('Physician\'s UPIN') ?>:<br />
+                        <?php echo xlt("Physician's UPIN") ?>:<br />
                         <?php echo xlt('Employer') ?>:<br />
                         <?php echo xlt('Relationship') ?>:<br />
                        </div>

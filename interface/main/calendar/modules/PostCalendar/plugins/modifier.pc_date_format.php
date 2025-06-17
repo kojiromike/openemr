@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -31,7 +33,7 @@ require_once $smarty->_get_plugin_filepath('shared', 'make_timestamp');
 //This provides a cross-platform alternative to strftime() for when it will be removed from PHP.
 use function PHP81_BC\strftime;
 
-function smarty_modifier_pc_date_format($string, $format = null, $default_date = null)
+function smarty_modifier_pc_date_format($string, $format = null, $default_date = null): ?string
 {
     setlocale(LC_TIME, _PC_LOCALE);
     if (empty($format)) {
@@ -39,16 +41,11 @@ function smarty_modifier_pc_date_format($string, $format = null, $default_date =
     }
 
     if ($string != '') {
-        if (is_string($string)) {
-            $timestamp = strtotime($string);
-        } else {
-            $timestamp = smarty_make_timestamp($string);
-        }
-
+        $timestamp = is_string($string) ? strtotime($string) : smarty_make_timestamp($string);
         return strftime($format, $timestamp);
     } elseif (isset($default_date) && $default_date != '') {
         return strftime($format, smarty_make_timestamp($default_date));
     } else {
-        return;
+        return null;
     }
 }

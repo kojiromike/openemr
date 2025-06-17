@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * prior auth form
  *
@@ -11,9 +13,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 
-require("C_FormPriorAuth.class.php");
+require(__DIR__ . "/C_FormPriorAuth.class.php");
 
 $c = new C_FormPriorAuth();
 echo $c->default_action();

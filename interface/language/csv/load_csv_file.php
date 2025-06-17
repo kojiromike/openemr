@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * @package OpenEMR
  * @link    http://www.open-emr.org
@@ -34,7 +36,7 @@ $sqlLanguages = "SELECT *, lang_description as trans_lang_description FROM lang_
 $resLanguages = SqlStatement($sqlLanguages);
 $languages = array();
 while ($row = sqlFetchArray($resLanguages)) {
-    array_push($languages, $row);
+    $languages[] = $row;
 }
 
 ?>

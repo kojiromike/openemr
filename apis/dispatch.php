@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Rest Dispatch
  *
@@ -15,7 +17,7 @@
  */
 
 // below brings in autoloader
-require_once("./../_rest_config.php");
+require_once(__DIR__ . "/../_rest_config.php");
 
 use OpenEMR\Common\Auth\UuidUserAccount;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -74,24 +76,26 @@ if (!empty($_SERVER['HTTP_APICSRFTOKEN'])) {
     $site = '';
     $scopes = $attributes['oauth_scopes'];
     $logger->debug("Parsed oauth_scopes in AccessToken", ["scopes" => $scopes]);
-    foreach ($scopes as $attr) {
-        if (stripos($attr, 'site:') !== false) {
-            $site = str_replace('site:', '', $attr);
+    foreach ($scopes as $scope) {
+        if (stripos($scope, 'site:') !== false) {
+            $site = str_replace('site:', '', $scope);
             $restRequest->setRequestSite($site);
         }
     }
+
     // set our scopes and updated resources as needed
     $restRequest->setAccessTokenScopes($scopes);
 
     // ensure 1) sane site 2) site from gbl and access token are the same and 3) ensure the site exists on filesystem
     if (
-        empty($restRequest->getRequestSite()) || empty($gbl::$SITE) || preg_match('/[^A-Za-z0-9\\-.]/', $gbl::$SITE)
+        in_array($restRequest->getRequestSite(), [null, '', '0'], true) || empty($gbl::$SITE) || preg_match('/[^A-Za-z0-9\\-.]/', $gbl::$SITE)
         || ($restRequest->getRequestSite() !== $gbl::$SITE) || !file_exists(__DIR__ . '/../sites/' . $gbl::$SITE)
     ) {
         $logger->error("OpenEMR Error - api site error, so forced exit");
         http_response_code(400);
         exit();
     }
+
     // set the site
     $_GET['site'] = $site;
 
@@ -110,6 +114,7 @@ if (!empty($_SERVER['HTTP_APICSRFTOKEN'])) {
         http_response_code(400);
         exit();
     }
+
     $restRequest->setClientId($clientId);
     $restRequest->setAccessTokenId($tokenId);
 
@@ -135,7 +140,7 @@ $restRequest->setIsLocalApi($isLocalApi);
 //  1. !$isLocalApi - not applicable since use the SessionUtil::apiSessionStart session, which was set above
 //  2. $isLocalApi - in this case, basically setting this to true downstream after some session sets via session_write_close() call
 $sessionAllowWrite = true;
-require_once("./../interface/globals.php");
+require_once(__DIR__ . "/../interface/globals.php");
 
 // we now can check the database to see if the token is revoked
 // Note despite League\OAuth2\Server\AuthorizationValidators\BearerTokenValidator.php:L117 already checking for revoked
@@ -196,6 +201,7 @@ if ($isLocalApi) {
         $gbl::emitResponse($isTrusted);
         exit;
     }
+
     // $isTrusted can be used for further validations using session_cache
     // which is a json. json_decode($isTrusted['session_cache'])
 
@@ -211,7 +217,7 @@ if ($isLocalApi) {
     $uuidToUser = new UuidUserAccount($userId);
     $user = $uuidToUser->getUserAccount();
     $userRole = $uuidToUser->getUserRole();
-    if (empty($user)) {
+    if ($user === null || $user === []) {
         // unable to identify the users user role
         $logger->error("OpenEMR Error - api user account could not be identified, so forced exit", [
             'userId' => $userId,
@@ -220,7 +226,8 @@ if ($isLocalApi) {
         http_response_code(400);
         exit();
     }
-    if (empty($userRole)) {
+
+    if ($userRole === null || $userRole === '' || $userRole === '0') {
         // unable to identify the users user role
         $logger->error("OpenEMR Error - api user role for user could not be identified, so forced exit");
         $gbl::destroySession();
@@ -245,14 +252,15 @@ if ($isLocalApi) {
         http_response_code(401);
         exit();
     }
+
     // ensure user role has access to the resource
     //  for now assuming:
     //   users has access to oemr and fhir
     //   patient has access to port and fhir
-    if ($userRole == 'users' && ($gbl::is_api_request($resource) || $gbl::is_fhir_request($resource))) {
+    if ($userRole === 'users' && ($gbl::is_api_request($resource) || $gbl::is_fhir_request($resource))) {
         $logger->debug("dispatch.php valid role and user has access to api/fhir resource", ['resource' => $resource]);
         // good to go
-    } elseif ($userRole == 'patient' && ($gbl::is_portal_request($resource) || $gbl::is_fhir_request($resource))) {
+    } elseif ($userRole === 'patient' && ($gbl::is_portal_request($resource) || $gbl::is_fhir_request($resource))) {
         $logger->debug("dispatch.php valid role and patient has access portal resource", ['resource' => $resource]);
         // good to go
     } elseif ($userRole === 'system' && ($gbl::is_fhir_request($resource))) {
@@ -263,8 +271,9 @@ if ($isLocalApi) {
         http_response_code(401);
         exit();
     }
+
     // set pertinent session variables
-    if ($userRole == 'users') {
+    if ($userRole === 'users') {
         $_SESSION['authUser'] = $user["username"] ?? null;
         $_SESSION['authUserID'] = $user["id"] ?? null;
         $_SESSION['authProvider'] = sqlQueryNoLog("SELECT `name` FROM `groups` WHERE `user` = ?", [$_SESSION['authUser']])['name'] ?? null;
@@ -275,6 +284,7 @@ if ($isLocalApi) {
             http_response_code(401);
             exit();
         }
+
         $logger->debug("dispatch.php request setup for user role", ['authUserID' => $user['id'], 'authUser' => $user['username']]);
         if (
             $restRequest->requestHasScope(SmartLaunchController::CLIENT_APP_STANDALONE_LAUNCH_SCOPE)
@@ -283,7 +293,7 @@ if ($isLocalApi) {
             $logger->debug("dispatch.php api is userRole populating token context for request due to smart launch scope");
             $restRequest = $gbl->populateTokenContextForRequest($restRequest);
         }
-    } elseif ($userRole == 'patient') {
+    } elseif ($userRole === 'patient') {
         $_SESSION['pid'] = $user['pid'] ?? null;
         $puuidCheck = $user['uuid'] ?? null;
         $puuidStringCheck = UuidRegistry::uuidToString($puuidCheck) ?? null;
@@ -294,6 +304,7 @@ if ($isLocalApi) {
             http_response_code(401);
             exit();
         }
+
         $restRequest->setPatientRequest(true);
         $restRequest->setPatientUuidString($puuidStringCheck);
         $logger->debug("dispatch.php request setup for patient role", ['patient' => $puuidStringCheck]);
@@ -339,6 +350,7 @@ if ($gbl::is_fhir_request($resource)) {
         http_response_code(501);
         exit();
     }
+
     $_SESSION['api'] = 'fhir';
     $routes = $gbl::$FHIR_ROUTE_MAP;
 } elseif ($gbl::is_portal_request($resource)) {
@@ -349,6 +361,7 @@ if ($gbl::is_fhir_request($resource)) {
         http_response_code(501);
         exit();
     }
+
     $_SESSION['api'] = 'port';
     $routes = $gbl::$PORTAL_ROUTE_MAP;
 } elseif ($gbl::is_api_request($resource)) {
@@ -362,6 +375,7 @@ if ($gbl::is_fhir_request($resource)) {
         http_response_code(501);
         exit();
     }
+
     $_SESSION['api'] = 'oemr';
     $routes = $gbl::$ROUTE_MAP;
 } else {
@@ -371,6 +385,7 @@ if ($gbl::is_fhir_request($resource)) {
     if (!$isLocalApi) {
         $gbl::destroySession();
     }
+
     http_response_code(501);
     exit();
 }
@@ -393,11 +408,12 @@ $apiCallOutput = ob_get_clean();
 if (!$isLocalApi) {
     $gbl::destroySession();
 }
+
 // TODO: @adunsulag we should consider rearranging the order of this code. We would rather return the response interface
 // then something that was collected in the buffer... There are things internally that just dump to the screen which
 // we really don't want to just spit out to the screen such as prepared statement error failures.
 // Send the output if not empty
-if (!empty($apiCallOutput)) {
+if (!($apiCallOutput === '' || $apiCallOutput === '0' || $apiCallOutput === false)) {
     echo $apiCallOutput;
 } elseif ($dispatchResult instanceof ResponseInterface) {
     RestConfig::emitResponse($dispatchResult);
@@ -419,6 +435,6 @@ try {
         'eventTarget' => $userRole ?? 'UNKNOWN',
     ]);
     exit;
-} catch (\Exception $e) {
-    $logger->error("dispatch.php telemetry error", ['exception' => $e]);
+} catch (\Exception $exception) {
+    $logger->error("dispatch.php telemetry error", ['exception' => $exception]);
 }

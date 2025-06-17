@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * library to simplify processing code_types
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2013 Kevin Yeh <kevin.y@integralemr.com> and OEMR <www.oemr.org>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 function diag_code_types($format = 'json', $sqlEscape = false)
 {
     global $code_types;
@@ -24,7 +25,7 @@ function diag_code_types($format = 'json', $sqlEscape = false)
                 $entry .= "'";
             }
 
-            array_push($diagCodes, $entry);
+            $diagCodes[] = $entry;
         }
     }
 
@@ -35,4 +36,5 @@ function diag_code_types($format = 'json', $sqlEscape = false)
     if ($format == 'keylist') {
         return implode(",", $diagCodes);
     }
+    return null;
 }

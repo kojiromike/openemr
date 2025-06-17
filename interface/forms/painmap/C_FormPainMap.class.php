@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * C_FormPainMap.class.php, used to control a clickmap based form.
  *
@@ -13,7 +15,7 @@
 require_once($GLOBALS['fileroot'] . "/interface/clickmap/C_AbstractClickmap.php");
 
 /* included so that we can instantiate FormPainMap in createModel, to model the data contained in this form. */
-require_once("FormPainMap.php");
+require_once(__DIR__ . "/FormPainMap.php");
 
 /**
  * @class C_FormPainMap
@@ -28,6 +30,7 @@ class C_FormPainMap extends C_AbstractClickmap
      * @var FORM_TITLE
      */
     static $FORM_TITLE = "Graphical Pain Map";
+
     /**
      * The 'code' of the form, also used when calling addform().
      *
@@ -47,7 +50,7 @@ class C_FormPainMap extends C_AbstractClickmap
      * @param form_id
      *  optional id of a form in the EMR, to populate data from.
      */
-    public function createModel($form_id = "")
+    public function createModel($form_id = ""): \FormPainMap
     {
         if ($form_id != "") {
             return new FormPainMap($form_id);
@@ -59,7 +62,7 @@ class C_FormPainMap extends C_AbstractClickmap
     /**
      * @brief return the path to the backing image relative to the webroot.
      */
-    function getImage()
+    public function getImage(): string
     {
         return $GLOBALS['webroot'] . "/interface/forms/" . C_FormPainMap::$FORM_CODE . "/templates/painmap.png";
     }
@@ -67,7 +70,7 @@ class C_FormPainMap extends C_AbstractClickmap
     /**
      * @brief return a n arra containing the options for the dropdown box.
      */
-    function getOptionList()
+    public function getOptionList(): array
     {
         return array(  "0" => "None",
                        "1" => "Level 1",
@@ -85,7 +88,7 @@ class C_FormPainMap extends C_AbstractClickmap
     /**
      * @brief return a label for the dropdown boxes on the form, as a string.
      */
-    function getOptionsLabel()
+    public function getOptionsLabel(): string
     {
         return "Pain Scale";
     }

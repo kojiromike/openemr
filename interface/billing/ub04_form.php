@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * UB04 Claims Form
  *
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("./ub04_dispose.php");
+require_once(__DIR__ . "/ub04_dispose.php");
 
 /* $isAuthorized tells us if the form is for user UI or claim processing and provides another security check */
 global $isAuthorized;
@@ -204,7 +206,7 @@ var ub04id = new Array();
 payerid = <?php echo js_escape($payerid ?? ''); ?>;
 pid = <?php echo js_escape($pid);?>;
 encounter = <?php echo js_escape($encounter ?? null);?>;
-isTemplate = <?php echo js_escape(($isAuthorized === true ? $isAuthorized : false)); ?>;
+isTemplate = <?php echo js_escape(($isAuthorized === true && $isAuthorized)); ?>;
 ub04id = <?php echo $ub04id;?>
 
 function adjustForm()

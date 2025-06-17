@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * POST-NUKE Content Management System
  * Based on:
@@ -16,10 +18,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/calendar.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once 'includes/pnAPI.php';
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/calendar.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once __DIR__ . '/includes/pnAPI.php';
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Session\SessionUtil;
@@ -51,10 +53,8 @@ if ($_POST['pc_facility'])  $_SESSION['pc_facility'] = $_POST['pc_facility'];
 *********************************************************************/
 if ($GLOBALS['login_into_facility']) {
     $sessionSetArray['pc_facility'] = $_SESSION['facilityId'];
-} else {
-    if (isset($_COOKIE['pc_facility']) && $GLOBALS['set_facility_cookie']) {
-        $sessionSetArray['pc_facility'] = $_COOKIE['pc_facility'];
-    }
+} elseif (isset($_COOKIE['pc_facility']) && $GLOBALS['set_facility_cookie']) {
+    $sessionSetArray['pc_facility'] = $_COOKIE['pc_facility'];
 }
 
 // override the cookie if the user doesn't have access to that facility any more
@@ -63,8 +63,8 @@ if ($_SESSION['userauthorized'] != 1 && $GLOBALS['restrict_user_facility']) {
     // use the first facility the user has access to, unless...
     $sessionSetArray['pc_facility'] = $facilities[0]['id'];
     // if the cookie is in the users' facilities, use that.
-    foreach ($facilities as $facrow) {
-        if (($facrow['id'] == $_COOKIE['pc_facility']) && $GLOBALS['set_facility_cookie']) {
+    foreach ($facilities as $facility) {
+        if (($facility['id'] == $_COOKIE['pc_facility']) && $GLOBALS['set_facility_cookie']) {
             $sessionSetArray['pc_facility'] = $_COOKIE['pc_facility'];
         }
     }
@@ -80,12 +80,10 @@ if (isset($_GET['pc_facility'])) {
     $sessionSetArray['pc_facility'] = $_GET['pc_facility'];
 }
 
-if ($GLOBALS['set_facility_cookie']) {
-    if (!$GLOBALS['login_into_facility'] && $_SESSION['pc_facility'] > 0) {
-        // If login_into_facility is turn on $_COOKIE['pc_facility'] was saved in the login process.
-        // In the case that login_into_facility is turn on you don't want to save different facility than the selected in the login screen.
-        setcookie("pc_facility", $_SESSION['pc_facility'], time() + (3600 * 365));
-    }
+if ($GLOBALS['set_facility_cookie'] && (!$GLOBALS['login_into_facility'] && $_SESSION['pc_facility'] > 0)) {
+    // If login_into_facility is turn on $_COOKIE['pc_facility'] was saved in the login process.
+    // In the case that login_into_facility is turn on you don't want to save different facility than the selected in the login screen.
+    setcookie("pc_facility", $_SESSION['pc_facility'], time() + (3600 * 365));
 }
 
 // Simplifying by just using request variable instead of checking for both post and get - KHY
@@ -112,6 +110,7 @@ if ($type == "admin") {
         // exit if do not have access
         exit;
     }
+
     if (
         ($func != "modifyconfig") &&
         ($func != "clearCache") &&
@@ -129,14 +128,9 @@ if (empty($type)) {
     $type = 'user';
 }
 
-if ($type == "user") {
-    if (
-        ($func != "view") &&
-        ($func != "search")
-    ) {
-        // only support view and search functions in for non-admin use
-        exit;
-    }
+if ($type == "user" && ($func != "view" && $func != "search")) {
+    // only support view and search functions in for non-admin use
+    exit;
 }
 
 if (($type != "user") && ($type != "admin")) {

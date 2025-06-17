@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 //////////////////////////////////////////////////////////////////////
 // ------------------ DO NOT MODIFY VIEW.PHP !!! ---------------------
 // View.php is an exact duplicate of new.php.  If you wish to make
@@ -20,8 +22,8 @@
 // of the License, or (at your option) any later version.
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -31,26 +33,24 @@ if (! $encounter) { // comes from globals.php
     die("Internal error: we do not seem to be in an encounter!");
 }
 
-function rbvalue($rbname)
+function rbvalue($rbname): string
 {
     $tmp = $_POST[$rbname];
     if (! $tmp) {
         return "NULL";
     }
 
-    return "$tmp";
+    return $tmp;
 }
 
-function rbinput($name, $value, $desc, $colname)
+function rbinput($name, $value, $desc, $colname): string
 {
     global $row;
     $ret  = "<input type='radio' name='" . attr($name) . "' value='" . attr($value) . "'";
     if ($row[$colname] == $value) {
         $ret .= " checked";
     }
-
-    $ret .= " />" . text($desc);
-    return $ret;
+    return $ret . (" />" . text($desc));
 }
 
 $formid = $_GET['id'];

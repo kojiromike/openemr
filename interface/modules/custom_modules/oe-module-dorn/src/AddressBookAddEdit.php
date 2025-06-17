@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022-2025 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn;
 
 class AddressBookAddEdit
@@ -29,10 +30,11 @@ class AddressBookAddEdit
             // Insert a new record
             $uid = AddressBookAddEdit::createRecordInAddressBook($organization, $street, $streetb, $city, $state, $zip, $url, $phone, $fax, $notes);
         }
+
         return $uid;
     }
 
-    public static function updateRecordInAddressBook($uid, $organization, $street, $streetb, $city, $state, $zip, $url, $phone, $fax, $notes)
+    public static function updateRecordInAddressBook($uid, $organization, $street, $streetb, $city, $state, $zip, $url, $phone, $fax, $notes): void
     {
         $sql = "UPDATE users SET organization = ?, street = ?, streetb = ?, city = ?, 
             state = ?, zip = ?, url = ?, phone = ?, fax = ?, notes = ?  
@@ -88,8 +90,7 @@ class AddressBookAddEdit
             ,$street,$streetb,$city,$state,$zip,$street2,$streetb2,$city2,$state2,$zip2,$phone,$phonew1
             ,$phonew2,$phonecell,$fax,$notes,$abook_type);
 
-
-        $userid = sqlInsert(
+        return sqlInsert(
             "INSERT INTO users ( 
         username, password, authorized, info, source,
         title, fname, lname, mname, suffix, 
@@ -105,7 +106,5 @@ class AddressBookAddEdit
         ,?,?,?,?,?)",
             $sqlArr
         );
-
-        return $userid;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OpenEMR\Modules\EhiExporter;
 
 use OpenEMR\Common\Acl\AclMain;
@@ -33,6 +35,7 @@ if (isset($_POST['submit'])) {
         if (!CsrfUtils::verifyCsrfToken($_POST['_token'] ?? '')) {
             throw new \InvalidArgumentException(xl("Invalid CSRF token"));
         }
+
         $memoryLimitUpdated = ini_set("memory_limit", "-1"); // set the memory limit to be unlimited so we can run the export.
         $pid = intval($_POST['pid'] ?? 0);
         $includeDocuments = intval($_POST['include_documents'] ?? 0) === 1;
@@ -45,6 +48,7 @@ if (isset($_POST['submit'])) {
                 $job = $exporter->createExportPatientPopulationJob($includeDocuments, $fileSizeLimit);
 //                $result = $exporter->exportAll($includeDocuments, $fileSizeLimit);
             }
+
             echo $twig->render(
                 Bootstrap::MODULE_NAME . DIRECTORY_SEPARATOR . 'ehi-exporter-tasks.html.twig',
                 [
@@ -55,8 +59,8 @@ if (isset($_POST['submit'])) {
                                     . Bootstrap::MODULE_NAME . '/public/index.php'
                 ]
             );
-        // TODO: @adunsulag we really should move all of this into a controller to be cleaner, but we are time crunched here.
-        } else if ($_POST['action'] == 'startExport') {
+            // TODO: @adunsulag we really should move all of this into a controller to be cleaner, but we are time crunched here.
+        } elseif ($_POST['action'] == 'startExport') {
             try {
                 $taskId = intval($_POST['taskId'] ?? 0);
                 $task = $exporter->runExportTask($taskId);
@@ -67,7 +71,7 @@ if (isset($_POST['submit'])) {
                 echo json_encode(['status' => 'failed', 'error_message' => $errorMessage, 'taskId' => $taskId]);
             }
             exit;
-        } else if ($_POST['action'] == 'statusUpdate') {
+        } elseif ($_POST['action'] == 'statusUpdate') {
             try {
                 $taskId = intval($_POST['taskId'] ?? 0);
                 $task = $exporter->getExportTaskForStatusUpdate($taskId);
@@ -101,4 +105,5 @@ if (isset($_POST['submit'])) {
         ]
     );
 }
+
 exit;

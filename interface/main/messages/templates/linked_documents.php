@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * linked_documents.php is a sub section template for the messages.php script.  It is primarily used for displaying attached
  * documents (usually received from the phimail-server process. It handles the preview and display of documents as well
@@ -80,7 +82,7 @@ foreach ($tmp as $record) {
     if ($record['type1'] == 9) {
         $docInformation = [
             'documentId' => $record['id1'],
-            'title' => 'fax_attachment' . "-" . $record['id1'],
+            'title' => 'fax_attachment-' . $record['id1'],
             'isCda' => false,
             'hasPatient' => false,
             'requiresValidation' => false,
@@ -181,7 +183,7 @@ try {
 
             // now we need to make an ajax async request to the server with the document id
             let docId = validateRecord.dataset['doc'];
-            let url = "<?php echo $GLOBALS['webroot'] . "/library/ajax/messages/validate_messages_document_ajax.php?csrf=\" + " . js_url(CsrfUtils::collectCsrfToken()); ?>
+            let url = "<?php echo $GLOBALS['webroot'] . '/library/ajax/messages/validate_messages_document_ajax.php?csrf=" + ' . js_url(CsrfUtils::collectCsrfToken()); ?>
 
             window.fetch(url + "&doc=" + encodeURIComponent(docId) )
                 .then(function(result) {
@@ -234,7 +236,7 @@ try {
         EncounterIdArray = [];
         Count = 0;
         <?php
-        if (!empty($enc_list)) {
+        if ($enc_list !== []) {
             foreach ($row as $enc_list) {
                 ?>
         EncounterIdArray[Count] = '<?php echo attr($row['encounter']); ?>';

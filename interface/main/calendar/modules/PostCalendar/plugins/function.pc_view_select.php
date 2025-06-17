@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,7 +27,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_view_select($args)
+function smarty_function_pc_view_select($args): void
 {
     @define('_PC_FORM_TEMPLATE', true);
     $Date = postcalendar_getDate();
@@ -41,7 +43,7 @@ function smarty_function_pc_view_select($args)
         $d = substr($Date, 6, 2);
     }
 
-    $tplview = pnVarCleanFromInput('tplview');
+    $prepared = pnVarCleanFromInput('tplview');
     $viewtype = pnVarCleanFromInput('viewtype');
     if (!isset($viewtype)) {
         $viewtype = _SETTING_DEFAULT_VIEW;
@@ -56,7 +58,7 @@ function smarty_function_pc_view_select($args)
     }
 
     $viewlist = array();
-    $handle = opendir("modules/$mdir/pntemplates/$pcTemplate/views/$viewtype");
+    $handle = opendir(sprintf('modules/%s/pntemplates/%s/views/%s', $mdir, $pcTemplate, $viewtype));
 
     $hide_list = array('.','..','CVS','index.html');
     while ($f = readdir($handle)) {
@@ -70,12 +72,12 @@ function smarty_function_pc_view_select($args)
     sort($viewlist);
     $tcount = count($viewlist);
     //$options = "<select id=\"tplview\" name=\"tplview\" class=\"$args[class]\">"; - pennfirm
-    $options = "<select id=\"tplview\" name=\"viewtype\" class=\"$args[class]\">";
-    $selected = $tplview;
-    for ($t = 0; $t < $tcount; $t++) {
+    $options = sprintf('<select id="tplview" name="viewtype" class="%s">', $args[class]);
+    $selected = $prepared;
+    for ($t = 0; $t < $tcount; ++$t) {
         $id = str_replace('.html', '', $viewlist[$t]);
         $sel = $selected == $id ? 'selected' : '';
-        $options .= "<option value=\"$id\" $sel class=\"$args[class]\">$id</option>";
+        $options .= sprintf('<option value="%s" %s class="%s">%s</option>', $id, $sel, $args[class], $id);
     }
 
     $options .= '</select>';

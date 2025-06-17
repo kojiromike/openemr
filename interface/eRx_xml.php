@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRx_xml.php Functions for interacting with NewCrop communications.
  *
@@ -29,7 +31,7 @@ function getErxSoapPath()
     return $GLOBALS['erx_newcrop_path_soap'];
 }
 
-function getErxCredentials()
+function getErxCredentials(): array
 {
     $cred = array();
     $cred[] = $GLOBALS['erx_account_partner_name'];
@@ -40,7 +42,7 @@ function getErxCredentials()
     return $cred;
 }
 
-function validation($val_check, $val, $msg)
+function validation(string $val_check, $val, string $msg): string
 {
     if (!$val) {
         $msg .= $val_check . ' ' . xl('missing') . '<br />';
@@ -51,34 +53,30 @@ function validation($val_check, $val, $msg)
 
 function stripSpecialCharacterFacility($str)
 {
-    $str = preg_replace("/[^a-zA-Z0-9 '().,#:\/\-@_%]/", "", $str);
-    return $str;
+    return preg_replace("/[^a-zA-Z0-9 '().,#:\/\-@_%]/", "", $str);
 }
 
 function stripSpecialCharacter($str)
 {
-    $str = preg_replace("/[^a-zA-Z0-9 '().,#:\/\-@_%]/", "", $str);
-    return $str;
+    return preg_replace("/[^a-zA-Z0-9 '().,#:\/\-@_%]/", "", $str);
 }
 
 function stripPhoneSlashes($str)
 {
-    $str = preg_replace('/-/', '', $str);
-    return $str;
+    return preg_replace('/-/', '', $str);
 }
 
-function trimData($str, $length)
+function trimData($str, $length): string
 {
-    $str = substr($str, 0, ($length - 1));
-    return $str;
+    return substr($str, 0, ($length - 1));
 }
 
-function stringToNumeric($str)
+function stringToNumeric($str): array|string
 {
     if (is_numeric($str)) {
         return array($str,"");
     } else {
-        for ($i = 0; $i < strlen($str); $i++) {
+        for ($i = 0; $i < strlen($str); ++$i) {
             $x = substr($str, $i, 1);
             if (is_numeric($x) && !$txt) {
                 $num .= $x;
@@ -89,11 +87,10 @@ function stringToNumeric($str)
 
         return array($num,$txt);
     }
-
-    $str = substr($str, 0, ($length - 1));
-    return $str;
+    return substr($str, 0, ($length - 1));
 }
-function credentials($doc, $r)
+
+function credentials($doc, $r): void
 {
     global $msg;
     $cred = getErxCredentials();
@@ -129,7 +126,7 @@ function credentials($doc, $r)
     $r->appendChild($b);
 }
 
-function user_role($doc, $r)
+function user_role($doc, $r): void
 {
     global $msg;
     $userRole = sqlQuery("select * from users where username=?", array($_SESSION['authUser']));
@@ -165,7 +162,7 @@ function user_role($doc, $r)
     $r->appendChild($b);
 }
 
-function destination($doc, $r, string $page = null, $pid)
+function destination($doc, $r, $pid, string $page = null): void
 {
     global $msg,$page;
     $userRole = sqlQuery("select * from users where username=?", array($_SESSION['authUser']));
@@ -188,7 +185,7 @@ function destination($doc, $r, string $page = null, $pid)
     $r->appendChild($b);
 }
 
-function account($doc, $r)
+function account($doc, $r): void
 {
     global $msg, $facilityService;
     $erxSiteID = $facilityService->getPrimaryBusinessEntity();
@@ -281,7 +278,7 @@ function account($doc, $r)
     $r->appendChild($b);
 }
 
-function location($doc, $r)
+function location($doc, $r): void
 {
     global $msg;
     $userRole = sqlQuery("SELECT * FROM users AS u LEFT JOIN facility AS f ON f.id=u.facility_id WHERE u.username=?", array($_SESSION['authUser']));
@@ -379,12 +376,13 @@ function location($doc, $r)
     $r->appendChild($b);
 }
 
-function LicensedPrescriber($doc, $r)
+function LicensedPrescriber($doc, $r): void
 {
     global $msg;
     $user_details = sqlQuery("SELECT * FROM users WHERE id = ?", array($_SESSION['authUserID']));
     $b = $doc->createElement("LicensedPrescriber");
     $b->setAttribute('ID', $user_details['npi']);
+
     $LicensedPrescriberName = $doc->createElement("LicensedPrescriberName");
         $user_details['lname'] = stripSpecialCharacter($user_details['lname']);
         $msg = validation(xl('LicensedPrescriber Last name'), $user_details['lname'], $msg);
@@ -435,12 +433,13 @@ function LicensedPrescriber($doc, $r)
     $r->appendChild($b);
 }
 
-function Staff($doc, $r)
+function Staff($doc, $r): void
 {
     global $msg;
     $user_details = sqlQuery("SELECT * FROM users WHERE id = ?", array($_SESSION['authUserID']));
     $b = $doc->createElement("Staff");
     $b->setAttribute('ID', $user_details['username']);
+
     $StaffName = $doc->createElement("StaffName");
         $user_details['lname'] = stripSpecialCharacter($user_details['lname']);
         $last = $doc->createElement("last");
@@ -469,12 +468,13 @@ function Staff($doc, $r)
     $r->appendChild($b);
 }
 
-function SupervisingDoctor($doc, $r)
+function SupervisingDoctor($doc, $r): void
 {
     global $msg;
     $user_details = sqlQuery("SELECT * FROM users WHERE id = ?", array($_SESSION['authUserID']));
     $b = $doc->createElement("SupervisingDoctor");
     $b->setAttribute('ID', $user_details['npi']);
+
     $LicensedPrescriberName = $doc->createElement("LicensedPrescriberName");
         $user_details['lname'] = stripSpecialCharacter($user_details['lname']);
         $msg = validation(xl('Supervising Doctor Last name'), $user_details['lname'], $msg);
@@ -525,12 +525,13 @@ function SupervisingDoctor($doc, $r)
     $r->appendChild($b);
 }
 
-function MidlevelPrescriber($doc, $r)
+function MidlevelPrescriber($doc, $r): void
 {
     global $msg;
     $user_details = sqlQuery("SELECT * FROM users WHERE id = ?", array($_SESSION['authUserID']));
     $b = $doc->createElement("MidlevelPrescriber");
     $b->setAttribute('ID', $user_details['npi']);
+
     $LicensedPrescriberName = $doc->createElement("LicensedPrescriberName");
         $user_details['lname'] = stripSpecialCharacter($user_details['lname']);
         $msg = validation(xl('Midlevel Prescriber Last name'), $user_details['lname'], $msg);
@@ -590,6 +591,7 @@ function Patient($doc, $r, $pid)
     $patient_data = sqlQuery("select *, DATE_FORMAT(DOB,'%Y%m%d') AS date_of_birth from patient_data where pid=?", array($pid));
     $b = $doc->createElement("Patient");
     $b->setAttribute('ID', $patient_data['pid']);
+
     $PatientName = $doc->createElement("PatientName");
         $patient_data['lname'] = stripSpecialCharacter($patient_data['lname']);
         $patient_data['lname'] = trimData($patient_data['lname'], 35);
@@ -627,7 +629,7 @@ function Patient($doc, $r, $pid)
         $patient_data['street'] = stripSpecialCharacter($patient_data['street']);
         $patient_data['street'] = trimData($patient_data['street'], 35);
         $msg = validation(xl('Patient Address'), $patient_data['street'], $msg);
-    if (trim($patient_data['street']) == '') {
+    if (trim($patient_data['street']) === '') {
         $warning_msg .= "<br />" . xlt("Patient Address is missing");
     }
 
@@ -663,9 +665,9 @@ function Patient($doc, $r, $pid)
     }
 
         //$msg = validation(xl('Patient Country'),$patient_data['country_code'],$msg);
-    if (trim($patient_data['country_code']) == '' && $GLOBALS['erx_default_patient_country'] == '') {
+    if (trim($patient_data['country_code']) === '' && $GLOBALS['erx_default_patient_country'] == '') {
         $dem_check .= xlt("Patient Country is missing. Also you have not set default Patient Country in Global Settings") . "<br />";
-    } elseif (trim($patient_data['country_code']) == '') {
+    } elseif (trim($patient_data['country_code']) === '') {
         $patient_data['country_code'] = $GLOBALS['erx_default_patient_country'];
     }
 
@@ -688,7 +690,7 @@ function Patient($doc, $r, $pid)
 
     $b->appendChild($PatientContact);
     $PatientCharacteristics = $doc->createElement("PatientCharacteristics");
-    if (trim($patient_data['date_of_birth']) == '' || $patient_data['date_of_birth'] == '00000000') {
+    if (trim($patient_data['date_of_birth']) === '' || $patient_data['date_of_birth'] == '00000000') {
         $warning_msg .= "<br />" . xlt("Patient Date Of Birth is missing");
     }
 
@@ -700,7 +702,7 @@ function Patient($doc, $r, $pid)
         $PatientCharacteristics->appendChild($dob);
     }
 
-    if (trim($patient_data['sex']) == '') {
+    if (trim($patient_data['sex']) === '') {
         $warning_msg .= "<br />" . xlt("Patient Gender is missing");
     }
 
@@ -720,7 +722,7 @@ function Patient($doc, $r, $pid)
     return $allergyId;
 }
 
-function OutsidePrescription($doc, $r, $pid, $prescid)
+function OutsidePrescription($doc, $r, $pid, $prescid): void
 {
     global $msg;
     if ($prescid) {
@@ -783,7 +785,7 @@ function OutsidePrescription($doc, $r, $pid, $prescid)
     }
 }
 
-function PatientMedication($doc, $r, $pid, $med_limit)
+function PatientMedication($doc, $r, $pid, $med_limit): array|string
 {
     global $msg;
     $active = '';
@@ -791,10 +793,10 @@ function PatientMedication($doc, $r, $pid, $med_limit)
         $active = " and (enddate is null or enddate = '' or enddate = '0000-00-00' )";
     }
 
-    $res_med = sqlStatement("select * from lists where type='medication' and pid=? and title<>''
-	and erx_uploaded='0' $active order by enddate limit 0," . escape_limit($med_limit), array($pid));
+    $recordset = sqlStatement("select * from lists where type='medication' and pid=? and title<>''
+	and erx_uploaded='0' {$active} order by enddate limit 0," . escape_limit($med_limit), array($pid));
     $uploaded_med_arr = "";
-    while ($row_med = sqlFetchArray($res_med)) {
+    while ($row_med = sqlFetchArray($recordset)) {
         $uploaded_med_arr[] = $row_med['id'];
         $b = $doc->createElement("OutsidePrescription");
             $externalId = $doc->createElement("externalId");
@@ -844,13 +846,16 @@ function PatientMedication($doc, $r, $pid, $med_limit)
     return $uploaded_med_arr;
 }
 
-function PatientFreeformAllergy($doc, $r, $pid)
+/**
+ * @return list
+ */
+function PatientFreeformAllergy($doc, $r, $pid): array
 {
-    $res = sqlStatement("SELECT id,l.title as title1,lo.title as title2,comments FROM lists AS l
+    $recordset = sqlStatement("SELECT id,l.title as title1,lo.title as title2,comments FROM lists AS l
     LEFT JOIN list_options AS lo ON l.outcome = lo.option_id AND lo.list_id = 'outcome' AND lo.activity = 1
 	WHERE `type`='allergy' AND pid=? AND erx_source='0' and erx_uploaded='0' AND (enddate is null or enddate = '' or enddate = '0000-00-00')", array($pid));
     $allergyId = array();
-    while ($row = sqlFetchArray($res)) {
+    while ($row = sqlFetchArray($recordset)) {
         $val = array();
         $val['id'] = $row['id'];
         $val['title1'] = $row['title1'];
@@ -889,9 +894,9 @@ function PatientFreeformAllergy($doc, $r, $pid)
     return $allergyId;
 }
 
-function PatientFreeformHealthplans($doc, $r, $pid)
+function PatientFreeformHealthplans($doc, $r, $pid): void
 {
-    $resource = sqlStatement(
+    $recordset = sqlStatement(
         'SELECT
             `ins`.`name`
         FROM (
@@ -909,7 +914,7 @@ function PatientFreeformHealthplans($doc, $r, $pid)
         array($pid)
     );
 
-    while ($row = sqlFetchArray($resource)) {
+    while ($row = sqlFetchArray($recordset)) {
         $healthplanName = $doc->createElement('healthplanName');
         $healthplanName->appendChild($doc->createTextNode(
             stripSpecialCharacter(trimData($row['name'], 35))
@@ -922,7 +927,7 @@ function PatientFreeformHealthplans($doc, $r, $pid)
     }
 }
 
-function PrescriptionRenewalResponse($doc, $r, $pid)
+function PrescriptionRenewalResponse($doc, $r, $pid): void
 {
     $b = $doc->createElement("PrescriptionRenewalResponse");
         $renewalRequestIdentifier = $doc->createElement("renewalRequestIdentifier");
@@ -938,11 +943,9 @@ function PrescriptionRenewalResponse($doc, $r, $pid)
     $r->appendChild($b);
 }
 
-function checkError($xml)
+function checkError(string $xml): string
 {
     $ch = curl_init($xml);
-
-    $data = array('RxInput' => $xml);
 
     curl_setopt($ch, CURLOPT_URL, getErxPath());
     curl_setopt($ch, CURLOPT_POST, 1);
@@ -970,7 +973,8 @@ function checkError($xml)
     if (count($arr) == 1) {
         echo nl2br($error_message[1]);
     } else {
-        for ($i = 1; $i < count($arr); $i++) {
+        $counter = count($arr);
+        for ($i = 1; $i < $counter; ++$i) {
             echo $arr[$i] . "<br /><br />";
         }
     }
@@ -983,7 +987,7 @@ function checkError($xml)
     }
 }
 
-function erx_error_log($message)
+function erx_error_log(string $message): void
 {
     $date = date("Y-m-d");
     if (!is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/erx_error')) {
@@ -1000,7 +1004,7 @@ function stripStrings($str, $pattern)
 {
     $result = $str;
     foreach ($pattern as $key => $value) {
-        $result = preg_replace("/$key/", $value, $result);
+        $result = preg_replace(sprintf('/%s/', $key), $value, $result);
     }
 
     return $result;

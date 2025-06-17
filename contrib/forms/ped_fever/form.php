@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
 Pediatric Fever form
 This form works as new and editing,

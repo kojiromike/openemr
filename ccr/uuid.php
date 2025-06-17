@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This will return an instance of Ramsey\Uuid\Rfc4122\UuidV4.
  *
@@ -18,7 +20,7 @@ use Ramsey\Uuid\Uuid;
  * @return  string  A UUID, made up of 32 hex digits and 4 hyphens.
  */
 
-function getUuid()
+function getUuid(): string
 {
     $uuid = Uuid::uuid4();
     return $uuid->toString();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Config Module.
  *
@@ -40,10 +42,8 @@ if (($_POST['action'] ?? null) || ($_POST['selected_service'] ?? null)) {
     }
 
     if ($selectedService && $selectedAction) {
-        if ($selectedAction === 'create') {
-            if ($period) {
-                $taskManager->manageService($selectedService, $period);
-            }
+        if ($selectedAction === 'create' && $period) {
+            $taskManager->manageService($selectedService, $period);
         }
         switch ($selectedAction) {
             case 'create':
@@ -80,7 +80,7 @@ $vendors = $boot->getVendorGlobals();
     <title><?php echo xlt("Enable Vendors") ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php
-    if (count($vendors ?? []) === 0) {
+    if ($vendors ?? [] === []) {
         $boot->createVendorGlobals();
         $vendors = $boot->getVendorGlobals();
     }
@@ -263,12 +263,10 @@ $vendors = $boot->getVendorGlobals();
                     </div>
                     <div class="pl-2 form-group clearfix">
                         <?php foreach ($services as $service) {
-                            if (empty($service)) {
+                            if ($service === '' || $service === '0') {
                                 continue;
                             }
                             $showFlag = true;
-                            if ($service != 'disabled') {
-                            }
                             ?>
                             <label>
                                 <input type="radio" name="selected_service" value="<?php echo attr($service); ?>" <?php echo ($selectedService === $service) ? 'checked' : ''; ?> required />
@@ -308,7 +306,7 @@ $vendors = $boot->getVendorGlobals();
                 <h3 class="text-center"><?php echo xlt("Setup Fax Account"); ?></h3>
                 <iframe src="<?php
                 $setupUrl = './../setup.php';
-                if ($isRCFax) {
+                if ($isRCFax !== '0') {
                     $setupUrl = './../setup_rc.php';
                 }
                 echo attr($setupUrl . '?type=fax&module_config=1&mode=flat'); ?>" style="border:none;height:100vh;width:100%;"></iframe>
@@ -319,7 +317,7 @@ $vendors = $boot->getVendorGlobals();
                 <h3 class="text-center"><?php echo xlt("Setup SMS Account"); ?></h3>
                 <iframe src="<?php
                 $setupUrl = './../setup.php';
-                if ($isRCSMS) {
+                if ($isRCSMS !== '0') {
                     $setupUrl = './../setup_rc.php';
                 }
                 echo attr($setupUrl . '?type=sms&module_config=1&mode=flat'); ?>" style="border:none;height:100vh;width:100%;"></iframe>

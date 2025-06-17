@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 if ($benefit->serviceDeliveries != null && $benefit->serviceDeliveries) {
     ?>
     <div class="row">
@@ -36,12 +37,14 @@ if ($benefit->serviceDeliveries != null && $benefit->serviceDeliveries) {
                                     <?php
             }
                                                             echo text($serviceDelivery->periodCount); ?> <?php echo text($serviceDelivery->timePeriodDesc);
-if ($serviceDelivery->frequencyCode != '') {
-    if ($serviceDelivery->FrequencyCodeDesc != '') {
-        ?>
-                                                <span> <?php echo text($serviceDelivery->FrequencyCodeDesc); ?></span> <span><?php echo text($serviceDelivery->patternTimeCodeDesc); ?> </span>
-        <?php
-    }
+if ($serviceDelivery->frequencyCode != '' && $serviceDelivery->FrequencyCodeDesc != '') {
+    ?>
+                                                <span> <?php 
+    echo text($serviceDelivery->FrequencyCodeDesc);
+    ?></span> <span><?php 
+    echo text($serviceDelivery->patternTimeCodeDesc);
+    ?> </span>
+        <?php 
 }
 ?>      
                                     </li>
@@ -60,4 +63,3 @@ if ($serviceDelivery->frequencyCode != '') {
     </div>
     <?php
 }
-?>

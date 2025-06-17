@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * physical_exam new.php
  *
@@ -13,9 +15,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("lines.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once(__DIR__ . "/lines.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -26,9 +28,9 @@ if (! $encounter) { // comes from globals.php
 
 $returnurl = 'encounter_top.php';
 
-function showExamLine($line_id, $description, &$linedbrow, $sysnamedisp)
+function showExamLine($line_id, $description, array &$linedbrow, $sysnamedisp): void
 {
-    $dres = sqlStatement("SELECT * FROM form_physical_exam_diagnoses " .
+    $recordset = sqlStatement("SELECT * FROM form_physical_exam_diagnoses " .
     "WHERE line_id = ? ORDER BY ordering, diagnosis", array($line_id));
 
     echo " <tr>\n";
@@ -42,7 +44,7 @@ function showExamLine($line_id, $description, &$linedbrow, $sysnamedisp)
     echo "  <td><select name='form_obs[" . attr($line_id) . "][diagnosis]' onchange='seldiag(this, " . attr_js($line_id) . ")' style='width:100%'>\n";
     echo "   <option value=''></option>\n";
     $diagnosis = $linedbrow['diagnosis'];
-    while ($drow = sqlFetchArray($dres)) {
+    while ($drow = sqlFetchArray($recordset)) {
         $sel = '';
         $diag = $drow['diagnosis'];
         if ($diagnosis && $diag == $diagnosis) {
@@ -50,7 +52,7 @@ function showExamLine($line_id, $description, &$linedbrow, $sysnamedisp)
             $diagnosis = '';
         }
 
-        echo "   <option value='" . attr($diag) . "' $sel>" . text($diag) . "</option>\n";
+        echo "   <option value='" . attr($diag) . sprintf("' %s>", $sel) . text($diag) . "</option>\n";
     }
 
  // If the diagnosis was not in the standard list then it must have been
@@ -68,7 +70,7 @@ function showExamLine($line_id, $description, &$linedbrow, $sysnamedisp)
     echo " </tr>\n";
 }
 
-function showTreatmentLine($line_id, $description, &$linedbrow)
+function showTreatmentLine($line_id, $description, array &$linedbrow): void
 {
     echo " <tr>\n";
     echo "  <td align='center'><input type='checkbox' name='form_obs[" . attr($line_id) . "][wnl]' " .

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles class, routing, views, and other configuration properties for the module.
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2021 Stephen Nielson <stephen@nielson.org>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\ZendModules\CodeTypes;
 
 use Laminas\ServiceManager\Factory\InvokableFactory;

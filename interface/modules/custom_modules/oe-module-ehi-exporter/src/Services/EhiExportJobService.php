@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the saving, retriving, and updating of ehi_export_job records.
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Services;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -22,6 +23,7 @@ use OpenEMR\Validators\ProcessingResult;
 class EhiExportJobService extends BaseService
 {
     const TABLE_NAME = "ehi_export_job";
+
     const TABLE_NAME_PATIENT_JOIN_TABLE = "ehi_export_job_patients";
 
     public function __construct()
@@ -29,24 +31,24 @@ class EhiExportJobService extends BaseService
         parent::__construct(self::TABLE_NAME);
     }
 
-    public function insert(EhiExportJob $job)
+    public function insert(EhiExportJob $ehiExportJob): EhiExportJob
     {
         $sql = "INSERT INTO " . self::TABLE_NAME . " (`uuid`, `user_id`,`status`,`include_patient_documents`, `document_limit_size`) "
         . " VALUES (?,?,?,?, ?) ";
         $bind = [
-            $job->uuid
-            ,$job->user_id
-            ,$job->getStatus()
-            ,$job->include_patient_documents ? 1 : 0
-            ,$job->getDocumentLimitSize()
+            $ehiExportJob->uuid
+            ,$ehiExportJob->user_id
+            ,$ehiExportJob->getStatus()
+            ,$ehiExportJob->include_patient_documents ? 1 : 0
+            ,$ehiExportJob->getDocumentLimitSize()
         ];
         QueryUtils::startTransaction();
         try {
             $insertId = QueryUtils::sqlInsert($sql, $bind);
-            $job->setId($insertId);
+            $ehiExportJob->setId($insertId);
 
-            if ($job->hasPatientIds()) {
-                $patientIds = $job->getPatientIds();
+            if ($ehiExportJob->hasPatientIds()) {
+                $patientIds = $ehiExportJob->getPatientIds();
                 $patientJoinSql = "INSERT INTO " . self::TABLE_NAME_PATIENT_JOIN_TABLE . " (`ehi_export_job_id`, `pid`) "
                     . " SELECT ehi_export_job_id,pid FROM " . self::TABLE_NAME . " CROSS JOIN (SELECT pid FROM patient_data WHERE pid IN ( "
                     . str_repeat("?, ", count($patientIds) - 1) . "? ) ) pids WHERE ehi_export_job_id = ? ";
@@ -59,16 +61,17 @@ class EhiExportJobService extends BaseService
             // roll it up
             throw $exception;
         }
-        return $job;
+
+        return $ehiExportJob;
     }
 
-    public function update(EhiExportJob $job)
+    public function update(EhiExportJob $ehiExportJob): EhiExportJob
     {
-        $sql = "UPDATE " . self::TABLE_NAME . " SET `status`= ?" . ($job->isCompleted() ? ",`completion_date`= NOW() " : "");
+        $sql = "UPDATE " . self::TABLE_NAME . " SET `status`= ?" . ($ehiExportJob->isCompleted() ? ",`completion_date`= NOW() " : "");
         $sql .= " WHERE `ehi_export_job_id` = ? ";
         $bind = [
-            $job->getStatus()
-            ,$job->getId()
+            $ehiExportJob->getStatus()
+            ,$ehiExportJob->getId()
         ];
         QueryUtils::startTransaction();
         try {
@@ -79,7 +82,8 @@ class EhiExportJobService extends BaseService
             // roll it up
             throw $exception;
         }
-        return $job;
+
+        return $ehiExportJob;
     }
 
     public function getJobById(?int $ehi_export_job_id, $loadPatients = false): ?EhiExportJob
@@ -102,6 +106,7 @@ class EhiExportJobService extends BaseService
                 $ehiExportJob->addPatientIdList($patientPids);
             }
         }
+
         return $ehiExportJob;
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,7 +27,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_url($args)
+function smarty_function_pc_url($args): void
 {
 
     //print "<br />args<br />";
@@ -38,11 +40,7 @@ function smarty_function_pc_url($args)
         $action = _SETTING_DEFAULT_VIEW;
     }
 
-    if (empty($print)) {
-        $print = false;
-    } else {
-        $print = true;
-    }
+    $print = !empty($print);
 
     $starth = "";
     if ($setdeftime == 1) {
@@ -65,25 +63,22 @@ function smarty_function_pc_url($args)
     $category = pnVarCleanFromInput('pc_category');
     $topic = pnVarCleanFromInput('pc_topic');
     $popup = pnVarCleanFromInput('popup');
-    if (!isset($date)) {
-        $Date = postcalendar_getDate();
-    } else {
-        $Date = $date;
-    }
+    $Date = isset($date) ? $date : postcalendar_getDate();
 
     // some extra cleanup if necessary
     $Date = str_replace('-', '', $Date);
 
     $pcModInfo = pnModGetInfo(pnModGetIDFromName(__POSTCALENDAR__));
-    $pcDir = pnVarPrepForOS($pcModInfo['directory']);
+    pnVarPrepForOS($pcModInfo['directory']);
 
     switch ($action) {
         case 'submit':
-            if (!empty($starth)) {
+            if ($starth !== '' && $starth !== '0') {
                 $link = pnModURL(__POSTCALENDAR__, 'user', 'submit', array('tplview' => $template_view,'Date' => $Date, 'event_starttimeh' => $starth, 'event_startampm' => $ampm));
             } else {
                 $link = pnModURL(__POSTCALENDAR__, 'user', 'submit', array('tplview' => $template_view,'Date' => $Date));
             }
+
             break;
 
         case 'submit-admin':
@@ -141,7 +136,7 @@ function smarty_function_pc_url($args)
         case 'detail':
             if (isset($eid)) {
                 if (_SETTING_OPEN_NEW_WINDOW && !$popup) {
-                    $link = "javascript:opencal($eid,'$Date');";
+                    $link = sprintf("javascript:opencal(%s,'%s');", $eid, $Date);
                 } else {
                     $link = pnModURL(__POSTCALENDAR__, 'user', 'view', array('Date' => $Date,
                                                                           'tplview' => $template_view,
@@ -152,12 +147,13 @@ function smarty_function_pc_url($args)
             } else {
                 $link = '';
             }
+
             break;
     }
 
     if ($print) {
         $link .= '" target="_blank"';
-    } elseif (_SETTING_OPEN_NEW_WINDOW && $viewtype == 'details') {
+    } elseif (_SETTING_OPEN_NEW_WINDOW && $viewtype === 'details') {
         $link .= '" target="csCalendar"';
     }
 

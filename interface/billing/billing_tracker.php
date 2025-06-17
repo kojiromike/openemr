@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Interface that provides tracking information for a claim batch
  *
@@ -14,7 +16,7 @@
  */
 
 require_once(__DIR__ . "/../globals.php");
-require_once "$srcdir/options.inc.php";
+require_once $srcdir . '/options.inc.php';
 
 use OpenEMR\Common\{
     Acl\AclMain,

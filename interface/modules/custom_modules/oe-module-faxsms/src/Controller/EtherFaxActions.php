@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023-24 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
 use Document;
@@ -23,16 +24,20 @@ use OpenEMR\Services\ImageUtilities\HandleImageService;
 class EtherFaxActions extends AppDispatch
 {
     public static $timeZone;
+
     protected $baseDir;
+
     protected $uriDir;
+
     protected $serverUrl;
+
     protected $credentials;
+
     public string $portalUrl;
+
     protected CryptoGen $crypto;
-    private EtherFaxClient $client;
-    private mixed $appSecret;
-    private mixed $sid;
-    private mixed $appKey;
+
+    private EtherFaxClient $etherFaxClient;
 
     public function __construct()
     {
@@ -44,8 +49,8 @@ class EtherFaxActions extends AppDispatch
         $this->baseDir = $GLOBALS['temporary_files_dir'];
         $this->uriDir = $GLOBALS['OE_SITE_WEBROOT'];
         $this->credentials = $this->getCredentials();
-        $this->client = new EtherFaxClient();
-        $this->client->setCredentials(
+        $this->etherFaxClient = new EtherFaxClient();
+        $this->etherFaxClient->setCredentials(
             $this->credentials['account'] ?? '',
             $this->credentials['username'] ?? '',
             $this->credentials['password'] ?? '',
@@ -55,16 +60,9 @@ class EtherFaxActions extends AppDispatch
         parent::__construct();
     }
 
-    /**
-     * @return mixed
-     */
     public function getCredentials(): mixed
     {
         $credentials = appDispatch::getSetup();
-
-        $this->sid = $credentials['username'] ?? '';
-        $this->appKey = $credentials['appKey'] ?? '';
-        $this->appSecret = $credentials['appSecret'] ?? '';
         $this->serverUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'];
         $this->uriDir = $this->serverUrl . $this->uriDir;
 
@@ -75,30 +73,25 @@ class EtherFaxActions extends AppDispatch
      * @param       $email
      * @param       $body
      * @param       $file
-     * @param array $user
-     * @return string
      * @throws \PHPMailer\PHPMailer\Exception
      */
     public static function emailDocument($email, $body, $file, array $user = []): string
     {
         $from_name = ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? '');
         $desc = xlt("Comment") . ":\n" . text($body) . "\n" . xlt("This email has an attached fax document.");
-        $mail = new MyMailer();
+        $myMailer = new MyMailer();
         $from_name = text($from_name);
         $from = $GLOBALS["practice_return_email_path"];
-        $mail->AddReplyTo($from, $from_name);
-        $mail->SetFrom($from, $from);
-        $mail->AddAddress($email, $email);
-        $mail->Subject = xlt("Forwarded Fax Document");
-        $mail->Body = $desc;
-        $mail->AddAttachment($file);
+        $myMailer->AddReplyTo($from, $from_name);
+        $myMailer->SetFrom($from, $from);
+        $myMailer->AddAddress($email, $email);
+        $myMailer->Subject = xlt("Forwarded Fax Document");
+        $myMailer->Body = $desc;
+        $myMailer->AddAttachment($file);
 
-        return $mail->Send() ? xlt("Email successfully sent.") : xlt("Error: Email failed") . text($mail->ErrorInfo);
+        return $myMailer->Send() ? xlt("Email successfully sent.") : xlt("Error: Email failed") . text($myMailer->ErrorInfo);
     }
 
-    /**
-     * @return string
-     */
     public function fetchReminderCount(): string
     {
         // removed polling API to download pending faxes.
@@ -106,34 +99,31 @@ class EtherFaxActions extends AppDispatch
         return json_encode($this->fetchQueueCount());
     }
 
-    /**
-     * @return int
-     */
     public function pollAndInsertAllPendingFax(): int
     {
         // authenticate and return if not successful. security measure
-        if (!$this->authenticate()) {
+        if ($this->authenticate() === 0) {
             error_log('Error: Authentication failed polling fax server.');
             return 0;
         }
+
         $c = 0;
-        while ($fax = $this->client->getNextUnreadFax(true)) {
-            $c++;
+        while ($fax = $this->etherFaxClient->getNextUnreadFax(true)) {
+            ++$c;
             if ($c > 20) {
                 break;
             }
+
             if (!empty($fax->JobId)) {
                 $this->insertFaxQueue($fax);
-                $this->client->setFaxReceived($fax->JobId);
+                $this->etherFaxClient->setFaxReceived($fax->JobId);
             }
         }
+
         // return the count of faxes processed
         return $c;
     }
 
-    /**
-     * @return string
-     */
     public function faxProcessUploads(): string
     {
         if (empty($_FILES['fax']) || $_FILES['fax']['error'] !== UPLOAD_ERR_OK) {
@@ -160,9 +150,6 @@ class EtherFaxActions extends AppDispatch
         return $filepath;
     }
 
-    /**
-     * @return string
-     */
     public function sendSMS(): string
     {
         return text("Not implemented");
@@ -171,14 +158,14 @@ class EtherFaxActions extends AppDispatch
     /**
      * TODO: decrypt document
      *
-     * @return string
      * @throws \PHPMailer\PHPMailer\Exception
      */
     public function sendFax(): string
     {
-        if (!$this->authenticate()) {
+        if ($this->authenticate() === 0) {
             return $this->authErrorDefault;
         }
+
         // needed args
         $isContent = $this->getRequest('isContent');
         $file = $this->getRequest('file');
@@ -198,6 +185,7 @@ class EtherFaxActions extends AppDispatch
                 // Remove the "file://" prefix
                 $file = substr($file, 7);
             }
+
             $realPath = realpath($file);
             if ($realPath !== false) {
                 $file = str_replace("\\", "/", $realPath);
@@ -206,7 +194,7 @@ class EtherFaxActions extends AppDispatch
             }
         }
 
-        if ($isDocuments) {
+        if ($isDocuments !== 0) {
             $file = (new Document($docId))->get_data();
         }
 
@@ -215,21 +203,23 @@ class EtherFaxActions extends AppDispatch
         }
 
         try {
-            $fax = $this->client->sendFax($phone, $file, null, $facility, $csid, $tag, $isDocuments, pathinfo($file, PATHINFO_BASENAME));
+            $fax = $this->etherFaxClient->sendFax($phone, $file, null, $facility, $csid, $tag, $isDocuments, pathinfo($file, PATHINFO_BASENAME));
             if (!$fax->FaxResult) {
                 return 'Error: ' . json_encode($fax->Message);
             }
+
             if ($fax->FaxResult == FaxResult::InProgress) {
                 while (true) {
-                    $status = $this->client->getFaxStatus($fax->JobId);
+                    $status = $this->etherFaxClient->getFaxStatus($fax->JobId);
                     if (!$status || $status->FaxResult != FaxResult::InProgress) {
                         break;
                     }
+
                     sleep(5);
                 }
             }
-        } catch (Exception $e) {
-            return 'Error: ' . json_encode($e->getMessage());
+        } catch (Exception $exception) {
+            return 'Error: ' . json_encode($exception->getMessage());
         }
 
         return $status->FaxResult ? 'Error: ' . json_encode(FaxResult::getFaxResult($status->FaxResult)) : json_encode(FaxResult::getFaxResult($status->FaxResult));
@@ -237,7 +227,6 @@ class EtherFaxActions extends AppDispatch
 
     /**
      * @param $acl
-     * @return int
      */
     public function authenticate($acl = ['patients', 'appt']): int
     {
@@ -245,18 +234,17 @@ class EtherFaxActions extends AppDispatch
             $this->credentials = $this->getCredentials();
         }
 
-        if (!$this->client->getFaxAccount()) {
+        if (!$this->etherFaxClient->getFaxAccount()) {
             return 0;
         }
 
-        self::$timeZone = $this->client->getFaxAccount()->TimeZone ?? null;
+        self::$timeZone = $this->etherFaxClient->getFaxAccount()->TimeZone ?? null;
 
         return $this->verifyAcl($acl[0], $acl[1]);
     }
 
     /**
      * @param $number
-     * @return string
      */
     public function formatPhone($number): string
     {
@@ -272,7 +260,6 @@ class EtherFaxActions extends AppDispatch
 
     /**
      * @param $n
-     * @return bool
      */
     public function validatePhone($n): bool
     {
@@ -280,7 +267,6 @@ class EtherFaxActions extends AppDispatch
     }
 
     /**
-     * @return string
      * @throws \PHPMailer\PHPMailer\Exception
      */
     public function forwardFax(): string
@@ -296,7 +282,7 @@ class EtherFaxActions extends AppDispatch
         $tag = xlt("Forwarded");
         $statusMsg = xlt("Forwarding Requests") . "<br />";
 
-        if (!$hasEmail && empty($faxNumber)) {
+        if (!$hasEmail && ($faxNumber === '' || $faxNumber === '0')) {
             return js_escape(xlt("Error: Nothing to forward. Try again."));
         }
 
@@ -320,21 +306,24 @@ class EtherFaxActions extends AppDispatch
             $statusMsg .= self::emailDocument($email, $this->getRequest('comments'), $filepath, $user) . "<br />";
         }
 
-        if ($faxNumber) {
+        if ($faxNumber !== '' && $faxNumber !== '0') {
             try {
-                $fax = $this->client->sendFax($faxNumber, $filepath, null, $facility, $csid, $tag, false);
+                $fax = $this->etherFaxClient->sendFax($faxNumber, $filepath, null, $facility, $csid, $tag, false);
                 if (!$fax->FaxResult) {
                     return js_escape('Error: ' . $fax->Message . ' ' . FaxResult::getFaxResult($fax->Result));
                 }
+
                 if ($fax->FaxResult == FaxResult::InProgress) {
                     while (true) {
-                        $status = $this->client->getFaxStatus($fax->JobId);
+                        $status = $this->etherFaxClient->getFaxStatus($fax->JobId);
                         if (!$status || $status->FaxResult != FaxResult::InProgress) {
                             break;
                         }
+
                         sleep(5);
                     }
                 }
+
                 $statusMsg .= xlt("Successfully forwarded fax to") . ' ' . text($faxNumber) . "<br />";
             } catch (Exception $e) {
                 return js_escape('Error: ' . $e->getMessage());
@@ -351,9 +340,9 @@ class EtherFaxActions extends AppDispatch
      *
      * @return string|void
      */
-    public function getPending()
+    public function getPending(): string
     {
-        if (!$this->authenticate()) {
+        if ($this->authenticate() === 0) {
             return $this->authErrorDefault;
         }
 
@@ -405,6 +394,7 @@ class EtherFaxActions extends AppDispatch
                 <td class='text-left'>" . $actionLinks . "</td>
                 <td class='text-center'><input type='checkbox' class='delete-fax-checkbox' value='" . attr($id) . "'></td></tr>";
             }
+
             $responseMsg[$faxDetails->TransactionType == '0' ? 0 : 1] .= $faxRow . $form;
         }
 
@@ -438,10 +428,11 @@ class EtherFaxActions extends AppDispatch
                 [$parse['fname'] ?? '', $parse['lname'] ?? '', date("Y-m-d", strtotime($parse['DOB'] ?? ''))]
             )['pid'] ?? 'No';
         }
+
         return 'No';
     }
 
-    private function generateFaxForm($id, $recognized)
+    private function generateFaxForm($id, $recognized): string
     {
         if (empty($recognized)) {
             return '';
@@ -459,12 +450,10 @@ class EtherFaxActions extends AppDispatch
                 $form .= "<tr><td>" . text(str_replace(" - ", "-", $field->Name)) . "</td><td>" . text($field->Text) . "</td><td>" . text($field->Confidence * 100) . "</td></tr>";
             }
         }
-
-        $form .= "</tbody></table></div></td></tr>";
-        return $form;
+        return $form . "</tbody></table></div></td></tr>";
     }
 
-    private function generateActionLinks($id, $record_id, $pid_assumed)
+    private function generateActionLinks($id, $record_id, $pid_assumed): string
     {
         return "<a role='button' href='javascript:void(0)' onclick=\"createPatient(event, " . attr_js($id) . ", " . attr_js($record_id) . ", " . attr_js(json_encode([])) . ")\">
                 <i class='fa fa-chart-simple mr-2' title='" . xla("Chart fax or Create patient and chart fax to documents.") . "'></i>
@@ -486,14 +475,13 @@ class EtherFaxActions extends AppDispatch
             </a>";
     }
 
-    private function generateDetailLink($id, $recognized)
+    private function generateDetailLink($id, $recognized): string
     {
         $showFlag = count($recognized);
-        return $showFlag ? "<a role='button' href='javascript:void(0)' class='btn btn-link fa fa-eye' onclick='toggleDetail(\"#" . text($id) . "\")'></a>" . text($showFlag) . ' ' . xlt("Items") : '';
+        return $showFlag !== 0 ? "<a role='button' href='javascript:void(0)' class='btn btn-link fa fa-eye' onclick='toggleDetail(\"#" . text($id) . "\")'></a>" . text($showFlag) . ' ' . xlt("Items") : '';
     }
 
     /**
-     * @return string
      * @throws Exception
      */
     public function viewFax(): string
@@ -508,8 +496,8 @@ class EtherFaxActions extends AppDispatch
 
         try {
             $apiResponse = is_numeric($docId) ? $this->fetchFaxFromQueue(null, $docId) : $this->fetchFaxFromQueue($docId);
-        } catch (Exception $e) {
-            return "Error: Retrieving Fax:\n" . $e->getMessage();
+        } catch (Exception $exception) {
+            return "Error: Retrieving Fax:\n" . $exception->getMessage();
         }
 
         if ($isDelete && !empty($apiResponse->JobId)) {
@@ -522,11 +510,9 @@ class EtherFaxActions extends AppDispatch
 
         if ($c_header == 'image/tiff' || $c_header == 'image/tif') {
             $formattedImage = $this->formatFax($faxImage);
-            $c_header = $formattedImage ? 'application/pdf' : 'image/tiff';
+            $c_header = $formattedImage !== '' && $formattedImage !== '0' ? 'application/pdf' : 'image/tiff';
             $faxImage = $formattedImage ?: $faxImage;
         }
-
-        $dataUrl = $c_header == 'application/pdf' ? 'data:application/pdf;base64,' . $faxImage : ($c_header == 'image/tiff' ? 'data:image/tiff;base64,' . $faxImage : 'data:text/plain,' . $faxImage);
 
         if ($isDownload) {
             $faxStoreDir = $this->baseDir;
@@ -534,7 +520,7 @@ class EtherFaxActions extends AppDispatch
                 throw new Exception(sprintf('Directory "%s" was not created', $faxStoreDir));
             }
 
-            $file_name = "{$faxStoreDir}/Fax_{$docId}" . ($c_header == 'application/pdf' ? '.pdf' : ($c_header == 'image/tiff' ? '.tiff' : '.txt'));
+            $file_name = sprintf('%s/Fax_%s', $faxStoreDir, $docId) . ($c_header == 'application/pdf' ? '.pdf' : ($c_header == 'image/tiff' ? '.tiff' : '.txt'));
             file_put_contents($file_name, base64_decode($faxImage));
             $this->setSession('where', $file_name);
             $this->setFaxDeleted($apiResponse->JobId);
@@ -547,20 +533,16 @@ class EtherFaxActions extends AppDispatch
 
     /**
      * @param $encodedFax
-     * @return string
      * @throws Exception
      */
     public function formatFax($encodedFax): string
     {
-        $control = new HandleImageService();
-        $formatted_document = $control->convertImageToPdf($encodedFax, '');
+        $handleImageService = new HandleImageService();
+        $formatted_document = $handleImageService->convertImageToPdf($encodedFax, '');
 
         return $formatted_document ? base64_encode($formatted_document) : false;
     }
 
-    /**
-     * @return string
-     */
     public function disposeDocument(): string
     {
         $response = ['success' => false, 'message' => '', 'url' => ''];
@@ -596,10 +578,6 @@ class EtherFaxActions extends AppDispatch
         return json_encode($response);
     }
 
-    /**
-     * @param string $filePath
-     * @return void
-     */
     private function sendFile(string $filePath): void
     {
         ob_end_clean();
@@ -614,21 +592,15 @@ class EtherFaxActions extends AppDispatch
         exit;
     }
 
-    /**
-     * @return string
-     */
     public function getUser(): string
     {
         $id = $this->getRequest('uid');
-        $result = sqlStatement("SELECT * FROM users WHERE id = ?", [$id]);
-        $user = sqlFetchArray($result);
+        $recordset = sqlStatement("SELECT * FROM users WHERE id = ?", [$id]);
+        $user = sqlFetchArray($recordset);
 
         return json_encode([$user['fname'], $user['lname'], $user['fax'], $user['facility'], $user['email']]);
     }
 
-    /**
-     * @return string
-     */
     public function getNotificationLog(): string
     {
         $fromDate = $this->getRequest('datefrom');
@@ -645,8 +617,8 @@ class EtherFaxActions extends AppDispatch
                 $pinfo = str_replace("|||", " ", $row['patient_info']);
                 $responseMsgs .= "<tr><td>" . text($row["pc_eid"]) . "</td><td>" . text($row["dSentDateTime"]) . "</td><td>" . text($adate) . "</td><td>" . text($pinfo) . "</td><td>" . text($row["message"]) . "</td></tr>";
             }
-        } catch (Exception $e) {
-            return 'Error: ' . text($e->getMessage()) . PHP_EOL;
+        } catch (Exception $exception) {
+            return 'Error: ' . text($exception->getMessage()) . PHP_EOL;
         }
 
         return $responseMsgs;
@@ -662,7 +634,6 @@ class EtherFaxActions extends AppDispatch
 
     /**
      * @param $faxDetails
-     * @return int
      */
     public function insertFaxQueue($faxDetails): int
     {
@@ -683,7 +654,6 @@ class EtherFaxActions extends AppDispatch
     /**
      * @param $start
      * @param $end
-     * @return array
      */
     public function fetchFaxQueue($start, $end, $pollForNew = false): array
     {
@@ -692,13 +662,14 @@ class EtherFaxActions extends AppDispatch
         }
 
         $rows = [];
-        $result = sqlStatement("SELECT `id`, `details_json`, `receive_date` FROM `oe_faxsms_queue` WHERE `deleted` = '0' AND (`receive_date` > ? AND `receive_date` < ?)", [$start, $end]);
+        $recordset = sqlStatement("SELECT `id`, `details_json`, `receive_date` FROM `oe_faxsms_queue` WHERE `deleted` = '0' AND (`receive_date` > ? AND `receive_date` < ?)", [$start, $end]);
 
-        while ($row = sqlFetchArray($result)) {
+        while ($row = sqlFetchArray($recordset)) {
             $detail = json_decode($row['details_json']);
-            if (json_last_error()) {
+            if (json_last_error() !== 0) {
                 continue;
             }
+
             $detail->RecordId = $row['id'];
             $rows[] = $detail;
         }
@@ -709,7 +680,6 @@ class EtherFaxActions extends AppDispatch
     /**
      * @param $jobId
      * @param $id
-     * @return mixed
      */
     public function fetchFaxFromQueue($jobId, $id = null): mixed
     {
@@ -720,9 +690,6 @@ class EtherFaxActions extends AppDispatch
         return $detail;
     }
 
-    /**
-     * @return int
-     */
     public function fetchQueueCount(): int
     {
         return (int)sqlQuery("SELECT COUNT(id) as count FROM `oe_faxsms_queue` WHERE deleted = 0")['count'] ?? 0;
@@ -730,31 +697,25 @@ class EtherFaxActions extends AppDispatch
 
     /**
      * @param $jobId
-     * @return bool
      */
     public function setFaxDeleted($jobId): bool
     {
         return sqlQuery("UPDATE `oe_faxsms_queue` SET `deleted` = '1' WHERE `job_id` = ?", [$jobId]);
     }
 
-    /**
-     * @return string
-     */
     public function chartDocument(): string
     {
         $pid = $this->getRequest('pid');
         $docId = $this->getRequest('docid') ?? $this->getRequest('docId');
         $fileName = $this->getRequest('file_name');
-        $result = $this->chartFaxDocument($pid, $docId, $fileName);
 
-        return $result;
+        return $this->chartFaxDocument($pid, $docId, $fileName);
     }
 
     /**
      * @param $pid
      * @param $docId
      * @param $fileName
-     * @return string
      */
     public function chartFaxDocument($pid, $docId, $fileName = null): string
     {
@@ -789,10 +750,11 @@ class EtherFaxActions extends AppDispatch
             foreach ($val as $k => $v) {
                 foreach ($v as $s) {
                     if (stripos($src->Name, $s) !== false) {
-                        if ($k == "sex") {
+                        if ($k === "sex") {
                             $src->Text = ucfirst($src->Text);
-                            $src->Text = stripos($src->Name, 'Male') !== false ? 'Male' : (stripos($src->Name, 'Female') !== false ? 'Female' : ($src->Text == 'M' ? 'Male' : ($src->Text == 'F' ? 'Female' : $src->Text)));
+                            $src->Text = stripos($src->Name, 'Male') !== false ? 'Male' : (stripos($src->Name, 'Female') !== false ? 'Female' : ($src->Text === 'M' ? 'Male' : ($src->Text === 'F' ? 'Female' : $src->Text)));
                         }
+
                         $rtn[$k] = $src->Text;
                     }
                 }
@@ -812,9 +774,6 @@ class EtherFaxActions extends AppDispatch
         }
     }
 
-    /**
-     * @return mixed
-     */
     public function sendEmail(): mixed
     {
         return null;

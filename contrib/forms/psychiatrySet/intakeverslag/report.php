@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    Intakeverslag
 // Package: Report of First visit - Dutch specific form
@@ -15,7 +17,7 @@ require_once($GLOBALS["srcdir"] . "/api.inc.php");
 // Purpose: callback func?
 // Input:   pid? encounter, cols, id ?
 ////////////////////////////////////////////////////////////////////
-function intakeverslag_report($pid, $encounter, $cols, $id)
+function intakeverslag_report($pid, $encounter, $cols, $id): void
 {
     $count = 0;
     $data = formFetch("form_intakeverslag", $id);
@@ -144,7 +146,7 @@ function intakeverslag_report($pid, $encounter, $cols, $id)
             }
 
             // increment records counter
-            $count++;
+            ++$count;
             // check if not at the end close/open new row
             if ($count == $cols) {
                 $count = 0;

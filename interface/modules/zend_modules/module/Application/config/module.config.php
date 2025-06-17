@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Application/config/module.config.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Application;
 
 use Application\Controller\IndexController;
@@ -105,23 +106,23 @@ return array(
     // @see https://olegkrivtsov.github.io/using-zend-framework-3-book/html/en/Model_View_Controller/Controller_Plugins.html for more details.
     ,'controller_plugins' => array(
         'factories' => array(
-            'CommonPlugin' => function (ContainerInterface $container, $requestedName) {
+            'CommonPlugin' => function (ContainerInterface $container, $requestedName): \Application\Plugin\CommonPlugin {
                 return new Plugin\CommonPlugin($container);
             }
-            ,'Phimail' => function (ContainerInterface $container) {
+            ,'Phimail' => function (ContainerInterface $container): \Application\Plugin\Phimail {
                 return new Plugin\Phimail($container);
             }
         )
     )
     ,'controllers' => array(
         'factories' => [
-            \Application\Controller\IndexController::class => function (ContainerInterface $container, $requestedName) {
+            \Application\Controller\IndexController::class => function (ContainerInterface $container, $requestedName): \Application\Controller\IndexController {
                 return new \Application\Controller\IndexController($container->get(\Application\Model\ApplicationTable::class));
             },
-            \Application\Controller\SoapController::class => function (ContainerInterface $container, $requestedName) {
+            \Application\Controller\SoapController::class => function (ContainerInterface $container, $requestedName): \Application\Controller\SoapController {
                 return new \Application\Controller\SoapController($container->get(\Carecoordination\Controller\EncounterccdadispatchController::class));
             },
-            \Application\Controller\SendtoController::class => function (ContainerInterface $container, $requestedName) {
+            \Application\Controller\SendtoController::class => function (ContainerInterface $container, $requestedName): \Application\Controller\SendtoController {
                 return new \Application\Controller\SendtoController($container->get(\Application\Model\ApplicationTable::class), $container->get(\Application\Model\SendtoTable::class));
             }
         ]
@@ -129,17 +130,15 @@ return array(
     'service_manager' => array(
         'factories' => array(
             Listener::class => InvokableFactory::class,
-            \Application\Model\ApplicationTable::class => function (ContainerInterface $container, $requestedName) {
-                $dbAdapter = $container->get('Laminas\Db\Adapter\Adapter');
-                $table = new \Application\Model\ApplicationTable($dbAdapter);
-                return $table;
+            \Application\Model\ApplicationTable::class => function (ContainerInterface $container, $requestedName): \Application\Model\ApplicationTable {
+                $dbAdapter = $container->get(\Laminas\Db\Adapter\Adapter::class);
+                return new \Application\Model\ApplicationTable($dbAdapter);
             },
-            \Application\Model\SendtoTable::class => function (ContainerInterface $container, $requestedName) {
-                $dbAdapter = $container->get('Laminas\Db\Adapter\Adapter');
-                $table = new \Application\Model\SendtoTable($dbAdapter);
-                return $table;
+            \Application\Model\SendtoTable::class => function (ContainerInterface $container, $requestedName): \Application\Model\SendtoTable {
+                $dbAdapter = $container->get(\Laminas\Db\Adapter\Adapter::class);
+                return new \Application\Model\SendtoTable($dbAdapter);
             },
-            \Application\Controller\SendtoController::class => function (ContainerInterface $container, $requestedName) {
+            \Application\Controller\SendtoController::class => function (ContainerInterface $container, $requestedName): \Application\Controller\SendtoController {
                 return new \Application\Controller\SendtoController($container->get(\Application\Model\ApplicationTable::class), $container->get(\Application\Model\SendtoTable::class));
             },
             ModuleMenuSubscriber::class => InvokableFactory::class
@@ -166,12 +165,12 @@ return array(
             'javascriptGlobals' => \Application\Helper\Javascript::class,
         ),
         'factories' => [
-            'translate' => function (\Interop\Container\ContainerInterface $container, $requestedName) {
+            'translate' => function (\Interop\Container\ContainerInterface $container, $requestedName): \Application\Helper\TranslatorViewHelper {
                 // TODO: we should look at renaming this to be TranslatorAdapter
                 return new \Application\Helper\TranslatorViewHelper();
             }
             // TODO: this used to be the Getvariables functionality.. the whole thing has a leaky abstraction and should be refactored into services instead of jumping to a controller view
-            , 'sendToHie'      => function (\Interop\Container\ContainerInterface $container, $requestedName) {
+            , 'sendToHie'      => function (\Interop\Container\ContainerInterface $container, $requestedName): \Application\Helper\SendToHieHelper {
                 return new \Application\Helper\SendToHieHelper($container->get(\Application\Controller\SendtoController::class));
             }
         ]

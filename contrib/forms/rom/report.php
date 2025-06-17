@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -8,9 +10,8 @@
 //------------Forms generated from formsWiz
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-function rom_report($pid, $encounter, $cols, $id)
+function rom_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
     $data = formFetch("form_rom", $id);
     if ($data) {
         ?>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Notification Settings Script
  *
@@ -12,9 +14,9 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/registry.inc.php");
-require_once("batchcom.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/registry.inc.php');
+require_once(__DIR__ . "/batchcom.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -57,7 +59,7 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'save')) {
         $values = array($_POST['SettingsId'], $_POST['Send_SMS_Before_Hours'], $_POST['Send_Email_Before_Hours'],
                         $_POST['SMS_gateway_password'], $_POST['SMS_gateway_apikey'], $_POST['SMS_gateway_username'],
                         $type);
-        $query = "REPLACE INTO `notification_settings` $sql_text VALUES $sql_value";
+        $query = sprintf('REPLACE INTO `notification_settings` %s VALUES %s', $sql_text, $sql_value);
         //echo $query;
         $id = sqlInsert($query, $values);
         $sql_msg = xl("ERROR!... in Update");
@@ -89,7 +91,7 @@ if ($result) {
 </head>
 <body class="body_top container">
     <header class="row">
-        <?php require_once("batch_navigation.php");?>
+        <?php require_once(__DIR__ . "/batch_navigation.php");?>
         <h1 class="col-md-12">
             <a href="batchcom.php"><?php echo xlt('Batch Communication Tool'); ?></a>
             <small><?php echo xlt('SMS/Email Alert Settings'); ?></small>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * C_Prescription class
  *
@@ -27,15 +29,24 @@ use OpenEMR\Common\Twig\TwigContainer;
 
 class C_Prescription extends Controller
 {
-    var $template_mod;
-    var $pconfig;
-    var $providerid = 0;
-    var $is_faxing = false;
-    var $is_print_to_fax = false;
-    var $RxList;
-    var $prescriptions;
+    public $template_mod;
 
-    function __construct($template_mod = "general")
+    public $pconfig;
+
+    public $providerid = 0;
+
+    public $is_faxing = false;
+
+    public $is_print_to_fax = false;
+
+    /**
+     * @var \OpenEMR\Rx\RxList
+     */
+    public $RxList;
+
+    public $prescriptions;
+
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
         $this->template_mod = $template_mod;
@@ -75,7 +86,7 @@ class C_Prescription extends Controller
 
                 $drug_array_values[] = $row['drug_id'];
                 $drug_array_output[] = $tmp_output;
-                if ($drug_attributes) {
+                if ($drug_attributes !== '' && $drug_attributes !== '0') {
                     $drug_attributes .= ',';
                 }
 
@@ -100,7 +111,7 @@ class C_Prescription extends Controller
         }
     }
 
-    function default_action()
+    public function default_action(): void
     {
         $prescription = $this->prescriptions[0];
         $this->assign("prescription", $prescription);
@@ -115,16 +126,17 @@ class C_Prescription extends Controller
             $vars['amcCollectReturnFormulary'] = amcCollect('e_prescribe_chk_formulary_amc', $prescription->patient->id, 'prescriptions', $prescription->id);
             $vars['amcCollectReturnControlledSubstances'] = amcCollect('e_prescribe_cont_subst_amc', $prescription->patient->id, 'prescriptions', $prescription->id);
         }
-        $twig = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
-        echo $twig->render("prescription/" . $this->template_mod . "_edit.html.twig", $vars);
+
+        $twigEnvironment = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
+        echo $twigEnvironment->render("prescription/" . $this->template_mod . "_edit.html.twig", $vars);
     }
 
-    function edit_action($id = "", $patient_id = "", $p_obj = null)
+    public function edit_action($id = "", $patient_id = "", $p_obj = null): void
     {
 
         if ($p_obj != null && get_class($p_obj) == "prescription") {
             $this->prescriptions[0] = $p_obj;
-        } elseif (empty($this->prescriptions[0]) || !is_object($this->prescriptions[0]) || (get_class($this->prescriptions[0]) != "prescription")) {
+        } elseif (empty($this->prescriptions[0]) || !is_object($this->prescriptions[0]) || (get_class($this->prescriptions[0]) !== "prescription")) {
             $this->prescriptions[0] = new Prescription($id);
         }
 
@@ -143,7 +155,7 @@ class C_Prescription extends Controller
         $this->default_action();
     }
 
-    function list_action($id, $sort = "")
+    public function list_action($id, $sort = ""): void
     {
         if (empty($id)) {
             $this->function_argument_error();
@@ -173,6 +185,7 @@ class C_Prescription extends Controller
                     $rXn = sqlQuery("SELECT `rxcui` FROM `" . mitigateSqlTableUpperCase('RXNCONSO') . "` WHERE `str` LIKE ?", array("%" . $drug[0] . "%"));
                     $nameList[] = $rXn['rxcui'];
                 }
+
                 if (count($nameList) < 2) {
                     $interaction = xlt("Need more than one drug.");
                 } else {
@@ -198,6 +211,7 @@ class C_Prescription extends Controller
                     }
                 }
             }
+
             $this->assign("INTERACTION", $interaction);
         }
 
@@ -221,11 +235,12 @@ class C_Prescription extends Controller
         if (!($this->pconfig['use_signature'] && $this->current_user_has_signature())) {
             $vars['faxSignatureMissing'] = true;
         }
-        $twig = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
-        echo $twig->render("prescription/" . $this->template_mod . "_list.html.twig", $vars);
+
+        $twigEnvironment = (new TwigContainer(null, $GLOBALS['kernel']))->getTwig();
+        echo $twigEnvironment->render("prescription/" . $this->template_mod . "_list.html.twig", $vars);
     }
 
-    function block_action($id, $sort = "")
+    public function block_action($id, $sort = ""): void
     {
         if (empty($id)) {
             $this->function_argument_error();
@@ -247,10 +262,9 @@ class C_Prescription extends Controller
      * @deprecated As far as we can see this function isn't used
      * @param $id
      * @param $sort
-     * @return void
      * @throws SmartyException
      */
-    function fragment_action($id, $sort = "")
+    public function fragment_action($id, $sort = ""): void
     {
         if (empty($id)) {
             $this->function_argument_error();
@@ -267,17 +281,17 @@ class C_Prescription extends Controller
         $this->display($GLOBALS['template_dir'] . "prescription/" . $this->template_mod . "_fragment.html");
     }
 
-    function lookup_action()
+    public function lookup_action(): void
     {
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
         $this->do_lookup();
         $this->display($GLOBALS['template_dir'] . "prescription/" . $this->template_mod . "_lookup.html");
     }
 
-    function edit_action_process()
+    public function edit_action_process()
     {
         if ($_POST['process'] != "true") {
-            return;
+            return null;
         }
 
         //print_r($_POST);
@@ -287,6 +301,7 @@ class C_Prescription extends Controller
         if (empty($_POST['active'])) {
             $_POST['active'] = '-1';
         }
+
         if (!empty($_POST['start_date'])) {
             $_POST['start_date'] = DateToYYYYMMDD($_POST['start_date']);
         }
@@ -343,17 +358,18 @@ class C_Prescription extends Controller
         exit;
     }
 
-    function multiprintfax_header(&$pdf, $p)
+    public function multiprintfax_header(&$pdf, $p)
     {
         return $this->multiprint_header($pdf, $p);
     }
 
-    function multiprint_header(&$pdf, $p)
+    public function multiprint_header(&$pdf, $p): void
     {
         $this->providerid = $p->provider->id;
         //print header
         $pdf->ezImage($GLOBALS['oer_config']['prescriptions']['logo'], null, '50', '', 'center', '');
         $pdf->ezColumnsStart(array('num' => 2, 'gap' => 10));
+
         $res = sqlQuery("SELECT concat('<b>',f.name,'</b>\n',f.street,'\n',f.city,', ',f.state,' ',f.postal_code,'\nTel:',f.phone,if(f.fax != '',concat('\nFax: ',f.fax),'')) addr FROM users JOIN facility AS f ON f.name = users.facility where users.id ='" .
             add_escape_custom($p->provider->id) . "'");
         $pdf->ezText($res['addr'] ?? '', 12);
@@ -401,6 +417,7 @@ class C_Prescription extends Controller
         $pdf->line($pdf->ez['leftMargin'], $pdf->y, $pdf->ez['pageWidth'] - $pdf->ez['rightMargin'], $pdf->y);
         $pdf->ezText('<b>' . xl('Patient Name & Address') . '</b>', 6);
         $pdf->ezText($p->patient->get_name_display(), 10);
+
         $res = sqlQuery("SELECT  concat(street,'\n',city,', ',state,' ',postal_code,'\n',if(phone_home!='',phone_home,if(phone_cell!='',phone_cell,if(phone_biz!='',phone_biz,'')))) addr from patient_data where pid =" . add_escape_custom($p->patient->id));
         $pdf->ezText($res['addr']);
         $my_y = $pdf->y;
@@ -423,7 +440,7 @@ class C_Prescription extends Controller
         $pdf->ezText('', 10);
     }
 
-    function multiprintcss_header($p)
+    public function multiprintcss_header($p): void
     {
         echo("<div class='paddingdiv'>\n");
         $this->providerid = $p->provider->id;
@@ -506,7 +523,7 @@ class C_Prescription extends Controller
         echo ("</table>\n");
     }
 
-    function multiprintcss_preheader()
+    public function multiprintcss_preheader(): void
     {
         // this sets styling and other header information of the multiprint css sheet
         echo ("<html>\n");
@@ -559,12 +576,12 @@ class C_Prescription extends Controller
         echo ("<body>\n");
     }
 
-    function multiprintfax_footer(&$pdf)
+    public function multiprintfax_footer(&$pdf)
     {
         return $this->multiprint_footer($pdf);
     }
 
-    function current_user_has_signature()
+    public function current_user_has_signature(): bool
     {
         if (!empty($this->pconfig['signature'])) {
             $sigfile = str_replace('{userid}', $_SESSION["authUser"], $this->pconfig['signature']);
@@ -572,10 +589,11 @@ class C_Prescription extends Controller
                 return true;
             }
         }
+
         return false;
     }
 
-    function multiprint_footer(&$pdf)
+    public function multiprint_footer(&$pdf): void
     {
         if (
             $this->pconfig['use_signature']
@@ -608,7 +626,7 @@ class C_Prescription extends Controller
         $pdf->ezText("\n\n\n\n" . xl('Signature') . ":________________________________\n" . xl('Date') . ": " . date('Y-m-d'), 12);
     }
 
-    function multiprintcss_footer()
+    public function multiprintcss_footer(): void
     {
         echo ("<div class='signdiv'>\n");
         echo (xl('Signature') . ":________________________________<br />");
@@ -617,7 +635,7 @@ class C_Prescription extends Controller
         echo ("</div>\n");
     }
 
-    function multiprintcss_postfooter()
+    public function multiprintcss_postfooter(): void
     {
         echo("<script>\n");
         echo("opener.top.printLogPrint(window);\n");
@@ -626,7 +644,7 @@ class C_Prescription extends Controller
         echo("</html>\n");
     }
 
-    function get_prescription_body_text($p)
+    public function get_prescription_body_text($p): string
     {
         $body = '<b>' . xlt('Rx') . ': ' . text($p->get_drug()) . ' ' . text($p->get_size()) . ' ' . text($p->get_unit_display());
         if ($p->get_form()) {
@@ -657,12 +675,12 @@ class C_Prescription extends Controller
         return $body;
     }
 
-    function multiprintfax_body(&$pdf, $p)
+    public function multiprintfax_body(&$pdf, $p)
     {
         return $this->multiprint_body($pdf, $p);
     }
 
-    function multiprint_body(&$pdf, $p)
+    public function multiprint_body(&$pdf, $p): void
     {
         $pdf->ez['leftMargin'] += $pdf->ez['leftMargin'];
         $pdf->ez['rightMargin'] += $pdf->ez['rightMargin'];
@@ -694,7 +712,7 @@ class C_Prescription extends Controller
         $pdf->ezText('');
     }
 
-    function multiprintcss_body($p)
+    public function multiprintcss_body($p): void
     {
         $d = $this->get_prescription_body_text($p);
         $patterns = array ('/\n/','/     /');
@@ -703,13 +721,13 @@ class C_Prescription extends Controller
         echo ("<div class='scriptdiv'>\n" . $d . "</div>\n");
     }
 
-    function multiprintfax_action($id = "")
+    public function multiprintfax_action($id = "")
     {
         $this->is_print_to_fax = true;
         return $this->multiprint_action($id);
     }
 
-    function multiprint_action($id = "")
+    public function multiprint_action($id = ""): void
     {
         $_POST['process'] = "true";
         if (empty($id)) {
@@ -720,12 +738,11 @@ class C_Prescription extends Controller
 
         $pFirstName = $patient->fname; //modified by epsdky for prescription filename change to include patient name and ID
         $pFName = convert_safe_file_dir_name($pFirstName);
-        $modedFileName = "Rx_{$pFName}_{$patient->id}.pdf";
+        $modedFileName = sprintf('Rx_%s_%s.pdf', $pFName, $patient->id);
         $pdf->ezStream(array('Content-Disposition' => $modedFileName));
-        return;
     }
 
-    function multiprintplain_header($p)
+    public function multiprintplain_header($p): void
     {
         $this->providerid = $p->provider->id;
         $sql = "SELECT f.name, f.street, f.state, f.postal_code, f.phone, if(f.fax != '', f.fax, '') FROM users JOIN facility AS f ON f.name = users.facility where users.id = ?";
@@ -737,21 +754,25 @@ class C_Prescription extends Controller
             $parts[] = $res['name'];
             $parts[] = $res['street'];
             if (!empty($res['city'])) {
-                $parts[] = $res['city'] ?? '' . ', ' . $res['state'] ?? '' . ' ' . $res['postal_code'] ?? '';
-            } else if (!empty($res['state']) && !empty($res['postal_code'])) {
-                $parts[] = $res['state'] ?? '' . ' ' . $res['postal_code'] ?? '';
+                $parts[] = $res['city'] ?? ', ' . $res['state'] ?? ' ' . $res['postal_code'] ?? '';
+            } elseif (!empty($res['state']) && !empty($res['postal_code'])) {
+                $parts[] = $res['state'] ?? ' ' . $res['postal_code'] ?? '';
             }
+
             if (!empty($res['phone'])) {
                 $parts[] = xl('Tel:') . $res['phone'] ?? '';
             }
+
             if (!empty($res['fax'])) {
                 $parts[] = xl('Fax:') . $res['fax'] ?? '';
             }
+
             $address = implode("\n", $parts);
-            if (trim($address) == "") {
+            if (trim($address) === "") {
                 $address = "";
             }
         }
+
         echo xl("Digital Prescription Information") . "\n";
         echo xl("Prescriber") . "\n";
         echo $address;
@@ -782,6 +803,7 @@ class C_Prescription extends Controller
                 echo (xl('State Lic. #') . ": ________________________\n");
             }
         }
+
         echo "\n\n";
         echo (xl('Patient Name & Address') . "\n");
         echo ($p->patient->get_name_display() . "\n");
@@ -793,14 +815,15 @@ class C_Prescription extends Controller
             $parts = [];
             $parts[] = $res['street'];
             if (!empty($res['city'])) {
-                $parts[] = $res['city'] ?? '' . ', ' . $res['state'] ?? '' . ' ' . $res['postal_code'] ?? '';
-            } else if (!empty($res['state']) && !empty($res['postal_code'])) {
-                $parts[] = $res['state'] ?? '' . ' ' . $res['postal_code'] ?? '';
+                $parts[] = $res['city'] ?? ', ' . $res['state'] ?? ' ' . $res['postal_code'] ?? '';
+            } elseif (!empty($res['state']) && !empty($res['postal_code'])) {
+                $parts[] = $res['state'] ?? ' ' . $res['postal_code'] ?? '';
             }
 
             if (!empty($res['phone'])) {
                 $parts[] = xl('Tel:') . $res['phone'] ?? '';
             }
+
             $address = implode("\n", $parts);
             $address = trim($address);
         }
@@ -817,7 +840,7 @@ class C_Prescription extends Controller
     }
 
 
-    function multiprintplain_footer()
+    public function multiprintplain_footer(): void
     {
         echo xl('Signature') . ":________________________________\n";
         echo xl('Date') . ": " . date('Y-m-d') . "\n";
@@ -827,9 +850,8 @@ class C_Prescription extends Controller
     /**
      * Outputs a JSON response of the subject and message body for the prescription contents to go into a native
      * email client.  Useful if you want to use the native mailto: handler in the browser or user-agent's operating system.
-     * @return void
      */
-    function getDefaultMailClientText_action()
+    public function getDefaultMailClientText_action(): void
     {
         $idsGet = $_GET['ids'];
 
@@ -837,6 +859,7 @@ class C_Prescription extends Controller
             $this->function_argument_error();
             return;
         }
+
         ob_start();
 
         $ids = preg_split('/::/', substr($idsGet, 1, strlen($idsGet) - 2), -1, PREG_SPLIT_NO_EMPTY);
@@ -865,12 +888,11 @@ class C_Prescription extends Controller
             ,'message' => $data
         ];
         http_response_code(200);
-        header("Content-Type:" . "application/json");
+        header('Content-Type:application/json');
         echo json_encode($result);
-        return;
     }
 
-    function multiprintcss_action($id = "")
+    public function multiprintcss_action($id = ""): void
     {
         $_POST['process'] = "true";
         if (empty($id)) {
@@ -900,53 +922,52 @@ class C_Prescription extends Controller
 
         $this->multiprintcss_footer();
         $this->multiprintcss_postfooter();
-        return;
     }
 
-    function send_action_process()
+    public function send_action_process()
     {
-        $dummy = ""; // Added by Rod to avoid run-time warnings
+        // Added by Rod to avoid run-time warnings
         if ($_POST['process'] != "true") {
-            return;
+            return null;
         }
+
         $id = $_POST['sendEmailPrescriptionIds'];
 
         if (empty($id)) {
             $this->function_argument_error();
         }
+
         $sendAsPDF = intval($_POST['sendAsPdf'] ?? 0) == 1;
 
         $patient = $this->email_prescription($id, $_POST['email_to'], $sendAsPDF);
         return $this->list_action($patient->id);
     }
 
-    function print_prescription($p, &$toFile)
+    public function print_prescription($p, &$toFile): void
     {
-        $pdf = new Cezpdf($GLOBALS['rx_paper_size']);
-        $pdf->ezSetMargins($GLOBALS['rx_top_margin'], $GLOBALS['rx_bottom_margin'], $GLOBALS['rx_left_margin'], $GLOBALS['rx_right_margin']);
+        $cezpdf = new Cezpdf($GLOBALS['rx_paper_size']);
+        $cezpdf->ezSetMargins($GLOBALS['rx_top_margin'], $GLOBALS['rx_bottom_margin'], $GLOBALS['rx_left_margin'], $GLOBALS['rx_right_margin']);
 
-        $pdf->selectFont('Helvetica');
+        $cezpdf->selectFont('Helvetica');
 
         // Signature images are to be used only when faxing.
         if (!empty($toFile)) {
             $this->is_faxing = true;
         }
 
-        $this->multiprint_header($pdf, $p);
-        $this->multiprint_body($pdf, $p);
-        $this->multiprint_footer($pdf);
+        $this->multiprint_header($cezpdf, $p);
+        $this->multiprint_body($cezpdf, $p);
+        $this->multiprint_footer($cezpdf);
 
         if (!empty($toFile)) {
-            $toFile = $pdf->ezOutput();
+            $toFile = $cezpdf->ezOutput();
         } else {
-            $pdf->ezStream();
+            $cezpdf->ezStream();
             // $pdf->ezStream(array('compress' => 0)); // for testing with uncompressed output
         }
-
-        return;
     }
 
-    function print_prescription_css($p, &$toFile)
+    public function print_prescription_css($p, &$toFile): void
     {
 
         $this->multiprintcss_preheader();
@@ -956,43 +977,43 @@ class C_Prescription extends Controller
         $this->multiprintcss_postfooter();
     }
 
-    function email_prescription($id, $email, $sendAsPdf)
+    public function email_prescription($id, ?string $email, $sendAsPdf)
     {
-        if (empty($email)) {
-            $this->assign("process_result", "Email could not be sent, the address supplied: '$email' was empty or invalid.");
-            return;
+        if ($email === null || $email === '' || $email === '0') {
+            $this->assign("process_result", sprintf("Email could not be sent, the address supplied: '%s' was empty or invalid.", $email));
+            return null;
         }
 
-        $mail = new MyMailer();
+        $myMailer = new MyMailer();
         if ($sendAsPdf) {
             list($pdf, $patient) = $this->generatePdfObjectForPrescriptionIds($id);
             $pdfAsString = $pdf->output();
             $mailBody = $GLOBALS['openemr_name'] . " " . xl("Prescription attached to this email.") . " " . xl("Patient") . " " . $patient->get_name_display();
         } else {
             list($mailBody, $patient) = $this->generateHtmlObjectForPrescriptionIds($id);
-            $mail->isHTML(true);
+            $myMailer->isHTML(true);
         }
 
-        $mail->From = $GLOBALS['practice_return_email_path'];
+        $myMailer->From = $GLOBALS['practice_return_email_path'];
 //        $mail->FromName = $p->provider->get_name_display();
 //        $text_body  = $p->get_prescription_display();
-        $mail->Body = $mailBody;
-        $mail->Subject = $GLOBALS['openemr_name'] . " " . xl("Prescription");
-        $mail->AddAddress($email);
+        $myMailer->Body = $mailBody;
+        $myMailer->Subject = $GLOBALS['openemr_name'] . " " . xl("Prescription");
+        $myMailer->AddAddress($email);
         if ($sendAsPdf) {
-            $mail->addStringAttachment($pdfAsString, 'Prescription-' . date("Y-m-d_H_i_s") . ".pdf");
+            $myMailer->addStringAttachment($pdfAsString, 'Prescription-' . date("Y-m-d_H_i_s") . ".pdf");
         }
 
-        if ($mail->Send()) {
+        if ($myMailer->Send()) {
             $this->assign("process_result", "Email was successfully sent to: " . $email);
             return $patient;
         } else {
-            $this->assign("process_result", "There has been a mail error sending to " . $_POST['email_to'] . " " . $mail->ErrorInfo);
+            $this->assign("process_result", "There has been a mail error sending to " . $_POST['email_to'] . " " . $myMailer->ErrorInfo);
             return $patient;
         }
     }
 
-    function do_lookup()
+    public function do_lookup(): void
     {
         if ($_POST['process'] != "true") {
                     // don't do a lookup
@@ -1021,7 +1042,7 @@ class C_Prescription extends Controller
         $_POST['process'] = "";
     }
 
-    function fax_prescription($p, $faxNum)
+    public function fax_prescription($p, $faxNum): void
     {
         $err = "Sent fax";
         //strip - ,(, ), and ws
@@ -1050,15 +1071,15 @@ class C_Prescription extends Controller
                 touch($fileName); // php bug
                 $handle = fopen($fileName, "w");
                 if (!$handle) {
-                    $err .= " Failed to open file $fileName to write fax to";
+                    $err .= sprintf(' Failed to open file %s to write fax to', $fileName);
                 }
 
                 if (fwrite($handle, $faxFile) === false) {
-                    $err .= " Failed to write data to $fileName";
+                    $err .= ' Failed to write data to ' . $fileName;
                 }
 
                 fclose($handle);
-                $args = " -n -d $faxNum $fileName";
+                $args = sprintf(' -n -d %s %s', $faxNum, $fileName);
                 //print "command is $cmd $args<br />";
                 exec($cmd . $args);
             }
@@ -1066,20 +1087,16 @@ class C_Prescription extends Controller
             $err = "bad fax number passed to function";
         }
 
-        if ($err) {
+        if ($err !== '0') {
             $this->assign("process_result", $err);
         }
     }
 
-    /**
-     * @param mixed $id
-     * @return array
-     */
     private function generatePdfObjectForPrescriptionIds(mixed $id): array
     {
-        $pdf = new Cezpdf($GLOBALS['rx_paper_size']);
-        $pdf->ezSetMargins($GLOBALS['rx_top_margin'], $GLOBALS['rx_bottom_margin'], $GLOBALS['rx_left_margin'], $GLOBALS['rx_right_margin']);
-        $pdf->selectFont('Helvetica');
+        $cezpdf = new Cezpdf($GLOBALS['rx_paper_size']);
+        $cezpdf->ezSetMargins($GLOBALS['rx_top_margin'], $GLOBALS['rx_bottom_margin'], $GLOBALS['rx_left_margin'], $GLOBALS['rx_right_margin']);
+        $cezpdf->selectFont('Helvetica');
 
         // $print_header = true;
         $on_this_page = 0;
@@ -1091,25 +1108,25 @@ class C_Prescription extends Controller
             $p = new Prescription($id);
             // if ($print_header == true) {
             if ($on_this_page == 0) {
-                $this->multiprint_header($pdf, $p);
+                $this->multiprint_header($cezpdf, $p);
             }
 
             if (++$on_this_page > 3 || $p->provider->id != $this->providerid) {
-                $this->multiprint_footer($pdf);
-                $pdf->ezNewPage();
-                $this->multiprint_header($pdf, $p);
+                $this->multiprint_footer($cezpdf);
+                $cezpdf->ezNewPage();
+                $this->multiprint_header($cezpdf, $p);
                 // $print_header = false;
                 $on_this_page = 1;
             }
 
-            $this->multiprint_body($pdf, $p);
+            $this->multiprint_body($cezpdf, $p);
         }
 
-        $this->multiprint_footer($pdf);
-        return array($pdf, $p->patient);
+        $this->multiprint_footer($cezpdf);
+        return array($cezpdf, $p->patient);
     }
 
-    private function generateHtmlObjectForPrescriptionIds($id)
+    private function generateHtmlObjectForPrescriptionIds($id): array
     {
         ob_start();
         $this->multiprintcss_action($id);
@@ -1118,6 +1135,7 @@ class C_Prescription extends Controller
         if (!empty($ids)) {
             $prescription = new Prescription($ids[0]);
         }
+
         return [$html, $prescription->patient];
     }
 }

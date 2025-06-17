@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // $Id$
 // ----------------------------------------------------------------------
 // POST-NUKE Content Management System
@@ -51,18 +53,18 @@ function pnModGetVar($modname, $name)
     $modulevarstable = $pntable['module_vars'];
     $modulevarscolumn = &$pntable['module_vars_column'];
     $query = "SELECT $modulevarscolumn[value]
-              FROM $modulevarstable
+              FROM {$modulevarstable}
               WHERE $modulevarscolumn[modname] = '" . pnVarPrepForStore($modname) . "'
               AND $modulevarscolumn[name] = '" . pnVarPrepForStore($name) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {
         $pnmodvar[$modname][$name] = false;
-        return;
+        return null;
     }
 
     list($value) = $result->fields;
@@ -79,7 +81,7 @@ function pnModGetVar($modname, $name)
  * - the name of the variable
  * - the value of the variable
  */
-function pnModSetVar($modname, $name, $value)
+function pnModSetVar($modname, $name, $value): ?bool
 {
     if ((empty($modname)) || (empty($name))) {
         return false;
@@ -93,7 +95,7 @@ function pnModSetVar($modname, $name, $value)
     $modulevarstable = $pntable['module_vars'];
     $modulevarscolumn = &$pntable['module_vars_column'];
     if (!isset($curvar)) {
-        $query = "INSERT INTO $modulevarstable
+        $query = "INSERT INTO {$modulevarstable}
                      ($modulevarscolumn[modname],
                       $modulevarscolumn[name],
                       $modulevarscolumn[value])
@@ -102,7 +104,7 @@ function pnModSetVar($modname, $name, $value)
                       '" . pnVarPrepForStore($name) . "',
                       '" . pnVarPrepForStore($value) . "');";
     } else {
-        $query = "UPDATE $modulevarstable
+        $query = "UPDATE {$modulevarstable}
                   SET $modulevarscolumn[value] = '" . pnVarPrepForStore($value) . "'
                   WHERE $modulevarscolumn[modname] = '" . pnVarPrepForStore($modname) . "'
                   AND $modulevarscolumn[name] = '" . pnVarPrepForStore($name) . "'";
@@ -111,7 +113,7 @@ function pnModSetVar($modname, $name, $value)
     $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     global $pnmodvar;
@@ -142,12 +144,12 @@ function pnModGetIDFromName($module)
     $modulestable = $pntable['modules'];
     $modulescolumn = &$pntable['modules_column'];
     $query = "SELECT $modulescolumn[id]
-              FROM $modulestable
+              FROM {$modulestable}
               WHERE $modulescolumn[name] = '" . pnVarPrepForStore($module) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {
@@ -192,12 +194,12 @@ function pnModGetInfo($modid)
                      $modulescolumn[displayname],
                      $modulescolumn[description],
                      $modulescolumn[version]
-              FROM $modulestable
+              FROM {$modulestable}
               WHERE $modulescolumn[id] = '" . pnVarPrepForStore($modid) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {
@@ -226,18 +228,18 @@ function pnModGetInfo($modid)
  * @returns bool
  * @return true on success, false on failure
  */
-function pnModAPILoad($modname, $type = 'user')
+function pnModAPILoad(?string $modname, string $type = 'user'): ?bool
 {
     static $loaded = array();
 
-    if (empty($modname)) {
+    if ($modname === null || $modname === '' || $modname === '0') {
         return false;
     }
 
     list($dbconn) = pnDBGetConn();
     $pntable = pnDBGetTables();
 
-    if (!empty($loaded["$modname$type"])) {
+    if (!empty($loaded[$modname . $type])) {
         // Already loaded from somewhere else
         return true;
     }
@@ -247,12 +249,12 @@ function pnModAPILoad($modname, $type = 'user')
     $query = "SELECT $modulescolumn[name],
                      $modulescolumn[directory],
                      $modulescolumn[state]
-              FROM $modulestable
+              FROM {$modulestable}
               WHERE $modulescolumn[name] = '" . pnVarPrepForStore($modname) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {
@@ -264,7 +266,7 @@ function pnModAPILoad($modname, $type = 'user')
 
     list($osdirectory, $ostype) = pnVarPrepForOS($directory, $type);
 
-    $osfile = "modules/$osdirectory/pn{$ostype}api.php";
+    $osfile = sprintf('modules/%s/pn%sapi.php', $osdirectory, $ostype);
     if (!file_exists($osfile)) {
         // File does not exist
         return false;
@@ -272,10 +274,10 @@ function pnModAPILoad($modname, $type = 'user')
 
     // Load the file
     require $osfile;
-    $loaded["$modname$type"] = 1;
+    $loaded[$modname . $type] = 1;
 
-    if (file_exists("modules/$osdirectory/pnlang/eng/{$ostype}api.php")) {
-        require "modules/$osdirectory/pnlang/eng/{$ostype}api.php";
+    if (file_exists(sprintf('modules/%s/pnlang/eng/%sapi.php', $osdirectory, $ostype))) {
+        require sprintf('modules/%s/pnlang/eng/%sapi.php', $osdirectory, $ostype);
     }
 
     // Load datbase info
@@ -290,7 +292,7 @@ function pnModAPILoad($modname, $type = 'user')
  * @param directory - directory that module is in (if known)
  * @returns bool
  */
-function pnModDBInfoLoad($modname, $directory = '')
+function pnModDBInfoLoad(string $modname, $directory = ''): ?bool
 {
     static $loaded = array();
 
@@ -306,11 +308,11 @@ function pnModDBInfoLoad($modname, $directory = '')
         $modulestable = $pntable['modules'];
         $modulescolumn = &$pntable['modules_column'];
         $sql = "SELECT $modulescolumn[directory]
-                FROM $modulestable
+                FROM {$modulestable}
                 WHERE $modulescolumn[name] = '" . pnVarPrepForStore($modname) . "'";
         $result = $dbconn->Execute($sql);
         if ($dbconn->ErrorNo() != 0) {
-            return;
+            return null;
         }
 
         if ($result->EOF) {
@@ -344,11 +346,11 @@ function pnModDBInfoLoad($modname, $directory = '')
  * @returns string
  * @return name of module loaded, or false on failure
  */
-function pnModLoad($modname, $type = 'user')
+function pnModLoad(?string $modname, string $type = 'user'): false|string|null
 {
     static $loaded = array();
 
-    if (empty($modname)) {
+    if ($modname === null || $modname === '' || $modname === '0') {
         return false;
     }
 
@@ -358,19 +360,19 @@ function pnModLoad($modname, $type = 'user')
     $modulestable = $pntable['modules'];
     $modulescolumn = &$pntable['modules_column'];
 
-    if (!empty($loaded["$modname$type"])) {
+    if (!empty($loaded[$modname . $type])) {
         // Already loaded from somewhere else
         return $modname;
     }
 
     $query = "SELECT $modulescolumn[directory],
                      $modulescolumn[state]
-              FROM $modulestable
+              FROM {$modulestable}
               WHERE $modulescolumn[name] = '" . pnVarPrepForStore($modname) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {
@@ -382,7 +384,7 @@ function pnModLoad($modname, $type = 'user')
 
     // Load the module and module language files
     list($osdirectory, $ostype) = pnVarPrepForOS($directory, $type);
-    $osfile = "modules/$osdirectory/pn$ostype.php";
+    $osfile = sprintf('modules/%s/pn%s.php', $osdirectory, $ostype);
 
     if (!file_exists($osfile)) {
         // File does not exist
@@ -391,10 +393,10 @@ function pnModLoad($modname, $type = 'user')
 
     // Load file
     require $osfile;
-    $loaded["$modname$type"] = 1;
+    $loaded[$modname . $type] = 1;
 
-    if (file_exists("modules/$osdirectory/pnlang/eng/$ostype.php")) {
-        require "modules/$osdirectory/pnlang/eng/$ostype.php";
+    if (file_exists(sprintf('modules/%s/pnlang/eng/%s.php', $osdirectory, $ostype))) {
+        require sprintf('modules/%s/pnlang/eng/%s.php', $osdirectory, $ostype);
     }
 
     // Load datbase info
@@ -428,7 +430,7 @@ function pnModAPIFunc($modname, $type, $func, $args = array())
     }
 
     // Build function name and call function
-    $modapifunc = "{$modname}_{$type}api_{$func}";
+    $modapifunc = sprintf('%s_%sapi_%s', $modname, $type, $func);
     if (function_exists($modapifunc)) {
         return $modapifunc($args);
     }
@@ -460,7 +462,7 @@ function pnModFunc($modname, $type, $func, $args = array())
     }
 
     // Build function name and call function
-    $modfunc = "{$modname}_{$type}_{$func}";
+    $modfunc = sprintf('%s_%s_%s', $modname, $type, $func);
     if (function_exists($modfunc)) {
         return $modfunc($args);
     }
@@ -477,9 +479,9 @@ function pnModFunc($modname, $type, $func, $args = array())
  * @returns string
  * @return absolute URL for call
  */
-function pnModURL($modname, $type = 'user', $func = 'main', $args = array(), $path = '')
+function pnModURL(?string $modname, ?string $type = 'user', ?string $func = 'main', $args = array(), $path = ''): false|string
 {
-    if (empty($modname)) {
+    if ($modname === null || $modname === '' || $modname === '0') {
         return false;
     }
 
@@ -495,17 +497,17 @@ function pnModURL($modname, $type = 'user', $func = 'main', $args = array(), $pa
     }
 
     // The arguments
-    $urlargs[] = "module=$modname";
-    if ((!empty($type)) && ($type != 'user')) {
-        $urlargs[] = "type=$type";
+    $urlargs[] = 'module=' . $modname;
+    if (($type !== null && $type !== '' && $type !== '0') && ($type !== 'user')) {
+        $urlargs[] = 'type=' . $type;
     }
 
-    if ((!empty($func)) && ($func != 'main')) {
-        $urlargs[] = "func=$func";
+    if (($func !== null && $func !== '' && $func !== '0') && ($func !== 'main')) {
+        $urlargs[] = 'func=' . $func;
     }
 
-    $urlargs = join('&', $urlargs);
-    $url = "index.php?$urlargs";
+    $urlargs = implode('&', $urlargs);
+    $url = 'index.php?' . $urlargs;
 
 
     // <rabbitt> added array check on args
@@ -538,7 +540,7 @@ function pnModURL($modname, $type = 'user', $func = 'main', $args = array(), $pa
  * @returns bool
  * @return true if the module is available, false if not
  */
-function pnModAvailable($modname)
+function pnModAvailable($modname): ?bool
 {
     if (empty($modname)) {
         return false;
@@ -559,12 +561,12 @@ function pnModAvailable($modname)
     $modulestable = $pntable['modules'];
     $modulescolumn = &$pntable['modules_column'];
     $query = "SELECT $modulescolumn[state]
-              FROM $modulestable
+              FROM {$modulestable}
               WHERE $modulescolumn[name] = '" . pnVarPrepForStore($modname) . "'";
     $result = $dbconn->Execute($query);
 
     if ($dbconn->ErrorNo() != 0) {
-        return;
+        return null;
     }
 
     if ($result->EOF) {

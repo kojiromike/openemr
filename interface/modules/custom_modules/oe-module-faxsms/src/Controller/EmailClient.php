@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Email Controller
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
 use MyMailer;
@@ -19,14 +20,31 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class EmailClient extends AppDispatch
 {
+    /**
+     * @var mixed
+     */
+    public $sid;
+    /**
+     * @var mixed
+     */
+    public $appKey;
+    /**
+     * @var mixed
+     */
+    public $appSecret;
     public static $timeZone;
+
     public $baseDir;
+
     public $uriDir;
+
     public $serverUrl;
+
     public $credentials;
+
     public string $portalUrl;
+
     protected CryptoGen $crypto;
-    private EmailClient $client;
     private bool $smtpEnabled;
 
     public function __construct()
@@ -34,6 +52,7 @@ class EmailClient extends AppDispatch
         if (empty($GLOBALS['oe_enable_email'] ?? null)) {
             throw new \RuntimeException(xlt("Access denied! Module not enabled"));
         }
+
         $this->crypto = new CryptoGen();
         $this->baseDir = $GLOBALS['temporary_files_dir'];
         $this->uriDir = $GLOBALS['OE_SITE_WEBROOT'];
@@ -57,9 +76,6 @@ class EmailClient extends AppDispatch
         return $credentials;
     }
 
-    /**
-     * @return string
-     */
     public function sendSMS(): string
     {
         // dummy function
@@ -77,7 +93,6 @@ class EmailClient extends AppDispatch
 
     /**
      * @param $acl
-     * @return int
      */
     public function authenticate($acl = ['patients', 'appt']): int
     {
@@ -85,9 +100,6 @@ class EmailClient extends AppDispatch
         return $this->verifyAcl($s, $v);
     }
 
-    /**
-     * @return string
-     */
     public function sendEmail(): string
     {
         $statusMsg = xlt("Email Requests") . "<br />";
@@ -101,6 +113,7 @@ class EmailClient extends AppDispatch
         if (!$hasEmail) {
             return js_escape(xlt("Error: Missing email address. Try again."));
         }
+
         $statusMsg .= $this->mailEmail($email, $from_name, $body, $subject, $htmlContent);
         return js_escape($statusMsg);
     }
@@ -112,17 +125,17 @@ class EmailClient extends AppDispatch
     {
         $from_name = ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? '');
         $desc = xlt("Comment") . ":\n" . text($body) . "\n" . xlt("This email has an attached document.");
-        $mail = new MyMailer();
+        $myMailer = new MyMailer();
         $from_name = text($from_name);
         $from = $GLOBALS["practice_return_email_path"];
-        $mail->AddReplyTo($from, $from_name);
-        $mail->SetFrom($from, $from);
-        $mail->AddAddress($email, $email);
-        $mail->Subject = xlt("Forwarded Fax Document");
-        $mail->Body = $desc;
-        $mail->AddAttachment($file);
+        $myMailer->AddReplyTo($from, $from_name);
+        $myMailer->SetFrom($from, $from);
+        $myMailer->AddAddress($email, $email);
+        $myMailer->Subject = xlt("Forwarded Fax Document");
+        $myMailer->Body = $desc;
+        $myMailer->AddAttachment($file);
 
-        return $mail->Send() ? xlt("Email successfully sent.") : xlt("Error: Email failed") . text($mail->ErrorInfo);
+        return $myMailer->Send() ? xlt("Email successfully sent.") : xlt("Error: Email failed") . text($myMailer->ErrorInfo);
     }
 
     /**
@@ -134,21 +147,24 @@ class EmailClient extends AppDispatch
         if (!$hasEmail) {
             return js_escape(xlt("Error: Missing valid email address. Try again."));
         }
+
         if (!$this->smtpEnabled) {
             return text(js_escape('SMTP not setup.'));
         }
+
         $from_name = text($GLOBALS["Patient Reminder Sender Name"] ?? 'UNK');
         $desc = text($body);
-        $mail = new MyMailer();
+        $myMailer = new MyMailer();
         $from = text($GLOBALS["practice_return_email_path"]);
-        $mail->AddReplyTo($from, $from_name);
-        $mail->SetFrom($from, $from);
-        $mail->AddAddress($email, $email);
-        $mail->Subject = xlt("A Reminder for You");
-        $mail->Body = $desc;
+        $myMailer->AddReplyTo($from, $from_name);
+        $myMailer->SetFrom($from, $from);
+        $myMailer->AddAddress($email, $email);
+        $myMailer->Subject = xlt("A Reminder for You");
+        $myMailer->Body = $desc;
 
-        return $mail->Send();
+        return $myMailer->Send();
     }
+
     /**
      * @return false|string
      */
@@ -156,20 +172,18 @@ class EmailClient extends AppDispatch
     {
         $id = $this->getRequest('uid');
         $query = "SELECT * FROM users WHERE id = ?";
-        $result = sqlStatement($query, array($id));
+        $recordset = sqlStatement($query, array($id));
         $u = array();
-        foreach ($result as $row) {
+        foreach ($recordset as $row) {
             $u[] = $row;
         }
+
         $u = $u[0];
         $r = array($u['fname'], $u['lname'], $u['fax'], $u['facility'], $u['email']);
 
         return json_encode($r);
     }
 
-    /**
-     * @return null
-     */
     protected function index()
     {
         if (!$this->getSession('pid', '')) {
@@ -182,10 +196,7 @@ class EmailClient extends AppDispatch
         return null;
     }
 
-    /**
-     * @return string|bool
-     */
-    function fetchReminderCount(): string|bool
+    public function fetchReminderCount(): string|bool
     {
         // TODO: Implement fetchReminderCount() method.
     }

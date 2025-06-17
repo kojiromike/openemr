@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Contains all of the Weno global settings and configuration
  *
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2024 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\WenoModule;
 
 use OpenEMR\Common\Crypto\CryptoGen;
@@ -21,26 +22,24 @@ class WenoGlobalConfig
 {
     //globals variable
     const WENO_ENCRYPTION_KEY = 'weno_encryption_key';
+
     const WENO_ADMIN_USERNAME = 'weno_admin_username';
+
     const WENO_ADMIN_PASSWORD = 'weno_admin_password';
+
     const WENO_SETUP_INSTRUCTION_LINK = 'weno_setup_instructions_link';
+
     const WENO_RX_ENABLE_TEST = 'weno_rx_enable_test';
+
     const WENO_RX_ENABLE = 'weno_rx_enable';
+
     const WENO_PROVIDER_PASSWORD = 'weno_provider_password';
+
     const WENO_PROVIDER_EMAIL = 'weno_provider_email';
+
     const WENO_PROVIDER_UID = 'weno_provider_uid';
 
     const GLOBAL_SECTION_NAME = 'Weno';
-
-    /**
-     * @var CryptoGen
-     */
-    private $cryptoGen;
-
-    public function __construct()
-    {
-        $this->cryptoGen = new CryptoGen();
-    }
 
     /**
      * @return array[]

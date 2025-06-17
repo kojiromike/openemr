@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Login screen.
  *
@@ -41,7 +43,7 @@ use Twig\Error\SyntaxError;
 $ignoreAuth = true;
 // Set $sessionAllowWrite to true to prevent session concurrency issues during authorization related code
 $sessionAllowWrite = true;
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 $twig = new TwigContainer(null, $GLOBALS["kernel"]);
 $t = $twig->getTwig();
@@ -77,7 +79,7 @@ if (sqlNumRows($rs)) {
 }
 
 $div_app = '';
-if (count($emr_app)) {
+if ($emr_app !== []) {
     // Standard app must exist
     $std_app = 'main/main_screen.php';
     if (!in_array($std_app, $emr_app)) {
@@ -88,7 +90,7 @@ if (count($emr_app)) {
         $div_app = sprintf('<input type="hidden" name="appChoice" value="%s">', attr($_REQUEST['app']));
     } else {
         $opt_htm = '';
-        foreach ($emr_app as $opt_disp => $opt_value) {
+        foreach (array_keys($emr_app) as $opt_disp) {
             $opt_htm .= sprintf(
                 '<option value="%s" %s>%s</option>\n',
                 attr($opt_disp),
@@ -115,10 +117,10 @@ if (count($emr_app)) {
 function getDefaultLanguage(): array
 {
     $sql = "SELECT * FROM lang_languages where lang_description = ?";
-    $res = sqlStatement($sql, [$GLOBALS['language_default']]);
+    $recordset = sqlStatement($sql, [$GLOBALS['language_default']]);
     $langs = [];
 
-    while ($row = sqlFetchArray($res)) {
+    while ($row = sqlFetchArray($recordset)) {
         $langs[] = $row;
     }
 
@@ -141,20 +143,18 @@ function getLanguagesList(): array
         LEFT JOIN lang_constants AS lc ON lc.constant_name = ll.lang_description
         LEFT JOIN lang_definitions AS ld ON ld.cons_id = lc.cons_id AND ld.lang_id = ?
         ORDER BY IF(LENGTH(ld.definition),ld.definition,ll.lang_description), ll.lang_id";
-    $res = sqlStatement($sql, [$mainLangID]);
+    $recordset = sqlStatement($sql, [$mainLangID]);
     $langList = [];
 
-    while ($row = sqlFetchArray($res)) {
+    while ($row = sqlFetchArray($recordset)) {
         if (!$GLOBALS['allow_debug_language'] && $row['lang_description'] == 'dummy') {
             continue; // skip the dummy language
         }
 
         if ($GLOBALS['language_menu_showall']) {
             $langList[] = $row;
-        } else {
-            if (in_array($row['lang_description'], $GLOBALS['language_menu_show'])) {
-                $langList[] = $row;
-            }
+        } elseif (in_array($row['lang_description'], $GLOBALS['language_menu_show'])) {
+            $langList[] = $row;
         }
     }
 
@@ -173,7 +173,7 @@ $defaultLanguage = getDefaultLanguage();
 $languageList = getLanguagesList();
 $_SESSION['language_choice'] = $defaultLanguage['id'];
 
-$relogin = (isset($_SESSION['relogin']) && ($_SESSION['relogin'] == 1)) ? true : false;
+$relogin = isset($_SESSION['relogin']) && ($_SESSION['relogin'] == 1);
 if ($relogin) {
     unset($_SESSION["relogin"]);
 }
@@ -199,10 +199,10 @@ if (session_name()) {
     $oldDate = gmdate('Y', strtotime("-1 years"));
     $expires = gmdate(DATE_RFC1123, $oldDate);
     $sameSite = empty($scparams['samesite']) ? '' : $scparams['samesite'];
-    $cookie = "{$sname}={$sid}; path={$path}; domain={$domain}; expires={$expires}";
+    $cookie = sprintf('%s=%s; path=%s; domain=%s; expires=%s', $sname, $sid, $path, $domain, $expires);
 
-    if ($sameSite) {
-        $cookie .= "; SameSite={$sameSite}";
+    if ($sameSite !== '0') {
+        $cookie .= '; SameSite=' . $sameSite;
     }
 
     $cookie = json_encode($cookie);

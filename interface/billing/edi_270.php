@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * main file for the 270 batch creation.
  * This report is the batch report required for batch eligibility verification.
@@ -20,21 +22,19 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once "$srcdir/options.inc.php";
-require_once("$srcdir/calendar.inc.php");
-require_once("$srcdir/appointments.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once $srcdir . '/options.inc.php';
+require_once($srcdir . '/calendar.inc.php');
+require_once($srcdir . '/appointments.inc.php');
 
 use OpenEMR\Billing\EDI270;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 // Element data seperator
@@ -48,10 +48,10 @@ $compEleSep     = ":";
 
 $from_date      = (isset($_POST['form_from_date'])) ? DateToYYYYMMDD($_POST['form_from_date']) : date('Y-m-d');
 $to_date        = (isset($_POST['form_to_date'])) ? DateToYYYYMMDD($_POST['form_to_date']) : date('Y-m-d');
-$form_facility  = (!empty($_POST['form_facility'])) ? $_POST['form_facility'] : '';
-$form_provider  = (!empty($_POST['form_users'])) ? $_POST['form_users'] : '';
-$exclude_policy = (!empty($_POST['removedrows'])) ? $_POST['removedrows'] : '';
-$x12_partner    = (!empty($_POST['form_x12'])) ? $_POST['form_x12'] : '';
+$form_facility  = (empty($_POST['form_facility'])) ? '' : $_POST['form_facility'];
+$form_provider  = (empty($_POST['form_users'])) ? '' : $_POST['form_users'];
+$exclude_policy = (empty($_POST['removedrows'])) ? '' : $_POST['removedrows'];
+$x12_partner    = (empty($_POST['form_x12'])) ? '' : $_POST['form_x12'];
 $X12info        = EDI270::getX12Partner($x12_partner);
 
 // grab appointments, sort by date and make unique to first upcoming appt by pid.
@@ -65,17 +65,17 @@ foreach ($appts as $eid) {
 //Set up the sql variable binding array (this prevents sql-injection attacks)
 $sqlBindArray = array();
 
-$ids = count($ids) > 0 ? implode(',', $ids) : "'0'";
-$where  = "e.pc_eid in($ids) ";
+$ids = $ids !== [] ? implode(',', $ids) : "'0'";
+$where  = sprintf('e.pc_eid in(%s) ', $ids);
 
 if ($form_facility != "") {
     $where .= " AND f.id = ? ";
-    array_push($sqlBindArray, $form_facility);
+    $sqlBindArray[] = $form_facility;
 }
 
 if ($form_provider != "") {
     $where .= " AND d.id = ? ";
-    array_push($sqlBindArray, $form_provider);
+    $sqlBindArray[] = $form_provider;
 }
 
 if ($exclude_policy != "") {
@@ -86,7 +86,7 @@ if ($exclude_policy != "") {
         // grab the string between the _ character and the ending ' character (and then drop these characters)
         $processExclude = strstr($processExclude, '_');
         $processExclude = substr($processExclude, 1, strlen($processExclude) - 2);
-        array_push($sqlBindArray, $processExclude);
+        $sqlBindArray[] = $processExclude;
         if ($firstFlag) {
             $excludePlacemakers = "?";
             $firstFlag = false;
@@ -94,7 +94,7 @@ if ($exclude_policy != "") {
             $excludePlacemakers .= ",?";
         }
     }
-    $where .= " AND i.policy_number NOT IN ($excludePlacemakers)";
+    $where .= sprintf(' AND i.policy_number NOT IN (%s)', $excludePlacemakers);
 }
     $where .= " AND (i.policy_number is NOT NULL AND i.policy_number != '')";
     $where .= " GROUP BY p.pid ORDER BY c.name";
@@ -141,9 +141,9 @@ if ($exclude_policy != "") {
     $rslt = sqlStatement($query, $sqlBindArray);
     $res = [];
     while ($row = sqlFetchArray($rslt)) {
-        foreach ($appts as $tmp) {
-            if ((int)$tmp['pc_eid'] === (int)$row['pc_eid']) {
-                $row['pc_eventDate'] = date("Ymd", strtotime($tmp['pc_eventDate']));
+        foreach ($appts as $appt) {
+            if ((int)$appt['pc_eid'] === (int)$row['pc_eid']) {
+                $row['pc_eventDate'] = date("Ymd", strtotime($appt['pc_eventDate']));
             }
         }
         $res[] = $row;
@@ -196,7 +196,10 @@ if ($exclude_policy != "") {
     }
 
 // unique multidimensional array by key
-    function unique_by_key($source, $key)
+    /**
+     * @return mixed[]
+     */
+    function unique_by_key($source, $key): array
     {
         $i = 0;
         $rtn_array = array();
@@ -207,7 +210,7 @@ if ($exclude_policy != "") {
                 $key_array[$i] = $val[$key];
                 $rtn_array[$i] = $val;
             }
-            $i++;
+            ++$i;
         }
         return $rtn_array;
     }
@@ -384,10 +387,10 @@ if ($exclude_policy != "") {
                                         <td>
                                             <select name='form_users' class='form-control' onchange='form.submit();'>
                                                 <option value=''>-- <?php echo xlt('All'); ?> --</option>
-                                                <?php foreach ($providers as $user) : ?>
-                                                    <option value='<?php echo attr($user['id']); ?>'
-                                                        <?php echo $form_provider == $user['id'] ? " selected " : null; ?>
-                                                    ><?php echo text($user['fname'] . " " . $user['lname']); ?></option>
+                                                <?php foreach ($providers as $provider) : ?>
+                                                    <option value='<?php echo attr($provider['id']); ?>'
+                                                        <?php echo $form_provider == $provider['id'] ? " selected " : null; ?>
+                                                    ><?php echo text($provider['fname'] . " " . $provider['lname']); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </td>
@@ -413,7 +416,7 @@ if ($exclude_policy != "") {
                                                 }
                                                 ?>
                                             </select>
-                                                <span id='emptyVald' class='text-danger' style='font-size:12px;visibility: <?php echo (!empty($X12info['id'])) ? "hidden" : ""; ?>'> *
+                                                <span id='emptyVald' class='text-danger' style='font-size:12px;visibility: <?php echo (empty($X12info['id'])) ? "" : "hidden"; ?>'> *
                                                     <?php echo xlt('Clearing house info required for EDI 270 batch creation.'); ?></span>
                                         </td>
                                     </tr>
@@ -455,7 +458,7 @@ if ($exclude_policy != "") {
         </form>
 
         <?php
-        if ($res) {
+        if ($res !== []) {
             EDI270::showElig($res, $X12info, $segTer, $compEleSep);
         }
         ?>

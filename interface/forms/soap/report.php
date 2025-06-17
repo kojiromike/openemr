@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * soap form
  * Forms generated from formsWiz
@@ -14,9 +16,9 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function soap_report($pid, $encounter, $cols, $id)
+function soap_report($pid, $encounter, $cols, $id): void
 {
-    $cols = 1; // force always 1 column
+    // force always 1 column
     $count = 0;
     $data = formFetch("form_soap", $id);
     if ($data) {
@@ -33,11 +35,9 @@ function soap_report($pid, $encounter, $cols, $id)
             $key = ucwords(str_replace("_", " ", $key));
                                                                               //Updated by Sherwin 10/24/2016
             print "<td><span class=bold>" . xlt($key) . ": </span><span class=text>" . nl2br(text($value)) . "</span></td>";
-            $count++;
-            if ($count == $cols) {
-                $count = 0;
-                print "</tr><tr>\n";
-            }
+            ++$count;
+            $count = 0;
+            print "</tr><tr>\n";
         }
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /* Copyright (C) 2014 Kevin Yeh <kevin.y@integralemr.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
@@ -18,42 +20,46 @@
  * @link    http://www.open-emr.org
  */
 
-function find_or_create_constant($constant)
+function find_or_create_constant(string $constant)
 {
     $sqlFind = " SELECT cons_id , constant_name FROM lang_constants where BINARY constant_name = ?";
-    $result = sqlStatement($sqlFind, array($constant));
-    if ($result) {
-        $row_count = sqlNumRows($result);
+    $recordset = sqlStatement($sqlFind, array($constant));
+    if ($recordset) {
+        $row_count = sqlNumRows($recordset);
         if ($row_count == 1) {
-            $row = sqlFetchArray($result);
+            $row = sqlFetchArray($recordset);
             return $row['cons_id'];
         }
+
         if ($row_count > 1) {
             error_log("Duplicate Entries for language constant:" . $constant);
-            $row = sqlFetchArray($result);
+            $row = sqlFetchArray($recordset);
             $retval = $row['cons_id'];
-            while ($row = sqlFetchArray($result)) {
+            while ($row = sqlFetchArray($recordset)) {
                 $sqlDelete = " DELETE FROM lang_constants where cons_id = ? ";
                 sqlStatement($sqlDelete, array($row['cons_id']));
                 $sqlDelete = " DELETE FROM lang_definitions where cons_id = ? ";
                 sqlStatement($sqlDelete, array($row['cons_id']));
                 error_log("DELETED Definitions for duplicate constant:" . $constant . "|" . $row['cons_id']);
             }
+
             return $retval;
         }
+
         if ($row_count == 0) {
             $sqlInsert = " INSERT INTO lang_constants (constant_name) VALUES (?)";
-            $new_index = sqlInsert($sqlInsert, array($constant));
-            return $new_index;
+            return sqlInsert($sqlInsert, array($constant));
         }
     }
+    return null;
 }
 
-function verify_translation($constant, $definition, $language, $replace = true, $source = "", $preview = false)
+function verify_translation(?string $constant, ?string $definition, $language, $replace = true, $source = "", $preview = false): ?string
 {
-    if (empty($constant) || empty($definition)) {
+    if ($constant === null || $constant === '' || $constant === '0' || ($definition === null || $definition === '' || $definition === '0')) {
         return '[1]' . xl("Empty Definition");
     }
+
     $cons_id = find_or_create_constant($constant);
     $whereClause = " lang_id = ? and cons_id = ? ";
     $sqlFind = " SELECT def_id, definition FROM lang_definitions WHERE " . $whereClause;
@@ -66,40 +72,41 @@ function verify_translation($constant, $definition, $language, $replace = true, 
             $row['definition'] = iconv('utf-8', 'utf-8', $row['definition']);
             if ($row['definition'] === $definition) {
                 return '[2]' . xl('Definition Exists') . ':' . $infoText;
-            } else {
-                if ($replace) {
-                    $sqlUpdate = " UPDATE lang_definitions SET definition=? WHERE def_id=?";
-                    if (!$preview) {
-                        $result = sqlStatement($sqlUpdate, array($definition,$row['def_id']));
-                    }
-                    return '[3]' . xl('Update From') . ':' . $row['definition'] . ' => ' . $definition . ' (' . xl('for') . ': ' . $constant . ')';
-                } else {
-                    return '[4]' . xl('Definition Not Updated') . ': ' . xl('Current') . $row['definition'] . '|' . $infoText;
+            } elseif ($replace) {
+                $sqlUpdate = " UPDATE lang_definitions SET definition=? WHERE def_id=?";
+                if (!$preview) {
+                    $result = sqlStatement($sqlUpdate, array($definition,$row['def_id']));
                 }
+                return '[3]' . xl('Update From') . ':' . $row['definition'] . ' => ' . $definition . ' (' . xl('for') . ': ' . $constant . ')';
+            } else {
+                return '[4]' . xl('Definition Not Updated') . ': ' . xl('Current') . $row['definition'] . '|' . $infoText;
             }
         }
+
         if ($row_count > 1) {
             // Too many definitions, delete then recreate.
             if (!$preview) {
                 $sqlDelete = " DELETE FROM lang_definitions WHERE " . $whereClause;
                 sqlStatement($sqlDelete, array($language, $cons_id));
             }
+
             $create = true;
         }
+
         if ($row_count == 0) {
             $create = true;
         }
-        if ($create) {
-            $sqlInsert = " INSERT INTO lang_definitions (cons_id,lang_id,definition) VALUES (?,?,?) ";
-            if (!$preview) {
-                $id = sqlInsert($sqlInsert, array($cons_id, $language, $definition));
-            }
-            return '[5]' . xl('Create') . ':' . $constant . ' => ' . $definition;
+
+        $sqlInsert = " INSERT INTO lang_definitions (cons_id,lang_id,definition) VALUES (?,?,?) ";
+        if (!$preview) {
+            $id = sqlInsert($sqlInsert, array($cons_id, $language, $definition));
         }
+        return '[5]' . xl('Create') . ':' . $constant . ' => ' . $definition;
     }
+    return null;
 }
 
-function verify_translations($definitions, $language, $replace = true)
+function verify_translations($definitions, $language, $replace = true): void
 {
     foreach ($definitions as $constant => $definition) {
         verify_translation($constant, $definition, $language, $replace);
@@ -109,18 +116,19 @@ function verify_translations($definitions, $language, $replace = true)
 function utf8_fopen_read($fileName)
 {
     $fc = iconv('UTF-8', 'UTF-8', file_get_contents($fileName));
-    if (empty($fc)) {
+    if ($fc === '' || $fc === '0' || $fc === false) {
         return false;
     }
+
     $handle = fopen("php://memory", "rw");
     fwrite($handle, $fc);
     fseek($handle, 0);
     return $handle;
 }
 
-function verify_file($filename, $language, $replace = true, $source_name = '', $constant_colummn = 0, $definition_column = 1)
+function verify_file($filename, $language, $replace = true, $source_name = '', $constant_colummn = 0, $definition_column = 1): void
 {
-    if (($handle = utf8_fopen_read("$filename")) !== false) {
+    if (($handle = utf8_fopen_read($filename)) !== false) {
         $first = true;
         while (($data = fgetcsv($handle, 1000, ",")) !== false) {
             $num = count($data);
@@ -133,9 +141,11 @@ function verify_file($filename, $language, $replace = true, $source_name = '', $
                         echo text(substr($result, 3)) . "<br>";
                     }
                 }
+
                 $first = false;
             }
         }
+
         fclose($handle);
     }
 }

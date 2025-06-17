@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * The functions of this class support the billing process like the script billing_process.php.
  *
@@ -16,10 +18,10 @@
  */
 
 
-require_once("../globals.php");
-require_once("$srcdir/patient.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/patient.inc.php');
 require_once($GLOBALS['OE_SITE_DIR'] . "/statement.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Billing\ParseERA;
 use OpenEMR\Billing\SLEOB;
@@ -47,7 +49,7 @@ $where = '';
 $eraname = '';
 $eracount = 0;
 $Processed = 0;
-function era_callback(&$out)
+function era_callback(array &$out): void
 {
     global $where, $eracount, $eraname;
     ++$eracount;
@@ -70,16 +72,16 @@ if (!empty($_FILES['form_erafile']['size'])) {
 
     $tmp_name = $_FILES['form_erafile']['tmp_name'];
     // Handle .zip extension if present.  Probably won't work on Windows.
-    if (strtolower(substr($_FILES['form_erafile']['name'], -4)) == '.zip') {
-        rename($tmp_name, "$tmp_name.zip");
+    if (strtolower(substr($_FILES['form_erafile']['name'], -4)) === '.zip') {
+        rename($tmp_name, $tmp_name . '.zip');
         exec("unzip -p " . escapeshellarg($tmp_name . ".zip") . " > " . escapeshellarg($tmp_name));
-        unlink("$tmp_name.zip");
+        unlink($tmp_name . '.zip');
     }
     $alertmsg .= ParseERA::parseERA($tmp_name, 'era_callback');
-    $erafullname = $GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.edi";
+    $erafullname = $GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.edi', $eraname);
     if (is_file($erafullname)) {
         $alertmsg .=  xl("Warning") . ': ' . xl("Set") . ' ' . $eraname . ' ' . xl("was already uploaded") . ' ';
-        if (is_file($GLOBALS['OE_SITE_DIR'] . "/documents/era/$eraname.html")) {
+        if (is_file($GLOBALS['OE_SITE_DIR'] . sprintf('/documents/era/%s.html', $eraname))) {
             $Processed = 1;
             $alertmsg .=  xl("and processed.") . ' ';
         } else {
@@ -96,7 +98,7 @@ if (!empty($_FILES['form_erafile']['size'])) {
 <html>
 <head>
     <?php Header::setupHeader(['datetime-picker', 'common']);?>
-    <?php require_once("{$GLOBALS['srcdir']}/ajax/payment_ajax_jav.inc.php"); ?>
+    <?php require_once($GLOBALS['srcdir'] . '/ajax/payment_ajax_jav.inc.php'); ?>
     <script>
     function Validate()
     {
@@ -208,7 +210,7 @@ if (!empty($_FILES['form_erafile']['size'])) {
     // files they should be listed thereafter, please add _xpd suffix to the file name
     $arr_files_php = array("era_payments_xpd", "search_payments_xpd", "new_payment_xpd");
     $current_state = collectAndOrganizeExpandSetting($arr_files_php);
-    require_once("$srcdir/expand_contract_inc.php");
+    require_once($srcdir . '/expand_contract_inc.php');
     ?>
     <title><?php echo xlt('ERA Posting'); ?></title>
     <?php

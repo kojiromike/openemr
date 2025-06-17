@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+ 
+ /**
  * Exports patient demographics to a custom XML format
  *
  * @package OpenEMR
@@ -12,8 +14,8 @@
  * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
 */
 
- require_once("../interface/globals.php");
- require_once("../library/patient.inc.php");
+ require_once(__DIR__ . "/../interface/globals.php");
+ require_once(__DIR__ . "/../library/patient.inc.php");
 
  use OpenEMR\Core\Header;
 
@@ -21,20 +23,20 @@
  $indent = 0;
 
  // Add a string to output with some basic sanitizing.
-function Add($tag, $text)
+function Add($tag, $text): void
 {
     global $out, $indent;
     $text = trim(str_replace(array("\r", "\n", "\t"), " ", ($text ?? '')));
-    if ($text) {
+    if ($text !== '' && $text !== '0') {
         for ($i = 0; $i < $indent; ++$i) {
             $out .= "\t";
         }
 
-        $out .= "<$tag>$text</$tag>\n";
+        $out .= "<{$tag}>{$text}</{$tag}>\n";
     }
 }
 
-function OpenTag($tag)
+function OpenTag($tag): void
 {
     global $out, $indent;
     for ($i = 0; $i < $indent; ++$i) {
@@ -42,10 +44,10 @@ function OpenTag($tag)
     }
 
     ++$indent;
-    $out .= "<$tag>\n";
+    $out .= "<{$tag}>\n";
 }
 
-function CloseTag($tag)
+function CloseTag($tag): void
 {
     global $out, $indent;
     --$indent;
@@ -53,7 +55,7 @@ function CloseTag($tag)
         $out .= "\t";
     }
 
-    $out .= "</$tag>\n";
+    $out .= "</{$tag}>\n";
 }
 
  // Remove all non-digits from a string.
@@ -63,10 +65,10 @@ function Digits($field)
 }
 
  // Translate sex.
-function Sex($field)
+function Sex($field): string
 {
     $sex = strtoupper(substr(trim($field), 0, 1));
-    if ($sex != "M" && $sex != "F") {
+    if ($sex !== "M" && $sex !== "F") {
         $sex = "U";
     }
 
@@ -80,43 +82,43 @@ function LWDate($field)
 }
 
  // Add an insurance section.
-function addInsurance($row, $seq)
+function addInsurance(array $row, string $seq): void
 {
-    if ($row["name$seq"]) {
+    if ($row['name' . $seq]) {
         OpenTag("insurance");
         Add("priority", $seq);
-        Add("group", $row["group$seq"]);
-        Add("policy", $row["policy$seq"]);
-        Add("provider", $row["provider$seq"]);
-        Add("name", $row["name$seq"]);
-        Add("street1", $row["street1$seq"]);
-        Add("street2", $row["street2$seq"]);
-        Add("city", $row["city$seq"]);
-        Add("state", $row["state$seq"]);
-        Add("zip", $row["zip$seq"]);
-        Add("country", $row["country$seq"]);
-        Add("type", $row["instype$seq"]);
-        Add("copay", $row["copay$seq"]);
+        Add("group", $row['group' . $seq]);
+        Add("policy", $row['policy' . $seq]);
+        Add("provider", $row['provider' . $seq]);
+        Add("name", $row['name' . $seq]);
+        Add("street1", $row['street1' . $seq]);
+        Add("street2", $row['street2' . $seq]);
+        Add("city", $row['city' . $seq]);
+        Add("state", $row['state' . $seq]);
+        Add("zip", $row['zip' . $seq]);
+        Add("country", $row['country' . $seq]);
+        Add("type", $row['instype' . $seq]);
+        Add("copay", $row['copay' . $seq]);
         OpenTag("subscriber");
-        Add("relationship", $row["relationship$seq"]);
-        Add("lname", $row["lname$seq"]);
-        Add("fname", $row["fname$seq"]);
-        Add("mname", $row["mname$seq"]);
-        Add("street", $row["sstreet$seq"]);
-        Add("city", $row["scity$seq"]);
-        Add("state", $row["sstate$seq"]);
-        Add("zip", $row["szip$seq"]);
-        Add("country", $row["scountry$seq"]);
-        Add("dob", $row["sdob$seq"]);
-        Add("ss", $row["sss$seq"]);
-        Add("phone", $row["sphone$seq"]);
-        Add("employer", $row["semployer$seq"]);
-        Add("sex", $row["ssex$seq"]);
-        Add("employer_street", $row["semployer_street$seq"]);
-        Add("employer_city", $row["semployer_city$seq"]);
-        Add("employer_state", $row["semployer_state$seq"]);
-        Add("employer_zip", $row["semployer_zip$seq"]);
-        Add("employer_country", $row["semployer_country$seq"]);
+        Add("relationship", $row['relationship' . $seq]);
+        Add("lname", $row['lname' . $seq]);
+        Add("fname", $row['fname' . $seq]);
+        Add("mname", $row['mname' . $seq]);
+        Add("street", $row['sstreet' . $seq]);
+        Add("city", $row['scity' . $seq]);
+        Add("state", $row['sstate' . $seq]);
+        Add("zip", $row['szip' . $seq]);
+        Add("country", $row['scountry' . $seq]);
+        Add("dob", $row['sdob' . $seq]);
+        Add("ss", $row['sss' . $seq]);
+        Add("phone", $row['sphone' . $seq]);
+        Add("employer", $row['semployer' . $seq]);
+        Add("sex", $row['ssex' . $seq]);
+        Add("employer_street", $row['semployer_street' . $seq]);
+        Add("employer_city", $row['semployer_city' . $seq]);
+        Add("employer_state", $row['semployer_state' . $seq]);
+        Add("employer_zip", $row['semployer_zip' . $seq]);
+        Add("employer_country", $row['semployer_country' . $seq]);
         CloseTag("subscriber");
         CloseTag("insurance");
     }

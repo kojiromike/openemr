@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * clinic_note view.php
  *
@@ -14,9 +16,9 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -27,51 +29,47 @@ if (! $encounter) { // comes from globals.php
     die("Internal error: we do not seem to be in an encounter!");
 }
 
-function rbvalue($rbname)
+function rbvalue($rbname): string
 {
     $tmp = $_POST[$rbname];
     if (! $tmp) {
         $tmp = '0';
     }
 
-    return "$tmp";
+    return $tmp;
 }
 
-function cbvalue($cbname)
+function cbvalue($cbname): string
 {
     return $_POST[$cbname] ? '1' : '0';
 }
 
-function rbinput($name, $value, $desc, $colname)
+function rbinput($name, $value, $desc, $colname): string
 {
     global $row;
     $ret  = "<input type='radio' name='" . attr($name) . "' value='" . attr($value) . "'";
     if ($row[$colname] == $value) {
         $ret .= " checked";
     }
-
-    $ret .= " />" . text($desc);
-    return $ret;
+    return $ret . (" />" . text($desc));
 }
 
-function rbcell($name, $value, $desc, $colname)
+function rbcell($name, $value, $desc, $colname): string
 {
     return "<td width='25%' nowrap>" . rbinput($name, $value, $desc, $colname) . "</td>\n";
 }
 
-function cbinput($name, $colname)
+function cbinput($name, $colname): string
 {
     global $row;
     $ret  = "<input type='checkbox' name='" . attr($name) . "' value='1'";
     if ($row[$colname]) {
         $ret .= " checked";
     }
-
-    $ret .= " />";
-    return $ret;
+    return $ret . " />";
 }
 
-function cbcell($name, $desc, $colname)
+function cbcell($name, $desc, $colname): string
 {
     return "<td width='25%' nowrap>" . cbinput($name, $colname) . text($desc) . "</td>\n";
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Clickatell SMS Controller
  *
@@ -7,7 +9,6 @@
  * @link      http://www.open-emr.org
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
 class ClickatellSMSClient extends AppDispatch
@@ -17,12 +18,10 @@ class ClickatellSMSClient extends AppDispatch
         if (empty($GLOBALS['oefax_enable_sms'] ?? null)) {
             throw new \RuntimeException(xlt("Access denied! Module not enabled"));
         }
+
         parent::__construct();
     }
 
-    /**
-     * @return string
-     */
     public function sendSMS($toPhone = '', string $subject = '', string $message = '', string $from = ''): string
     {
         // If this is made as an API call we need to check authorization.
@@ -58,10 +57,8 @@ class ClickatellSMSClient extends AppDispatch
         $response = file_get_contents($url, false, $context);
 
         $json = json_decode($response, true);
-        if ($json['responseCode'] < 400) {
-            if ($json['messages'][0]['accepted']) {
-                return xlt('Message Sent');
-            }
+        if ($json['responseCode'] < 400 && $json['messages'][0]['accepted']) {
+            return xlt('Message Sent');
         }
 
         return text('Error: ' . $response);
@@ -75,18 +72,12 @@ class ClickatellSMSClient extends AppDispatch
         return text("Not supported");
     }
 
-    /**
-     * @return string
-     */
     public function sendEmail(): string
     {
         return text("Not supported");
     }
 
-    /**
-     * @return string|bool
-     */
-    function fetchReminderCount(): string|bool
+    public function fetchReminderCount(): string|bool
     {
         return 0;
     }
@@ -110,9 +101,8 @@ class ClickatellSMSClient extends AppDispatch
 
     /**
      * @param $acl
-     * @return int
      */
-    function authenticate($acl = ['patients', 'appt']): int
+    public function authenticate($acl = ['patients', 'appt']): int
     {
         list($s, $v) = $acl;
         return $this->verifyAcl($s, $v);

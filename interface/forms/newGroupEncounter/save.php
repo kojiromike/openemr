@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form save script.
  *
@@ -17,8 +19,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/encounter.inc.php");
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/encounter.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -108,23 +110,20 @@ if ($mode == 'new') {
         $datepart = "date = ?, ";
         $sqlBindArray[] = $date;
     }
-    array_push(
-        $sqlBindArray,
-        $onset_date,
-        $reason,
-        $facility,
-        $pc_catid,
-        $facility_id,
-        $billing_facility,
-        $sensitivity,
-        $referral_source,
-        $counselors,
-        $pos_code,
-        $id
-    );
+    $sqlBindArray[] = $onset_date;
+    $sqlBindArray[] = $reason;
+    $sqlBindArray[] = $facility;
+    $sqlBindArray[] = $pc_catid;
+    $sqlBindArray[] = $facility_id;
+    $sqlBindArray[] = $billing_facility;
+    $sqlBindArray[] = $sensitivity;
+    $sqlBindArray[] = $referral_source;
+    $sqlBindArray[] = $counselors;
+    $sqlBindArray[] = $pos_code;
+    $sqlBindArray[] = $id;
     sqlStatement(
         "UPDATE form_groups_encounter SET
-            $datepart
+            {$datepart}
             onset_date = ?,
             reason = ?,
             facility = ?,

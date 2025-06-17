@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * painmap save.php
  *
@@ -16,13 +18,13 @@ require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS['srcdir'] . '/api.inc.php');
 
 /* include our smarty derived controller class. */
-require('C_FormPainMap.class.php');
+require(__DIR__ . '/C_FormPainMap.class.php');
 
 /* Create a form object. */
 $c = new C_FormPainMap();
 
 /* Save the form contents .*/
-echo $c->default_action_process($_POST);
+echo $c->default_action_process();
 
 /* return to the encounter. */
 @formJump();

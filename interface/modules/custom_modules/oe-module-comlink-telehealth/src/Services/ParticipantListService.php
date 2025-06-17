@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Services;
 
 use Exception;
@@ -7,26 +9,23 @@ use Twig\Environment;
 
 class ParticipantListService
 {
-    /**
-     * @var TeleHealthProvisioningService
-     */
-    private $provisioningService;
+    private \Comlink\OpenEMR\Modules\TeleHealthModule\Services\TeleHealthProvisioningService $teleHealthProvisioningService;
 
     private $publicPathFQDN;
 
-    /**
-     * @var Environment
-     */
-    private $twig;
+    private \Twig\Environment $twigEnvironment;
 
-    public function __construct(Environment $twig, TeleHealthProvisioningService $provisioningService, $publicPathFQDN)
+    public function __construct(Environment $twigEnvironment, TeleHealthProvisioningService $teleHealthProvisioningService, $publicPathFQDN)
     {
-        $this->provisioningService = $provisioningService;
+        $this->teleHealthProvisioningService = $teleHealthProvisioningService;
         $this->publicPathFQDN = $publicPathFQDN;
-        $this->twig = $twig;
+        $this->twigEnvironment = $twigEnvironment;
     }
 
-    public function getParticipantListWithInvitationsForAppointment($user, $session)
+    /**
+     * @return list
+     */
+    public function getParticipantListWithInvitationsForAppointment($user, $session): array
     {
         $participants = $this->getParticipantListForAppointment($user, $session);
         $link = $this->getJoinLink($session);
@@ -35,11 +34,13 @@ class ParticipantListService
             if ($participant['role'] == 'patient') {
                 $participant['invitation'] = [
                     'link' => $link
-                    ,'text' => $this->twig->render('comlink/emails/telehealth-invitation-existing.text.twig', ['joinLink' => $link])
+                    ,'text' => $this->twigEnvironment->render('comlink/emails/telehealth-invitation-existing.text.twig', ['joinLink' => $link])
                 ];
             }
+
             $updatedParticipants[] = $participant;
         }
+
         return $updatedParticipants;
     }
 
@@ -47,16 +48,15 @@ class ParticipantListService
      * TODO: @adunsulag need to refactor this function and the one in the TeleHealthParticipantInvitationMailerService to its own class
      * @param $session
      * @param $thirdPartyLaunchAction
-     * @return string
      */
-    private function getJoinLink($session)
+    private function getJoinLink(array $session): string
     {
         // the index-portal will redirect the person to login before completing the action
         return $this->publicPathFQDN . "index-portal.php?action=launch_patient_session&pc_eid="
             . intval($session['pc_eid']);
     }
 
-    public function getSparseParticipantListFromSession($session)
+    public function getSparseParticipantListFromSession($session): array
     {
         $participantList = [
             [
@@ -72,6 +72,7 @@ class ParticipantListService
                 , 'id' => $session['pid']
             ];
         }
+
         if (!empty($session['pid_related'])) {
             $participantList[] = [
                 'role' => "patient"
@@ -79,13 +80,14 @@ class ParticipantListService
                 , 'id' => $session['pid_related']
             ];
         }
+
         return $participantList;
     }
 
 
-    public function getParticipantListForAppointment($user, $session)
+    public function getParticipantListForAppointment(array $user, $session): array
     {
-        $userTelehealthSettings = $this->provisioningService->getOrCreateTelehealthProvider($user);
+        $userTelehealthSettings = $this->teleHealthProvisioningService->getOrCreateTelehealthProvider($user);
 
         $participantList = [
             [
@@ -99,7 +101,7 @@ class ParticipantListService
         ];
         if (!empty($session['pid'])) {
             $patient = $this->getPatientForPid($session['pid']);
-            $patientTelehealthSettings = $this->provisioningService->getOrCreateTelehealthPatient($patient);
+            $patientTelehealthSettings = $this->teleHealthProvisioningService->getOrCreateTelehealthPatient($patient);
             $participantList[] = [
                 'callerName' => $patient['fname'] . ' ' . $patient['lname']
                 , 'email' => $patient['email'] ?? ''
@@ -109,9 +111,10 @@ class ParticipantListService
                 , 'id' => $patient['pid']
             ];
         }
+
         if (!empty($session['pid_related'])) {
             $patient = $this->getPatientForPid($session['pid_related']);
-            $patientTelehealthSettings = $this->provisioningService->getOrCreateTelehealthPatient($patient);
+            $patientTelehealthSettings = $this->teleHealthProvisioningService->getOrCreateTelehealthPatient($patient);
             $participantList[] = [
                 'callerName' => $patient['fname'] . ' ' . $patient['lname']
                 , 'email' => $patient['email'] ?? ''
@@ -121,6 +124,7 @@ class ParticipantListService
                 , 'id' => $patient['pid']
             ];
         }
+
         return $participantList;
     }
 
@@ -131,10 +135,9 @@ class ParticipantListService
      *
      * @param $session
      * @param $userKey
-     * @return string
      * @throws Exception
      */
-    private function sessionUserInRoom($session, $userKey)
+    private function sessionUserInRoom($session, string $userKey): string
     {
         if (
             !empty($session[$userKey . '_start_time']) &&
@@ -147,10 +150,11 @@ class ParticipantListService
                 return "Y";
             }
         }
+
         return "N";
     }
 
-    private function getPatientForPid($pid)
+    private function getPatientForPid(string $pid)
     {
         $formattedPatientService = new FormattedPatientService();
         return $formattedPatientService->getPatientForPid($pid);

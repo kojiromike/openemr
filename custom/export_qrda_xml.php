@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * EXPORT QRDA
@@ -22,13 +24,13 @@
  * @link    http://www.open-emr.org
  */
 
-require_once("../interface/globals.php");
-require_once("../ccr/uuid.php");
-require_once("../library/patient.inc.php");
-require_once "../library/options.inc.php";
-require_once("../library/clinical_rules.php");
-require_once "$srcdir/report_database.inc.php";
-require_once "qrda_functions.php";
+require_once(__DIR__ . "/../interface/globals.php");
+require_once(__DIR__ . "/../ccr/uuid.php");
+require_once(__DIR__ . "/../library/patient.inc.php");
+require_once __DIR__ . "/../library/options.inc.php";
+require_once(__DIR__ . "/../library/clinical_rules.php");
+require_once $srcdir . '/report_database.inc.php';
+require_once __DIR__ . "/qrda_functions.php";
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -464,7 +466,7 @@ $xml->open_customTag('performer', array('typeCode' => 'PRF'));
 
 $xml->open_customTag('assignedEntity');
 
-$npi_provider = !empty($userRow['npi']) ? $userRow['npi'] : '123456789';
+$npi_provider = empty($userRow['npi']) ? '123456789' : $userRow['npi'];
 $xml->self_customTag('id', array('root' => '2.16.840.1.113883.4.6', 'extension' => $npi_provider));
 
 if ($userRow['phone'] != "") {
@@ -687,12 +689,12 @@ if (count($dataSheet) > 0) {
         //All CQM Measures taken here
         foreach ($CQMeausesArr as $cqmKey => $cqmVal) {
             //DENEXCEP(Denominator Exception not needed for some rules are skipping here)
-            if ((in_array($row['cqm_nqf_code'], $denExcepNotNeedRules) ) && ($cqmKey == "exception_patients")) {
+            if ((in_array($row['cqm_nqf_code'], $denExcepNotNeedRules) ) && ($cqmKey === "exception_patients")) {
                 continue;
             }
 
             //get Itemized Data
-            if ($cqmKey == "init_patients") {
+            if ($cqmKey === "init_patients") {
                 $itemPatArr = collectItemizedPatientsCdrReport($report_id, $itemized_test_id, $cqmItemizedArr[$cqmKey]);
             } else {
                 $itemPatArr = collectItemizedPatientsCdrReport($report_id, $itemized_test_id, $cqmItemizedArr[$cqmKey], $numerator_label);
@@ -714,7 +716,7 @@ if (count($dataSheet) > 0) {
             $xml->open_list();
 
             //Gender Section Display
-            foreach ($mainQrdaGenderCodeArr as $GKey => $GVal) {
+            foreach ($mainQrdaGenderCodeArr as $GVal) {
                 $xml->open_customTag('item');
                 $genderInfo = $detailsArr['gender'][$GVal];
                 $arrContent = array('name' => $GVal, 'value' => $genderInfo);
@@ -723,7 +725,7 @@ if (count($dataSheet) > 0) {
             }
 
             //Ethnicity Section Display
-            foreach ($mainEthiArr as $ethKey => $ethVal) {
+            foreach ($mainEthiArr as $ethVal) {
                 $ethnicity_data = $detailsArr['ethnicity'][$ethVal];
                 $xml->open_customTag('item');
                 $arrContent = array('name' => 'Ethnicity - ' . $ethVal, 'value' => $ethnicity_data);
@@ -732,7 +734,7 @@ if (count($dataSheet) > 0) {
             }
 
             //Race Section Display
-            foreach ($mainQrdaRaceArr as $RKey => $RVal) {
+            foreach ($mainQrdaRaceArr as $RVal) {
                 $race_data = $detailsArr['race'][$RVal];
                 $xml->open_customTag('item');
                 $arrContent = array('name' => 'Race - ' . $RVal, 'value' => $race_data);
@@ -742,7 +744,7 @@ if (count($dataSheet) > 0) {
 
             //Payer Type Section Display
             $payerCheckArr = getQRDAPayerInfo($fullPatArr);
-            foreach ($mainQrdaPayerCodeArr as $PKey => $PVal) {
+            foreach ($mainQrdaPayerCodeArr as $PVal) {
                 $xml->open_customTag('item');
                 $arrContent = array('name' => 'Payer - ' . $PVal, 'value' => $payerCheckArr[$PVal]);
                 $xml->innerContent($arrContent);
@@ -784,7 +786,7 @@ if (count($dataSheet) > 0) {
         //}
 
         if (in_array($row['cqm_nqf_code'], $multNumNQFArr)) {
-            $dataChkArr[$row['cqm_nqf_code']]++;
+            ++$dataChkArr[$row['cqm_nqf_code']];
         }
 
         //CQM Rules 2014 set, 0013 is 0018
@@ -892,12 +894,10 @@ if (count($dataSheet) > 0) {
                 $exDocID = $preDefPopIdArr[$row['cqm_nqf_code']][$row['numerator_label']]["NUMER"];
             } elseif (($row['cqm_nqf_code'] == "0024")) {
                 $exDocID = $preDefPopIdArr[$row['cqm_nqf_code']][$row['population_label']][$row['numerator_label']]["NUMER"];
+            } elseif ($preDefPopIdArr[$row['cqm_nqf_code']]["NUMER"] != "") {
+                $exDocID = $preDefPopIdArr[$row['cqm_nqf_code']]["NUMER"];
             } else {
-                if ($preDefPopIdArr[$row['cqm_nqf_code']]["NUMER"] != "") {
-                    $exDocID = $preDefPopIdArr[$row['cqm_nqf_code']]["NUMER"];
-                } else {
-                    $exDocID = getUuid();
-                }
+                $exDocID = getUuid();
             }
 
             $xml->self_customId($exDocID);
@@ -921,12 +921,12 @@ if (count($dataSheet) > 0) {
         //All CQM Measures taken here
         foreach ($CQMeausesArr as $cqmKey => $cqmVal) {
             //DENEXCEP(Denominator Exception not needed for some rules are skipping here)
-            if ((in_array($row['cqm_nqf_code'], $denExcepNotNeedRules) ) && ($cqmKey == "exception_patients")) {
+            if ((in_array($row['cqm_nqf_code'], $denExcepNotNeedRules) ) && ($cqmKey === "exception_patients")) {
                 continue;
             }
 
             //cqm 0024 alllowing only nuemerator 2 and numerator 3 for ipp1,ipp2 and 1pp3 to avoid repeatation
-            if ($row['cqm_nqf_code'] == '0024' && ($row['numerator_label'] == "Numerator 2" || $row['numerator_label'] == "Numerator 3") && $cqmKey != 'numer_patients') {
+            if ($row['cqm_nqf_code'] == '0024' && ($row['numerator_label'] == "Numerator 2" || $row['numerator_label'] == "Numerator 3") && $cqmKey !== 'numer_patients') {
                 continue;
             }
 
@@ -936,7 +936,7 @@ if (count($dataSheet) > 0) {
 
 
             //get Itemized Data
-            if ($cqmKey == "init_patients") {
+            if ($cqmKey === "init_patients") {
                 $itemPatArr = collectItemizedPatientsCdrReport($report_id, $itemized_test_id, $cqmItemizedArr[$cqmKey]);
             } else {
                 $itemPatArr = collectItemizedPatientsCdrReport($report_id, $itemized_test_id, $cqmItemizedArr[$cqmKey], $numerator_label);
@@ -1002,7 +1002,7 @@ if (count($dataSheet) > 0) {
             #### Stratum Start (Stratification)#####
             if ($row['cqm_nqf_code'] == '0024') {
                 $strat_count = 1;
-                for (; $strat_count <= 2; $strat_count++) {
+                for (; $strat_count <= 2; ++$strat_count) {
                         $strata_value = $stratum[$strat_count][$cqmKey];
 
                     if ($row['numerator_label'] == "Numerator 2") {
@@ -1418,7 +1418,7 @@ if (count($dataSheet) > 0) {
                 $refID = $preDefPopIdArr[$row['cqm_nqf_code']][$mainQrdaPopulationIncArr[$cqmKey]];
             }
 
-            if ($refID == "") {
+            if ($refID === "") {
                 $refID = getUuid();
             }
 
@@ -1458,7 +1458,7 @@ if (count($dataSheet) > 0) {
 
         ###########################################################
 
-        $innrCnt++;
+        ++$innrCnt;
     }
 }
 

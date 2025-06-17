@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -8,10 +10,10 @@
 // of the License, or (at your option) any later version.
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -23,7 +25,7 @@ if (! $encounter) { // comes from globals.php
     die("Internal error: we do not seem to be in an encounter!");
 }
 
-function end_cell()
+function end_cell(): void
 {
     global $item_count, $cell_count;
     if ($item_count > 0) {
@@ -32,7 +34,7 @@ function end_cell()
     }
 }
 
-function end_row()
+function end_row(): void
 {
     global $cell_count, $CPR;
     end_cell();
@@ -46,7 +48,7 @@ function end_row()
     }
 }
 
-function end_group()
+function end_group(): void
 {
     global $last_group;
     if (strlen($last_group) > 0) {
@@ -70,18 +72,18 @@ if ($_POST['bn_save']) {
     while ($frow = sqlFetchArray($fres)) {
         $field_id  = $frow['field_id'];
         $value = get_layout_form_value($frow);
-        if ($sets) {
+        if ($sets !== '' && $sets !== '0') {
             $sets .= ", ";
         }
 
         $sets .= escape_sql_column_name($field_id, array('form_ippf_srh')) . " = ?";
-        array_push($sqlBindArray, $value);
+        $sqlBindArray[] = $value;
     }
 
     if ($formid) {
         // Updating an existing form.
         $query = "UPDATE form_ippf_srh SET " . $sets . " WHERE id = ?";
-        array_push($sqlBindArray, $formid);
+        $sqlBindArray[] = $formid;
         sqlStatement($query, $sqlBindArray);
     } else {
         // Adding a new form.
@@ -183,10 +185,8 @@ while ($frow = sqlFetchArray($fres)) {
         if (isset($shrow[$field_id])) {
             $currvalue = $shrow[$field_id];
         }
-    } else {
-        if (isset($pprow[$field_id])) {
-            $currvalue = $pprow[$field_id];
-        }
+    } elseif (isset($pprow[$field_id])) {
+        $currvalue = $pprow[$field_id];
     }
 
     // Handle a data category (group) change.
@@ -197,7 +197,7 @@ while ($frow = sqlFetchArray($fres)) {
             $last_group = $this_group;
             echo "<br /><span class='bold'><input type='checkbox' name='form_cb_" . attr($group_seq) . "' value='1' " .
         "onclick='return divclick(this," . attr_js("div_" . $group_seq) . ");'";
-        if ($display_style == 'block') {
+        if ($display_style === 'block') {
             echo " checked";
         }
 

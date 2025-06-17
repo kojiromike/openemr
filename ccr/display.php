@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * display.php  Is responsible for display a CCR/CCD/CCDA document previewed from the documents folder.
  *
@@ -45,7 +47,7 @@ try {
 
     $viewCCDAEvent = new PatientDocumentViewCCDAEvent();
     $viewCCDAEvent->setCcdaType($type); // not sure if we want to send the old CCR... but I guess module authors can use it if they want
-    if (!empty($d->get_foreign_reference_id())) {
+    if (!in_array($d->get_foreign_reference_id(), [null, 0], true)) {
         $viewCCDAEvent->setCcdaId($d->get_foreign_reference_id());
     }
 
@@ -61,6 +63,7 @@ try {
         echo $twig->getTwig()->render("templates/error/general_http_error.html.twig", ['statusCode' => 500, 'errorMessage' => 'System error occurred in processing content']);
         exit;
     }
+
     echo $updatedViewCCDAEvent->getContent($content);
 } catch (\Exception $exception) {
     (new SystemLogger())->errorLogCaller(

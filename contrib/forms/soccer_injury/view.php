@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 //////////////////////////////////////////////////////////////////////
 // ------------------ DO NOT MODIFY VIEW.PHP !!! ---------------------
 // View.php is an exact duplicate of new.php.  If you wish to make
@@ -20,8 +22,8 @@
 // of the License, or (at your option) any later version.
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -41,43 +43,40 @@ function rbvalue($rbname)
     return $tmp;
 }
 
-function cbvalue($cbname)
+function cbvalue($cbname): string
 {
     return $_POST[$cbname] ? '1' : '0';
 }
 
-function rbinput($name, $value, $desc, $colname)
+function rbinput($name, $value, $desc, $colname): string
 {
     global $row;
     $ret  = "<input type='radio' name='" . attr($name) . "' value='" . attr($value) . "'";
     if ($row[$colname] == $value) {
         $ret .= " checked";
     }
-
-    $ret .= " />" . text($desc);
-    return $ret;
+    return $ret . (" />" . text($desc));
 }
 
-function rbcell($name, $value, $desc, $colname)
+function rbcell($name, $value, $desc, $colname): string
 {
     return "<td width='25%' nowrap>" . rbinput($name, $value, $desc, $colname) . "</td>\n";
 }
 
-function cbinput($name, $colname)
+function cbinput($name, $colname): string
 {
     global $row;
     $ret  = "<input type='checkbox' name='" . attr($name) . "' value='1'";
     if ($row[$colname]) {
         $ret .= " checked";
     }
-
-    $ret .= " />";
-    return $ret;
+    return $ret . " />";
 }
 
-function cbcell($name, $desc, $colname)
+function cbcell($name, string $desc, $colname): string
 {
-    return "<td width='25%' nowrap>" . cbinput($name, $colname) . "$desc</td>\n";
+    return "<td width='25%' nowrap>" . cbinput($name, $colname) . ($desc . '</td>
+');
 }
 
 $formid = $_GET['id'];
@@ -208,10 +207,10 @@ if ($formid) {
   <td nowrap>Time</td>
   <td nowrap>
    <input type='text' name='time' size='5' title='Hour or hh:mm' value='<?php echo attr($siinjtime); ?>' />&nbsp;
-   <input type='radio' name='timeampm' value='am'<?php if ($siampm == 'am') {
+   <input type='radio' name='timeampm' value='am'<?php if ($siampm === 'am') {
         echo ' checked';
                                                  } ?> />am&nbsp;
-   <input type='radio' name='timeampm' value='pm'<?php if ($siampm == 'pm') {
+   <input type='radio' name='timeampm' value='pm'<?php if ($siampm === 'pm') {
         echo ' checked';
                                                  } ?> />pm&nbsp;
   </td>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package   OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022-2025 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\Dorn;
 
 use OpenEMR\Modules\Dorn\ConnectorApi;
@@ -25,7 +26,7 @@ class LabCompendiumInstall
         echo '<li>' . text($msg) . '</li>' . "\n";
     }
 
-    public static function install($labGuid)
+    public static function install($labGuid): void
     {
         $compendiumResponse = ConnectorApi::getCompendium($labGuid);
         if ($compendiumResponse->isSuccess && $compendiumResponse->compendium) {
@@ -38,6 +39,7 @@ class LabCompendiumInstall
                     LabCompendiumInstall::loadOrderableItem($item, $parentId, $lab_id);
                 }
             }
+
             ConnectorApi::setCompendiumLastUpdate($labGuid);
             self::echoLi("Compendium has been updated for lab: " . text($compendiumResponse->compendium->labName));
         } else {
@@ -54,8 +56,7 @@ class LabCompendiumInstall
             $sql = "SELECT * FROM procedure_type WHERE parent = ? AND lab_id = ? AND procedure_type = ? AND description = ?";
             $orderingTests = sqlQuery($sql, [$parentRecord["procedure_type_id"], $lab_id, "grp", "Ordering Tests"]);
             if ($orderingTests) {
-                $orderingTestsId = $orderingTests["procedure_type_id"];
-                return $orderingTestsId;
+                return $orderingTests["procedure_type_id"];
             }
         }
 
@@ -70,13 +71,12 @@ class LabCompendiumInstall
                 VALUES (?, ?, ?, ?, ?)";
 
         $sqlArr = array($id, $compendium->labName, $lab_id, 'grp', 'Ordering Tests');
-        $id = sqlInsert($sql, $sqlArr);
 
 
-        return $id;
+        return sqlInsert($sql, $sqlArr);
     }
 
-    public static function loadOrderableItem($item, $parentId, $lab_id)
+    public static function loadOrderableItem($item, $parentId, $lab_id): void
     {
         if (!$item->loinc) {
             $item->loinc = "";
@@ -100,23 +100,24 @@ class LabCompendiumInstall
         foreach ($item->components as $component) {
             LabCompendiumInstall::loadResult($component, $id, $lab_id);
         }
+
         $aoeCount = 1;
         foreach ($item->aoe as $aoe) {
             LabCompendiumInstall::loadAoe($aoe, $lab_id, $aoeCount, $item->code);
-            $aoeCount++;
+            ++$aoeCount;
         }
     }
 
-    public static function loadResult($component, $parentId, $lab_id)
+    public static function loadResult($component, $parentId, $lab_id): void
     {
         self::echoLi(xlt("Loading result"));
         $sql = "INSERT INTO procedure_type (parent, name, lab_id, procedure_type, procedure_code, standard_code) 
         VALUES (?, ?, ?, ?, ?, ?)";
         $sqlArr = array($parentId, $component->name, $lab_id, 'res', $component->code, $component->loinc);
-        $id = sqlInsert($sql, $sqlArr);
+        sqlInsert($sql, $sqlArr);
     }
 
-    public static function loadAoe($aoe, $lab_id, $aoeCount, $pcode)
+    public static function loadAoe($aoe, $lab_id, $aoeCount, $pcode): void
     {
         $fldtype = LabCompendiumInstall::getQuestionType($aoe->questionType);
         $qcode = $aoe->originalQuestionCode;
@@ -182,10 +183,11 @@ class LabCompendiumInstall
             $value = $answer . ":" . $answer;
             $returnValue .= ";" . $value;
         }
+
         return $returnValue;
     }
 
-    public static function getQuestionType($questionType)
+    public static function getQuestionType($questionType): string
     {
         /*
         text field = T
@@ -203,10 +205,11 @@ class LabCompendiumInstall
             case 'Multi-Select List':
                 return 'M';
         }
+
         return 'T';
     }
 
-    public static function uninstall($lab_id)
+    public static function uninstall($lab_id): void
     {
         sqlStatement("DELETE FROM procedure_type WHERE lab_id = ? AND (procedure_type = 'det' OR procedure_type = 'res') ", array($lab_id));
         // Mark everything else for the indicated lab as inactive.

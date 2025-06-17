@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,16 +27,12 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_form_nav_open($args = array())
+function smarty_function_pc_form_nav_open($args = array()): void
 {
     extract($args);
     unset($args);
     $viewtype = strtolower(pnVarCleanFromInput('viewtype'));
-    if (_SETTING_OPEN_NEW_WINDOW && $viewtype == 'details') {
-        $target = 'target="csCalendar"';
-    } else {
-        $target = '';
-    }
+    $target = _SETTING_OPEN_NEW_WINDOW && $viewtype === 'details' ? 'target="csCalendar"' : '';
 
     $fstart = '<form action="' . pnModURL(__POSTCALENDAR__, 'user', 'view') . '"'
             . ' method="post"'

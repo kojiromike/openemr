@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+    
+    /**
  * Used for adding dated reminders.
  *
  * @package   OpenEMR
@@ -11,8 +13,8 @@
  * @copyright Copyright (c) 2017-2018 Brady Miller <brady.g.miller@gmail.com>
  */
 
-    require_once("../../globals.php");
-    require_once("$srcdir/dated_reminder_functions.php");
+    require_once(__DIR__ . "/../../globals.php");
+    require_once($srcdir . '/dated_reminder_functions.php');
 
     use OpenEMR\Common\Acl\AclMain;
     use OpenEMR\Common\Csrf\CsrfUtils;
@@ -24,35 +26,33 @@
 /*
     -------------------  HANDLE POST ---------------------
 */
-if ($_GET) {
+if ($_GET !== []) {
     if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
 
-    if (!$isAdmin) {
-        if (empty($_GET['sentBy']) and empty($_GET['sentTo'])) {
-            $_GET['sentTo'] = array(intval($_SESSION['authUserID']));
-        }
+    if (!$isAdmin && (empty($_GET['sentBy']) && empty($_GET['sentTo']))) {
+        $_GET['sentTo'] = array(intval($_SESSION['authUserID']));
     }
 
     $remindersArray = array();
     $TempRemindersArray = logRemindersArray();
-    foreach ($TempRemindersArray as $RA) {
-        $remindersArray[$RA['messageID']]['messageID'] = $RA['messageID'];
-        $remindersArray[$RA['messageID']]['ToName'] = ((!empty($remindersArray[$RA['messageID']]['ToName'])) ? $remindersArray[$RA['messageID']]['ToName'] . ', ' . ($RA['ToName'] ?? '') : ($RA['ToName'] ?? ''));
-        $remindersArray[$RA['messageID']]['PatientName'] = $RA['PatientName'];
-        $remindersArray[$RA['messageID']]['message'] = $RA['message'];
-        $remindersArray[$RA['messageID']]['dDate'] = $RA['dDate'];
-        $remindersArray[$RA['messageID']]['sDate'] = $RA['sDate'];
-        $remindersArray[$RA['messageID']]['pDate'] = $RA['pDate'];
-        $remindersArray[$RA['messageID']]['processedByName'] = $RA['processedByName'];
-        $remindersArray[$RA['messageID']]['fromName'] = $RA['fromName'];
+    foreach ($TempRemindersArray as $TempReminderArray) {
+        $remindersArray[$TempReminderArray['messageID']]['messageID'] = $TempReminderArray['messageID'];
+        $remindersArray[$TempReminderArray['messageID']]['ToName'] = ((empty($remindersArray[$TempReminderArray['messageID']]['ToName'])) ? $TempReminderArray['ToName'] ?? '' : ($remindersArray[$TempReminderArray['messageID']]['ToName'] . ', ' . ($TempReminderArray['ToName'] ?? '')));
+        $remindersArray[$TempReminderArray['messageID']]['PatientName'] = $TempReminderArray['PatientName'];
+        $remindersArray[$TempReminderArray['messageID']]['message'] = $TempReminderArray['message'];
+        $remindersArray[$TempReminderArray['messageID']]['dDate'] = $TempReminderArray['dDate'];
+        $remindersArray[$TempReminderArray['messageID']]['sDate'] = $TempReminderArray['sDate'];
+        $remindersArray[$TempReminderArray['messageID']]['pDate'] = $TempReminderArray['pDate'];
+        $remindersArray[$TempReminderArray['messageID']]['processedByName'] = $TempReminderArray['processedByName'];
+        $remindersArray[$TempReminderArray['messageID']]['fromName'] = $TempReminderArray['fromName'];
     }
 
     echo '<div class="row">
             <div class="col-12 results-section mb-3">';
 
-    if (empty($remindersArray)) {
+    if ($remindersArray === []) {
         echo '<div class="alert alert-info text-center mt-3 mb-3">' . xlt('No Messages Found') . '</div>';
     } else {
         echo '<div class="card mt-3 mb-3">
@@ -77,17 +77,17 @@ if ($_GET) {
                             </thead>
                             <tbody>';
 
-        foreach ($remindersArray as $RA) {
+        foreach ($remindersArray as $reminderArray) {
             echo '<tr>
-                    <td>' . text($RA['messageID']) . '</td>
-                    <td>' . text(oeFormatDateTime($RA['sDate'])) . '</td>
-                    <td>' . text($RA['fromName']) . '</td>
-                    <td>' . text($RA['ToName']) . '</td>
-                    <td>' . text($RA['PatientName']) . '</td>
-                    <td>' . text($RA['message']) . '</td>
-                    <td>' . text(oeFormatShortDate($RA['dDate'])) . '</td>
-                    <td>' . text(oeFormatDateTime($RA['pDate'])) . '</td>
-                    <td>' . text($RA['processedByName']) . '</td>
+                    <td>' . text($reminderArray['messageID']) . '</td>
+                    <td>' . text(oeFormatDateTime($reminderArray['sDate'])) . '</td>
+                    <td>' . text($reminderArray['fromName']) . '</td>
+                    <td>' . text($reminderArray['ToName']) . '</td>
+                    <td>' . text($reminderArray['PatientName']) . '</td>
+                    <td>' . text($reminderArray['message']) . '</td>
+                    <td>' . text(oeFormatShortDate($reminderArray['dDate'])) . '</td>
+                    <td>' . text(oeFormatDateTime($reminderArray['pDate'])) . '</td>
+                    <td>' . text($reminderArray['processedByName']) . '</td>
                 </tr>';
         }
 
@@ -143,7 +143,7 @@ if ($_GET) {
         <?php
         $allUsers = array();
         $uSQL = sqlStatement('SELECT id, fname, mname, lname FROM `users` WHERE `active` = 1 AND `facility_id` > 0 AND id != ?', array(intval($_SESSION['authUserID'])));
-        for ($i = 0; $uRow = sqlFetchArray($uSQL); $i++) {
+        for ($i = 0; $uRow = sqlFetchArray($uSQL); ++$i) {
             $allUsers[] = $uRow;
         }
         ?>
@@ -189,8 +189,8 @@ if ($_GET) {
                                         <option value="<?php echo attr(intval($_SESSION['authUserID'])); ?>"><?php echo xlt('Myself') ?></option>
                                         <?php
                                         if ($isAdmin) {
-                                            foreach ($allUsers as $user) {
-                                                echo '<option value="' . attr($user['id']) . '">' . text($user['fname'] . ' ' . $user['mname'] . ' ' . $user['lname']) . '</option>';
+                                            foreach ($allUsers as $allUser) {
+                                                echo '<option value="' . attr($allUser['id']) . '">' . text($allUser['fname'] . ' ' . $allUser['mname'] . ' ' . $allUser['lname']) . '</option>';
                                             }
                                         }
                                         ?>
@@ -208,8 +208,8 @@ if ($_GET) {
                                         <option value="<?php echo attr(intval($_SESSION['authUserID'])); ?>"><?php echo xlt('Myself') ?></option>
                                         <?php
                                         if ($isAdmin) {
-                                            foreach ($allUsers as $user) {
-                                                echo '<option value="' . attr($user['id']) . '">' . text($user['fname'] . ' ' . $user['mname'] . ' ' . $user['lname']) . '</option>';
+                                            foreach ($allUsers as $allUser) {
+                                                echo '<option value="' . attr($allUser['id']) . '">' . text($allUser['fname'] . ' ' . $allUser['mname'] . ' ' . $allUser['lname']) . '</option>';
                                             }
                                         }
                                         ?>

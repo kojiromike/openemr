@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,7 +27,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_popup($args)
+function smarty_function_pc_popup($args): void
 {
     // if we're not using popups just return an empty string
     if (!_SETTING_USE_POPUPS) {
@@ -42,7 +44,7 @@ function smarty_function_pc_popup($args)
         $trigger = "onMouseOver";
     }
 
-    echo $trigger . '="return overlib(\'' . pc_clean($text) . '\'';
+    echo $trigger . '="return overlib(\'' . pc_clean($text) . "'";
     if ($sticky) {
         echo ",STICKY";
     }
@@ -52,55 +54,55 @@ function smarty_function_pc_popup($args)
     }
 
     if (!empty($fgcolor)) {
-        echo ",FGCOLOR,'$fgcolor'";
+        echo sprintf(",FGCOLOR,'%s'", $fgcolor);
     }
 
     if (!empty($bgcolor)) {
-        echo ",BGCOLOR,'$bgcolor'";
+        echo sprintf(",BGCOLOR,'%s'", $bgcolor);
     }
 
     if (!empty($textcolor)) {
-        echo ",TEXTCOLOR,'$textcolor'";
+        echo sprintf(",TEXTCOLOR,'%s'", $textcolor);
     }
 
     if (!empty($capcolor)) {
-        echo ",CAPCOLOR,'$capcolor'";
+        echo sprintf(",CAPCOLOR,'%s'", $capcolor);
     }
 
     if (!empty($closecolor)) {
-        echo ",CLOSECOLOR,'$closecolor'";
+        echo sprintf(",CLOSECOLOR,'%s'", $closecolor);
     }
 
     if (!empty($textfont)) {
-        echo ",TEXTFONT,'$textfont'";
+        echo sprintf(",TEXTFONT,'%s'", $textfont);
     }
 
     if (!empty($captionfont)) {
-        echo ",CAPTIONFONT,'$captionfont'";
+        echo sprintf(",CAPTIONFONT,'%s'", $captionfont);
     }
 
     if (!empty($closefont)) {
-        echo ",CLOSEFONT,'$closefont'";
+        echo sprintf(",CLOSEFONT,'%s'", $closefont);
     }
 
     if (!empty($textsize)) {
-        echo ",TEXTSIZE,$textsize";
+        echo ',TEXTSIZE,' . $textsize;
     }
 
     if (!empty($captionsize)) {
-        echo ",CAPTIONSIZE,$captionsize";
+        echo ',CAPTIONSIZE,' . $captionsize;
     }
 
     if (!empty($closesize)) {
-        echo ",CLOSESIZE,$closesize";
+        echo ',CLOSESIZE,' . $closesize;
     }
 
     if (!empty($width)) {
-        echo ",WIDTH,$width";
+        echo ',WIDTH,' . $width;
     }
 
     if (!empty($height)) {
-        echo ",HEIGHT,$height";
+        echo ',HEIGHT,' . $height;
     }
 
     if (!empty($left)) {
@@ -124,23 +126,23 @@ function smarty_function_pc_popup($args)
     }
 
     if (isset($border)) {
-        echo ",BORDER,$border";
+        echo ',BORDER,' . $border;
     }
 
     if (isset($offsetx)) {
-        echo ",OFFSETX,$offsetx";
+        echo ',OFFSETX,' . $offsetx;
     }
 
     if (isset($offsety)) {
-        echo ",OFFSETY,$offsety";
+        echo ',OFFSETY,' . $offsety;
     }
 
     if (!empty($fgbackground)) {
-        echo ",FGBACKGROUND,'$fgbackground'";
+        echo sprintf(",FGBACKGROUND,'%s'", $fgbackground);
     }
 
     if (!empty($bgbackground)) {
-        echo ",BGBACKGROUND,'$bgbackground'";
+        echo sprintf(",BGBACKGROUND,'%s'", $bgbackground);
     }
 
     if (!empty($closetext)) {
@@ -164,43 +166,43 @@ function smarty_function_pc_popup($args)
     }
 
     if (isset($inarray)) {
-        echo ",INARRAY,'$inarray'";
+        echo sprintf(",INARRAY,'%s'", $inarray);
     }
 
     if (isset($caparray)) {
-        echo ",CAPARRAY,'$caparray'";
+        echo sprintf(",CAPARRAY,'%s'", $caparray);
     }
 
     if (!empty($capicon)) {
-        echo ",CAPICON,'$capicon'";
+        echo sprintf(",CAPICON,'%s'", $capicon);
     }
 
     if (!empty($snapx)) {
-        echo ",SNAPX,$snapx";
+        echo ',SNAPX,' . $snapx;
     }
 
     if (!empty($snapy)) {
-        echo ",SNAPY,$snapy";
+        echo ',SNAPY,' . $snapy;
     }
 
     if (isset($fixx)) {
-        echo ",FIXX,$fixx";
+        echo ',FIXX,' . $fixx;
     }
 
     if (isset($fixy)) {
-        echo ",FIXY,$fixy";
+        echo ',FIXY,' . $fixy;
     }
 
     if (!empty($background)) {
-        echo ",BACKGROUND,'$background'";
+        echo sprintf(",BACKGROUND,'%s'", $background);
     }
 
     if (!empty($padx)) {
-        echo ",PADX,$padx";
+        echo ',PADX,' . $padx;
     }
 
     if (!empty($pady)) {
-        echo ",PADY,$pady";
+        echo ',PADY,' . $pady;
     }
 
     if (!empty($fullhtml)) {
@@ -208,19 +210,19 @@ function smarty_function_pc_popup($args)
     }
 
     if (!empty($frame)) {
-        echo ",FRAME,'$frame'";
+        echo sprintf(",FRAME,'%s'", $frame);
     }
 
     if (isset($timeout)) {
-        echo ",TIMEOUT,$timeout";
+        echo ',TIMEOUT,' . $timeout;
     }
 
     if (!empty($function)) {
-        echo ",FUNCTION,'$function'";
+        echo sprintf(",FUNCTION,'%s'", $function);
     }
 
     if (isset($delay)) {
-        echo ",DELAY,$delay";
+        echo ',DELAY,' . $delay;
     }
 
     if (!empty($hauto)) {

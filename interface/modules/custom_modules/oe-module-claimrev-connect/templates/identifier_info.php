@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 if ($benefit->identifiers != null && $benefit->identifiers) {
     ?>
     <div class="row">
@@ -50,4 +51,3 @@ if ($benefit->identifiers != null && $benefit->identifiers) {
     </div>
     <?php
 }
-?>

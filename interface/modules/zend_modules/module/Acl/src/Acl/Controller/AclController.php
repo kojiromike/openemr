@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/modules/zend_modules/module/Acl/src/Acl/Controller/AclController.php
  *
@@ -10,7 +12,6 @@
  * @copyright Copyright (c) 2013 Z&H Consultancy Services Private Limited <sam@zhservices.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Acl\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -19,17 +20,15 @@ use Application\Listener\Listener;
 
 class AclController extends AbstractActionController
 {
-    /**
-     * @var \Acl\Model\AclTable
-     */
-    protected $aclTable;
+    protected \Acl\Model\AclTable $aclTable;
 
-    protected $listenerObject;
-    private $htmlEscaper;
+    protected \Application\Listener\Listener $listenerObject;
 
-    public function __construct(\Laminas\View\Helper\HelperInterface $htmlEscaper, \Acl\Model\AclTable $aclTable)
+    private \Laminas\View\Helper\HelperInterface $helper;
+
+    public function __construct(\Laminas\View\Helper\HelperInterface $helper, \Acl\Model\AclTable $aclTable)
     {
-        $this->htmlEscaper = $htmlEscaper;
+        $this->helper = $helper;
         // TODO: we should probably inject the Listener object as well so we can mock it in unit tests or at least make the dependency explicit.
         $this->listenerObject = new Listener();
         $this->aclTable = $aclTable;
@@ -58,31 +57,28 @@ class AclController extends AbstractActionController
         foreach ($result as $row) {
             $array_active_modules[$row['mod_id']] = $row['mod_name'];
         }
-
-        $index = new ViewModel(array(
-                        'user_group_main'       => $user_group_main,
-            'user_group_allowed'    => $user_group_allowed,
-            'user_group_denied'     => $user_group_denied,
-            'sections'              => $sections,
-            'component_id'          => "0-" . $module_id,
-            'module_id'             => $module_id,
-            'listenerObject'            => $this->listenerObject,
-            'active_modules'        => $array_active_modules,
-                ));
-                return $index;
+                return new ViewModel(array(
+                                'user_group_main'       => $user_group_main,
+                    'user_group_allowed'    => $user_group_allowed,
+                    'user_group_denied'     => $user_group_denied,
+                    'sections'              => $sections,
+                    'component_id'          => "0-" . $module_id,
+                    'module_id'             => $module_id,
+                    'listenerObject'            => $this->listenerObject,
+                    'active_modules'        => $array_active_modules,
+                        ));
     }
 
-    public function acltabAction()
+    public function acltabAction(): \Laminas\View\Model\ViewModel
     {
         $module_id = $this->params()->fromQuery('module_id');
         $this->layout('layout/layout_tabs');
-        $index = new ViewModel(array(
-            'mod_id' => $module_id,
-                ));
-                return $index;
+                return new ViewModel(array(
+                    'mod_id' => $module_id,
+                        ));
     }
 
-    public function aclAction()
+    public function aclAction(): \Laminas\View\Model\ViewModel
     {
         $module_id = $this->params()->fromQuery('module_id');
         $data = $this->getAclTable()->getGroups();
@@ -113,10 +109,9 @@ class AclController extends AbstractActionController
                 $saved_ACL[$row['section_id']] = array();
             }
 
-            array_push($saved_ACL[$row['section_id']], $row['group_id']);
+            $saved_ACL[$row['section_id']][] = $row['group_id'];
         }
-
-        $acl_view = new ViewModel(
+        return new ViewModel(
             array(
                                         'user_groups'  => $user_groups,
                                         'listenerObject' => $this->listenerObject,
@@ -125,10 +120,9 @@ class AclController extends AbstractActionController
                                         'acl_data'     => $saved_ACL
                                     )
         );
-        return $acl_view;
     }
 
-    public function ajaxAction()
+    public function ajaxAction(): void
     {
         $ajax_mode  = $this->getRequest()->getPost('ajax_mode', null);
         if ($ajax_mode == "save_acl") {
@@ -190,22 +184,22 @@ class AclController extends AbstractActionController
                         $array_users_allowed[$row['group_id']] = array();
                     }
 
-                    array_push($array_users_allowed[$row['group_id']], $row['user_id']);
+                    $array_users_allowed[$row['group_id']][] = $row['user_id'];
                 } else {
                     if (!$array_users_denied[$row['group_id']]) {
                         $array_users_denied[$row['group_id']] = array();
                     }
 
-                    array_push($array_users_denied[$row['group_id']], $row['user_id']);
+                    $array_users_denied[$row['group_id']][] = $row['user_id'];
                 }
             }
 
                         $res_group   = $this->getAclTable()->getAclDataGroups($selected_componet_arr[1]);
-            foreach ($res_group as $row) {
-                if ($row['allowed'] == 1) {
-                    array_push($array_groups_allowed, $row['group_id']);
+            foreach ($res_group as $re_group) {
+                if ($re_group['allowed'] == 1) {
+                    $array_groups_allowed[] = $re_group['group_id'];
                 } else {
-                    array_push($array_groups_denied, $row['group_id']);
+                    $array_groups_denied[] = $re_group['group_id'];
                 }
             }
 
@@ -221,16 +215,16 @@ class AclController extends AbstractActionController
                         $this->getAclTable()->deleteModuleGroupACL($module_id);
 
             foreach ($ACL_DATA['allowed'] as $section_id => $sections) {
-                foreach ($sections as $group_id) {
+                foreach ($sections as $section) {
                                         $this->getAclTable()->deleteUserACL($module_id, $section_id);
-                                        $this->getAclTable()->insertGroupACL($module_id, $group_id, $section_id, 1);
+                                        $this->getAclTable()->insertGroupACL($module_id, $section, $section_id, 1);
                 }
             }
 
             foreach ($ACL_DATA['denied'] as $section_id => $sections) {
-                foreach ($sections as $group_id) {
+                foreach ($sections as $section) {
                                         $this->getAclTable()->deleteUserACL($module_id, $section_id);
-                    $this->getAclTable()->insertGroupACL($module_id, $group_id, $section_id, 0);
+                    $this->getAclTable()->insertGroupACL($module_id, $section, $section_id, 0);
                 }
             }
         } elseif ($ajax_mode == "get_sections_by_module") {
@@ -269,10 +263,10 @@ class AclController extends AbstractActionController
      * @param String $prevLevel Prev Depth of Tree
      *
      **/
-    private function createTreeView($array, $currentParent, $currLevel = 0, $prevLevel = -1)
+    private function createTreeView($array, $currentParent, int|float $currLevel = 0, $prevLevel = -1): void
     {
       /** Html Escape Function */
-        $escapeHtml         = $this->htmlEscaper;
+        $escapeHtml         = $this->helper;
 
         foreach ($array as $categoryId => $category) {
             if ($category['name'] == '') {
@@ -294,9 +288,9 @@ class AclController extends AbstractActionController
                     $prevLevel = $currLevel;
                 }
 
-                $currLevel++;
+                ++$currLevel;
                 $this->createTreeView($array, $categoryId, $currLevel, $prevLevel);
-                $currLevel--;
+                --$currLevel;
             }
         }
 
@@ -314,27 +308,27 @@ class AclController extends AbstractActionController
      * @param String $li_class <li> Class Name
      *
      **/
-    private function createUserGroups($id = "user_group_", $visibility = "", $dragabble = "draggable", $li_class = "")
+    private function createUserGroups(string $id = "user_group_", string $visibility = "", string $dragabble = "draggable", string $li_class = ""): string
     {
         /** Html Escape Function */
-        $escapeHtml         = $this->htmlEscaper;
+        $escapeHtml         = $this->helper;
 
         $output_string = "";
         $res_users = $this->getAclTable()->aclUserGroupMapping();
 
         $tempList  = array();
-        foreach ($res_users as $row) {
-            $tempList[$row['group_id']]['group_name'] = $row['group_name'];
-            $tempList[$row['group_id']]['group_id'] = $row['group_id'];
-            $tempList[$row['group_id']]['items'][] = $row;
+        foreach ($res_users as $re_user) {
+            $tempList[$re_user['group_id']]['group_name'] = $re_user['group_name'];
+            $tempList[$re_user['group_id']]['group_id'] = $re_user['group_id'];
+            $tempList[$re_user['group_id']]['items'][] = $re_user;
         }
 
         $output_string .= '<ul>';
-        foreach ($tempList as $groupID => $tempListRow) {
+        foreach ($tempList as $tempListRow) {
             $output_string .= '<li ' . $li_class . ' id="li_' . $id . $tempListRow['group_id'] . '-0" style="' . $visibility . '"><div class="' . $escapeHtml($dragabble) . '" id="' . $id . $tempListRow['group_id'] . '-0" >' . $escapeHtml($tempListRow['group_name']) . '</div>';
-            if (!empty($tempListRow['items'])) {
+            if (isset($tempListRow['items']) && $tempListRow['items'] !== []) {
                 $output_string .= '<ul>';
-                foreach ($tempListRow['items'] as $key => $itemRow) {
+                foreach ($tempListRow['items'] as $itemRow) {
                      $output_string .= '<li ' . $li_class . ' id="li_' . $id . $itemRow['group_id'] . '-' . $itemRow['user_id'] . '" style="' . $visibility . '"><div class="' . $escapeHtml($dragabble) . '" id="' . $id . $itemRow['group_id'] . '-' . $itemRow['user_id'] . '">' . $escapeHtml($itemRow['display_name']) . '</div></li>';
                 }
 
@@ -343,9 +337,7 @@ class AclController extends AbstractActionController
 
             $output_string .= '</li>';
         }
-
-        $output_string .= '</ul>';
-        return $output_string;
+        return $output_string . '</ul>';
     }
 
     /**

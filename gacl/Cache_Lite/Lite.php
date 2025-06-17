@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
 * Fast, light and safe Cache Class
 *
@@ -32,6 +34,7 @@ define('CACHE_LITE_ERROR_DIE', 8);
 class Cache_Lite
 {
 
+    public $_memoryCachingState;
     // --- Private properties ---
 
     /**
@@ -40,7 +43,7 @@ class Cache_Lite
     *
     * @var string $_cacheDir
     */
-    var $_cacheDir = '/tmp/';
+    public $_cacheDir = '/tmp/';
 
     /**
     * Enable / disable caching
@@ -49,14 +52,14 @@ class Cache_Lite
     *
     * @var boolean $_caching
     */
-    var $_caching = true;
+    public $_caching = true;
 
     /**
     * Cache lifetime (in seconds)
     *
     * @var int $_lifeTime
     */
-    var $_lifeTime = 3600;
+    public $_lifeTime = 3600;
 
     /**
     * Enable / disable fileLocking
@@ -65,21 +68,21 @@ class Cache_Lite
     *
     * @var boolean $_fileLocking
     */
-    var $_fileLocking = true;
+    public $_fileLocking = true;
 
     /**
     * Timestamp of the last valid cache
     *
     * @var int $_refreshTime
     */
-    var $_refreshTime;
+    public $_refreshTime;
 
     /**
     * File name (with path)
     *
     * @var string $_file
     */
-    var $_file;
+    public $_file;
 
     /**
     * Enable / disable write control (the cache is read just after writing to detect corrupt entries)
@@ -89,7 +92,7 @@ class Cache_Lite
     *
     * @var boolean $_writeControl
     */
-    var $_writeControl = true;
+    public $_writeControl = true;
 
     /**
     * Enable / disable read control
@@ -99,7 +102,7 @@ class Cache_Lite
     *
     * @var boolean $_writeControl
     */
-    var $_readControl = true;
+    public $_readControl = true;
 
     /**
     * Type of read control (only if read control is enabled)
@@ -111,7 +114,7 @@ class Cache_Lite
     *
     * @var boolean $_readControlType
     */
-    var $_readControlType = 'crc32';
+    public $_readControlType = 'crc32';
 
     /**
     * Pear error mode (when raiseError is called)
@@ -121,21 +124,21 @@ class Cache_Lite
     * @see setToDebug()
     * @var int $_pearErrorMode
     */
-    var $_pearErrorMode = CACHE_LITE_ERROR_RETURN;
+    public $_pearErrorMode = CACHE_LITE_ERROR_RETURN;
 
     /**
     * Current cache id
     *
     * @var string $_id
     */
-    var $_id;
+    public $_id;
 
     /**
     * Current cache group
     *
     * @var string $_group
     */
-    var $_group;
+    public $_group;
 
     /**
     * Enable / Disable "Memory Caching"
@@ -144,7 +147,7 @@ class Cache_Lite
     *
     * @var boolean $_memoryCaching
     */
-    var $_memoryCaching = false;
+    public $_memoryCaching = false;
 
     /**
     * Enable / Disable "Only Memory Caching"
@@ -152,28 +155,28 @@ class Cache_Lite
     *
     * @var boolean $_onlyMemoryCaching
     */
-    var $_onlyMemoryCaching = false;
+    public $_onlyMemoryCaching = false;
 
     /**
     * Memory caching array
     *
     * @var array $_memoryCachingArray
     */
-    var $_memoryCachingArray = array();
+    public $_memoryCachingArray = array();
 
     /**
     * Memory caching counter
     *
     * @var int $memoryCachingCounter
     */
-    var $_memoryCachingCounter = 0;
+    public $_memoryCachingCounter = 0;
 
     /**
     * Memory caching limit
     *
     * @var int $memoryCachingLimit
     */
-    var $_memoryCachingLimit = 1000;
+    public $_memoryCachingLimit = 1000;
 
     /**
     * File Name protection
@@ -185,7 +188,7 @@ class Cache_Lite
     *
     * @var boolean $fileNameProtection
     */
-    var $_fileNameProtection = true;
+    public $_fileNameProtection = true;
 
     /**
     * Enable / disable automatic serialization
@@ -195,7 +198,7 @@ class Cache_Lite
     *
     * @var boolean $_serialize
     */
-    var $_automaticSerialization = false;
+    public $_automaticSerialization = false;
 
     // --- Public methods ---
 
@@ -222,7 +225,7 @@ class Cache_Lite
     * @param array $options options
     * @access public
     */
-    function __construct($options = array(NULL))
+    public function __construct($options = array(NULL))
     {
         $availableOptions = array('automaticSerialization', 'fileNameProtection', 'memoryCaching', 'onlyMemoryCaching', 'memoryCachingLimit', 'cacheDir', 'caching', 'lifeTime', 'fileLocking', 'writeControl', 'readControl', 'readControlType', 'pearErrorMode');
         foreach($options as $key => $value) {
@@ -231,6 +234,7 @@ class Cache_Lite
                 $this->$property = $value;
             }
         }
+
         $this->_refreshTime = time() - $this->_lifeTime;
     }
 
@@ -243,7 +247,7 @@ class Cache_Lite
     * @return string data of the cache (or false if no cache available)
     * @access public
     */
-    function get($id, $group = 'default', $doNotTestCacheValidity = false)
+    public function get($id, $group = 'default', $doNotTestCacheValidity = false)
     {
         $this->_id = $id;
         $this->_group = $group;
@@ -257,29 +261,30 @@ class Cache_Lite
                     } else {
                         return $this->_memoryCachingArray[$this->_file];
                     }
-                } else {
-                    if ($this->_onlyMemoryCaching) {
-                        return false;
-                    }
+                } elseif ($this->_onlyMemoryCaching) {
+                    return false;
                 }
             }
+
             if ($doNotTestCacheValidity) {
                 if (file_exists($this->_file)) {
                     $data = $this->_read();
                 }
-            } else {
-                if ((file_exists($this->_file)) && (@filemtime($this->_file) > $this->_refreshTime)) {
-                    $data = $this->_read();
-                }
+            } elseif ((file_exists($this->_file)) && (@filemtime($this->_file) > $this->_refreshTime)) {
+                $data = $this->_read();
             }
-            if (($data) and ($this->_memoryCaching)) {
+
+            if ($data && $this->_memoryCaching) {
                 $this->_memoryCacheAdd($this->_file, $data);
             }
-            if (($this->_automaticSerialization) and (is_string($data))) {
+
+            if ($this->_automaticSerialization && is_string($data)) {
                 $data = unserialize($data);
             }
+
             return $data;
         }
+
         return false;
     }
 
@@ -292,21 +297,24 @@ class Cache_Lite
     * @return boolean true if no problem
     * @access public
     */
-    function save($data, $id = NULL, $group = 'default')
+    public function save($data, $id = NULL, $group = 'default')
     {
         if ($this->_caching) {
             if ($this->_automaticSerialization) {
                 $data = serialize($data);
             }
+
             if (isset($id)) {
                 $this->_setFileName($id, $group);
             }
+
             if ($this->_memoryCaching) {
                 $this->_memoryCacheAdd($this->_file, $data);
                 if ($this->_onlyMemoryCaching) {
                     return true;
                 }
             }
+
             if ($this->_writeControl) {
                 if (!$this->_writeAndControl($data)) {
                     @touch($this->_file, time() - 2*abs($this->_lifeTime));
@@ -318,6 +326,7 @@ class Cache_Lite
                 return $this->_write($data);
             }
         }
+
         return false;
     }
 
@@ -329,22 +338,25 @@ class Cache_Lite
     * @return boolean true if no problem
     * @access public
     */
-    function remove($id, $group = 'default')
+    public function remove($id, $group = 'default'): bool
     {
         $this->_setFileName($id, $group);
         if ($this->_memoryCaching) {
             if (isset($this->_memoryCachingArray[$this->_file])) {
                 unset($this->_memoryCachingArray[$this->_file]);
-                $this->_memoryCachingCounter = $this->_memoryCachingCounter - 1;
+                $this->_memoryCachingCounter -= 1;
             }
+
             if ($this->_onlyMemoryCaching) {
                 return true;
             }
         }
+
         if (!@unlink($this->_file)) {
             $this->raiseError('Cache_Lite : Unable to remove cache !', -3);
             return false;
         }
+
         return true;
     }
 
@@ -358,41 +370,44 @@ class Cache_Lite
     * @return boolean true if no problem
     * @access public
     */
-    function clean($group = false)
+    public function clean($group = false): bool
     {
         if ($this->_fileNameProtection) {
             $motif = ($group) ? 'cache_'.md5($group).'_' : 'cache_';
         } else {
             $motif = ($group) ? 'cache_'.$group.'_' : 'cache_';
         }
+
         if ($this->_memoryCaching) {
             foreach ($this->_memoryCachingArray as $key => $value) {
                 if (strpos($key, $motif, 0)) {
                     unset($this->_memoryCachingArray[$key]);
-                    $this->_memoryCachingCounter = $this->_memoryCachingCounter - 1;
+                    $this->_memoryCachingCounter -= 1;
                 }
             }
+
             if ($this->_onlyMemoryCaching) {
                 return true;
             }
         }
+
         if (!($dh = opendir($this->_cacheDir))) {
             $this->raiseError('Cache_Lite : Unable to open cache directory !', -4);
             return false;
         }
+
         while ($file = readdir($dh)) {
-            if (($file != '.') && ($file != '..')) {
+            if (($file !== '.') && ($file !== '..')) {
                 $file = $this->_cacheDir . $file;
-                if (is_file($file)) {
-                    if (strpos($file, $motif, 0)) {
-                        if (!@unlink($file)) {
-                            $this->raiseError('Cache_Lite : Unable to remove cache !', -3);
-                            return false;
-                        }
+                if (is_file($file) && strpos($file, $motif, 0)) {
+                    if (!@unlink($file)) {
+                        $this->raiseError('Cache_Lite : Unable to remove cache !', -3);
+                        return false;
                     }
                 }
             }
         }
+
         return true;
     }
 
@@ -404,7 +419,7 @@ class Cache_Lite
     *
     * @access public
     */
-    function setToDebug()
+    public function setToDebug(): void
     {
         $this->_pearErrorMode = CACHE_LITE_ERROR_DIE;
     }
@@ -415,7 +430,7 @@ class Cache_Lite
     * @param int $newLifeTime new life time (in seconds)
     * @access public
     */
-    function setLifeTime($newLifeTime)
+    public function setLifeTime($newLifeTime): void
     {
         $this->_lifeTime = $newLifeTime;
         $this->_refreshTime = time() - $newLifeTime;
@@ -425,7 +440,7 @@ class Cache_Lite
     *
     * @access public
     */
-    function saveMemoryCachingState($id, $group = 'default')
+    public function saveMemoryCachingState($id, $group = 'default'): void
     {
         if ($this->_caching) {
             $array = array(
@@ -441,14 +456,12 @@ class Cache_Lite
     *
     * @access public
     */
-    function getMemoryCachingState($id, $group = 'default', $doNotTestCacheValidity = false)
+    public function getMemoryCachingState($id, $group = 'default', $doNotTestCacheValidity = false): void
     {
-        if ($this->_caching) {
-            if ($data = $this->get($id, $group, $doNotTestCacheValidity)) {
-                $array = unserialize($data);
-                $this->_memoryCachingCounter = $array['counter'];
-                $this->_memoryCachingArray = $array['array'];
-            }
+        if ($this->_caching && $data = $this->get($id, $group, $doNotTestCacheValidity)) {
+            $array = unserialize($data);
+            $this->_memoryCachingCounter = $array['counter'];
+            $this->_memoryCachingArray = $array['array'];
         }
     }
 
@@ -459,7 +472,7 @@ class Cache_Lite
     *
     * @return int last modification time
     */
-    function lastModified() {
+    public function lastModified(): int|false {
         return filemtime($this->_file);
     }
 
@@ -474,9 +487,9 @@ class Cache_Lite
     * @param int $code error code
     * @access public
     */
-    function raiseError($msg, $code)
+    public function raiseError($msg, $code): void
     {
-        include_once('PEAR.php');
+        include_once(__DIR__ . '/PEAR.php');
         PEAR::raiseError($msg, $code, $this->_pearErrorMode);
     }
 
@@ -486,7 +499,7 @@ class Cache_Lite
     *
     * @access private
     */
-    function _memoryCacheAdd($id, $data)
+    public function _memoryCacheAdd($id, $data): void
     {
         $this->_memoryCachingArray[$this->_file] = $data;
         if ($this->_memoryCachingCounter >= $this->_memoryCachingLimit) {
@@ -494,7 +507,7 @@ class Cache_Lite
                 unset($this->_memoryCachingArray[$key]);
             }
         } else {
-            $this->_memoryCachingCounter = $this->_memoryCachingCounter + 1;
+            $this->_memoryCachingCounter += 1;
         }
     }
 
@@ -505,7 +518,7 @@ class Cache_Lite
     * @param string $group name of the group
     * @access private
     */
-    function _setFileName($id, $group)
+    public function _setFileName(string $id, string $group): void
     {
         if ($this->_fileNameProtection) {
             $this->_file = ($this->_cacheDir.'cache_'.md5($group).'_'.md5($id));
@@ -520,10 +533,13 @@ class Cache_Lite
     * @return string content of the cache file
     * @access private
     */
-    function _read()
+    public function _read(): false|string
     {
         $fp = @fopen($this->_file, "rb");
-        if ($this->_fileLocking) @flock($fp, LOCK_SH);
+        if ($this->_fileLocking) {
+            @flock($fp, LOCK_SH);
+        }
+
         if ($fp) {
             clearstatcache(); // because the filesize can be cached by PHP itself...
             $length = @filesize($this->_file);
@@ -531,11 +547,15 @@ class Cache_Lite
             set_magic_quotes_runtime(0);
             if ($this->_readControl) {
                 $hashControl = @fread($fp, 32);
-                $length = $length - 32;
+                $length -= 32;
             }
+
             $data = @fread($fp, $length);
             set_magic_quotes_runtime($mqr);
-            if ($this->_fileLocking) @flock($fp, LOCK_UN);
+            if ($this->_fileLocking) {
+                @flock($fp, LOCK_UN);
+            }
+
             @fclose($fp);
             if ($this->_readControl) {
                 $hashData = $this->_hash($data, $this->_readControlType);
@@ -544,8 +564,10 @@ class Cache_Lite
                     return false;
                 }
             }
+
             return $data;
         }
+
         $this->raiseError('Cache_Lite : Unable to read cache !', -2);
         return false;
     }
@@ -557,20 +579,28 @@ class Cache_Lite
     * @return boolean true if ok
     * @access private
     */
-    function _write($data)
+    public function _write($data): bool
     {
         $fp = @fopen($this->_file, "wb");
         if ($fp) {
-            if ($this->_fileLocking) @flock($fp, LOCK_EX);
+            if ($this->_fileLocking) {
+                @flock($fp, LOCK_EX);
+            }
+
             if ($this->_readControl) {
                 @fwrite($fp, $this->_hash($data, $this->_readControlType), 32);
             }
+
             $len = strlen($data);
             @fwrite($fp, $data, $len);
-            if ($this->_fileLocking) @flock($fp, LOCK_UN);
+            if ($this->_fileLocking) {
+                @flock($fp, LOCK_UN);
+            }
+
             @fclose($fp);
             return true;
         }
+
         $this->raiseError('Cache_Lite : Unable to write cache !', -1);
         return false;
     }
@@ -582,10 +612,10 @@ class Cache_Lite
     * @return boolean true if the test is ok
     * @access private
     */
-    function _writeAndControl($data)
+    public function _writeAndControl($data): bool
     {
         $this->_write($data);
-        $dataRead = $this->_read($data);
+        $dataRead = $this->_read();
         return ($dataRead==$data);
     }
 
@@ -597,7 +627,7 @@ class Cache_Lite
     * @return string control key
     * @access private
     */
-    function _hash($data, $controlType)
+    public function _hash($data, $controlType): ?string
     {
         switch ($controlType) {
         case 'md5':
@@ -607,8 +637,9 @@ class Cache_Lite
         case 'strlen':
             return sprintf('% 32d', strlen($data));
         default:
-            $this->raiseError('Unknown controlType ! (available values are only \'md5\', \'crc32\', \'strlen\')', -5);
+            $this->raiseError("Unknown controlType ! (available values are only 'md5', 'crc32', 'strlen')", -5);
         }
+        return null;
     }
 
 }

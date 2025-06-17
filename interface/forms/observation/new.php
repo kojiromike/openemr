@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Functional cognitive status form.
  *
@@ -14,9 +16,9 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -26,18 +28,18 @@ use OpenEMR\Core\Header;
 $returnurl = 'encounter_top.php';
 $formid = (int)(isset($_GET['id']) ? $_GET['id'] : 0);
 
-if ($formid) {
+if ($formid !== 0) {
     $sql = "SELECT * FROM `form_observation` WHERE id=? AND pid = ? AND encounter = ?";
     $res = sqlStatement($sql, array($formid, $_SESSION["pid"], $_SESSION["encounter"]));
 
     $all = [];
-    for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+    for ($iter = 0; $row = sqlFetchArray($res); ++$iter) {
         $all[$iter] = $row;
     }
     $check_res = $all;
 }
 
-$check_res = $formid ? $check_res : array();
+$check_res = $formid !== 0 ? $check_res : array();
 
 $reasonCodeStatii = ReasonStatusCodes::getCodesWithDescriptions();
 $reasonCodeStatii[ReasonStatusCodes::NONE]['description'] = xl("Select a status code");
@@ -137,7 +139,7 @@ while ($type = sqlFetchArray($res)) {
                                                     $style = 'display: block';
                                                 }
                                                 ?>
-                                                <label id="ob_unit_head_<?php echo attr($key) + 1; ?>" class="ob_unit_head h5" <?php echo (!$obj["ob_value"]) ? 'style="display: block;"' : ''; ?>><?php echo xlt('Units'); ?>:</label>
+                                                <label id="ob_unit_head_<?php echo attr($key) + 1; ?>" class="ob_unit_head h5" <?php echo ($obj["ob_value"]) ? '' : 'style="display: block;"'; ?>><?php echo xlt('Units'); ?>:</label>
                                                 <?php if ($obj["code"] == '21612-7') { ?>
                                                     <select name="ob_unit[]" id="ob_unit_<?php echo attr($key) + 1; ?>" class="ob_unit">
                                                         <option value="d" <?php echo ($obj["ob_unit"] == 'd') ? 'selected = "selected"' : ''; ?>><?php echo xlt('Day'); ?></option>
@@ -163,10 +165,10 @@ while ($type = sqlFetchArray($res)) {
                                                 <textarea name="comments[]" id="comments_<?php echo attr($key) + 1; ?>" class="form-control comments" rows="3"><?php echo text($obj["observation"]); ?></textarea>
                                             </div>
                                             <div class="forms col-md-2">
-                                                <?php include "templates/observation_actions.php"; ?>
+                                                <?php include __DIR__ . "/templates/observation_actions.php"; ?>
                                             </div>
                                         </div>
-                                        <?php include "templates/observation_reason_row.php"; ?>
+                                        <?php include __DIR__ . "/templates/observation_reason_row.php"; ?>
                                     </div>
                                     <?php
                                 }
@@ -251,10 +253,10 @@ while ($type = sqlFetchArray($res)) {
                                             <textarea name="comments[]" id="comments_1" class="form-control comments" rows="3"><?php echo text($obj["observation"] ?? ''); ?></textarea>
                                         </div>
                                         <div class="forms col-md-2">
-                                            <?php include "templates/observation_actions.php"; ?>
+                                            <?php include __DIR__ . "/templates/observation_actions.php"; ?>
                                         </div>
                                     </div>
-                                    <?php include "templates/observation_reason_row.php"; ?>
+                                    <?php include __DIR__ . "/templates/observation_reason_row.php"; ?>
                                 </div>
                                 <?php
                             }

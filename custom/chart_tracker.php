@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * The Chart Tracker feature facilitates the old traditional paper charts updates.
  * This feature requires a new list:
@@ -17,8 +19,8 @@
  * @Copyright (C) 2017 Roberto Vasquez <robertogagliotta@gmail.com>
  */
 
-require_once("../interface/globals.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../interface/globals.php");
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -30,7 +32,7 @@ $form_curid   = isset($_POST['form_curid'  ]) ? trim($_POST['form_curid'  ]) : '
 $form_newloc  = isset($_POST['form_newloc' ]) ? trim($_POST['form_newloc' ]) : '';
 $form_newuser = isset($_POST['form_newuser']) ? trim($_POST['form_newuser']) : '';
 
-if ($form_newuser) {
+if ($form_newuser !== '' && $form_newuser !== '0') {
     $form_newloc = '';
 } else {
     $form_newuser = 0;
@@ -89,7 +91,7 @@ if ($form_newloc || $form_newuser) {
 
 $row = array();
 
-if ($form_newid) {
+if ($form_newid !== '' && $form_newid !== '0') {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
@@ -170,9 +172,9 @@ if (!empty($row)) {
                         <?php
                         $users = $userService->getActiveUsers();
 
-                        foreach ($users as $activeUser) {
-                            echo "    <option value='" . attr($activeUser['id']) . "'";
-                            echo ">" . text($activeUser['lname']) . ', ' . text($activeUser['fname']) . ' ' . text($activeUser['mname']) .
+                        foreach ($users as $user) {
+                            echo "    <option value='" . attr($user['id']) . "'";
+                            echo ">" . text($user['lname']) . ', ' . text($user['fname']) . ' ' . text($user['mname']) .
                             "</option>\n";
                         }
                         ?>

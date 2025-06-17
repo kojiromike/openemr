@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file presents the PMSFH control panel.
  * It uses ajax/javascript to add, delete or edit an issue.
@@ -20,7 +22,7 @@
 /* TODO: Code cleanup */
 
 $form_folder = "eye_mag";
-require_once('../../globals.php');
+require_once(__DIR__ . '/../../globals.php');
 require_once($GLOBALS['srcdir'] . '/lists.inc.php');
 require_once($GLOBALS['srcdir'] . '/patient.inc.php');
 require_once($GLOBALS['srcdir'] . '/options.inc.php');
@@ -42,7 +44,7 @@ $encounter = 0 + (empty($_REQUEST['encounter']) ? $_SESSION['encounter'] : $_REQ
 $issue = $_REQUEST['issue'] ?? '';
 $deletion = $_REQUEST['deletion'] ?? '';
 $form_save = $_REQUEST['form_save'] ?? '';
-if (!$pid) {
+if ($pid === 0) {
     $pid = $_SESSION['pid'];
 }
 
@@ -90,7 +92,7 @@ if (!empty($irow['type'])) {
 }
 
 $given = "ROSGENERAL,ROSHEENT,ROSCV,ROSPULM,ROSGI,ROSGU,ROSDERM,ROSNEURO,ROSPSYCH,ROSMUSCULO,ROSIMMUNO,ROSENDOCRINE,ROSCOMMENTS";
-$query = "SELECT $given from form_eye_ros where id=? and pid=?";
+$query = sprintf('SELECT %s from form_eye_ros where id=? and pid=?', $given);
 $rres = sqlQuery($query, array(
     $form_id,
     $pid
@@ -196,7 +198,7 @@ foreach (explode(',', $given) as $item) {
                 $qry = "";
             }
 
-            if ($local == "1") { // leave FH/SocHx/ROS for later - done below separately
+            if ($local === "1") { // leave FH/SocHx/ROS for later - done below separately
                 while ($res = sqlFetchArray($qry ?? '')) { //Should we take the top 10 and display alphabetically?
                     echo " aopts['" . attr($key) . "'][aopts['" . attr($key) . "'].length] = new Option(" . js_escape(xl_list_label(trim($res['title']))) . ", " . js_escape(trim($res['option_id'])) . ", false, false);\n";
                     if ($res['codes']) {
@@ -584,7 +586,7 @@ foreach (explode(',', $given) as $item) {
         $smoke_codes = getSmokeCodes();
 
         foreach ($smoke_codes as $val => $code) {
-            echo "code_options_js" . "['" . attr($val) . "']='" . attr($code) . "';\n";
+            echo 'code_options_js[\'' . attr($val) . "']='" . attr($code) . "';\n";
         }
         ?>
 
@@ -759,7 +761,7 @@ foreach (explode(',', $given) as $item) {
                         <td class="right text-nowrap"><strong id="by_whom"><?php echo xlt('Eye Med'); ?>:</strong></td>
                         <td colspan="3"><?php echo $irow['subtype'] ?? ''; ?>
                             <input type='checkbox' name='form_eye_subtype' id='form_eye_subtype' value='1' <?php
-                            if ($irow['subtype'] ?? '' == 'eye') {
+                            if ($irow['subtype'] ?? '' === 'eye') {
                                 echo " checked";
                             }
                             ?> style="margin:3px 3px 3px 5px;" title='<?php echo xla('Indicates if this issue is an ophthalmic-specific medication'); ?>' />
@@ -803,28 +805,28 @@ foreach (explode(',', $given) as $item) {
                     $dateStart = $_POST['dateState'] ?? '';
                     $dateEnd = $_POST['dateEnd'] ?? '';
                     if ($dateStart && $dateEnd) {
-                        $result1 = sqlQuery("select $given from history_data where pid = ? and date >= ? and date <= ? order by date DESC limit 0,1", array(
+                        $result1 = sqlQuery(sprintf('select %s from history_data where pid = ? and date >= ? and date <= ? order by date DESC limit 0,1', $given), array(
                             $pid,
                             $dateStart,
                             $dateEnd
                         ));
                     } elseif ($dateStart && !$dateEnd) {
-                        $result1 = sqlQuery("select $given from history_data where pid = ? and date >= ? order by date DESC limit 0,1", array(
+                        $result1 = sqlQuery(sprintf('select %s from history_data where pid = ? and date >= ? order by date DESC limit 0,1', $given), array(
                             $pid,
                             $dateStart
                         ));
                     } elseif (!$dateStart && $dateEnd) {
-                        $result1 = sqlQuery("select $given from history_data where pid = ? and date <= ? order by date DESC limit 0,1", array(
+                        $result1 = sqlQuery(sprintf('select %s from history_data where pid = ? and date <= ? order by date DESC limit 0,1', $given), array(
                             $pid,
                             $dateEnd
                         ));
                     } else {
-                        $result1 = sqlQuery("select $given from history_data where pid=? order by date DESC limit 0,1", array(
+                        $result1 = sqlQuery(sprintf('select %s from history_data where pid=? order by date DESC limit 0,1', $given), array(
                             $pid
                         ));
                     }
 
-                    $group_fields_query = sqlStatement("SELECT * FROM layout_options " . "WHERE form_id = 'HIS' AND group_id = '4' AND uor > 0 " . "ORDER BY seq");
+                    $group_fields_query = sqlStatement('SELECT * FROM layout_options WHERE form_id = \'HIS\' AND group_id = \'4\' AND uor > 0 ORDER BY seq');
                     while ($group_fields = sqlFetchArray($group_fields_query)) {
                         $titlecols = $group_fields['titlecols'];
                         $datacols = $group_fields['datacols'];

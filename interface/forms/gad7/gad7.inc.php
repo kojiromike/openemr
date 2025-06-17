@@ -1,6 +1,8 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+ /**
  * gad-7.inc - common includes and constants for the gad-7 form
  * version 1.0.0  July 2020
  *
@@ -13,8 +15,8 @@
  */
 
  require_once(__DIR__ . "/../../globals.php");
- require_once("$srcdir/api.inc.php");
- require_once("$srcdir/patient.inc.php");
+ require_once($srcdir . '/api.inc.php');
+ require_once($srcdir . '/patient.inc.php');
 
 
 // menu strings

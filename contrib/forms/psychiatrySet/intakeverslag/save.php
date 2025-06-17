@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    Intakeverslag
 // Package: Report of First visit - Dutch specific form
@@ -8,8 +10,8 @@
 ////////////////////////////////////////////////////////////////////
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 if ($encounter == "") {
     $encounter = date("Ymd");

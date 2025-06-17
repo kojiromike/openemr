@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Handles the exception when validations fail for a telehealth data form
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Exception;
 
 use Throwable;
@@ -21,10 +22,10 @@ class TelehealthValidationException extends \InvalidArgumentException
      */
     private $errors;
 
-    public function __construct($validationErrors, $message = "", $code = 0, Throwable $previous = null)
+    public function __construct($validationErrors, $message = "", $code = 0, Throwable $throwable = null)
     {
         $this->errors = $validationErrors;
-        parent::__construct($message, $code, $previous);
+        parent::__construct($message, $code, $throwable);
     }
 
     /**

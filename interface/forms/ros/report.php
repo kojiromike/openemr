@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * ROS form
  * Forms generated from formsWiz
@@ -14,7 +16,7 @@
 require_once(dirname(__FILE__) . '/../../globals.php');
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function ros_report($pid, $encounter, $cols, $id)
+function ros_report($pid, $encounter, $cols, $id): void
 {
 
     $count = 0;
@@ -112,7 +114,7 @@ function ros_report($pid, $encounter, $cols, $id)
             }
 
             printf("<td><span class=bold>%s: </span><span class=text>%s</span></td>", xlt($key), xlt($value));
-            $count++;
+            ++$count;
 
             if ($count == $cols) {
                 $count = 0;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * trusted-messages-ajax.php takes data from the POST/GET request, validates the data and then sends a message via the
  * Direct protocol to the trusted email address.  Results / errors are returned via JSON
@@ -10,8 +12,8 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../globals.php");
-require_once("../../../ccr/transmitCCD.php");
+require_once(__DIR__ . "/../../globals.php");
+require_once(__DIR__ . "/../../../ccr/transmitCCD.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Logging\SystemLogger;
@@ -41,6 +43,7 @@ if (!CsrfUtils::verifyCsrfToken($csrf)) {
         if (empty($pid) || intval($pid) <= 0) {
             throw new InvalidArgumentException("pid is required and must be a valid patient id");
         }
+
         $patientService = new PatientService();
         $patient = $patientService->findByPid($pid);
         if (empty($patient)) {
@@ -72,6 +75,7 @@ if (!CsrfUtils::verifyCsrfToken($csrf)) {
                 throw new AccessDeniedException("patients", "demo", "Access to patient data is denied");
             }
         }
+
         $verifyMessageReceived = intval($_REQUEST['verifyMessageReceived'] ?? 0) == 1;
         $isValid = true;
     } catch (AccessDeniedException $exception) {
@@ -107,6 +111,7 @@ if ($isValid) {
 
             $transmitResult = transmitCCD($pid, $dataToSend, $recipient, $requested_by, $xmlType, $formatType, $message, $fileName, $verifyMessageReceived);
         }
+
         if ($transmitResult !== "SUCCESS") {
             $result['errorCode'] = 'directError';
             $result['errorMessage'] = $transmitResult;
@@ -135,8 +140,9 @@ if ($isValid) {
 try {
     (new SystemLogger())->debug("trusted-messages-ajax.php result object", $result);
     echo json_encode($result, JSON_THROW_ON_ERROR);
-} catch (\Exception $error) {
-    (new SystemLogger())->error("Failed to encode json response", ['trace' => $error->getTraceAsString(), 'message' => $error->getMessage(), 'result' => $result]);
+} catch (\Exception $exception) {
+    (new SystemLogger())->error("Failed to encode json response", ['trace' => $exception->getTraceAsString(), 'message' => $exception->getMessage(), 'result' => $result]);
     http_response_code(500);
 }
+
 exit;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * forms/eye_mag/save.php
  *
@@ -31,15 +33,15 @@ $form_folder = "eye_mag";
 
 require_once(__DIR__ . "/../../globals.php");
 
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 require_once("php/" . $form_name . "_functions.php");
 require_once($srcdir . "/../controllers/C_Document.class.php");
 require_once($srcdir . "/documents.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/lists.inc.php");
-require_once("$srcdir/report.inc.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/lists.inc.php');
+require_once($srcdir . '/report.inc.php');
 
 use Mpdf\Mpdf;
 use OpenEMR\Billing\BillingUtilities;
@@ -59,7 +61,7 @@ if (!($id ?? '')) {
 $encounter = $_REQUEST['encounter'] ?? '';
 
 $AJAX_PREFS = $_REQUEST['AJAX_PREFS'] ?? '';
-if ($encounter == "" && !$id && !$AJAX_PREFS && (($_REQUEST['mode'] != "retrieve") or ($_REQUEST['mode'] == "show_PDF"))) {
+if ($encounter == "" && !$id && !$AJAX_PREFS && ($_REQUEST['mode'] != "retrieve" || $_REQUEST['mode'] == "show_PDF")) {
     echo "Sorry Charlie..."; //should lead to a database of errors for explanation.
     exit;
 }
@@ -335,8 +337,8 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
         'form_eye_external', 'form_eye_antseg','form_eye_postseg',
         'form_eye_neuro','form_eye_locking');
 
-    foreach ($tables as $table_name) {
-        $query = "INSERT INTO " . $table_name . " ('id','pid') VALUES (?,?)";
+    foreach ($tables as $table) {
+        $query = "INSERT INTO " . $table . " ('id','pid') VALUES (?,?)";
         $result = sqlStatement($query, array($new_id,$pid));
     }
 } elseif (($_REQUEST["mode"]  ?? '') == "update") {
@@ -419,8 +421,9 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
         //remove what is there and replace it with this data.
         $query = "DELETE from form_" . $form_folder . "_impplan where form_id=? and pid=?";
         sqlQuery($query, array($form_id, $pid));
+        $counter = count($IMPPLAN);
 
-        for ($i = 0; $i < count($IMPPLAN); $i++) {
+        for ($i = 0; $i < $counter; ++$i) {
             $query = "INSERT IGNORE INTO form_" . $form_folder . "_impplan (form_id, pid, title, code, codetype, codedesc, codetext, plan, IMPPLAN_order, PMSFH_link) VALUES(?,?,?,?,?,?,?,?,?,?) ";
             $response = sqlQuery($query, array($form_id, $pid, $IMPPLAN[$i]['title'], $IMPPLAN[$i]['code'], $IMPPLAN[$i]['codetype'], $IMPPLAN[$i]['codedesc'], $IMPPLAN[$i]['codetext'], $IMPPLAN[$i]['plan'], $i, $IMPPLAN[$i]['PMSFH_link']));
             //if it is a duplicate then delete this from the array and return the array via json.
@@ -554,7 +557,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
                 while ($frow = sqlFetchArray($fres)) {
                     $field_id = $frow['field_id'];
                     //get value only if field exist in $_POST (prevent deleting of field with disabled attribute)
-                    if (isset($_POST["form_$field_id"])) {
+                    if (isset($_POST['form_' . $field_id])) {
                         $newdata[$field_id] = get_layout_form_value($frow);
                     }
                 }
@@ -654,7 +657,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
                 }
 
                 if (!$issue) {
-                    if ($subtype == '') {
+                    if ($subtype === '') {
                         $query = "SELECT id,pid from lists where title=? and type=? and pid=?";
                         $issue2 = sqlQuery($query, array($_REQUEST['form_title'], $form_type, $pid));
                         $issue = $issue2['id'];
@@ -847,7 +850,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
     $sql_clear = "DELETE from form_eye_mag_orders where pid =? and ORDER_PLACED_BYWHOM=? and ORDER_DATE_PLACED=? and ORDER_STATUS ='pending'";
     sqlQuery($sql_clear, array($pid, $providerID, $visit_date));
     if ($N > '0') {
-        for ($i = 0; $i < $N; $i++) {
+        for ($i = 0; $i < $N; ++$i) {
             if ($_POST['PLAN'][$i] == '') {
                 continue;
             }
@@ -863,7 +866,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
 
     $M = empty($_POST['TEST']) ? 0 : count($_POST['TEST']);
     if ($M > '0') {
-        for ($i = 0; $i < $M; $i++) {
+        for ($i = 0; $i < $M; ++$i) {
             $_POST['Resource'] .= $_POST['TEST'][$i] . "|"; //this makes an entry for form_eyemag: Resource
         }
 
@@ -975,12 +978,11 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
         'form_eye_external', 'form_eye_antseg','form_eye_postseg',
         'form_eye_neuro','form_eye_locking');
 
-    foreach ($tables as $table_name) {
-        $query = "SHOW COLUMNS from " . $table_name . "";
+    foreach ($tables as $table) {
+        $query = "SHOW COLUMNS from " . $table . "";
         $result = sqlStatement($query);
         if (!$result) {
-            return 'Could not run query: No columns found in your table!  ';// . mysql_error();
-            continue;
+            return 'Could not run query: No columns found in your table!  ';
         }
 
         $fields = array();
@@ -989,24 +991,14 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
             while ($row = sqlFetchArray($result)) {
                 //exclude critical columns/fields and those needing special processing from update
                 if (
-                    $row['Field'] == 'id' or
-                    $row['Field'] == 'date' or
-                    $row['Field'] == 'pid' or
-                    $row['Field'] == 'user' or
-                    $row['Field'] == 'groupname' or
-                    $row['Field'] == 'authorized' or
-                    $row['Field'] == 'LOCKED' or
-                    $row['Field'] == 'LOCKEDBY' or
-                    $row['Field'] == 'activity' or
-                    $row['Field'] == 'PLAN' or
-                    $row['Field'] == 'Resource'
+                    $row['Field'] == 'id' || $row['Field'] == 'date' || $row['Field'] == 'pid' || $row['Field'] == 'user' || $row['Field'] == 'groupname' || $row['Field'] == 'authorized' || $row['Field'] == 'LOCKED' || $row['Field'] == 'LOCKEDBY' || $row['Field'] == 'activity' || $row['Field'] == 'PLAN' || $row['Field'] == 'Resource'
                 ) {
                     continue;
                 }
                 $fields[] = $_POST[$row['Field']] ?? '';
                 $sql2 .= " " . add_escape_custom($row['Field']) . " = ?,";
             }
-            $sql = "update " . escape_table_name($table_name) . " set pid ='" . add_escape_custom($_SESSION['pid']) . "'," . $sql2;
+            $sql = "update " . escape_table_name($table) . " set pid ='" . add_escape_custom($_SESSION['pid']) . "'," . $sql2;
 
             $sql = substr($sql, 0, -1);
             $sql .= " where id=?";
@@ -1037,7 +1029,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
                 $_POST['OSHPD_1'], $_POST['OSHBASE_1'], $_POST['OSVPD_1'], $_POST['OSVBASE_1'], $_POST['OSSLABOFF_1'], $_POST['OSVERTEXDIST_1'],
                 $_POST['ODMPDD_1'], $_POST['ODMPDN_1'], $_POST['OSMPDD_1'], $_POST['OSMPDN_1'], $_POST['BPDD_1'], $_POST['BPDN_1'], $_POST['LENS_MATERIAL_1'],
                 $LENS_TREATMENTS_1));
-            $rx_number++;
+            ++$rx_number;
     } else {
         $query = "DELETE FROM form_eye_mag_wearing where ENCOUNTER=? and PID=? and FORM_ID=? and RX_NUMBER=?";
         sqlQuery($query, array($encounter, $pid, $form_id, '1'));
@@ -1062,7 +1054,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
             $_POST['OSHPD_2'], $_POST['OSHBASE_2'], $_POST['OSVPD_2'], $_POST['OSVBASE_2'], $_POST['OSSLABOFF_2'], $_POST['OSVERTEXDIST_2'],
             $_POST['ODMPDD_2'], $_POST['ODMPDN_2'], $_POST['OSMPDD_2'], $_POST['OSMPDN_2'], $_POST['BPDD_2'], $_POST['BPDN_2'], $_POST['LENS_MATERIAL_2'],
             $LENS_TREATMENTS_2));
-        $rx_number++;
+        ++$rx_number;
     } else {
         $query = "DELETE FROM form_eye_mag_wearing where ENCOUNTER=? and PID=? and FORM_ID=? and RX_NUMBER=?";
         sqlQuery($query, array($encounter, $pid, $form_id, '2'));
@@ -1087,7 +1079,7 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
             $_POST['OSHPD_3'], $_POST['OSHBASE_3'], $_POST['OSVPD_3'], $_POST['OSVBASE_3'], $_POST['OSSLABOFF_3'], $_POST['OSVERTEXDIST_3'],
             $_POST['ODMPDD_3'], $_POST['ODMPDN_3'], $_POST['OSMPDD_3'], $_POST['OSMPDN_3'], $_POST['BPDD_3'], $_POST['BPDN_3'], $_POST['LENS_MATERIAL_3'],
             $LENS_TREATMENTS_3));
-        $rx_number++;
+        ++$rx_number;
     } else {
         $query = "DELETE FROM form_eye_mag_wearing where ENCOUNTER=? and PID=? and FORM_ID=? and RX_NUMBER=?";
         sqlQuery($query, array($encounter, $pid, $form_id, '3'));
@@ -1112,13 +1104,13 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
             $_POST['OSHPD_4'], $_POST['OSHBASE_4'], $_POST['OSVPD_4'], $_POST['OSVBASE_4'], $_POST['OSSLABOFF_4'], $_POST['OSVERTEXDIST_4'],
             $_POST['ODMPDD_4'], $_POST['ODMPDN_4'], $_POST['OSMPDD_4'], $_POST['OSMPDN_4'], $_POST['BPDD_4'], $_POST['BPDN_4'], $_POST['LENS_MATERIAL_4'],
             $LENS_TREATMENTS_4));
-        $rx_number++;
+        ++$rx_number;
     } else {
         $query = "DELETE FROM form_eye_mag_wearing where ENCOUNTER=? and PID=? and FORM_ID=? and RX_NUMBER=?";
         sqlQuery($query, array($encounter, $pid, $form_id, '4'));
     }
 
-    for ($i = $rx_number; $i < 5; $i++) {
+    for ($i = $rx_number; $i < 5; ++$i) {
         $query = "DELETE FROM form_eye_mag_wearing where ENCOUNTER=? and PID=? and FORM_ID=? and RX_NUMBER=?";
         sqlQuery($query, array($encounter, $pid, $form_id, $i));
     }
@@ -1135,22 +1127,6 @@ if (($_REQUEST["mode"]  ?? '') == "new") {
 } elseif (($_REQUEST["mode"]  ?? '') == "retrieve") {
     if ($_REQUEST['PRIORS_query']) {
         if ($_REQUEST['zone'] == 'REFRACTIONS') {
-            //TODO:  Fix this so it works!
-//have to do query to join with _base pn pid since pid is not in sub files
-            //get the last 3 encounters with refraction data, not Wear data, and display all that encounters Rx/W data.
-            $sql = "SELECT id,date FROM form_eye_refraction WHERE
-                    pid=? AND id < ? AND
-                    (MRODVA <> '' OR
-                      MROSVA <> '' OR
-                      ARODVA <> '' OR
-                      AROSVA <> '' OR
-                      CRODVA <> '' OR
-                      CROSVA <> '' OR
-                      CTLODVA <> '' OR
-                      CTLOSVA <> ''
-                    )
-                    ORDER BY id DESC LIMIT 3";
-
             //$result = sqlStatement($sql, array($pid, $_REQUEST['orig_id']));
 
             $sql = "SELECT id from form_eye_refraction where
@@ -1229,7 +1205,7 @@ if ($_REQUEST['copy']) {
     return;
 }
 
-function QuotedOrNull($fld)
+function QuotedOrNull($fld): string
 {
     if ($fld) {
         return "'" . add_escape_custom($fld) . "'";
@@ -1238,7 +1214,7 @@ function QuotedOrNull($fld)
     return "NULL";
 }
 
-function debug($local_var)
+function debug(string $local_var): void
 {
     echo "<pre><BR>We are in the debug function.<BR>";
     echo "Passed variable = " . $local_var . " <BR>";
@@ -1248,31 +1224,31 @@ function debug($local_var)
 
 /* From original issue.php */
 
-function row_delete($table, $where)
+function row_delete($table, string $where): void
 {
-    $query = "SELECT * FROM " . escape_table_name($table) . " WHERE $where";
-    $tres = sqlStatement($query);
+    $query = "SELECT * FROM " . escape_table_name($table) . (' WHERE ' . $where);
+    $recordset = sqlStatement($query);
     $count = 0;
-    while ($trow = sqlFetchArray($tres)) {
+    while ($trow = sqlFetchArray($recordset)) {
         $logstring = "";
         foreach ($trow as $key => $value) {
             if (!$value || $value == '0000-00-00 00:00:00') {
                 continue;
             }
 
-            if ($logstring) {
+            if ($logstring !== '' && $logstring !== '0') {
                 $logstring .= " ";
             }
 
             $logstring .= $key . "='" . addslashes($value) . "'";
         }
 
-        EventAuditLogger::instance()->newEvent("delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "$table: $logstring");
+        EventAuditLogger::instance()->newEvent("delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, sprintf('%s: %s', $table, $logstring));
         ++$count;
     }
 
-    if ($count) {
-        $query = "DELETE FROM " . escape_table_name($table) . " WHERE $where";
+    if ($count !== 0) {
+        $query = "DELETE FROM " . escape_table_name($table) . (' WHERE ' . $where);
         sqlStatement($query);
     }
 }
@@ -1280,7 +1256,7 @@ function row_delete($table, $where)
 // Given an issue type as a string, compute its index.
 // Not sure of the value of this sub given transition to array $PMSFH
 // Can I use it to find out which PMSFH item we are looking for?  YES
-function issueTypeIndex($tstr)
+function issueTypeIndex($tstr): int
 {
     global $ISSUE_TYPES;
     $i = 0;

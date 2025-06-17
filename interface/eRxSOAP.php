@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRxSOAP.php Functions for interacting with NewCrop SOAP calls.
  *
@@ -9,29 +11,37 @@
  * @copyright Copyright (c) 2015 Sam Likins <sam.likins@wsi-services.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-
 class eRxSOAP
 {
     const ACTION_ALLERGIES      = 'allergies';
+
     const ACTION_MEDICATIONS    = 'medications';
 
     const FLAG_PRESCRIPTION_PRESS   = '1';
+
     const FLAG_PRESCRIPTION_IMPORT  = '2';
+
     const FLAG_ALLERGY_PRESS        = '3';
+
     const FLAG_ALLERGY_IMPORT       = '4';
 
     private $globals;
+
     private $store;
 
     private $authUserId;
+
     private $authUserDetails;
-    private $patientId;
-    private $soapClient;
-    private $soapSettings = array();
+
+    private ?int $patientId = null;
+
+    private ?\SoapClient $soapClient = null;
+
+    private array $soapSettings = array();
+
     private $siteId;
 
-    protected static function fixHtmlEntities($array, $xmltoarray)
+    protected static function fixHtmlEntities($array, $xmltoarray): mixed
     {
         $encoded = json_encode($array);
         $fixed = $xmltoarray->fix_html_entities($encoded);
@@ -45,16 +55,16 @@ class eRxSOAP
      */
     public static function htmlFixXmlToArray($xml)
     {
-        $xmltoarray = new xmltoarray_parser_htmlfix();                  //create instance of class
+        $xmltoarrayparserhtmlfix = new xmltoarray_parser_htmlfix();                  //create instance of class
 
-        $xmltoarray->xmlparser_setoption(XML_OPTION_SKIP_WHITE, 1);     //set options same as xml_parser_set_option
-        $xmltoarray->xmlparser_setoption(XML_OPTION_CASE_FOLDING, 0);
+        $xmltoarrayparserhtmlfix->xmlparser_setoption(XML_OPTION_SKIP_WHITE, 1);     //set options same as xml_parser_set_option
+        $xmltoarrayparserhtmlfix->xmlparser_setoption(XML_OPTION_CASE_FOLDING, 0);
 
-        $xmltoarray->xmlparser_fix_into_struct(base64_decode($xml));    //fixes html values for XML
+        $xmltoarrayparserhtmlfix->xmlparser_fix_into_struct(base64_decode($xml));    //fixes html values for XML
 
-        $array = $xmltoarray->createArray();                            //creates an array with fixed html values
+        $array = $xmltoarrayparserhtmlfix->createArray();                            //creates an array with fixed html values
 
-        $array = self::fixHtmlEntities($array, $xmltoarray);
+        $array = self::fixHtmlEntities($array, $xmltoarrayparserhtmlfix);
 
         if (array_key_exists('NewDataSet', $array) && array_key_exists('Table', $array['NewDataSet'])) {
             $array = $array['NewDataSet']['Table'];
@@ -70,7 +80,7 @@ class eRxSOAP
      * @param  object  $globals The eRx Globals object to use for processing
      * @return eRxPage          This object is returned for method chaining
      */
-    public function setGlobals($globals)
+    public function setGlobals($globals): static
     {
         $this->globals = $globals;
 
@@ -91,7 +101,7 @@ class eRxSOAP
      * @param  object  $store The eRx Store object to use for processing
      * @return eRxSOAP        This object is returned for method chaining
      */
-    public function setStore($store)
+    public function setStore($store): static
     {
         $this->store = $store;
 
@@ -121,7 +131,7 @@ class eRxSOAP
      * @param  string  $id The Site Id to send with SOAP requests to NewCrop
      * @return eRxSOAP     This object is returned for method chaining
      */
-    public function setSiteId($id)
+    public function setSiteId($id): static
     {
         $this->siteId = $id;
 
@@ -161,7 +171,7 @@ class eRxSOAP
      * @param  integer $user The Id for the authenticated user
      * @return eRxSOAP       This object is returned for method chaining
      */
-    public function setAuthUserId($user)
+    public function setAuthUserId($user): static
     {
         $this->authUserId = $user;
 
@@ -182,7 +192,7 @@ class eRxSOAP
      * @param  integer $id The Id of the current patient
      * @return eRxSOAP     This object is returned for method chaining
      */
-    public function setPatientId($id)
+    public function setPatientId($id): static
     {
         $this->patientId = (int) $id;
 
@@ -212,12 +222,12 @@ class eRxSOAP
 
     /**
      * Set SOAP client for communication with NewCrop
-     * @param  SoapClient $client SOAP client for communication with NewCrop
+     * @param SoapClient $soapClient SOAP client for communication with NewCrop
      * @return eRxSOAP            This object is returned for method chaining
      */
-    public function setSoapClient(SoapClient $client)
+    public function setSoapClient(SoapClient $soapClient): static
     {
-        $this->soapClient = $client;
+        $this->soapClient = $soapClient;
 
         return $this;
     }
@@ -236,7 +246,7 @@ class eRxSOAP
      * @param  array   $settings [optional] Setting to send with SOAP call to NewCrop
      * @return eRxSOAP           This object is returned for method chaining
      */
-    public function setSoapSettings($settings = array())
+    public function setSoapSettings($settings = array()): static
     {
         $this->soapSettings = (array) $settings;
 
@@ -298,7 +308,7 @@ class eRxSOAP
      * @param  string  $process SOAP process to update TTL of current patient
      * @return eRxSOAP          This object is returned for method chaining
      */
-    public function updateTTL($process)
+    public function updateTTL($process): static
     {
         $this->getStore()->setLastSOAP($process, $this->getPatientId());
 
@@ -310,20 +320,14 @@ class eRxSOAP
      * @param  string|array $status SOAP process to check against import status of current patient, optionally an array of SOAP processes can be substituted
      * @return boolean              True if import status of current patient is set to provided SOAP process(es), otherwise false
      */
-    public function checkPatientImportStatus($status)
+    public function checkPatientImportStatus($status): bool
     {
         $currentStatus = $this->getStore()
             ->getPatientImportStatusByPatientId(
                 $this->getPatientId()
             );
 
-        if (is_array($status)) {
-            $return = in_array($currentStatus, $status);
-        } else {
-            $return = ($currentStatus == $status);
-        }
-
-        return $return;
+        return is_array($status) ? in_array($currentStatus, $status) : $currentStatus == $status;
     }
 
     /**
@@ -331,7 +335,7 @@ class eRxSOAP
      * @param  string  $status SOAP process to update import status of current patient
      * @return eRxSOAP         This object is returned for method chaining
      */
-    public function updatePatientImportStatus($status)
+    public function updatePatientImportStatus($status): static
     {
         $this->getStore()
             ->updatePatientImportStatusByPatientId(
@@ -346,7 +350,7 @@ class eRxSOAP
      * Initialize SOAP settings with the credentials currently set
      * @return eRxSOAP This object is returned for method chaining
      */
-    public function initializeCredentials()
+    public function initializeCredentials(): static
     {
         $credentials = $this->getGlobals()->getCredentials();
 
@@ -363,7 +367,7 @@ class eRxSOAP
      * Initialize SOAP settings with the NewCrop account and site Ids
      * @return eRxSOAP This object is returned for method chaining
      */
-    public function initializeAccountRequest()
+    public function initializeAccountRequest(): static
     {
         $this->soapSettings['accountRequest'] = array(
             'AccountId' => $this->getGlobals()->getAccountId(),
@@ -377,7 +381,7 @@ class eRxSOAP
      * Initialize SOAP settings with patient information
      * @return eRxSOAP This object is returned for method chaining
      */
-    public function initializePatientInformationRequester()
+    public function initializePatientInformationRequester(): static
     {
         $userDetails = $this->getAuthUserDetails();
 
@@ -473,7 +477,7 @@ class eRxSOAP
 
         $this->soapSettings['patientRequest']['PatientId'] = $this->getPatientId();
 
-        $client = $this->initializeSoapClient(0);
+        $this->initializeSoapClient(0);
 
         return $this->getSoapClient()
             ->GetPatientFreeFormAllergyHistory($this->soapSettings);
@@ -504,7 +508,7 @@ class eRxSOAP
      * Trigger Allergy History SOAP call to NewCrop for current patient and update local cached data
      * @return integer Count of newly cached records
      */
-    public function insertUpdateAllergies()
+    public function insertUpdateAllergies(): int
     {
         $store = $this->getStore();
 
@@ -567,7 +571,7 @@ class eRxSOAP
      * @param  array   $allergyArray List of allergies
      * @return eRxSOAP               This object is returned for method chaining
      */
-    public function updatePatientAllergyEndDate($allergyArray)
+    public function updatePatientAllergyEndDate($allergyArray): static
     {
         $store = $this->getStore();
         $patientId = $this->getPatientId();
@@ -599,7 +603,7 @@ class eRxSOAP
      * Update eRx uploaded status for current patient allergies
      * @return boolean True on success, false on failure
      */
-    public function updateUploadedErx()
+    public function updateUploadedErx(): bool
     {
         $patientFreeFormAllergyHistory = $this
             ->getPatientFreeFormAllergyHistory()
@@ -627,7 +631,7 @@ class eRxSOAP
      * Insert or update medications for current patient
      * @return integer Count of newly cached records
      */
-    public function insertUpdateMedications()
+    public function insertUpdateMedications(): int
     {
         $store = $this->getStore();
 
@@ -641,32 +645,20 @@ class eRxSOAP
         $store->updatePrescriptionsActiveByPatientId($this->getPatientId());
         if (is_array($medArray)) {
             foreach ($medArray as $med) {
-                if ($med['DosageForm']) {
-                    $optionIdDosageForm = $this->insertMissingListOptions(
-                        'drug_form',
-                        $med['DosageForm']
-                    );
-                } else {
-                    $optionIdDosageForm = null;
-                }
+                $optionIdDosageForm = $med['DosageForm'] ? $this->insertMissingListOptions(
+                    'drug_form',
+                    $med['DosageForm']
+                ) : null;
 
-                if ($med['Route']) {
-                    $optionIdRoute = $this->insertMissingListOptions(
-                        'drug_route',
-                        $med['Route']
-                    );
-                } else {
-                    $optionIdRoute = null;
-                }
+                $optionIdRoute = $med['Route'] ? $this->insertMissingListOptions(
+                    'drug_route',
+                    $med['Route']
+                ) : null;
 
-                if ($med['StrengthUOM']) {
-                    $optionIdStrengthUOM = $this->insertMissingListOptions(
-                        'drug_units',
-                        $med['StrengthUOM']
-                    );
-                } else {
-                    $optionIdStrengthUOM = null;
-                }
+                $optionIdStrengthUOM = $med['StrengthUOM'] ? $this->insertMissingListOptions(
+                    'drug_units',
+                    $med['StrengthUOM']
+                ) : null;
 
                 if ($med['DosageFrequencyDescription']) {
                     $optionIdFrequencyDescription = $this->insertMissingListOptions(

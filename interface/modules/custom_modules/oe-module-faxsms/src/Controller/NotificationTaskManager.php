@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package        OpenEMR
@@ -8,7 +10,6 @@
  * @copyright      Copyright (c) 2025 <sjpadgett@gmail.com>
  * @license        https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
 /**
@@ -46,11 +47,7 @@ class NotificationTaskManager
             return false;
         }
 
-        if (empty($hours)) {
-            $total_minutes = $this->getTaskHours($type);
-        } else {
-            $total_minutes = $hours * 60;
-        }
+        $total_minutes = empty($hours) ? $this->getTaskHours($type) : $hours * 60;
 
         $sql = "SELECT COUNT(*) as count FROM `background_services` WHERE `name` = ?";
         $result = sqlQueryNoLog($sql, [$name]);
@@ -71,7 +68,7 @@ class NotificationTaskManager
     /**
      * Deletes the background Notification task.
      */
-    public function deleteService($type)
+    public function deleteService($type): ?bool
     {
         if ($type == 'sms') {
             $name = 'Notification_SMS_Task';
@@ -83,12 +80,13 @@ class NotificationTaskManager
 
         $sql = "DELETE FROM `background_services` WHERE `name` = ?";
         sqlStatementNoLog($sql, [$name]);
+        return null;
     }
 
     /**
      * Enables the background Notification task.
      */
-    public function enableService($type, $period = 24)
+    public function enableService($type, $period = 24): ?bool
     {
         if ($type == 'sms') {
             $name = 'Notification_SMS_Task';
@@ -97,16 +95,18 @@ class NotificationTaskManager
         } else {
             return false;
         }
+
         $this->manageService($type, $period);
 
         $sql = "UPDATE `background_services` SET `active` = '1' WHERE `name` = ?";
         sqlStatementNoLog($sql, [$name]);
+        return null;
     }
 
     /**
      * Disables the background Notification task.
      */
-    public function disableService($type)
+    public function disableService($type): ?bool
     {
         if ($type == 'sms') {
             $name = 'Notification_SMS_Task';
@@ -118,6 +118,7 @@ class NotificationTaskManager
 
         $sql = "UPDATE `background_services` SET `active` = '0' WHERE `name` = ?";
         sqlStatementNoLog($sql, [$name]);
+        return null;
     }
 
     public function getServiceStatus($type): false|array|string

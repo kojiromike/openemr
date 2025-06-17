@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CCR Script.
  *
@@ -290,7 +292,7 @@ while ($row2 = sqlFetchArray($result[2])) {
     $e_Actor = $ccr->createElement('Actor');
     $e_Actors->appendChild($e_Actor);
 
-    $e_ActorObjectID = $ccr->createElement('ActorObjectID', ${"labID{$row2['id']}"});
+    $e_ActorObjectID = $ccr->createElement('ActorObjectID', ${'labID' . $row2['id']});
     $e_Actor->appendChild($e_ActorObjectID);
 
     $e_InformationSystem = $ccr->createElement('InformationSystem');

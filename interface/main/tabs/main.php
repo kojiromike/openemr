@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
 * main.php
 *
@@ -359,7 +361,7 @@ echo $twig->render("interface/main/tabs/tabs_template.html.twig", []);
 echo $twig->render("interface/main/tabs/menu_template.html.twig", []);
 // TODO: patient_data_template.php is a more extensive refactor that could be done in a future feature request but to not jeopardize 7.0.3 release we will hold off.
 ?>
-<?php require_once("templates/patient_data_template.php"); ?>
+<?php require_once(__DIR__ . "/templates/patient_data_template.php"); ?>
 <?php
 echo $twig->render("interface/main/tabs/therapy_group_template.html.twig", []);
 echo $twig->render("interface/main/tabs/user_data_template.html.twig", [
@@ -387,7 +389,7 @@ echo $twig->render("interface/main/tabs/menu_json.html.twig", ['menu_restriction
             $target = json_encode($tab['option_id']);
             $label = json_encode(xl("Loading") . " " . $tab['title']);
             $loading = xlj("Loading");
-            echo "app_view_model.application_data.tabs.tabsList.push(new tabStatus($label, $url, $target, $loading, true, $visible, false));\n";
+            echo "app_view_model.application_data.tabs.tabsList.push(new tabStatus({$label}, {$url}, {$target}, {$loading}, true, {$visible}, false));\n";
             $visible = "false";
         endforeach;
     endif;

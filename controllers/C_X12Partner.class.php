@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * controller class for x-12 partner screen
  *
@@ -16,26 +18,27 @@ use OpenEMR\Common\Crypto\CryptoGen;
 
 class C_X12Partner extends Controller
 {
-    var $template_mod;
-    var $providers;
-    var $x12_partners;
+    public $template_mod;
 
-    function __construct($template_mod = "general")
+    public $providers;
+
+    public $x12_partners = array();
+
+    public function __construct($template_mod = "general")
     {
         parent::__construct();
-        $this->x12_partners = array();
         $this->template_mod = $template_mod;
         $this->assign("FORM_ACTION", $GLOBALS['webroot'] . "/controller.php?" . attr($_SERVER['QUERY_STRING']));
         $this->assign("CURRENT_ACTION", $GLOBALS['webroot'] . "/controller.php?" . "practice_settings&x12_partner&");
         $this->assign("STYLE", $GLOBALS['style']);
     }
 
-    function default_action()
+    public function default_action()
     {
         return $this->list_action();
     }
 
-    function edit_action($id = "", $x_obj = null)
+    public function edit_action($id = "", $x_obj = null)
     {
         if ($x_obj != null && get_class($x_obj) == "x12partner") {
             $this->x12_partners[0] = $x_obj;
@@ -55,27 +58,23 @@ class C_X12Partner extends Controller
         return $this->fetch($GLOBALS['template_dir'] . "x12_partners/" . $this->template_mod . "_edit.html");
     }
 
-    function list_action()
+    public function list_action()
     {
 
-        $x = new X12Partner();
-        $this->assign("partners", $x->x12_partner_factory());
+        $x12Partner = new X12Partner();
+        $this->assign("partners", $x12Partner->x12_partner_factory());
         return $this->fetch($GLOBALS['template_dir'] . "x12_partners/" . $this->template_mod . "_list.html");
     }
 
 
-    function edit_action_process()
+    public function edit_action_process(): void
     {
         if ($_POST['process'] != "true") {
             return;
         }
 
         //print_r($_POST);
-        if (is_numeric($_POST['id'])) {
-            $this->x12_partners[0] = new X12Partner($_POST['id']);
-        } else {
-            $this->x12_partners[0] = new X12Partner();
-        }
+        $this->x12_partners[0] = is_numeric($_POST['id']) ? new X12Partner($_POST['id']) : new X12Partner();
 
         parent::populate_object($this->x12_partners[0]);
 

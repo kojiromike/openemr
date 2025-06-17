@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
  * phpGACL - Generic Access Control List - Hashed Directory Caching.
  * Copyright (C) 2002 Mike Benoit
@@ -43,7 +45,7 @@ class Hashed_Cache_Lite extends Cache_Lite
 	* @param string $group name of the group
 	* @access private
 	*/
-	function _setFileName($id, $group)
+	public function _setFileName($id, $group): void
 	{
 		// CRC32 with SUBSTR is still faster then MD5.
 		$encoded_id = substr(crc32($id),1);
@@ -65,7 +67,7 @@ class Hashed_Cache_Lite extends Cache_Lite
 	* @param string $dir Full directory.
 	* @access private
 	*/
-	function _create_dir_structure($dir)
+	public function _create_dir_structure($dir): ?bool
 	{
 		if (!@file_exists($dir)) {
 			$dir_parts = preg_split('![\/]+!', $dir, -1, PREG_SPLIT_NO_EMPTY);
@@ -76,12 +78,14 @@ class Hashed_Cache_Lite extends Cache_Lite
 					Cache_Lite::raiseError('Cache_Lite : problem creating directory \"$dir\" !', -3);
 					return false;
 				}
+
 				$new_dir .= DIR_SEP;
 			}
 		}
+        return null;
 	}
 
-	function _remove_dir_structure($dir,$remove_dir = false)
+	public function _remove_dir_structure($dir,$remove_dir = false): bool
 	{
 		if (in_array(substr($dir,-1),array(DIR_SEP,'/','\\'))) {
 			$dir = substr($dir,0,-1);
@@ -93,20 +97,23 @@ class Hashed_Cache_Lite extends Cache_Lite
 		}
 
 		while ($file = readdir($dh)) {
-			if ($file == '.' || $file == '..') {
+			if ($file === '.' || $file === '..') {
 				continue;
 			}
+
 			$file = $dir . DIR_SEP . $file;
 			if (is_dir($file)) {
 				$this->_remove_dir_structure($file,true);
 				continue;
 			}
+
 			if (is_file($file)) {
 				if (!@unlink($file)) {
 					closedir($dh);
 					$this->raiseError('Cache_Lite : Unable to remove cache !', -3);
 					return false;
 				}
+
 				continue;
 			}
 		}
@@ -134,7 +141,7 @@ class Hashed_Cache_Lite extends Cache_Lite
 	* @return boolean true if no problem
 	* @access public
 	*/
-	function clean($group = false)
+	public function clean($group = false)
 	{
 		if ($group) {
 			$motif = $this->_cacheDir.$group.'/';
@@ -145,6 +152,7 @@ class Hashed_Cache_Lite extends Cache_Lite
 						unset($this->_memoryCachingArray[$key]);
 					}
 				}
+
 				$this->_memoryCachingCounter = count($this->_memoryCachingArray);
 				if ($this->_onlyMemoryCaching) {
 					return true;
@@ -168,9 +176,10 @@ class Hashed_Cache_Lite extends Cache_Lite
 		}
 
 		while ($file = readdir($dh)) {
-			if ($file == '.' || $file == '..') {
+			if ($file === '.' || $file === '..') {
 				continue;
 			}
+
 			$file = $this->_cacheDir . $file;
 			if (is_dir($file) && !$this->_remove_dir_structure($file,true)) {
 				return false;

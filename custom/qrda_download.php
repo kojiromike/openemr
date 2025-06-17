@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * QRDA Download
@@ -24,7 +26,7 @@
 
 // This program exports(Download) to QRDA Category III XML.
 
-require_once("../interface/globals.php");
+require_once(__DIR__ . "/../interface/globals.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 
@@ -44,7 +46,7 @@ if ($qrda_fname != "") {
     header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
     header("Cache-Control: private", false); // required for certain browsers
     header('Content-type: application/xml');
-    header("Content-Disposition: attachment; filename=\"" . basename($xmlurl) . "\";");
+    header('Content-Disposition: attachment; filename="' . basename($xmlurl) . '";');
     header("Content-Transfer-Encoding: binary");
     header("Content-Length: " . filesize($xmlurl));
     ob_clean();

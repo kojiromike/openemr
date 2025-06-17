@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/eRxStore.php Functions for interacting with NewCrop database.
  *
@@ -20,7 +22,7 @@ class eRxStore
      * @param  string $value Value to sanitize
      * @return string        Value sanitized of all non numerical characters
      */
-    public static function sanitizeNumber($value)
+    public static function sanitizeNumber($value): string|array|null
     {
         $sanitized = '';
         if ($value !== null) {
@@ -36,11 +38,9 @@ class eRxStore
      */
     public function getFacilityPrimary()
     {
-        $return = sqlQuery('SELECT `name`, `federal_ein`, `street`, `city`, `state`, `postal_code`, `country_code`, `phone`, `fax`
+        return sqlQuery('SELECT `name`, `federal_ein`, `street`, `city`, `state`, `postal_code`, `country_code`, `phone`, `fax`
 			FROM `facility`
 			WHERE `primary_business_entity` = \'1\';');
-
-        return $return;
     }
 
     /**
@@ -100,7 +100,7 @@ class eRxStore
         );
     }
 
-    public function getPatientVitalsByPatientId($patientId)
+    public function getPatientVitalsByPatientId($patientId): array
     {
         $result = sqlQuery(
             "SELECT FORM_VITALS.date, FORM_VITALS.id
@@ -204,7 +204,7 @@ class eRxStore
      * @param  string  $process   SOAP process to update
      * @param  integer $patientId Patient Id to update
      */
-    public function setLastSOAP($process, $patientId)
+    public function setLastSOAP($process, $patientId): void
     {
         sqlQuery(
             'REPLACE INTO erx_ttl_touch
@@ -223,7 +223,7 @@ class eRxStore
      * @param  integer $patientId Patient Id to update
      * @param  integer $active    Active status to set for provided patient
      */
-    public function updatePrescriptionsActiveByPatientId($patientId, $active = 0)
+    public function updatePrescriptionsActiveByPatientId($patientId, $active = 0): void
     {
         sqlQuery(
             'UPDATE prescriptions
@@ -237,7 +237,7 @@ class eRxStore
         );
     }
 
-    public function updatePrescriptionsUploadActiveByPatientIdPrescriptionId($upload, $active, $patientId, $prescriptionId)
+    public function updatePrescriptionsUploadActiveByPatientIdPrescriptionId($upload, $active, $patientId, $prescriptionId): void
     {
         sqlQuery(
             'UPDATE prescriptions
@@ -397,7 +397,7 @@ class eRxStore
      * @param  string $optionId Option Id to add to referenced list
      * @param  string $title    Title of option to add to new option
      */
-    public function insertListOptions($listId, $optionId, $title)
+    public function insertListOptions($listId, $optionId, $title): void
     {
         sqlQuery(
             'INSERT INTO list_options
@@ -446,7 +446,7 @@ class eRxStore
      * @param  integer $intervalOptionId Option Id for prescription interval
      * @return integer                   Id of newly created prescription
      */
-    public function insertPrescriptions($prescriptionData, $encounter, $providerId, $authUserId, $formOptionId, $routeOptionId, $unitsOptionId, $intervalOptionId)
+    public function insertPrescriptions(array $prescriptionData, $encounter, $providerId, $authUserId, $formOptionId, $routeOptionId, $unitsOptionId, $intervalOptionId)
     {
         return sqlInsert(
             'INSERT INTO `prescriptions`
@@ -513,7 +513,7 @@ class eRxStore
      * @param  integer $unitsOptionId    Option Id for prescription units
      * @param  integer $intervalOptionId Option Id for prescription interval
      */
-    public function updatePrescriptions($prescriptionData, $providerId, $authUserId, $formOptionId, $routeOptionId, $unitsOptionId, $intervalOptionId)
+    public function updatePrescriptions(array $prescriptionData, $providerId, $authUserId, $formOptionId, $routeOptionId, $unitsOptionId, $intervalOptionId): void
     {
         sqlQuery(
             'UPDATE prescriptions SET
@@ -598,7 +598,7 @@ class eRxStore
      * @param  integer $authUserId User Id
      * @param  integer $outcome    Allergy option Id
      */
-    public function insertAllergy($name, $allergyId, $patientId, $authUserId, $outcome)
+    public function insertAllergy($name, $allergyId, $patientId, $authUserId, $outcome): void
     {
         sqlQuery(
             'INSERT INTO lists
@@ -630,7 +630,7 @@ class eRxStore
      * @param  integer $patientId  Patient Id to select
      * @param  string  $name       Allergy name to select
      */
-    public function updateAllergyOutcomeExternalIdByPatientIdName($outcome, $externalId, $patientId, $name)
+    public function updateAllergyOutcomeExternalIdByPatientIdName($outcome, $externalId, $patientId, $name): void
     {
         sqlQuery(
             'UPDATE lists
@@ -655,7 +655,7 @@ class eRxStore
      * @param  integer $externalId External allergy Id to select
      * @param  string  $name       Allergy name to select
      */
-    public function updateAllergyOutcomeByPatientIdExternalIdName($outcome, $patientId, $externalId, $name)
+    public function updateAllergyOutcomeByPatientIdExternalIdName($outcome, $patientId, $externalId, $name): void
     {
         sqlQuery(
             'UPDATE lists
@@ -673,7 +673,7 @@ class eRxStore
         );
     }
 
-    public function updateAllergyUploadedByPatientIdAllergyId($uploaded, $patientId, $allergyId)
+    public function updateAllergyUploadedByPatientIdAllergyId($uploaded, $patientId, $allergyId): void
     {
         sqlQuery(
             'UPDATE lists
@@ -715,7 +715,7 @@ class eRxStore
      * @param  integer $patientId Id of patient to lookup
      * @param  integer $listId    Id of allergy to update
      */
-    public function updateAllergyEndDateByPatientIdListId($patientId, $listId)
+    public function updateAllergyEndDateByPatientIdListId($patientId, $listId): void
     {
         sqlQuery(
             'UPDATE lists
@@ -735,7 +735,7 @@ class eRxStore
      * @param  integer $listId Id of list item
      * @param  integer $erx    [optional - defaults to 0] Upload status to set: [0 = Pending NewCrop upload, 1 = Uploaded TO NewCrop]
      */
-    public function updateErxUploadedByListId($listId, $erx = 0)
+    public function updateErxUploadedByListId($listId, $erx = 0): void
     {
         sqlQuery(
             'UPDATE lists
@@ -769,7 +769,7 @@ class eRxStore
      * @param  integer $patientId Id of patient to update
      * @param  integer $status    Import status to update specified patient: [1 = Prescription Press, 2 = Prescription Import, 3 = Allergy Press, 4 = Allergy Import]
      */
-    public function updatePatientImportStatusByPatientId($patientId, $status)
+    public function updatePatientImportStatusByPatientId($patientId, $status): void
     {
         sqlQuery(
             'UPDATE patient_data

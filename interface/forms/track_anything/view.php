@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Encounter form to track any clinical parameter.
  *
@@ -9,5 +11,4 @@
  * @copyright Copyright (c) 2014 Joe Slam <trackanything@produnis.de>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
-require_once("new.php");
+require_once(__DIR__ . "/new.php");

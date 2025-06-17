@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * ankleinjury view.php
  *
@@ -27,7 +29,7 @@ use OpenEMR\Core\Header;
 </head>
 <body class="body_top">
 <?php
-require_once("$srcdir/api.inc.php");
+require_once($srcdir . '/api.inc.php');
 $obj = formFetch("form_ankleinjury", $_GET["id"]);
 ?>
 <form method=post action="<?php echo $rootdir?>/forms/ankleinjury/save.php?mode=update&id=<?php echo attr_url($_GET["id"]); ?>" name="my_form">
@@ -38,7 +40,7 @@ $obj = formFetch("form_ankleinjury", $_GET["id"]);
 <a href="javascript:top.restoreSession();document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link"
- onclick="top.restoreSession()">[<?php echo xlt('Don\'t Save Changes'); ?>]</a>
+ onclick="top.restoreSession()">[<?php echo xlt("Don't Save Changes"); ?>]</a>
 <br /><br />
 
 <span class=text>Date of Injury: </span><input type="text" name="ankle_date_of_injuary" value="<?php echo attr($obj["ankle_date_of_injuary"]); ?>" >
@@ -193,7 +195,7 @@ attr($obj["ankle_diagnosis4"]); ?>" size="50"></td>
 <a href="javascript:top.restoreSession();document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
 <a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link"
- onclick="top.restoreSession()">[<?php echo xlt('Don\'t Save Changes'); ?>]</a>
+ onclick="top.restoreSession()">[<?php echo xlt("Don't Save Changes"); ?>]</a>
 </form>
 <?php
 formFooter();

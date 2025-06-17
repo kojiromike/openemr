@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * gad-7 form using form api     view.php
  * open a previously completed GAD-7 form for further editing
@@ -12,7 +14,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("gad7.inc.php");  // common strings, require_once(globals.php), other includes etc
+require_once(__DIR__ . "/gad7.inc.php");  // common strings, require_once(globals.php), other includes etc
 
 use OpenEMR\Common\Csrf\CsrfUtils;    // security module
 use OpenEMR\Core\Header;

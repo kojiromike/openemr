@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Represents the state of an export operation holding all of the working data that is needed
  * to process the export.  Including the current queue of table definitions to export, the xml meta table
@@ -12,7 +14,6 @@
  * @copyright Copyright (c) 2023 OpenEMR Foundation, Inc
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\EhiExporter\Models;
 
 use OpenEMR\Common\Database\QueryUtils;
@@ -36,15 +37,19 @@ use OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTrackAnythingFormTableDef
 class ExportState
 {
     public \SimpleXMLElement $rootNode;
+
     private \SplQueue $queue;
-    private Models\ExportResult $result;
-    private array $tableDefinitionsMap;
-    private SystemLogger $logger;
+
+    private Models\ExportResult $exportResult;
+
+    private array $tableDefinitionsMap = [];
+
+    private SystemLogger $systemLogger;
 
     // we use this to make sure if we are scheduled to hit an item again
-    private $inQueueList = [];
+    private array $inQueueList = [];
 
-    private ExportTableDataFilterer $dataFilterer;
+    private ExportTableDataFilterer $exportTableDataFilterer;
 
     /**
      * @var string the temp directory to use for this export
@@ -53,64 +58,65 @@ class ExportState
 
     private \SimpleXMLElement $metaNode;
 
-    private ExportKeyDefinitionFilterer $keyFilterer;
+    private ExportKeyDefinitionFilterer $exportKeyDefinitionFilterer;
 
-    private EhiExportJobTask $jobTask;
+    private EhiExportJobTask $ehiExportJobTask;
 
-    public function __construct(SystemLogger $logger, \SimpleXMLElement $tableNode, \SimpleXMLElement $metaNode, EhiExportJobTask $jobTask)
+    public function __construct(SystemLogger $systemLogger, \SimpleXMLElement $tableNode, \SimpleXMLElement $metaNode, EhiExportJobTask $ehiExportJobTask)
     {
         $this->rootNode = $tableNode;
         $this->metaNode = $metaNode;
         $this->queue = new \SplQueue();
-        $this->result = new Models\ExportResult();
-        $this->tableDefinitionsMap = [];
-        $this->dataFilterer = new ExportTableDataFilterer();
-        $this->keyFilterer = new ExportKeyDefinitionFilterer();
-        $this->jobTask = $jobTask;
+        $this->exportResult = new Models\ExportResult();
+        $this->exportTableDataFilterer = new ExportTableDataFilterer();
+        $this->exportKeyDefinitionFilterer = new ExportKeyDefinitionFilterer();
+        $this->ehiExportJobTask = $ehiExportJobTask;
 
-        $this->logger = $logger;
+        $this->systemLogger = $systemLogger;
     }
 
-    public function getTempSysDir()
+    public function getTempSysDir(): string
     {
         if (!isset($this->tempDir)) {
             $this->tempDir = tempnam(sys_get_temp_dir(), 'ehi-export-');
             if (file_exists($this->tempDir)) {
                 unlink($this->tempDir);
             }
+
             mkdir($this->tempDir);
             if (!is_dir($this->tempDir)) {
                 throw new \RuntimeException("Failed to make temporary directory for export in temp directory");
             }
         }
+
         return $this->tempDir;
     }
 
     public function getJobTask()
     {
-        return $this->jobTask;
+        return $this->ehiExportJobTask;
     }
 
-    public function addExportResultTable(string $tableName, int $recordCount)
+    public function addExportResultTable(string $tableName, int $recordCount): void
     {
-        $result = new ExportTableResult();
-        $result->tableName = $tableName;
-        $result->count = $recordCount;
-        $this->result->exportedTables[$tableName] = $result;
-        $this->logger->debug("Adding export result table ", ['table' => $tableName, 'count' => $recordCount]);
+        $exportTableResult = new ExportTableResult();
+        $exportTableResult->tableName = $tableName;
+        $exportTableResult->count = $recordCount;
+        $this->exportResult->exportedTables[$tableName] = $exportTableResult;
+        $this->systemLogger->debug("Adding export result table ", ['table' => $tableName, 'count' => $recordCount]);
     }
 
     public function getExportResult()
     {
-        return $this->result;
+        return $this->exportResult;
     }
 
-    public function xmlXPath(string $xpath)
+    public function xmlXPath(string $xpath): array|false|null
     {
         return $this->rootNode->xpath($xpath);
     }
 
-    public function xmlMetaXPath(string $xpath)
+    public function xmlMetaXPath(string $xpath): array|false|null
     {
         return $this->metaNode->xpath($xpath);
     }
@@ -120,6 +126,7 @@ class ExportState
         if (isset($this->tableDefinitionsMap[$tableName])) {
             return $this->tableDefinitionsMap[$tableName];
         }
+
         return null;
     }
 
@@ -127,51 +134,54 @@ class ExportState
     {
         $item = $this->queue->dequeue();
         if ($item instanceof ExportTableDefinition) {
-            $this->logger->debug("Retrieving next table definition from queue", ['table' => $item->table, 'hasMoreData' => $item->hasNewData()]);
+            $this->systemLogger->debug("Retrieving next table definition from queue", ['table' => $item->table, 'hasMoreData' => $item->hasNewData()]);
             if (isset($this->inQueueList[$item->table])) {
                 unset($this->inQueueList[$item->table]);
             }
+
             return $item;
         }
+
         throw new \RuntimeException("Invalid item in queue");
     }
 
-    public function hasTableDefinitions()
+    public function hasTableDefinitions(): bool
     {
         return !$this->queue->isEmpty();
     }
 
-    public function addTableDefinition(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $tableDefinition)
+    public function addTableDefinition(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $exportTableDefinition): void
     {
         // should exist already, but double check
-        if (!isset($this->tableDefinitionsMap[$tableDefinition->table])) {
-            $this->tableDefinitionsMap[$tableDefinition->table] = $tableDefinition;
+        if (!isset($this->tableDefinitionsMap[$exportTableDefinition->table])) {
+            $this->tableDefinitionsMap[$exportTableDefinition->table] = $exportTableDefinition;
         }
-        if (!isset($this->inQueueList[$tableDefinition->table])) {
-            $this->queue->enqueue($tableDefinition);
-            $this->inQueueList[$tableDefinition->table] = $tableDefinition;
-            $this->logger->debug("QUEUE: Adding table definition to queue", ['table' => $tableDefinition->table]);
+
+        if (!isset($this->inQueueList[$exportTableDefinition->table])) {
+            $this->queue->enqueue($exportTableDefinition);
+            $this->inQueueList[$exportTableDefinition->table] = $exportTableDefinition;
+            $this->systemLogger->debug("QUEUE: Adding table definition to queue", ['table' => $exportTableDefinition->table]);
         } else {
-            $this->logger->debug("QUEUE: Table already exists in queue", ['table' => $tableDefinition->table]);
+            $this->systemLogger->debug("QUEUE: Table already exists in queue", ['table' => $exportTableDefinition->table]);
         }
     }
 
-    public function getKeyDataForTable(ExportTableDefinition $tableDefinition)
+    public function getKeyDataForTable(ExportTableDefinition $exportTableDefinition): array
     {
         $keyData = [
             'tables' => []
             ,'keys' => []
         ];
-        $elements = $this->xmlXPath("//table[@name='" . $tableDefinition->table . "']/column");
+        $elements = $this->xmlXPath("//table[@name='" . $exportTableDefinition->table . "']/column");
         if ($elements !== false) {
             foreach ($elements as $element) {
                 $localColumnName = (string)($element->attributes()['name'] ?? null);
-                if (isset($localColumnName) && $element->count() > 0) {
+                if ($element->count() > 0) {
                     foreach ($element->children() as $child) {
                         $foreignTableName = (string)($child->attributes()['table'] ?? null);
                         $foreignColumnName = (string)($child->attributes()['column'] ?? null);
                         $keyType = $child->getName();
-                        if (!empty($foreignTableName) && !empty($foreignColumnName)) {
+                        if ($foreignTableName !== '' && $foreignTableName !== '0' && ($foreignColumnName !== '' && $foreignColumnName !== '0')) {
                             if (!isset($this->tableDefinitionsMap[$foreignTableName])) {
                                 // TODO: @adunsulag is there a better location higher up the chain to do this
                                 // or would it be cleaner to have a NOOP table definition that we can use for this?
@@ -185,20 +195,21 @@ class ExportState
                             } else {
                                 $foreignTableDefinition = $this->tableDefinitionsMap[$foreignTableName];
                             }
+
                             $keyData['tables'][$foreignTableName] = $foreignTableDefinition;
                             $key = new ExportKeyDefinition();
                             $key->foreignKeyTable = $foreignTableName;
                             $key->foreignKeyColumn = $foreignColumnName;
-                            $key->localTable = $tableDefinition->table;
+                            $key->localTable = $exportTableDefinition->table;
                             $key->localColumn = $localColumnName;
                             $key->keyType = $keyType;
-                            if ($this->keyFilterer->hasMultipleKeysForColumn($key)) {
-                                $keys = $this->keyFilterer->filterMultipleKeys($key);
+                            if ($this->exportKeyDefinitionFilterer->hasMultipleKeysForColumn($key)) {
+                                $keys = $this->exportKeyDefinitionFilterer->filterMultipleKeys($key);
                                 foreach ($keys as $key) {
                                     $keyData['keys'][] = $key;
                                 }
                             } else {
-                                $key = $this->keyFilterer->filterKey($key);
+                                $key = $this->exportKeyDefinitionFilterer->filterKey($key);
                                 $keyData['keys'][] = $key;
                             }
                         }
@@ -206,9 +217,10 @@ class ExportState
                 }
             }
         }
+
         // for any hard-coded denormalized tables we need to handlethose here.
-        if ($this->hasDenormalizedKeys($tableDefinition)) {
-            $keys = $this->getDenormalizedKeys($tableDefinition);
+        if ($this->hasDenormalizedKeys($exportTableDefinition)) {
+            $keys = $this->getDenormalizedKeys($exportTableDefinition);
             foreach ($keys as $key) {
                 $foreignTableName = $key->foreignKeyTable;
                 $foreignTableDefinition = $this->getTableDefinitionForTable($foreignTableName) ?? $this->createTableDefinition($foreignTableName);
@@ -216,22 +228,24 @@ class ExportState
                 $keyData['keys'][] = $key;
             }
         }
+
         return $keyData;
     }
 
-    private function hasDenormalizedKeys(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $tableDefinition)
+    private function hasDenormalizedKeys(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $exportTableDefinition): ?bool
     {
-        if ($tableDefinition->table === 'patient_data' || $tableDefinition->table === 'patient_history') {
+        if ($exportTableDefinition->table === 'patient_data' || $exportTableDefinition->table === 'patient_history') {
             return true;
         }
+        return null;
     }
 
-    private function getDenormalizedKeys(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $tableDefinition)
+    private function getDenormalizedKeys(\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition $exportTableDefinition): array
     {
         // these columns are denormalized data and have the ids separated by a pipe (|)
-        if ($tableDefinition->table === 'patient_data' || $tableDefinition->table == 'patient_history') {
+        if ($exportTableDefinition->table === 'patient_data' || $exportTableDefinition->table == 'patient_history') {
             $care_team_provider = new ExportKeyDefinition();
-            $care_team_provider->localTable = $tableDefinition->table;
+            $care_team_provider->localTable = $exportTableDefinition->table;
             $care_team_provider->localColumn = "care_team_provider";
             $care_team_provider->foreignKeyColumn = "id";
             $care_team_provider->foreignKeyTable = "users";
@@ -239,7 +253,7 @@ class ExportState
             $care_team_provider->denormalizedKeySeparator = "|";
 
             $care_team_facility = new ExportKeyDefinition();
-            $care_team_facility->localTable = $tableDefinition->table;
+            $care_team_facility->localTable = $exportTableDefinition->table;
             $care_team_facility->localColumn = "care_team_facility";
             $care_team_facility->foreignKeyColumn = "id";
             $care_team_facility->foreignKeyTable = "facility";
@@ -247,6 +261,7 @@ class ExportState
             $care_team_provider->denormalizedKeySeparator = "|";
             return [$care_team_provider, $care_team_facility];
         }
+
         return [];
     }
 
@@ -263,36 +278,39 @@ class ExportState
             $sequenceNo = (int)($primaryKey->attributes()['sequenceNumberInPK'] ?? 0);
             $pkBySequence[$sequenceNo] = $columnName;
         }
-        foreach ($pkBySequence as $sequenceNo => $columnName) {
+
+        foreach ($pkBySequence as $pk) {
             // since we add the sequence by integer, it will be in order and we can add the primary keys here so we create our hashes properly.
-            $tableDef->addPrimaryKey($columnName);
+            $tableDef->addPrimaryKey($pk);
         }
+
         // this will be used to make sure we don't have any sql injection attacks
         $safeColumnNames = QueryUtils::listTableFields($safeTableName);
         $tableDef->setColumnNames($safeColumnNames);
-        $this->dataFilterer->generateSelectQueryForTableFromMetadata($tableDef, $this->metaNode);
+        $this->exportTableDataFilterer->generateSelectQueryForTableFromMetadata($tableDef, $this->metaNode);
         $this->tableDefinitionsMap[$safeTableName] = $tableDef;
         return $tableDef;
     }
 
-    private function exportTableDefininitionFactory(string $tableName)
+    private function exportTableDefininitionFactory(string $tableName): \OpenEMR\Modules\EhiExporter\TableDefinitions\ExportOnsiteMessagesTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportOnsiteMailTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportEsignatureTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportOpenEmrPostCalendarEventsTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportClinicalNotesFormTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportFormsGroupsEncounterTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTrackAnythingFormTableDefinition|\OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition
     {
         // for specific tables that we need to do special handling with
-        if ($tableName == ExportOnsiteMessagesTableDefinition::TABLE_NAME) {
+        if ($tableName === ExportOnsiteMessagesTableDefinition::TABLE_NAME) {
             return new ExportOnsiteMessagesTableDefinition($tableName);
-        } else if ($tableName == ExportOnsiteMailTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportOnsiteMailTableDefinition::TABLE_NAME) {
             return new ExportOnsiteMailTableDefinition($tableName);
-        } else if ($tableName == ExportEsignatureTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportEsignatureTableDefinition::TABLE_NAME) {
             return new ExportEsignatureTableDefinition($tableName);
-        } else if ($tableName == ExportOpenEmrPostCalendarEventsTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportOpenEmrPostCalendarEventsTableDefinition::TABLE_NAME) {
             return new ExportOpenEmrPostCalendarEventsTableDefinition($tableName);
-        } else if ($tableName == ExportClinicalNotesFormTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportClinicalNotesFormTableDefinition::TABLE_NAME) {
             return new ExportClinicalNotesFormTableDefinition($tableName);
-        } else if ($tableName == ExportFormsGroupsEncounterTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportFormsGroupsEncounterTableDefinition::TABLE_NAME) {
             return new ExportFormsGroupsEncounterTableDefinition($tableName);
-        } else if ($tableName == ExportTrackAnythingFormTableDefinition::TABLE_NAME) {
+        } elseif ($tableName === ExportTrackAnythingFormTableDefinition::TABLE_NAME) {
             return new ExportTrackAnythingFormTableDefinition($tableName);
         }
+
         return new \OpenEMR\Modules\EhiExporter\TableDefinitions\ExportTableDefinition($tableName);
     }
 

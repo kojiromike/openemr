@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * interface/forms/group_attendance/new.php
  *
@@ -15,7 +17,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("functions.php");
+require_once(__DIR__ . "/functions.php");
 require_once(dirname(__FILE__) . "/../../../library/group.inc.php");
 
 use OpenEMR\Common\Acl\AclMain;

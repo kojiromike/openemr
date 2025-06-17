@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *
  * @package OpenEMR
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Brad Sharp <brad.sharp@claimrev.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Modules\ClaimRevConnector\ClaimRevApi;
@@ -20,8 +21,7 @@ class ClaimSearch
     public static function search($search)
     {
         $token = ClaimRevApi::getAccessToken();
-        $data = ClaimRevApi::searchClaims($search, $token);
 
-        return $data;
+        return ClaimRevApi::searchClaims($search, $token);
     }
 }

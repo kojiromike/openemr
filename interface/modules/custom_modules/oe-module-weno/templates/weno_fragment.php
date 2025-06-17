@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * weno_fragment.php
  *
@@ -38,7 +40,7 @@ $pharmacyLog = $logService->getLastPharmacyDownloadStatus('Success');
 $status = xlt("Last pharmacy update") . ": " . text($pharmacyLog['status'] ?? '') . ". " . xlt("Pharmacies available") . ": " . text($pharmacyLog['count'] ?? 0);
 $cite = <<<CITE
 <cite class="h6 text-danger p-1 mt-1">
-    <span>$status</span>
+    <span>{$status}</span>
 </cite>
 CITE;
 if (str_starts_with($pharmacyLog['status'], 'Success')) {
@@ -82,7 +84,7 @@ function getProviderByWenoId($external_id, $provider_id = ''): string
     // $provider_id is the user id that was passed in the prescription when prescribed.
     // If all else fails then use logged in user id;
     $match = explode(":", $external_id);
-    if (is_countable($match) && count($match) > 1) {
+    if (count($match) > 1) {
         $external_id = $match[0];
     }
     $provider = sqlQuery("SELECT fname, mname, lname FROM users WHERE weno_prov_id = ? OR id = ?", array($external_id, $provider_id));
@@ -226,7 +228,7 @@ if ($hasErrors) { ?>
             <select id="facilitySelect" name="facilitySelect" class="form-control-sm mt-2 border-0 bg-light text-dark">
                 <?php foreach ($facilities as $facility) {
                     $flag = $facility['id'] == $defaultUserFacility['facility_id'] ? 'selected' : '';
-                    $default = !empty($flag) ? '(Default)' : '';
+                    $default = $flag === '' || $flag === '0' ? '' : '(Default)';
                     ?>
                     <option value="<?php echo attr($facility['weno_id']); ?>"
                         <?php echo $flag; ?>><?php echo text($default) . ' ' . text($facility['name']) . ' ' . text($facility['weno_id']); ?>

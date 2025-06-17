@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * OpenEMR About Page
  *
@@ -18,7 +20,7 @@
 // @TODO: jQuery UI Removal
 
 
-require_once("../globals.php");
+require_once(__DIR__ . "/../globals.php");
 
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Common\Uuid\UniqueInstallationUuid;

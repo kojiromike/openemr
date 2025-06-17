@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * class FormEvaluation
  *
@@ -21,32 +23,57 @@ class FormEvaluation extends ORDataObject
      * @access private
      */
 
-    var $id;
-    var $temp;
-    var $p;
-    var $r;
-    var $bp;
-    var $ht;
-    var $wt;
-    var $bmi;
-    var $lmp;
-    var $complaint;
-    var $hpi;
-    var $eyes_od;
-    var $eyes_os;
-    var $eyes_ou;
-    var $comments;
-    var $assesment;
-    var $pid;
-    var $activity;
-    var $date;
-    var $checks;
+    public $id;
+
+    public $temp;
+
+    public $p;
+
+    public $r;
+
+    public $bp;
+
+    public $ht;
+
+    public $wt;
+
+    public $bmi;
+
+    public $lmp;
+
+    public $complaint;
+
+    public $hpi;
+
+    public $eyes_od;
+
+    public $eyes_os;
+
+    public $eyes_ou;
+
+    public $comments;
+
+    public $assesment;
+
+    public $pid;
+
+    public $activity;
+
+    /**
+     * @var string
+     */
+    public $date;
+
+    /**
+     * @var array{}
+     */
+    public $checks;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -67,230 +94,234 @@ class FormEvaluation extends ORDataObject
         }
     }
 
-    function populate()
+    public function populate(): void
     {
         parent::populate();
 
         $sql = "SELECT name from form_evaluation_checks where foreign_id = ?";
-        $results = sqlQ($sql, array($this->id));
+        $recordset = sqlQ($sql, array($this->id));
 
-        while ($row = sqlFetchArray($results)) {
+        while ($row = sqlFetchArray($recordset)) {
             $this->checks[] = $row['name'];
         }
     }
 
     /**
      * @param bool $html
-     * @return string
      */
-    function toString($html = false)
+    public function toString($html = false): string
     {
         $string = "\n" . "ID: " . $this->id . "\n";
         return $html ? nl2br($string) : $string;
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
-    function set_pid($pid)
+
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
-    function get_pid()
+
+    public function get_pid()
     {
         return $this->pid;
     }
-    function set_activity($tf)
+
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
-    function get_activity()
+
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
-    function set_temp($string)
+    public function set_temp($string): void
     {
         $this->temp = $string;
     }
 
-    function get_temp()
+    public function get_temp()
     {
         return $this->temp;
     }
 
-    function set_p($string)
+    public function set_p($string): void
     {
         $this->p = $string;
     }
 
-    function get_p()
+    public function get_p()
     {
         return $this->p;
     }
 
-    function set_r($string)
+    public function set_r($string): void
     {
         $this->r = $string;
     }
 
-    function get_r()
+    public function get_r()
     {
         return $this->r;
     }
 
-    function set_bp($string)
+    public function set_bp($string): void
     {
         $this->bp = $string;
     }
 
-    function get_bp()
+    public function get_bp()
     {
         return $this->bp;
     }
 
-    function set_ht($string)
+    public function set_ht($string): void
     {
         $this->ht = $string;
     }
 
-    function get_ht()
+    public function get_ht()
     {
         return $this->ht;
     }
 
-    function set_wt($string)
+    public function set_wt($string): void
     {
         $this->wt = $string;
     }
 
-    function get_wt()
+    public function get_wt()
     {
         return $this->wt;
     }
 
-    function set_bmi($string)
+    public function set_bmi($string): void
     {
         $this->bmi = $string;
     }
 
-    function get_bmi()
+    public function get_bmi()
     {
         return $this->bmi;
     }
 
-    function set_lmp($string)
+    public function set_lmp($string): void
     {
         $this->lmp = $string;
     }
 
-    function get_lmp()
+    public function get_lmp()
     {
         return $this->lmp;
     }
 
-    function set_complaint($string)
+    public function set_complaint($string): void
     {
         $this->complaint = $string;
     }
 
-    function get_complaint()
+    public function get_complaint()
     {
         return $this->complaint;
     }
 
-    function set_hpi($string)
+    public function set_hpi($string): void
     {
         $this->hpi = $string;
     }
 
-    function get_hpi()
+    public function get_hpi()
     {
 
         return $this->hpi;
     }
 
-    function set_eyes_od($string)
+    public function set_eyes_od($string): void
     {
         $this->eyes_od = $string;
     }
 
-    function get_eyes_od()
+    public function get_eyes_od()
     {
         return $this->eyes_od;
     }
 
-    function set_eyes_os($string)
+    public function set_eyes_os($string): void
     {
         $this->eyes_os = $string;
     }
 
-    function get_eyes_os()
+    public function get_eyes_os()
     {
         return $this->eyes_os;
     }
 
-    function set_eyes_ou($string)
+    public function set_eyes_ou($string): void
     {
         $this->eyes_ou = $string;
     }
 
-    function get_eyes_ou()
+    public function get_eyes_ou()
     {
         return $this->eyes_ou;
     }
 
-    function set_comments($string)
+    public function set_comments($string): void
     {
         $this->comments = $string;
     }
 
-    function get_comments()
+    public function get_comments()
     {
         return $this->comments;
     }
 
-    function set_assesment($string)
+    public function set_assesment($string): void
     {
         $this->assesment = $string;
     }
 
-    function get_assesment()
+    public function get_assesment()
     {
         return $this->assesment;
     }
 
-    function get_checks()
+    public function get_checks()
     {
         return $this->checks;
     }
 
-    function set_checks($check_array)
+    public function set_checks($check_array): void
     {
         $this->checks = $check_array;
     }
 
-    function persist()
+    public function persist(): void
     {
 
         parent::persist();
-        if (is_numeric($this->id) and !empty($this->checks)) {
+        if (is_numeric($this->id) && !empty($this->checks)) {
             $sql = "delete FROM form_evaluation_checks WHERE foreign_id = ?";
             sqlQuery($sql, array($this->id));
             foreach ($this->checks as $check) {
@@ -303,7 +334,7 @@ class FormEvaluation extends ORDataObject
         }
     }
 
-    function _form_layout()
+    public function _form_layout(): array
     {
         $a = array();
 

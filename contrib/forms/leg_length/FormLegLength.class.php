@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -30,33 +32,51 @@ class FormLegLength extends ORDataObject
      *
      * static
      */
-    var $id;
-    var $date;
-    var $pid;
-    var $user;
-    var $groupname;
-    var $activity;
+    public $id;
 
-    var $AE_left;
-    var $AE_right;
-    var $BE_left;
-    var $BE_right;
-    var $AK_left;
-    var $AK_right;
-    var $K_left;
-    var $K_right;
-    var $BK_left;
-    var $BK_right;
-    var $ASIS_left;
-    var $ASIS_right;
-    var $UMB_left;
-    var $UMB_right;
+    public $date;
+
+    public $pid;
+
+    public $user;
+
+    public $groupname;
+
+    public $activity;
+
+    public $AE_left;
+
+    public $AE_right;
+
+    public $BE_left;
+
+    public $BE_right;
+
+    public $AK_left;
+
+    public $AK_right;
+
+    public $K_left;
+
+    public $K_right;
+
+    public $BK_left;
+
+    public $BK_right;
+
+    public $ASIS_left;
+
+    public $ASIS_right;
+
+    public $UMB_left;
+
+    public $UMB_right;
 
     /**
      * Constructor sets all Form attributes to their default value
      */
 
-    function __construct($id = "", $_prefix = "")
+    public function __construct($id = "")
     {
         parent::__construct();
 
@@ -76,260 +96,232 @@ class FormLegLength extends ORDataObject
         }
     }
 
-    function populate()
+    public function populate(): void
     {
         parent::populate();
         //$this->temp_methods = parent::_load_enum("temp_locations",false);
     }
 
-    function __toString()
+    public function __toString(): string
     {
         return "ID: " . $this->id . "\n";
     }
 
-    function set_id($id)
+    public function set_id($id): void
     {
         if (!empty($id) && is_numeric($id)) {
             $this->id = $id;
         }
     }
 
-    function get_id()
+    public function get_id()
     {
         return $this->id;
     }
 
-    function set_pid($pid)
+    public function set_pid($pid): void
     {
         if (!empty($pid) && is_numeric($pid)) {
             $this->pid = $pid;
         }
     }
 
-    function get_pid()
+    public function get_pid()
     {
         return $this->pid;
     }
 
-    function get_date()
+    public function get_date()
     {
         return $this->date;
     }
 
-    function set_date($dt)
+    public function set_date($dt): void
     {
         if (!empty($dt)) {
             $this->date = $dt;
         }
     }
 
-    function get_user()
+    public function get_user()
     {
         return $this->user;
     }
 
-    function set_user($u)
+    public function set_user($u): void
     {
         if (!empty($u)) {
             $this->user = $u;
         }
     }
 
-    function set_activity($tf)
+    public function set_activity($tf): void
     {
         if (!empty($tf) && is_numeric($tf)) {
             $this->activity = $tf;
         }
     }
 
-    function get_activity()
+    public function get_activity()
     {
         return $this->activity;
     }
 
-    function persist()
+    public function persist(): void
     {
         parent::persist();
     }
 
-    function get_AE_left()
+    public function get_AE_left()
     {
         return $this->AE_left;
     }
 
-    function set_AE_left($tf)
+    public function set_AE_left($tf): void
     {
-        if (true) {
-            $this->AE_left = $tf;
-        }
+        $this->AE_left = $tf;
     }
 
-    function get_AE_right()
+    public function get_AE_right()
     {
         return $this->AE_right;
     }
 
-    function set_AE_right($tf)
+    public function set_AE_right($tf): void
     {
-        if (true) {
-            $this->AE_right = $tf;
-        }
+        $this->AE_right = $tf;
     }
 
-    function get_BE_left()
+    public function get_BE_left()
     {
         return $this->BE_left;
     }
 
-    function set_BE_left($tf)
+    public function set_BE_left($tf): void
     {
-        if (true) {
-            $this->BE_left = $tf;
-        }
+        $this->BE_left = $tf;
     }
 
-    function get_BE_right()
+    public function get_BE_right()
     {
         return $this->BE_right;
     }
 
-    function set_BE_right($tf)
+    public function set_BE_right($tf): void
     {
-        if (true) {
-            $this->BE_right = $tf;
-        }
+        $this->BE_right = $tf;
     }
 
-    function get_AK_left()
+    public function get_AK_left()
     {
         return $this->AK_left;
     }
 
-    function set_AK_left($tf)
+    public function set_AK_left($tf): void
     {
-        if (true) {
-            $this->AK_left = $tf;
-        }
+        $this->AK_left = $tf;
     }
 
-    function get_AK_right()
+    public function get_AK_right()
     {
         return $this->AK_right;
     }
 
-    function set_AK_right($tf)
+    public function set_AK_right($tf): void
     {
-        if (true) {
-            $this->AK_right = $tf;
-        }
+        $this->AK_right = $tf;
     }
 
-    function get_K_left()
+    public function get_K_left()
     {
         return $this->K_left;
     }
 
-    function set_K_left($tf)
+    public function set_K_left($tf): void
     {
-        if (true) {
-            $this->K_left = $tf;
-        }
+        $this->K_left = $tf;
     }
 
-    function get_K_right()
+    public function get_K_right()
     {
         return $this->K_right;
     }
 
-    function set_K_right($tf)
+    public function set_K_right($tf): void
     {
-        if (true) {
-            $this->K_right = $tf;
-        }
+        $this->K_right = $tf;
     }
 
-    function get_BK_left()
+    public function get_BK_left()
     {
         return $this->BK_left;
     }
 
-    function set_BK_left($tf)
+    public function set_BK_left($tf): void
     {
-        if (true) {
-            $this->BK_left = $tf;
-        }
+        $this->BK_left = $tf;
     }
 
-    function get_BK_right()
+    public function get_BK_right()
     {
         return $this->BK_right;
     }
 
-    function set_BK_right($tf)
+    public function set_BK_right($tf): void
     {
-        if (true) {
-            $this->BK_right = $tf;
-        }
+        $this->BK_right = $tf;
     }
 
-    function get_ASIS_left()
+    public function get_ASIS_left()
     {
         return $this->ASIS_left;
     }
 
-    function set_ASIS_left($tf)
+    public function set_ASIS_left($tf): void
     {
-        if (true) {
-            $this->ASIS_left = $tf;
-        }
+        $this->ASIS_left = $tf;
     }
 
-    function get_ASIS_right()
+    public function get_ASIS_right()
     {
         return $this->ASIS_right;
     }
 
-    function set_ASIS_right($tf)
+    public function set_ASIS_right($tf): void
     {
-        if (true) {
-            $this->ASIS_right = $tf;
-        }
+        $this->ASIS_right = $tf;
     }
 
-    function get_UMB_left()
+    public function get_UMB_left()
     {
         return $this->UMB_left;
     }
 
-    function set_UMB_left($tf)
+    public function set_UMB_left($tf): void
     {
-        if (true) {
-            $this->UMB_left = $tf;
-        }
+        $this->UMB_left = $tf;
     }
 
-    function get_UMB_right()
+    public function get_UMB_right()
     {
         return $this->UMB_right;
     }
 
-    function set_UMB_right($tf)
+    public function set_UMB_right($tf): void
     {
-        if (true) {
-            $this->UMB_right = $tf;
-        }
+        $this->UMB_right = $tf;
     }
 
     // ----- notes -----
 
-    var $notes;
+    public $notes;
 
-    function get_notes()
+    public function get_notes()
     {
         return $this->notes;
     }
 
-    function set_notes($data)
+    public function set_notes($data): void
     {
         if (!empty($data)) {
             $this->notes = $data;

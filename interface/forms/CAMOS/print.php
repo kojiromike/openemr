@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * CAMOS print.php
  *
@@ -15,7 +17,7 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("../../../library/api.inc.php");
+require_once(__DIR__ . "/../../../library/api.inc.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Core\Header;
@@ -34,7 +36,7 @@ formHeader("Form: CAMOS");
         <h1><?php echo xlt('CAMOS'); ?></h1>
         <hr>
         <input type="submit" name="submit form" value="<?php echo xla('submit form'); ?>" />
-        <?php echo "<a href='{$GLOBALS['form_exit_url']}' onclick='top.restoreSession()'>[" . xlt('do not save') . "]</a>"; ?>
+        <?php echo sprintf("<a href='%s' onclick='top.restoreSession()'>[", $GLOBALS['form_exit_url']) . xlt('do not save') . "]</a>"; ?>
         <table>
         </table>
         <h3><?php echo xlt('Computer Aided Medical Ordering System'); ?></h3>
@@ -57,7 +59,7 @@ formHeader("Form: CAMOS");
             </tr>
         </table><input type="submit" name="submit form" value="submit form" />
         <?php
-        echo "<a href='{$GLOBALS['form_exit_url']}' onclick='top.restoreSession()'>[" .
+        echo sprintf("<a href='%s' onclick='top.restoreSession()'>[", $GLOBALS['form_exit_url']) .
         xlt('do not save') . "]</a>";
         ?>
 

@@ -1,15 +1,15 @@
 <?php
+declare(strict_types=1);
+
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 
-if (!empty($_POST)) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
-        CsrfUtils::csrfNotVerified();
-    }
+if (!($_POST === []) && !CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
+    CsrfUtils::csrfNotVerified();
 }
 
 //ensure user has proper access
@@ -18,14 +18,10 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
     exit;
 }
 
-require_once("gacl_admin.inc.php");
+require_once(__DIR__ . "/gacl_admin.inc.php");
 
 //GET takes precedence.
-if ( isset($_GET['object_type']) AND $_GET['object_type'] != '' ) {
-	$object_type = $_GET['object_type'];
-} else {
-	$object_type = $_POST['object_type'];
-}
+$object_type = isset($_GET['object_type']) && $_GET['object_type'] != '' ? $_GET['object_type'] : $_POST['object_type'];
 
 switch(strtolower(trim($object_type))) {
     case 'aco':
@@ -47,7 +43,6 @@ switch(strtolower(trim($object_type))) {
     default:
         echo "ERROR: Must select an object type<br />\n";
         exit();
-        break;
 }
 
 $postAction = $_POST['action'] ?? null;
@@ -72,6 +67,7 @@ switch ($postAction) {
             list($id, $value, $order, $name) = $row;
             $gacl_api->edit_object_section($id, $name, $value, $order,0,$object_type );
         }
+
         unset($id);
         unset($value);
         unset($order);
@@ -81,18 +77,19 @@ switch ($postAction) {
         foreach ($_POST['new_sections'] as $row) {
             list($value, $order, $name) = $row;
 
-            if (!empty($value) AND !empty($order) AND !empty($name)) {
+            if (!empty($value) && !empty($order) && !empty($name)) {
 
                 $object_section_id = $gacl_api->add_object_section($name, $value, $order, 0, $object_type);
-                $gacl_api->debug_text("Section ID: $object_section_id");
+                $gacl_api->debug_text('Section ID: ' . $object_section_id);
             }
         }
+
         $gacl_api->debug_text("return_page: ". $_POST['return_page']);
         $gacl_api->return_page($_POST['return_page']);
 
         break;
     default:
-        $query = "select id,value,order_value,name from $object_sections_table order by order_value";
+        $query = sprintf('select id,value,order_value,name from %s order by order_value', $object_sections_table);
 
         $rs = $db->pageexecute($query, $gacl_api->_items_per_page, ($_GET['page'] ?? null));
         $rows = $rs->GetRows();
@@ -112,7 +109,7 @@ switch ($postAction) {
 
         $new_sections = array();
 
-        for($i=0; $i < 5; $i++) {
+        for($i=0; $i < 5; ++$i) {
                 $new_sections[] = array(
                                                 'id' => $i,
                                                 'value' => NULL,

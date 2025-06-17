@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ////////////////////////////////////////////////////////////////////
 // Form:    form_brief_aan_verwijzer
 // Package: letter to - Dutch specific form
@@ -8,8 +10,8 @@
 ////////////////////////////////////////////////////////////////////
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/forms.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/forms.inc.php');
 
 if ($encounter == "") {
     $encounter = date("Ymd");

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Clinical Notes form report.php
  *
@@ -23,12 +25,11 @@ use OpenEMR\Services\ClinicalNotesService;
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
 
-function clinical_notes_report($pid, $encounter, $cols, $id)
+function clinical_notes_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
     $clinicalNotesService = new ClinicalNotesService();
     $records = $clinicalNotesService->getClinicalNotesForPatientForm($id, $pid, $encounter) ?? [];
-    $data = array_filter($records, function ($val) {
+    $data = array_filter($records, function (array $val): bool {
         return $val['activity'] == ClinicalNotesService::ACTIVITY_ACTIVE;
     });
 
@@ -37,6 +38,6 @@ function clinical_notes_report($pid, $encounter, $cols, $id)
     ];
 
     $twig = new TwigContainer(__DIR__, $GLOBALS['kernel']);
-    $t = $twig->getTwig();
-    echo $t->render('templates/report.html.twig', $viewArgs);
+    $twigEnvironment = $twig->getTwig();
+    echo $twigEnvironment->render('templates/report.html.twig', $viewArgs);
 }

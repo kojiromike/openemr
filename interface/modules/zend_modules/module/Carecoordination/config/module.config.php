@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * module.config.php handles the dependency injection configuration, routes, and other config settings needed by the module.
  *
@@ -11,7 +13,6 @@
  * @copyright Copyright (c) 2022 Discover and Change <snielson@discoverandchange.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Carecoordination;
 
 use Carecoordination\Model\CcdaGenerator;
@@ -40,17 +41,17 @@ use Carecoordination\Listener\CCDAEventsSubscriber;
 return array(
     'controllers' => array(
         'factories' => [
-            CarecoordinationController::class => function (ContainerInterface $container, $requestedName) {
+            CarecoordinationController::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Controller\CarecoordinationController {
                 return new CarecoordinationController($container->get(CarecoordinationTable::class), $container->get(DocumentsController::class));
             },
-            EncountermanagerController::class =>  function (ContainerInterface $container, $requestedName) {
+            EncountermanagerController::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Controller\EncountermanagerController {
                 return new EncountermanagerController($container->get(\Carecoordination\Model\EncountermanagerTable::class));
             },
             // we use factories because the controller code is used in two places.  ZF isolates the controller services into
             // their own scope and are not available from outside the module.  The factory let's us share the instantiation code.
             EncounterccdadispatchController::class =>  EncounterccdadispatchControllerFactory::class,
             SetupController::class => SetupControllerFactory::class,
-            CcdController::class => function (ContainerInterface $container, $requestedName) {
+            CcdController::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Controller\CcdController {
                 return new CcdController($container->get(CcdTable::class), $container->get(CarecoordinationTable::class), $container->get(\Documents\Model\DocumentsTable::class), $container->get(DocumentsController::class));
             }
         ],
@@ -151,34 +152,34 @@ return array(
 
     'service_manager' => [
         'factories' => array(
-            CarecoordinationTable::class =>  function (ContainerInterface $container, $requestedName) {
+            CarecoordinationTable::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Model\CarecoordinationTable {
                 return new CarecoordinationTable($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
-            EncounterccdadispatchTable::class =>  function (ContainerInterface $container, $requestedName) {
+            EncounterccdadispatchTable::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Model\EncounterccdadispatchTable {
                     return new EncounterccdadispatchTable($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
-            EncountermanagerTable::class =>  function (ContainerInterface $container, $requestedName) {
+            EncountermanagerTable::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Model\EncountermanagerTable {
                     return new EncountermanagerTable($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
-            SetupTable::class =>  function (ContainerInterface $container, $requestedName) {
+            SetupTable::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Model\SetupTable {
                     return new SetupTable($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
-            CcdTable::class =>  function (ContainerInterface $container, $requestedName) {
+            CcdTable::class =>  function (ContainerInterface $container, $requestedName): \Carecoordination\Model\CcdTable {
                     return new CcdTable($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
-            ModuleconfigForm::class => function (ContainerInterface $container, $requestedName) {
+            ModuleconfigForm::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Form\ModuleconfigForm {
                 return new ModuleconfigForm($container->get(\Laminas\Db\Adapter\Adapter::class));
             },
             // so this isn't really a 'controller' class used as a route 'controller' but more to reuse component code for other modules...
-            ModuleconfigController::class => function (ContainerInterface $container, $requestedName) {
+            ModuleconfigController::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Controller\ModuleconfigController {
                 return new ModuleconfigController();
             },
             SetupController::class => SetupControllerFactory::class,
             EncounterccdadispatchController::class => EncounterccdadispatchControllerFactory::class,
-            CCDAEventsSubscriber::class => function (ContainerInterface $container, $requestedName) {
+            CCDAEventsSubscriber::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Listener\CCDAEventsSubscriber {
                 return new CCDAEventsSubscriber($container->get(CcdaGenerator::class));
             },
-            CcdaGenerator::class => function (ContainerInterface $container, $requestedName) {
+            CcdaGenerator::class => function (ContainerInterface $container, $requestedName): \Carecoordination\Model\CcdaGenerator {
                 return new CcdaGenerator($container->get(EncounterccdadispatchTable::class));
             }
         ),
@@ -191,7 +192,7 @@ return array(
     // TODO: Note this is a weird dependency used in the CarecoordinationController class that should be revisited
     ,'controller_plugins' => array(
         'factories' => array(
-            'Documents' => function (ContainerInterface $container, $requestedName) {
+            'Documents' => function (ContainerInterface $container, $requestedName): \Documents\Plugin\Documents {
                 return new \Documents\Plugin\Documents($container);
             }
         )

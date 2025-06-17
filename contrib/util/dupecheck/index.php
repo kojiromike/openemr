@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * dupecheck index.php
  *
@@ -10,15 +12,15 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../../../interface/globals.php");
-require_once("./Utils.php");
+require_once(__DIR__ . "/../../../interface/globals.php");
+require_once(__DIR__ . "/Utils.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Header;
 
-if (!empty($_POST)) {
+if ($_POST !== []) {
     if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"])) {
         CsrfUtils::csrfNotVerified();
     }
@@ -168,25 +170,26 @@ if ($parameters['go'] == "Go") {
             $sqlstmt .= $sqland . " fname=?";
             $sqland = " AND ";
             $sqlstmt .= $sqland . " lname=?";
-            array_push($sqlBindArray, $row['fname'], $row['lname']);
+            $sqlBindArray[] = $row['fname'];
+            $sqlBindArray[] = $row['lname'];
         }
 
         if ($parameters['match_sex']) {
             $sqlstmt .= $sqland . " sex=?";
             $sqland = " AND ";
-            array_push($sqlBindArray, $row['sex']);
+            $sqlBindArray[] = $row['sex'];
         }
 
         if ($parameters['match_ssn']) {
             $sqlstmt .= $sqland . " ss=?";
             $sqland = " AND ";
-            array_push($sqlBindArray, $row['ss']);
+            $sqlBindArray[] = $row['ss'];
         }
 
         if ($parameters['match_dob']) {
             $sqlstmt .= $sqland . " dob=?";
             $sqland = " AND ";
-            array_push($sqlBindArray, $row['dob']);
+            $sqlBindArray[] = $row['dob'];
         }
 
         $mResults = sqlStatement($sqlstmt, $sqlBindArray);
@@ -228,7 +231,7 @@ if ($parameters['go'] == "Go") {
             $dupelist[$mrow['id']] = 1;
         }
 
-        $dupecount++;
+        ++$dupecount;
 
         echo "</table>";
         echo "</div>\n";

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
 meinhard_jahn@web.de, 20041102: axo implemented
 */
@@ -8,7 +10,7 @@ if (!empty($_GET['debug'])) {
 }
 */
 //First make sure user has access
-require_once("../../interface/globals.php");
+require_once(__DIR__ . "/../../interface/globals.php");
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -21,10 +23,10 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 @set_time_limit(600);
 
-require_once('../profiler.inc.php');
+require_once(__DIR__ . '/../profiler.inc.php');
 $profiler = new Profiler(true,true);
 
-require_once("gacl_admin.inc.php");
+require_once(__DIR__ . "/gacl_admin.inc.php");
 /*
 $query = '
 	SELECT		a.value AS a_value, a.name AS a_name,
@@ -93,8 +95,8 @@ foreach ($rows as $row) {
 	$acl_check_time = ($acl_check_end_time - $acl_check_begin_time) * 1000;
 	$total_acl_check_time += $acl_check_time;
 
-	if ($aco_section_name != $tmp_aco_section_name OR $aco_name != $tmp_aco_name) {
-		$display_aco_name = "$aco_section_name > $aco_name";
+	if ($aco_section_name != $tmp_aco_section_name || $aco_name != $tmp_aco_name) {
+		$display_aco_name = sprintf('%s > %s', $aco_section_name, $aco_name);
 	} else {
 		$display_aco_name = "";
 	}
@@ -136,6 +138,7 @@ $smarty->assign("total_acl_check_time", ($total_acl_check_time ?? null));
 if ($total_rows > 0) {
 	$avg_acl_check_time = $total_acl_check_time / $total_rows;
 }
+
 $smarty->assign("avg_acl_check_time", number_format((($avg_acl_check_time ?? 0) + 0) ,2));
 
 $smarty->assign("paging_data", $gacl_api->get_paging_data($rs));

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Id: admin.php,v 1.1.1.3 2005/06/23 05:33:20 drbowen Exp $
  *
@@ -48,7 +50,7 @@ define('_PC_CAT_DESC', xl('Description'));
 define('_PC_CAT_DESC_XL', xl('Description Translation'));
 define('_PC_CAT_COLOR', xl('Color'));
 define('_PC_CAT_DUR', xl('Duration'));
-define('_PC_ARE_YOU_SURE', xl('Are you sure you\'d like to continue with these actions?'));
+define('_PC_ARE_YOU_SURE', xl("Are you sure you'd like to continue with these actions?"));
 define('_PC_DELETE_CATS', xl('Delete Categories with ID(s) : '));
 define('_PC_ADD_CAT', xl('Add new category : '));
 define('_PC_MODIFY_CATS', xl('Make modifications to current categories.'));

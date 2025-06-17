@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Copyright (C) 2009 Aron Racho <aron@mi-squared.com>
 //
 // This program is free software; you can redistribute it and/or
@@ -8,12 +10,9 @@
 //------------Forms generated from formsWiz
 require_once(__DIR__ . "/../../globals.php");
 require_once($GLOBALS["srcdir"] . "/api.inc.php");
-function snellen_report($pid, $encounter, $cols, $id)
+function snellen_report($pid, $encounter, $cols, $id): void
 {
-    $count = 0;
-    $cols = 2;
     $data = formFetch("form_snellen", $id);
-    $width = 100 / $cols;
     if ($data) {
         ?>
 

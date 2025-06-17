@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
 pediatric pain form
 This form works as new and editing,

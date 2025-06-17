@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * PSYCHIATRISCH ONDERZOEK
  * Report of Research psihiatric - Dutch specific form
@@ -22,8 +24,8 @@
  */
 
 require_once(__DIR__ . "/../../globals.php");
-require_once("$srcdir/api.inc.php");
-require_once("$srcdir/patient.inc.php");
+require_once($srcdir . '/api.inc.php');
+require_once($srcdir . '/patient.inc.php');
 
 use OpenEMR\Core\Header;
 
@@ -98,25 +100,13 @@ if ($obj_po['conclusie_van_intake'] != '') {
 }
 
 // Medicatie - local
-if ($obj_po['medicatie'] != '') {
-    $obj['medicatie'] = $obj_po['medicatie'];
-} else {
-    $obj['medicatie'] = '';
-}
+$obj['medicatie'] = $obj_po['medicatie'] != '' ? $obj_po['medicatie'] : '';
 
 // Anamnese - local
-if ($obj_po['anamnese'] != '') {
-    $obj['anamnese'] = $obj_po['anamnese'];
-} else {
-    $obj['anamnese'] = '';
-}
+$obj['anamnese'] = $obj_po['anamnese'] != '' ? $obj_po['anamnese'] : '';
 
 // Psychiatrisch onderzoek i.e.z. - local
-if ($obj_po['psychiatrisch_onderzoek'] != '') {
-    $obj['psychiatrisch_onderzoek'] = $obj_po['psychiatrisch_onderzoek'];
-} else {
-    $obj['psychiatrisch_onderzoek'] = '';
-}
+$obj['psychiatrisch_onderzoek'] = $obj_po['psychiatrisch_onderzoek'] != '' ? $obj_po['psychiatrisch_onderzoek'] : '';
 
 // Beschrijvende conclusie
 if ($obj_po['beschrijvende_conclusie'] != '') {
@@ -137,7 +127,7 @@ if ($obj_po['behandelvoorstel'] != '') {
 }
 
 $tmpDate = stripslashes($obj["datum_onderzoek"]);
-if ($tmpDate && $tmpDate != '0000-00-00 00:00:00') {
+if ($tmpDate && $tmpDate !== '0000-00-00 00:00:00') {
     $m_strEventDate = $tmpDate;
 }
 
@@ -175,11 +165,7 @@ if ($tmpDate && $tmpDate != '0000-00-00 00:00:00') {
 
 <?php
 
-if ($vectAutosavePO['id']) {
-    $psychiatrisch_onderzoek_id = $vectAutosavePO['id'];
-} else {
-    $psychiatrisch_onderzoek_id = "0";
-}
+$psychiatrisch_onderzoek_id = $vectAutosavePO['id'] ? $vectAutosavePO['id'] : "0";
 
 ?>
 <script>
@@ -309,7 +295,7 @@ function autosave( )
 <br /><br />
 <a href="javascript:document.my_form.submit();" class="link_submit">[<?php echo xlt('Save'); ?>]</a>
 <br />
-<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt('Don\'t Save'); ?>]</a>
+<a href="<?php echo $GLOBALS['form_exit_url']; ?>" class="link_submit" onclick="delete_autosave();top.restoreSession()">[<?php echo xlt("Don't Save"); ?>]</a>
 </form>
 
 <div id="timestamp"></div>

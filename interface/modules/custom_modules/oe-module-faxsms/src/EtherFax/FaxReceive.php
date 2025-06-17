@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fax SMS Module Member
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2023 Jerry Padgett <sjpadgett@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General public License 3
  */
-
 namespace OpenEMR\Modules\FaxSMS\EtherFax;
 
 /**
@@ -17,35 +18,34 @@ namespace OpenEMR\Modules\FaxSMS\EtherFax;
  */
 class FaxReceive
 {
-    public $FaxResult;
+    public $FaxResult = 0;
+
     public $JobId;
+
     public $CalledNumber;
+
     public $CallingNumber;
+
     public $RemoteId;
-    public $PagesReceived;
-    public $ConnectTime;
-    public $ConnectSpeed;
+
+    public $PagesReceived = 0;
+
+    public $ConnectTime = 0;
+
+    public $ConnectSpeed = 0;
+
     public $ReceivedOn;
+
     public $FaxImage;
+
     public $AnalyzeFormResult;
+
     public $DocumentParams;
 
     /**
-     * Default constructor.
-     */
-    public function __construct()
-    {
-        $this->FaxResult = 0;
-        $this->PagesReceived = 0;
-        $this->ConnectTime = 0;
-        $this->ConnectSpeed = 0;
-    }
-
-    /**
      * @param $data
-     * @return void
      */
-    public function set($data)
+    public function set($data): void
     {
         foreach ($data as $key => $value) {
             $this->{$key} = $value;

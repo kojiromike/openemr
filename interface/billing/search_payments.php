@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
 * Payments in database can be searched through this screen and edit popup is also its part.
 * Deletion of the payment is done with logging.
@@ -17,11 +19,11 @@
 * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
 */
 
-require_once("../globals.php");
-require_once("../../custom/code_types.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
-require_once("$srcdir/payment.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once(__DIR__ . "/../../custom/code_types.inc.php");
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
+require_once($srcdir . '/payment.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
@@ -87,64 +89,64 @@ if (isset($_POST["mode"])) {
 
         $sqlBindArray = array();
 
-        if ($PaymentDate == 'date_val') {
+        if ($PaymentDate === 'date_val') {
             $PaymentDateString = ' check_date ';
-        } elseif ($PaymentDate == 'post_to_date') {
+        } elseif ($PaymentDate === 'post_to_date') {
             $PaymentDateString = ' post_to_date ';
-        } elseif ($PaymentDate == 'deposit_date') {
+        } elseif ($PaymentDate === 'deposit_date') {
             $PaymentDateString = ' deposit_date ';
         }
 
-        if ($FromDate != '') {
-            $QueryString .= " $And $PaymentDateString >=?";
+        if ($FromDate !== '') {
+            $QueryString .= sprintf(' %s %s >=?', $And, $PaymentDateString);
             $And = ' and ';
             $sqlBindArray[] = DateToYYYYMMDD($FromDate);
         }
 
-        if ($ToDate != '') {
-            $QueryString .= " $And $PaymentDateString <=?";
+        if ($ToDate !== '') {
+            $QueryString .= sprintf(' %s %s <=?', $And, $PaymentDateString);
             $And = ' and ';
             $sqlBindArray[] = DateToYYYYMMDD($ToDate);
         }
 
-        if ($PaymentMethod != '') {
-            $QueryString .= " $And payment_method =?";
+        if ($PaymentMethod !== '') {
+            $QueryString .= sprintf(' %s payment_method =?', $And);
             $And = ' and ';
             $sqlBindArray[] = $PaymentMethod;
         }
 
-        if ($CheckNumber != '') {
-            $QueryString .= " $And reference like ?";
+        if ($CheckNumber !== '') {
+            $QueryString .= sprintf(' %s reference like ?', $And);
             $And = ' and ';
             $sqlBindArray[] = '%' . $CheckNumber . '%';
         }
 
-        if ($PaymentAmount != '') {
-            $QueryString .= " $And pay_total =?";
+        if ($PaymentAmount !== '') {
+            $QueryString .= sprintf(' %s pay_total =?', $And);
             $And = ' and ';
             $sqlBindArray[] = $PaymentAmount;
         }
 
-        if ($PayingEntity != '') {
-            if ($PayingEntity == 'insurance') {
-                $QueryString .= " $And payer_id !='0'";
+        if ($PayingEntity !== '') {
+            if ($PayingEntity === 'insurance') {
+                $QueryString .= sprintf(" %s payer_id !='0'", $And);
             }
 
-            if ($PayingEntity == 'patient') {
-                $QueryString .= " $And payer_id ='0'";
+            if ($PayingEntity === 'patient') {
+                $QueryString .= sprintf(" %s payer_id ='0'", $And);
             }
 
             $And = ' and ';
         }
 
-        if ($PaymentCategory != '') {
-            $QueryString .= " $And adjustment_code =?";
+        if ($PaymentCategory !== '') {
+            $QueryString .= sprintf(' %s adjustment_code =?', $And);
             $And = ' and ';
             $sqlBindArray[] = $PaymentCategory;
         }
 
-        if ($PaymentFrom != '') {
-            if ($PayingEntity == 'insurance' || $PayingEntity == '') {
+        if ($PaymentFrom !== '') {
+            if ($PayingEntity === 'insurance' || $PayingEntity === '') {
                 //-------------------
                 $res = sqlStatement("SELECT insurance_companies.name FROM insurance_companies
             where insurance_companies.id =?", [$PaymentFrom]);
@@ -152,11 +154,11 @@ if (isset($_POST["mode"])) {
                 $div_after_save = $row['name'];
                 //-------------------
 
-                $QueryString .= " $And payer_id =?";
+                $QueryString .= sprintf(' %s payer_id =?', $And);
                 $sqlBindArray[] = $PaymentFrom;
             }
 
-            if ($PayingEntity == 'patient') {
+            if ($PayingEntity === 'patient') {
                 //-------------------
                 $res = sqlStatement("SELECT fname,lname,mname FROM patient_data
             where pid =?", [$PaymentFrom]);
@@ -167,14 +169,14 @@ if (isset($_POST["mode"])) {
                 $div_after_save = $lname . ' ' . $fname . ' ' . $mname;
                 //-------------------
 
-                $QueryString .= " $And patient_id =?";
+                $QueryString .= sprintf(' %s patient_id =?', $And);
                 $sqlBindArray[] = $PaymentFrom;
             }
 
             $And = ' and ';
         }
 
-        if ($PaymentStatus != '') {
+        if ($PaymentStatus !== '') {
             $QsString = "select ar_session.session_id, pay_total, global_amount, sum(pay_amount) sum_pay_amount " .
                 "from ar_session,ar_activity WHERE " .
                 "ar_activity.deleted IS NULL AND ar_session.session_id = ar_activity.session_id " .
@@ -192,24 +194,20 @@ if (isset($_POST["mode"])) {
             }
 
             $StringSessionId = substr($StringSessionId, 0, -1);
-            if ($PaymentStatus == 'fully_paid') {
-                $QueryString .= " $And session_id in(" . add_escape_custom($StringSessionId) . ") ";
-            } elseif ($PaymentStatus == 'unapplied') {
-                $QueryString .= " $And session_id not in(" . add_escape_custom($StringSessionId) . ") ";
+            if ($PaymentStatus === 'fully_paid') {
+                $QueryString .= sprintf(' %s session_id in(', $And) . add_escape_custom($StringSessionId) . ") ";
+            } elseif ($PaymentStatus === 'unapplied') {
+                $QueryString .= sprintf(' %s session_id not in(', $And) . add_escape_custom($StringSessionId) . ") ";
             }
 
             $And = ' and ';
         }
 
-        if ($PaymentSortBy != '') {
+        if ($PaymentSortBy !== '') {
             $SortFieldOld = isset($_POST['SortFieldOld']) ? trim($_POST['SortFieldOld']) : '';
             $Sort = isset($_POST['Sort']) ? trim($_POST['Sort']) : '';
-            if ($SortFieldOld == $PaymentSortBy) {
-                if ($Sort == 'DESC' || $Sort == '') {
-                    $Sort = 'ASC';
-                } else {
-                    $Sort = 'DESC';
-                }
+            if ($SortFieldOld === $PaymentSortBy) {
+                $Sort = $Sort === 'DESC' || $Sort === '' ? 'ASC' : 'DESC';
             } else {
                 $Sort = 'ASC';
             }
@@ -229,8 +227,8 @@ if (isset($_POST["mode"])) {
 <title><?php echo xlt("Search Payment") ?></title>
 <?php Header::setupHeader(['datetime-picker']); ?>
 
-<?php include_once("{$GLOBALS['srcdir']}/payment_jav.inc.php"); ?>
-<?php include_once("{$GLOBALS['srcdir']}/ajax/payment_ajax_jav.inc.php"); ?>
+<?php include_once($GLOBALS['srcdir'] . '/payment_jav.inc.php'); ?>
+<?php include_once($GLOBALS['srcdir'] . '/ajax/payment_ajax_jav.inc.php'); ?>
 
 <script>
     function refreshSearch() {
@@ -461,7 +459,7 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                     </fieldset><!--End of Search-->
                     <?php
                     if (!empty($_POST["mode"]) && ($_POST["mode"] == "SearchPayment")) {
-                        echo "&nbsp;" . "<br />"; // do not remove else below div will not display !!
+                        echo '&nbsp;<br />'; // do not remove else below div will not display !!
                         ?>
                         <div class="table-responsive-sm">
                             <table class="table table-sm table-bordered">
@@ -505,12 +503,8 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                                             //-------------------
                                         }
                                         //=============================================
-                                        $CountIndex++;
-                                        if ($CountIndex % 2 == 1) {
-                                            $bgcolor = '#ddddff';
-                                        } else {
-                                            $bgcolor = '#ffdddd';
-                                        }
+                                        ++$CountIndex;
+                                        $bgcolor = $CountIndex % 2 == 1 ? '#ddddff' : '#ffdddd';
                                         ?>
                                         <tr bgcolor='<?php echo attr($bgcolor); ?>' class="text">
                                             <td>

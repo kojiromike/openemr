@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * de_identification script 2
  *
@@ -12,10 +14,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-require_once("../globals.php");
-require_once("$srcdir/lists.inc.php");
-require_once("$srcdir/patient.inc.php");
-require_once("$srcdir/options.inc.php");
+require_once(__DIR__ . "/../globals.php");
+require_once($srcdir . '/lists.inc.php');
+require_once($srcdir . '/patient.inc.php');
+require_once($srcdir . '/options.inc.php');
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -36,11 +38,7 @@ de_identification_screen1.php  */
 $begin_date = $_POST["begin_date"];
 $end_date = $_POST["end_date"];
 
-if ($_POST["unstructured"]) {
-    $include_unstructured = 1;
-} else {
-    $include_unstructured = 0;
-}
+$include_unstructured = $_POST["unstructured"] ? 1 : 0;
 
 if ($_POST["all"]) {
     $include_tables = "all";
@@ -70,7 +68,7 @@ if ($_POST["all"]) {
     }
 
     if ($_POST["billing_data"]) {
-        $include_tables = $include_tables . "billing#payments";
+        $include_tables .= "billing#payments";
     }
 }
 
@@ -262,7 +260,7 @@ if ($deIdentificationStatus == 0) {
         $query = "update de_identification_status set status = 3";
         $res = sqlStatement($query);
     }
-} elseif ($deIdentificationStatus == 2 or $deIdentificationStatus == 3) {
+} elseif ($deIdentificationStatus == 2 || $deIdentificationStatus == 3) {
  //2 - The De Identification process completed and xls file is ready to download
  //3 - The De Identification process completed with error
     $query = "select last_available_de_identified_data_file from de_identification_status";

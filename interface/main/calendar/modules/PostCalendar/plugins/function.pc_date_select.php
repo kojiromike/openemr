@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  *  $Id$
  *
@@ -25,10 +27,10 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-function smarty_function_pc_date_select($args)
+function smarty_function_pc_date_select($args): void
 {
-    $print = pnVarCleanFromInput('print');
-    $tplview = pnVarCleanFromInput('tplview');
+    pnVarCleanFromInput('print');
+    pnVarCleanFromInput('tplview');
     $viewtype = pnVarCleanFromInput('viewtype');
     if (!isset($viewtype)) {
         $viewtype = _SETTING_DEFAULT_VIEW;
@@ -48,35 +50,37 @@ function smarty_function_pc_date_select($args)
         $d = substr($Date, 6, 2);
     }
 
-    if (!isset($args['day']) || strtolower($args['day']) == 'on') {
+    if (!isset($args['day']) || strtolower($args['day']) === 'on') {
         $args['day'] = true;
         @define('_PC_FORM_DATE', true);
     } else {
         $args['day'] = false;
     }
 
-    if (!isset($args['month']) || strtolower($args['month']) == 'on') {
+    if (!isset($args['month']) || strtolower($args['month']) === 'on') {
         $args['month'] = true;
         @define('_PC_FORM_DATE', true);
     } else {
         $args['month'] = false;
     }
 
-    if (!isset($args['year']) || strtolower($args['year']) == 'on') {
+    if (!isset($args['year']) || strtolower($args['year']) === 'on') {
         $args['year'] = true;
         @define('_PC_FORM_DATE', true);
     } else {
         $args['year'] = false;
     }
 
-    if (!isset($args['view']) || strtolower($args['view']) == 'on') {
+    if (!isset($args['view']) || strtolower($args['view']) === 'on') {
         $args['view'] = true;
         @define('_PC_FORM_VIEW_TYPE', true);
     } else {
         $args['view'] = false;
     }
-
-    $dayselect = $monthselect = $yearselect = $viewselect = '';
+    $dayselect = '';
+    $monthselect = '';
+    $yearselect = '';
+    $viewselect = '';
     $output = new pnHTML();
     $output->SetOutputMode(_PNH_RETURNOUTPUT);
     if ($args['day'] === true) {
@@ -94,7 +98,7 @@ function smarty_function_pc_date_select($args)
         $yearselect = $output->FormSelectMultiple('jumpyear', $sel_data);
     }
 
-    if ($args['view'] === true) {
+    if ($args['view']) {
         $sel_data = array();
         $sel_data[0]['id']         = 'day';
         $sel_data[0]['selected']   = $viewtype == 'day';
@@ -128,12 +132,12 @@ function smarty_function_pc_date_select($args)
         $newOrder = array();
         $order = explode(',', $args['order']);
         foreach ($order as $tmp_order) {
-            array_push($newOrder, $orderArray[$tmp_order]);
+            $newOrder[] = $orderArray[$tmp_order];
         }
 
         foreach ($orderArray as $key => $old_order) {
             if (!in_array($key, $newOrder)) {
-                array_push($newOrder, $orderArray[$old_order]);
+                $newOrder[] = $orderArray[$old_order];
             }
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Retrieves, creates, and updates database telehealth session records that track a provider/patient session relationship
  *
@@ -9,7 +11,6 @@
  * @copyright Copyright (c) 2022 Comlink Inc <https://comlinkinc.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
-
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Repository;
 
 use Comlink\OpenEMR\Modules\TeleHealthModule\Util\CalendarUtils;
@@ -65,29 +66,32 @@ class TeleHealthSessionRepository
         if (!empty($records)) {
             return $records;
         }
+
         return null;
     }
 
-    public function createSession($pc_eid, $user_id, $encounter, $pid)
+    public function createSession($pc_eid, $user_id, $encounter, $pid): ?array
     {
         $sql = "INSERT INTO " . self::TABLE_NAME . " (pc_eid, user_id, encounter, pid) VALUES (?,?,?,?)";
         (new SystemLogger())->debug("Attempting to create session ", ['pc_eid' => $pc_eid, 'user_id' => $user_id, 'encounter' => $encounter, 'pid' => $pid]);
-        $sessionId = QueryUtils::sqlInsert($sql, [$pc_eid, $user_id, $encounter, $pid]);
+        QueryUtils::sqlInsert($sql, [$pc_eid, $user_id, $encounter, $pid]);
         // now return the record.  Should be a 1:1 relationship with appointments.  Encounters can be a m:1 relationship
         return $this->getSessionByAppointmentId($pc_eid, $user_id);
     }
 
-    public function addRelatedPartyToSession($pc_eid, $pid_related)
+    public function addRelatedPartyToSession(string $pc_eid, string $pid_related): ?array
     {
         $patientService = new PatientService();
         $session = $this->getSessionByAppointmentId($pc_eid);
-        if (empty($session)) {
+        if ($session === null || $session === []) {
             throw new \InvalidArgumentException("session could not be found for pc_eid of " . $pc_eid);
         }
+
         $relatedPatient = $patientService->findByPid($pid_related);
         if (empty($relatedPatient)) {
             throw new \InvalidArgumentException("Patient does not exist for pid " . $pid_related);
         }
+
         // TODO: @adunsulag do we want to keep track of a different third party here?
         // eventually if we support more than one person to the call we could handle this differently.
         // TODO: @adunsulag this really all should be put into a transaction.
@@ -97,23 +101,27 @@ class TeleHealthSessionRepository
         QueryUtils::sqlStatementThrowException($sql, $bind);
         return $this->getSessionByAppointmentId($pc_eid);
     }
-    public function updateStartTimestamp($pc_eid, $role = 'provider')
+
+    public function updateStartTimestamp($pc_eid, string $role = 'provider'): void
     {
         $validRoles = ['provider', 'patient', 'patient_related'];
         if (!in_array($role, $validRoles)) {
             throw new \InvalidArgumentException("Invalid role provided of " . $role);
         }
+
         $columnPrefix = $role;
 
         $sql = "UPDATE " . self::TABLE_NAME . " SET " . $columnPrefix . "_start_time = NOW() WHERE pc_eid = ?";
         QueryUtils::sqlStatementThrowException($sql, [$pc_eid]);
     }
-    public function updateLastSeenTimestamp($pc_eid, $role)
+
+    public function updateLastSeenTimestamp($pc_eid, string $role): void
     {
         $validRoles = ['provider', 'patient', 'patient_related'];
         if (!in_array($role, $validRoles)) {
             throw new \InvalidArgumentException("Invalid role provided of " . $role);
         }
+
         $columnPrefix = $role;
 
         $sql = "UPDATE " . self::TABLE_NAME . " SET " . $columnPrefix . "_last_update = NOW() WHERE pc_eid = ?";
@@ -127,8 +135,10 @@ class TeleHealthSessionRepository
         if (!empty($records)) {
             return $records[0];
         }
+
         return null;
     }
+
     public function getSessionByAppointmentId($pc_eid, $user_id = null): ?array
     {
         $sql = "select * from " . self::TABLE_NAME . " WHERE pc_eid = ? ";
@@ -137,14 +147,16 @@ class TeleHealthSessionRepository
             $sql .= " AND user_id = ? ";
             $binds[] = $user_id;
         }
+
         $records = QueryUtils::fetchRecords($sql, $binds);
         if (!empty($records)) {
             return $records[0];
         }
+
         return null;
     }
 
-    public function updatePatientFromAppointment(array $session, array $appt)
+    public function updatePatientFromAppointment(array $session, array $appt): void
     {
         // for now we only sync the patient record if its been changed
         if ($session['pid'] != $appt['pc_pid']) {
