@@ -24,10 +24,15 @@ foreach ($argv as $arg) {
 }
 $_GET['site'] = $siteDefault;
 
-$ignoreAuth = true;
-// Since from command line, set $sessionAllowWrite since need to set site_id session and no benefit to set to false
-$sessionAllowWrite = true;
-require_once __DIR__ . '/../interface/globals.php';
+// Check if this is the install command - if so, skip database initialization
+$isInstallCommand = in_array('openemr:install', $argv);
+
+if (!$isInstallCommand) {
+    $ignoreAuth = true;
+    // Since from command line, set $sessionAllowWrite since need to set site_id session and no benefit to set to false
+    $sessionAllowWrite = true;
+    require_once __DIR__ . '/../interface/globals.php';
+}
 
 $commandRunner = new \OpenEMR\Common\Command\SymfonyCommandRunner();
 $commandRunner->run();

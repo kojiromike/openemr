@@ -41,7 +41,12 @@ class SymfonyCommandRunner
     public function getEventDispatcher(): EventDispatcher
     {
         if (!isset($this->eventDispatcher)) {
-            $this->eventDispatcher = $GLOBALS['kernel']->getEventDispatcher();
+            // Handle case where globals.php wasn't loaded (e.g., for install command)
+            if (isset($GLOBALS['kernel'])) {
+                $this->eventDispatcher = $GLOBALS['kernel']->getEventDispatcher();
+            } else {
+                $this->eventDispatcher = new EventDispatcher();
+            }
         }
         return $this->eventDispatcher;
     }
