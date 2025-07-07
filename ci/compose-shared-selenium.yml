@@ -1,6 +1,8 @@
 services:
   selenium:
     image: selenium/standalone-chrome:134.0-chromedriver-134.0-grid-4.31.0-20250414    # Pinned to Chrome 134 and grid 4.31
+    profiles:
+    - video-recording
     ports:
     - 4444:4444    # Selenium WebDriver interface
     environment:
@@ -16,8 +18,16 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+  video:
+    image: selenium/video:ffmpeg-7.1-20250707
+    profiles:
+    - video-recording
+    depends_on:
+    - selenium
+    environment:
+      DISPLAY_CONTAINER_NAME: selenium
   openemr:
     environment:
       SELENIUM_USE_GRID: "true"
       SELENIUM_HOST: selenium
-      SELENIUM_FORCE_HEADLESS: "true"
+      SELENIUM_FORCE_HEADLESS: "false"

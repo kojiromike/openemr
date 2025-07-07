@@ -143,6 +143,12 @@ jobs:
       run: |
         . ci/ciLibrary.source
         build_test e2e
+    - name: Upload E2E test videos
+      if: ${{ (success() || failure()) && matrix.configurations.e2e_enabled == 'true' && hashFiles('selenium-videos/video.mp4') != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-test-videos-${{ matrix.configurations.docker_dir }}
+        path: selenium-videos/
     - name: Api testing
       if: ${{ success() || failure() }}
       run: |
