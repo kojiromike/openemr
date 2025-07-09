@@ -172,7 +172,10 @@ build_test_e2e() {
     fi
 
     echo 'Running E2E tests…'
+    set +e
     _exec php -d memory_limit=8G ./vendor/bin/phpunit --testsuite e2e --testdox
+    status=$?
+    set -e
 
     # Stop selenium and video containers if they were started and extract videos
     if [[ ${DOCKER_DIR:-} = apache_84_118 ]]; then
@@ -195,6 +198,8 @@ build_test_e2e() {
             echo 'No videos directory found locally.'
         fi
     fi
+
+    return "${status}"
 }
 
 phpunit() {
