@@ -142,6 +142,9 @@ jobs:
     # rename the docker directory to end with "_no-e2e".
     - name: E2e testing
       if: ${{ (success() || failure()) && matrix.configurations.e2e_enabled == 'true' }}
+      env:
+        # Change this to just 'selenium' to disable video recording.
+        COMPOSE_PROFILES: video-recording
       run: |
         . ci/ciLibrary.source
         build_test e2e
