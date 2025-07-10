@@ -63,6 +63,12 @@ dockers_env_start() {
     dc up --detach --wait --wait-timeout 300
 }
 
+selenium_video_start() {
+    # Selenium and video containers are only started explicitly or when their profiles are activated.
+    # So this may do nothing if the profiles are not activated.
+    dockers_env_start
+}
+
 selenium_video_stop() {
     dc stop selenium video
     dc logs selenium
@@ -137,6 +143,7 @@ build_test_e2e() {
     # Fix permissions for video recording
     actions_chmod 777 selenium-videos
 
+    selenium_video_start
     echo 'Checking if selenium container is running…'
     # shellcheck disable=SC2310
     if dc ps --services --filter status=running selenium; then
