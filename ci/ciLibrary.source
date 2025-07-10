@@ -63,11 +63,6 @@ dockers_env_start() {
     dc up --detach --wait --wait-timeout 300
 }
 
-selenium_video_start() {
-    # Selenium and video containers are only started explicitly or when their profiles are activated.
-    dc up --detach --wait --wait-timeout 60 selenium video
-}
-
 selenium_video_stop() {
     dc stop selenium video
     dc logs selenium
@@ -142,33 +137,26 @@ build_test_e2e() {
     # Fix permissions for video recording
     actions_chmod 777 selenium-videos
 
-    # Start selenium and video containers only for apache_84_118 configuration
-    if [[ ${DOCKER_DIR:-} = apache_84_118 ]]; then
-        echo 'Starting selenium and video containers for apache_84_118 configuration…'
-        selenium_video_start
-        echo 'Checking if selenium container is running…'
-        # shellcheck disable=SC2310
-        if dc ps --services --filter status=running | grep -q '^selenium$'; then
-            echo 'Selenium container is running.'
-        else
-            echo 'Selenium container is not running.'
-        fi
-        echo 'Checking if video container is running…'
-        # shellcheck disable=SC2310
-        if dc ps --services --filter status=running | grep -q '^video$'; then
-            echo 'Video container is running.'
-        else
-            echo 'Video container is not running.'
-        fi
-        echo 'Checking if video directory exists in video container…'
-        # shellcheck disable=SC2310
-        if dc exec video ls -la /videos; then
-            echo 'Video directory exists in video container.'
-        else
-            echo 'Video directory not found in video container.'
-        fi
+    echo 'Checking if selenium container is running…'
+    # shellcheck disable=SC2310
+    if dc ps --services --filter status=running selenium; then
+        echo 'Selenium container is running.'
     else
-        echo "Skipping selenium and video containers for configuration: ${DOCKER_DIR:-unknown}"
+        echo 'Selenium container is not running.'
+    fi
+    echo 'Checking if video container is running…'
+    # shellcheck disable=SC2310
+    if dc ps --services --filter status=running video; then
+        echo 'Video container is running.'
+    else
+        echo 'Video container is not running.'
+    fi
+    echo 'Checking if video directory exists in video container…'
+    # shellcheck disable=SC2310
+    if dc exec video ls -la /videos; then
+        echo 'Video directory exists in video container.'
+    else
+        echo 'Video directory not found in video container.'
     fi
 
     echo 'Running E2E tests…'
@@ -178,25 +166,24 @@ build_test_e2e() {
     set -e
 
     # Stop selenium and video containers if they were started and extract videos
-    if [[ ${DOCKER_DIR:-} = apache_84_118 ]]; then
-        echo 'Waiting for video recording to complete…'
-        sleep 5
-        echo 'Stopping selenium and video containers…'
-        selenium_video_stop
-        echo 'Extracting videos from video container…'
-        # shellcheck disable=SC2310
-        if dc cp video:/videos/video.mp4 selenium-videos/video.mp4 2>/dev/null; then
-            echo 'Video file extracted successfully'
-        else
-            echo 'No video file found in container'
-        fi
-        echo 'Checking for video files after extraction…'
-        if [[ -d selenium-videos ]]; then
-            echo 'Videos directory exists locally.'
-            ls -la selenium-videos/
-        else
-            echo 'No videos directory found locally.'
-        fi
+    echo 'Waiting for video recording to complete…'
+    sleep 5
+    echo 'Stopping selenium and video containers…'
+    selenium_video_stop
+    echo 'Extracting videos from video container…'
+    # shellcheck disable=SC2310
+    if dc cp video:/videos/video.mp4 selenium-videos/video.mp4 2>/dev/null; then
+        echo 'Video file extracted successfully'
+    else
+        # This is not an error if video recording is not enabled
+        echo 'No video file found in container'
+    fi
+    echo 'Checking for video files after extraction…'
+    if [[ -d selenium-videos ]]; then
+        echo 'Videos directory exists locally.'
+        ls -la selenium-videos/
+    else
+        echo 'No videos directory found locally.'
     fi
 
     return "${status}"
