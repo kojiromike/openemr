@@ -211,63 +211,36 @@ trait QuestionnaireTraits
      */
     private function parseAnswer($answer, $display = false)
     {
-        $obv = array();
         $type = key($answer);
-        switch ($type) {
-            case "valueBoolean":
-                $obv['type'] = 'boolean';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueDecimal":
-                $obv['type'] = 'decimal';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueInteger":
-                $obv['type'] = 'integer';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueDate":
-                $obv['type'] = 'date';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueDateTime":
-                $obv['type'] = 'datetime';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueTime":
-                $obv['type'] = 'time';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueString":
-                $obv['type'] = 'string';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueUri":
-                $obv['type'] = 'uri';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueCoding":
-                $obv = array(
-                    'type' => 'coding',
-                    'system' => $answer[$type]['system'] ?? null,
-                    'code' => $answer[$type]['code'],
-                    'display' => $answer[$type]['display'],
-                );
-                break;
-            case "valueQuantity":
-                $obv['type'] = 'quantity';
-                $obv['display'] = $answer[$type];
-                break;
-            case "valueAttachment":
-                // todo
-                break;
-            case "valueReference":
-                break;
+        $simpleTypeMap = [
+            'valueBoolean' => 'boolean',
+            'valueDecimal' => 'decimal',
+            'valueInteger' => 'integer',
+            'valueDate' => 'date',
+            'valueDateTime' => 'datetime',
+            'valueTime' => 'time',
+            'valueString' => 'string',
+            'valueUri' => 'uri',
+            'valueQuantity' => 'quantity'
+        ];
+
+        if ($type === "valueCoding") {
+            $obv = array(
+                'type' => 'coding',
+                'system' => $answer[$type]['system'] ?? null,
+                'code' => $answer[$type]['code'],
+                'display' => $answer[$type]['display'],
+            );
+        } elseif (isset($simpleTypeMap[$type])) {
+            $obv = array(
+                'type' => $simpleTypeMap[$type],
+                'display' => $answer[$type],
+            );
+        } else {
+            // Note: valueAttachment and valueReference cases are todo/empty
+            $obv = array();
         }
-        if ($display) {
-            return $obv['display'];
-        }
-        return $obv;
+        return $display ? $obv['display'] : $obv;
     }
 
     /**

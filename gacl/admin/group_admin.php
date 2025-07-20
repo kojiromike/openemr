@@ -14,27 +14,10 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 require_once('gacl_admin.inc.php');
 
-//GET takes precedence.
-if ($_GET['group_type'] != '') {
-	$group_type = $_GET['group_type'];
-} else {
-	$group_type = $_POST['group_type'];
-}
-
-switch(strtolower(trim($group_type))) {
-	case 'axo':
-		$group_type = 'axo';
-		$group_table = $gacl_api->_db_table_prefix . 'axo_groups';
-		$group_map_table = $gacl_api->_db_table_prefix . 'groups_axo_map';
-		$smarty->assign('current','axo_group');
-		break;
-	default:
-		$group_type = 'aro';
-		$group_table = $gacl_api->_db_table_prefix . 'aro_groups';
-		$group_map_table = $gacl_api->_db_table_prefix . 'groups_aro_map';
-		$smarty->assign('current','aro_group');
-		break;
-}
+// GET takes precedence.
+$group_type = ($_GET['group_type'] ?? $_POST['group_type']) === 'axo' ? 'axo' : 'aro';
+$group_table = $gacl_api->_db_table_prefix . $group_type . '_groups';
+$group_map_table = $gacl_api->_db_table_prefix . 'groups_' . $group_type . '_map';
 
 $postAction = $_POST['action'] ?? null;
 switch ($postAction) {

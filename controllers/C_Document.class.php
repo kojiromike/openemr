@@ -597,27 +597,11 @@ class C_Document extends Controller
             $doEncryption = true;
         }
 
-            //controller public function ruins booleans, so need to manually re-convert to booleans
-        if ($as_file == "true") {
-                $as_file = true;
-        } elseif ($as_file == "false") {
-                $as_file = false;
-        }
-        if ($original_file == "true") {
-                $original_file = true;
-        } elseif ($original_file == "false") {
-                $original_file = false;
-        }
-        if ($disable_exit == "true") {
-                $disable_exit = true;
-        } elseif ($disable_exit == "false") {
-                $disable_exit = false;
-        }
-        if ($show_original == "true") {
-            $show_original = true;
-        } elseif ($show_original == "false") {
-            $show_original = false;
-        }
+        // controller public function ruins booleans, so need to manually re-convert to booleans
+        $as_file = filter_var($as_file, FILTER_VALIDATE_BOOLEAN);
+        $original_file = filter_var($original_file, FILTER_VALIDATE_BOOLEAN);
+        $disable_exit = filter_var($disable_exit, FILTER_VALIDATE_BOOLEAN);
+        $show_original = filter_var($show_original, FILTER_VALIDATE_BOOLEAN);
 
         // Note this is necessary to not allow the controller the ability to return the raw file
         //  which could introduce xss vulnerabilities.
@@ -628,12 +612,9 @@ class C_Document extends Controller
             }
         }
 
-        switch ($context) {
-            case "patient_picture":
-                $document_id = $this->patientService->getPatientPictureDocumentId($patient_id);
-                break;
+        if ($context === "patient_picture") {
+            $document_id = $this->patientService->getPatientPictureDocumentId($patient_id);
         }
-
         $d = new Document($document_id);
 
         // ensure user/patient has access

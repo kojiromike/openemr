@@ -20,34 +20,16 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 require_once("gacl_admin.inc.php");
 
-//GET takes precedence.
-if (!empty($_GET['object_type'])) {
-	$object_type = $_GET['object_type'];
-} else {
-	$object_type = $_POST['object_type'];
+// GET takes precedence.
+$object_type = strtolower(trim($_GET['object_type'] ?? $_POST['object_type']));
+
+if (!in_array($object_type, ['aco', 'aro', 'axo'])) {
+    echo "ERROR: Must select an object type<br />\n";
+    exit();
 }
 
-switch(strtolower(trim($object_type))) {
-    case 'aco':
-        $object_type = 'aco';
-	$object_table = $gacl_api->_db_table_prefix . 'aco';
-		$object_sections_table = $gacl_api->_db_table_prefix . 'aco_sections';
-        break;
-    case 'aro':
-        $object_type = 'aro';
-	$object_table = $gacl_api->_db_table_prefix . 'aro';
-		$object_sections_table = $gacl_api->_db_table_prefix . 'aro_sections';
-        break;
-    case 'axo':
-        $object_type = 'axo';
-	$object_table = $gacl_api->_db_table_prefix . 'axo';
-		$object_sections_table = $gacl_api->_db_table_prefix . 'axo_sections';
-        break;
-    default:
-        echo "ERROR: Must select an object type<br />\n";
-        exit();
-        break;
-}
+$object_table = $gacl_api->_db_table_prefix . $object_type;
+$object_sections_table = $object_table . '_sections';
 
 $postAction = $_POST['action'] ?? null;
 switch ($postAction) {

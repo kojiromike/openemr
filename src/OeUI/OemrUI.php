@@ -293,21 +293,18 @@ class OemrUI
     }
 
     /**
-    * Creates the html string that will display the formatted help icon - fa-question-circle.
-    *
-    * @param int|bool  $display_help_icon
-    *
-    * @return string $help_icon that will output the help icon html string
-    *
-    */
+     * Creates the html string that will display the formatted help icon - fa-question-circle.
+     *
+     * @param int|bool  $display_help_icon
+     * @return string $help_icon that will output the help icon html string
+     */
     public function helpIconListener(PageHeadingRenderEvent $e)
     {
-        $title = "";
-        if ($GLOBALS['enable_help'] == "1") {
-            $title = xl("Click to view Help");
-        } elseif ($GLOBALS['enable_help'] == "2") {
-            $title = xl("Enable help under your User Menu > Settings > Features > Enable Help Modal");
-        }
+        $title = match ($GLOBALS['enable_help']) {
+            "1" => xl("Click to view Help"),
+            "2" => xl("Enable help under your User Menu > Settings > Features > Enable Help Modal"),
+            default => ""
+        };
 
         $id = 'help-href';
         $opts = [

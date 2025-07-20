@@ -31,44 +31,23 @@ if (!AclMain::aclCheckCore('acct', 'eob', '', 'write') && !AclMain::aclCheckCore
     exit;
 }
 
-//global variables:
-if (!isset($_GET["mode"])) {
-    if (!isset($_GET["from_date"])) {
-        $from_date = date("Y-m-d");
-    } else {
-        $from_date = $_GET["from_date"];
-    }
+function getReportParams() {
+    $defaults = !isset($_GET["mode"]);
+    $code_type_raw = $_GET["code_type"] ?? ($defaults ? "all" : null);
+    $unbilled_raw = $_GET["unbilled"] ?? ($defaults ? "on" : null);
+    $authorized_raw = $_GET["authorized"] ?? ($defaults ? "on" : null);
 
-    if (!isset($_GET["to_date"])) {
-        $to_date = date("Y-m-d");
-    } else {
-        $to_date = $_GET["to_date"];
-    }
-
-    if (!isset($_GET["code_type"])) {
-        $code_type = "all";
-    } else {
-        $code_type = $_GET["code_type"];
-    }
-
-    if (!isset($_GET["unbilled"])) {
-        $unbilled = "on";
-    } else {
-        $unbilled = $_GET["unbilled"];
-    }
-
-    if (!isset($_GET["authorized"])) {
-        $my_authorized = "on";
-    } else {
-        $my_authorized = $_GET["authorized"];
-    }
-} else {
-    $from_date = $_GET["from_date"];
-    $to_date = $_GET["to_date"];
-    $code_type = $_GET["code_type"];
-    $unbilled = $_GET["unbilled"];
-    $my_authorized = $_GET["authorized"];
+    return [
+        'from_date' => $_GET["from_date"] ?? ($defaults ? date("Y-m-d") : null),
+        'to_date' => $_GET["to_date"] ?? ($defaults ? date("Y-m-d") : null),
+        'code_type' => ($code_type_raw === 'all') ? '%' : $code_type_raw,
+        'unbilled' => ($unbilled_raw === 'on') ? '0' : '%',
+        'my_authorized' => ($authorized_raw === 'on') ? true : '%'
+    ];
 }
+
+//global variables:
+extract(getReportParams());
 
 ?>
 
@@ -84,75 +63,8 @@ if (!isset($_GET["mode"])) {
 <br />
 
 <?php
-if ($my_authorized === 'on') {
-    $my_authorized = true;
-} else {
-    $my_authorized = '%';
-}
-
-if ($unbilled === 'on') {
-    $unbilled = '0';
-} else {
-    $unbilled = '%';
-}
-
-if ($code_type === 'all') {
-    $code_type = '%';
-}
-
-if (!isset($_GET["mode"])) {
-    if (!isset($_GET["from_date"])) {
-        $from_date = date("Y-m-d");
-    } else {
-        $from_date = $_GET["from_date"];
-    }
-
-    if (!isset($_GET["to_date"])) {
-        $to_date = date("Y-m-d");
-    } else {
-        $to_date = $_GET["to_date"];
-    }
-
-    if (!isset($_GET["code_type"])) {
-        $code_type = "all";
-    } else {
-        $code_type = $_GET["code_type"];
-    }
-
-    if (!isset($_GET["unbilled"])) {
-        $unbilled = "on";
-    } else {
-        $unbilled = $_GET["unbilled"];
-    }
-
-    if (!isset($_GET["authorized"])) {
-        $my_authorized = "on";
-    } else {
-        $my_authorized = $_GET["authorized"];
-    }
-} else {
-    $from_date = $_GET["from_date"];
-    $to_date = $_GET["to_date"];
-    $code_type = $_GET["code_type"];
-    $unbilled = $_GET["unbilled"];
-    $my_authorized = $_GET["authorized"];
-}
-
-if ($my_authorized === 'on') {
-    $my_authorized = true;
-} else {
-    $my_authorized = '%';
-}
-
-if ($unbilled === 'on') {
-    $unbilled = '0';
-} else {
-    $unbilled = '%';
-}
-
-if ($code_type === 'all') {
-    $code_type = '%';
-}
+// Re-initialize variables for database queries
+extract(getReportParams());
 
 if (isset($_GET["mode"]) && $_GET["mode"] === 'bill') {
     BillingReport::billCodesList($list);

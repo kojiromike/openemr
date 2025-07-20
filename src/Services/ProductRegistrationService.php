@@ -127,19 +127,16 @@ class ProductRegistrationService
         curl_close($curl);
 
         $currentVersion = (new VersionService())->asString();
-        switch ($responseCode) {
-            case 201:
-                $entry = $this->entryExist();
-                if ($entry) {
-                    sqlStatement("UPDATE `product_registration` SET `email` = ?, `opt_out` = 0, `last_ask_version` = ? WHERE `id` = ?", [$email, $currentVersion, $entry]);
-                } else {
-                    sqlStatement("INSERT INTO `product_registration` (`email`, `opt_out`, `last_ask_version`) VALUES (?, 0, ?)", [$email, $currentVersion]);
-                }
-                return $email;
-                break;
-            default:
-                throw new \GenericProductRegistrationException(xl("Server error: try again later"));
+        if ($responseCode !== 201) {
+            throw new \GenericProductRegistrationException(xl("Server error: try again later"));
         }
+        $entry = $this->entryExist();
+        if ($entry) {
+            sqlStatement("UPDATE `product_registration` SET `email` = ?, `opt_out` = 0, `last_ask_version` = ? WHERE `id` = ?", [$email, $currentVersion, $entry]);
+        } else {
+            sqlStatement("INSERT INTO `product_registration` (`email`, `opt_out`, `last_ask_version`) VALUES (?, 0, ?)", [$email, $currentVersion]);
+        }
+        return $email;
     }
 
     // void... don't bother checking for success/failure.

@@ -139,11 +139,9 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
             $sql .= " and patient_data.hipaa_mail='YES' ";
         }
 
-        switch ($_POST['process_type']) :
-            case $choices[1]: // Email
-                $sql .= " and patient_data.email IS NOT NULL ";
-                break;
-        endswitch;
+        if ($_POST['process_type'] == $process_choices[1]) { // Email
+            $sql .= " and patient_data.email IS NOT NULL ";
+        }
 
         // sort by
         $sql .= ' ORDER BY ' . escape_identifier($_POST['sort_by'], array_values($sort_by_choices), true);
@@ -154,7 +152,7 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
         if (sqlNumRows($res) == 0) {
             $form_err = xl('No results found, please try again.');
         } else {
-            switch ($_POST['process_type']) :
+            switch ($_POST['process_type']) {
                 case $process_choices[0]: // CSV File
                     generate_csv($res);
                     exit();
@@ -164,7 +162,7 @@ if (!empty($_POST['form_action']) && ($_POST['form_action'] == 'process')) {
                 case $process_choices[2]: // Phone list
                     require_once('batchPhoneList.php');
                     exit();
-            endswitch;
+            }
         }
     }
 }

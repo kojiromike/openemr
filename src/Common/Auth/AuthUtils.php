@@ -69,15 +69,13 @@ class AuthUtils
     public function __construct($mode = '')
     {
         // Set mode
-        if ($mode == 'login') {
-            $this->loginAuth = true;
-        } elseif ($mode == 'api') {
-            $this->apiAuth = true;
-        } elseif ($mode == 'portal-api') {
-            $this->portalApiAuth = true;
-        } else {
-            $this->otherAuth = true;
-        }
+        $modeMap = [
+            'login' => 'loginAuth',
+            'api' => 'apiAuth',
+            'portal-api' => 'portalApiAuth'
+        ];
+        $property = $modeMap[$mode] ?? 'otherAuth';
+        $this->$property = true;
 
         // Set up AuthHash instance (note it uses auth mode)
         $this->authHashAuth = new AuthHash('auth');

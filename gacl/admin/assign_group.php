@@ -20,31 +20,16 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 require_once('gacl_admin.inc.php');
 
-//GET takes precedence.
-if ($_GET['group_type'] != '') {
-	$group_type = $_GET['group_type'];
-} else {
-	$group_type = $_POST['group_type'];
-}
-
-switch(strtolower(trim($group_type))) {
-	case 'axo':
-		$group_type = 'axo';
-		$table = $gacl_api->_db_table_prefix . 'axo';
-		$group_table = $gacl_api->_db_table_prefix . 'axo_groups';
-		$group_sections_table = $gacl_api->_db_table_prefix . 'axo_sections';
-		$group_map_table = $gacl_api->_db_table_prefix . 'groups_axo_map';
-		$object_type = 'Access eXtension Object';
-		break;
-	default:
-		$group_type = 'aro';
-		$table = $gacl_api->_db_table_prefix . 'aro';
-		$group_table = $gacl_api->_db_table_prefix . 'aro_groups';
-		$group_sections_table = $gacl_api->_db_table_prefix . 'aro_sections';
-		$group_map_table = $gacl_api->_db_table_prefix . 'groups_aro_map';
-		$object_type = 'Access Request Object';
-		break;
-}
+// GET takes precedence.
+$group_type_raw = $_GET['group_type'] ?? $_POST['group_type'] ?? '';
+[$group_type, $object_type] = match (strtolower(trim($group_type_raw))) {
+    'axo' => ['axo', 'Access eXtension Object'],
+    default => ['aro', 'Access Request Object']
+};
+$table = $gacl_api->_db_table_prefix . $group_type;
+$group_table = $table . '_groups';
+$group_sections_table = $table . '_sections';
+$group_map_table = $gacl_api->_db_table_prefix . 'groups_' . $group_type . '_map';
 
 $postAction = $_POST['action'] ?? null;
 switch ($postAction) {

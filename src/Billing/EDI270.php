@@ -259,16 +259,11 @@ class EDI270
         if ($qual == '102') {
             $DTP[3] = $row['date'];                 // Ins effective Date
         } else {
-            switch ($X12info['x12_dtp03']) {
-                case 'A':
-                    $dtp_date = !empty($row['pc_eventDate']) && $row['pc_eventDate'] > '20010101' ? $row['pc_eventDate'] : date("Ymd");
-                    break;
-                case 'E':
-                    $dtp_date = !empty($row['date']) && $row['date'] > '20010101' ? $row['date'] : date("Ymd");
-                    break;
-                default:
-                    $dtp_date = date("Ymd");
-            }
+            $dtp_date = match ($X12info['x12_dtp03']) {
+                'A' => !empty($row['pc_eventDate']) && $row['pc_eventDate'] > '20010101' ? $row['pc_eventDate'] : date("Ymd"),
+                'E' => !empty($row['date']) && $row['date'] > '20010101' ? $row['date'] : date("Ymd"),
+                default => date("Ymd")
+            };
             $DTP[3] = $dtp_date;  // Date of Service
         }
         $DTP['Created'] = implode('*', $DTP);   // Data Element Separator
@@ -323,19 +318,15 @@ class EDI270
         return trim($IEA['Created']);
     }
 
+    private static $relationshipCodes = [
+        'spouse' => '01',
+        'child' => '19',
+        'self' => 'S'
+    ];
+
     public static function translateRelationship($relationship)
     {
-        switch ($relationship) {
-            case "spouse":
-                return "01";
-                break;
-            case "child":
-                return "19";
-                break;
-            case "self":
-            default:
-                return "S";
-        }
+        return self::$relationshipCodes[$relationship] ?? 'S';
     }
 
 // EDI-270 Batch file Generation
@@ -632,24 +623,14 @@ class EDI270
             }
             $benefit['start_date'] = strpos($benefit['start_date'], "0000") === false ? $benefit['start_date'] : '';
             $benefit['end_date'] = strpos($benefit['end_date'], "0000") === false ? $benefit['end_date'] : '';
-            $color = "";
-            switch ($benefit['type']) {
-                case '1':
-                    $color = "darkred";
-                    break;
-                case 'A':
-                    $color = "blue";
-                    break;
-                case 'B':
-                    $color = "red";
-                    break;
-                case 'C':
-                    $color = "green";
-                    break;
-                case 'F':
-                    $color = "darkgreen";
-                    break;
-            }
+            $colorMap = [
+                '1' => "darkred",
+                'A' => "blue",
+                'B' => "red",
+                'C' => "green",
+                'F' => "darkgreen"
+            ];
+            $color = $colorMap[$benefit['type']] ?? "";
             $showString .= "\n<div class='col col-sm-6' >\n";
             $showString .= !empty($benefit['benefit_type']) ? "<b style='color: $color'>" . xlt('Benefit Type') . ": " . text($benefit['benefit_type']) . "</b><br />\n" : '';
             $showString .= !empty($benefit['start_date']) ? "<b>" . xlt('Start Date') . ":</b> " . text(date("m/d/Y", strtotime($benefit['start_date']))) . "<br />\n" : '';

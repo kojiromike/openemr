@@ -47,10 +47,9 @@ class UserService
     public function toggleSensitiveFields($fields)
     {
         foreach ($fields as $field) {
-            switch ($field) {
-                case 'username':
-                    $this->_includeUsername = !$this->_includeUsername;
-                    break;
+            if ($field === 'username') {
+                $this->_includeUsername = !$this->_includeUsername;
+                break;
             }
         }
     }

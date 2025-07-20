@@ -217,14 +217,11 @@ class HandleImageService
         $base = pathinfo($sourceImage, PATHINFO_FILENAME);
         $outputImage = $base . '_resized' . ($imageType == IMAGETYPE_PNG ? '.png' : '.jpg');
 
-        switch ($imageType) {
-            case IMAGETYPE_JPEG:
-                imagejpeg($targetImage, $outputImage, 90); // 90 is the quality level
-                break;
-            case IMAGETYPE_PNG:
-                imagepng($targetImage, $outputImage);
-                break;
-        }
+        match ($imageType) {
+            IMAGETYPE_JPEG => imagejpeg($targetImage, $outputImage, 90), // 90 is the quality level
+            IMAGETYPE_PNG => imagepng($targetImage, $outputImage),
+            default => throw new \Exception('Unsupported image type')
+        };
         return $outputImage;
     }
 
@@ -236,14 +233,11 @@ class HandleImageService
     private function getImageAsBase64($targetImage, $imageType): string
     {
         ob_start();
-        switch ($imageType) {
-            case IMAGETYPE_JPEG:
-                imagejpeg($targetImage, null, 90); // 90 is the quality level
-                break;
-            case IMAGETYPE_PNG:
-                imagepng($targetImage);
-                break;
-        }
+        match ($imageType) {
+            IMAGETYPE_JPEG => imagejpeg($targetImage, null, 90), // 90 is the quality level
+            IMAGETYPE_PNG => imagepng($targetImage),
+            default => throw new \Exception('Unsupported image type')
+        };
         $imageData = ob_get_contents();
         ob_end_clean();
         return 'data:image/' . ($imageType == IMAGETYPE_PNG ? 'png' : 'jpeg') . ';base64,' . base64_encode($imageData);

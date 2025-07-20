@@ -45,13 +45,12 @@ function getRegistered($state = "1", $limit = "unlimited", $offset = "0", $encou
 {
     $sql = "select * from registry where state like ? ";
     if ($encounterType !== 'all') {
-        switch ($encounterType) {
-            case 'patient':
-                $sql .= 'AND patient_encounter = 1 ';
-                break;
-            case 'therapy_group':
-                $sql .= 'AND therapy_group_encounter = 1 ';
-                break;
+        $encounterFilters = [
+            'patient' => 'AND patient_encounter = 1 ',
+            'therapy_group' => 'AND therapy_group_encounter = 1 '
+        ];
+        if (isset($encounterFilters[$encounterType])) {
+            $sql .= $encounterFilters[$encounterType];
         }
     }
     $sql .= "order by priority, name ";

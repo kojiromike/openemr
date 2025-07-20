@@ -29,18 +29,18 @@ class DateFormatterUtils
             return '';
         }
 
-        if ($GLOBALS['date_display_format'] == 0) {
-            return $DateValue;
-        } elseif ($GLOBALS['date_display_format'] == 1 || $GLOBALS['date_display_format'] == 2) {
-            $DateValueArray = explode('/', $DateValue);
-            if ($GLOBALS['date_display_format'] == 1) {
+        return match ($GLOBALS['date_display_format']) {
+            0 => $DateValue,
+            1 => (function () use ($DateValue) {
+                $DateValueArray = explode('/', $DateValue);
                 return $DateValueArray[2] . '-' . $DateValueArray[0] . '-' . $DateValueArray[1];
-            }
-
-            if ($GLOBALS['date_display_format'] == 2) {
+            })(),
+            2 => (function () use ($DateValue) {
+                $DateValueArray = explode('/', $DateValue);
                 return $DateValueArray[2] . '-' . $DateValueArray[1] . '-' . $DateValueArray[0];
-            }
-        }
+            })(),
+            default => $DateValue
+        };
     }
 
     /**

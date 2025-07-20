@@ -30,42 +30,18 @@ if (!AclMain::aclCheckCore('acct', 'eob', '', 'write') && !AclMain::aclCheckCore
 }
 
 //global variables:
-if (!isset($_GET["mode"])) {
-    if (!isset($_GET["from_date"])) {
-        $from_date = date("Y-m-d");
-    } else {
-        $from_date = $_GET["from_date"];
-    }
-
-    if (!isset($_GET["to_date"])) {
-        $to_date = date("Y-m-d");
-    } else {
-        $to_date = $_GET["to_date"];
-    }
-
-    if (!isset($_GET["code_type"])) {
-        $code_type = "all";
-    } else {
-        $code_type = $_GET["code_type"];
-    }
-
-    if (!isset($_GET["unbilled"])) {
-        $unbilled = "on";
-    } else {
-        $unbilled = $_GET["unbilled"];
-    }
-
-    if (!isset($_GET["authorized"])) {
-        $my_authorized = "on";
-    } else {
-        $my_authorized = $_GET["authorized"];
-    }
-} else {
+if (isset($_GET["mode"])) {
     $from_date = $_GET["from_date"];
     $to_date = $_GET["to_date"];
     $code_type = $_GET["code_type"];
     $unbilled = $_GET["unbilled"];
     $my_authorized = $_GET["authorized"];
+} else {
+    $from_date = $_GET["from_date"] ?? date("Y-m-d");
+    $to_date = $_GET["to_date"] ?? date("Y-m-d");
+    $code_type = $_GET["code_type"] ?? "all";
+    $unbilled = $_GET["unbilled"] ?? "on";
+    $my_authorized = $_GET["authorized"] ?? "on";
 }
 
 ?>

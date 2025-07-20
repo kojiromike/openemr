@@ -1016,18 +1016,24 @@ class AuthorizationController
 
     protected function getUserUuid($userId, $userRole): string
     {
-        switch ($userRole) {
-            case 'users':
-                UuidRegistry::createMissingUuidsForTables(['users']);
-                $account_sql = "SELECT `uuid` FROM `users` WHERE `id` = ?";
-                break;
-            case 'patient':
-                UuidRegistry::createMissingUuidsForTables(['patient_data']);
-                $account_sql = "SELECT `uuid` FROM `patient_data` WHERE `pid` = ?";
-                break;
-            default:
-                return '';
+        $roleConfig = [
+            'users' => [
+                'table' => 'users',
+                'sql' => "SELECT `uuid` FROM `users` WHERE `id` = ?"
+            ],
+            'patient' => [
+                'table' => 'patient_data',
+                'sql' => "SELECT `uuid` FROM `patient_data` WHERE `pid` = ?"
+            ]
+        ];
+
+        if (!isset($roleConfig[$userRole])) {
+            return '';
         }
+
+        $config = $roleConfig[$userRole];
+        UuidRegistry::createMissingUuidsForTables([$config['table']]);
+        $account_sql = $config['sql'];
         $id = sqlQueryNoLog($account_sql, array($userId))['uuid'];
 
         return UuidRegistry::uuidToString($id);

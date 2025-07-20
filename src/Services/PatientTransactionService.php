@@ -283,13 +283,11 @@ class PatientTransactionService extends BaseService
         }
 
         $validator = new Validator();
-        switch ($transactionType) {
-            case "LBTref":
-                $validator->required('referralDate')->datetime('Y-m-d');
-                $validator->required('body')->lengthBetween(2, 150);
-                $validator->required('groupname')->string();
-                $validator->required('referByNpi')->string();
-                break;
+        if ($transactionType === "LBTref") {
+            $validator->required('referralDate')->datetime('Y-m-d');
+            $validator->required('body')->lengthBetween(2, 150);
+            $validator->required('groupname')->string();
+            $validator->required('referByNpi')->string();
         }
 
         return $validator->validate($transaction);

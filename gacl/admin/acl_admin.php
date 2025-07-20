@@ -20,13 +20,8 @@ if (!AclMain::aclCheckCore('admin', 'acl')) {
 
 require_once('gacl_admin.inc.php');
 
-if (!isset($_POST['action']) ) {
-	$_POST['action'] = FALSE;
-}
-
-if (!isset($_GET['action']) ) {
-	$_GET['action'] = FALSE;
-}
+$_POST['action'] = $_POST['action'] ?? false;
+$_GET['action'] = $_GET['action'] ?? false;
 
 switch ($_POST['action']) {
 	case 'Delete':
