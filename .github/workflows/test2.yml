@@ -13,7 +13,7 @@ permissions:
 
 
 jobs:
-  test:
+  test2:
     runs-on: ubuntu-24.04
     services:
       mariadb:
@@ -24,10 +24,11 @@ jobs:
         ports:
         - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=10
+          --health-start-period=30s
     strategy:
       matrix:
         # Single-element matrix provides named variable and job title
@@ -58,7 +59,7 @@ jobs:
           ${{ runner.os }}-composer-${{ matrix.php-version }}-
           ${{ runner.os }}-composer-
     - name: Composer Install
-      run: composer install --prefer-dist --no-progress --optimize-autoloader --no-recommend
+      run: composer install --prefer-dist --no-progress --optimize-autoloader
     - name: Save composer cache
       uses: actions/cache/save@v4
       with:
