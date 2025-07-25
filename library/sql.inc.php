@@ -57,6 +57,22 @@ if ((!empty($GLOBALS["enable_database_connection_pooling"]) || !empty($_SESSION[
 } else {
     $database->connect($host, $login, $pass, $dbase);
 }
+
+// Check if database connection was successful
+if (!$database->_connectionID) {
+    $error_msg = "Failed to connect to MySQL database. ";
+    $error_msg .= "Host: " . ($host ?? 'undefined') . ", ";
+    $error_msg .= "Database: " . ($dbase ?? 'undefined') . ", ";
+    $error_msg .= "User: " . ($login ?? 'undefined') . ". ";
+    if ($database->ErrorMsg()) {
+        $error_msg .= "Error: " . $database->ErrorMsg();
+    } else {
+        $error_msg .= "Check database server status, credentials, and network connectivity.";
+    }
+    error_log("PHP custom error: from openemr library/sql.inc.php - " . $error_msg, 0);
+    die("Database connection failed. Check error log for details.");
+}
+
 $GLOBALS['adodb']['db'] = $database;
 $GLOBALS['dbh'] = $database->_connectionID;
 
