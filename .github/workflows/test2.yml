@@ -100,7 +100,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
     - name: Run OpenEMR Auto Installer
       run: |
-        php contrib/util/installScripts/InstallerAuto.php server=mariadb rootpass=root
+        php contrib/util/installScripts/InstallerAuto.php server=localhost rootpass=root
       env:
         OPENEMR_ENABLE_INSTALLER_AUTO: "1"
     - name: Run OpenEMR Tests
