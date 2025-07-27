@@ -21,6 +21,13 @@ require_once(dirname(__FILE__) . "/../vendor/adodb/adodb-php/adodb.inc.php");
 require_once(dirname(__FILE__) . "/../vendor/adodb/adodb-php/drivers/adodb-mysqli.inc.php");
 require_once(dirname(__FILE__) . "/ADODB_mysqli_log.php");
 
+/**
+ * Exception thrown when database connection fails
+ */
+class DatabaseConnectionException extends RuntimeException
+{
+}
+
 if (!defined('ADODB_FETCH_ASSOC')) {
     define('ADODB_FETCH_ASSOC', 2);
 }
@@ -70,7 +77,7 @@ if (!$database->_connectionID) {
         $error_msg .= "Check database server status, credentials, and network connectivity.";
     }
     error_log("PHP custom error: from openemr library/sql.inc.php - " . $error_msg, 0);
-    die("Database connection failed. Check error log for details.");
+    throw new DatabaseConnectionException("Database connection failed. Check error log for details.");
 }
 
 $GLOBALS['adodb']['db'] = $database;
