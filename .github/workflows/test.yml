@@ -205,7 +205,7 @@ jobs:
         dockers_env_start
     - name: Wait for MySQL to initialize
       if: ${{ matrix.configurations.database == 'mysql' }}
-      run: sleep 30
+      run: sleep 60
     - name: Install and configure
       run: |
         . ci/ciLibrary.source
@@ -215,9 +215,6 @@ jobs:
       run: |
         . ci/ciLibrary.source
         configure_coverage
-    - name: Save running container state
-      shell: bash
-      run: docker compose ps --format json > docker-state.json
     - name: Save Docker image list
       shell: bash
       run: |
@@ -245,7 +242,6 @@ jobs:
       with:
         name: test-env-${{ matrix.configurations.docker_dir }}
         path: |
-          docker-state.json
           docker-images.tar.gz
           image-list.txt
           workspace.tar.gz

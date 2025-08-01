@@ -41,6 +41,12 @@ jobs:
       ENABLE_COVERAGE: ${{ matrix.configurations.docker_dir == 'apache_84_114' && 'true' || 'false' }}
       OPENEMR_DIR: ${{ matrix.configurations.openemr_dir }}
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.configurations.php }}
     - name: Download initialized environment
       uses: actions/download-artifact@v4
       with:
@@ -56,7 +62,16 @@ jobs:
         dockers_env_start
     - name: Wait for MySQL to be ready
       if: ${{ matrix.configurations.database == 'mysql' }}
-      run: sleep 30
+      run: sleep 60
+    - name: Install and configure
+      run: |
+        . ci/ciLibrary.source
+        install_configure
+    - name: Prepare for coverage reporting
+      if: ${{ env.ENABLE_COVERAGE == 'true' }}
+      run: |
+        . ci/ciLibrary.source
+        configure_coverage
     - name: Run ${{ inputs.test-suite }} tests
       if: ${{ inputs.test-suite != 'e2e' || (matrix.configurations.e2e_enabled == 'true' && inputs.enable-e2e-condition == 'true') }}
       shell: bash
