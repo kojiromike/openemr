@@ -1,0 +1,79 @@
+##
+# This reusable workflow is not run directly,
+# but is called by the jobs in the test.yml workflow.
+
+name: Run Test Suite
+
+on:
+  workflow_call:
+    inputs:
+      test-suite:
+        description: 'The test suite to run (unit, e2e, api, fixtures, services, validators, controllers, common)'
+        required: true
+        type: string
+      configurations:
+        description: 'JSON string of test configurations'
+        required: true
+        type: string
+      enable-e2e-condition:
+        description: 'Condition for when to run E2E tests'
+        required: false
+        type: string
+        default: 'true'
+      compose-profiles:
+        description: 'Docker compose profiles to use'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  run-tests:
+    name: ${{ inputs.test-suite }} Tests - PHP ${{ matrix.configurations.php }} - ${{ matrix.configurations.webserver }} - ${{ matrix.configurations.database }} ${{ matrix.configurations.db }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        configurations: ${{ fromJson(inputs.configurations) }}
+    env:
+      COMPOSE_FILE: "ci/${{ matrix.configurations.selenium_template }}:ci/${{ matrix.configurations.webserver_template }}:ci/${{ matrix.configurations.database_template }}:ci/${{ matrix.configurations.docker_dir }}/docker-compose.yml"
+      COMPOSE_PROFILES: ${{ inputs.compose-profiles }}
+      DOCKER_DIR: ${{ matrix.configurations.docker_dir }}
+      ENABLE_COVERAGE: ${{ matrix.configurations.docker_dir == 'apache_84_114' && 'true' || 'false' }}
+      OPENEMR_DIR: ${{ matrix.configurations.openemr_dir }}
+    steps:
+    - name: Download initialized environment
+      uses: actions/download-artifact@v4
+      with:
+        name: test-env-${{ matrix.configurations.docker_dir }}
+    - name: Restore workspace
+      run: tar -xzf workspace.tar.gz
+    - name: Load Docker images
+      run: docker load < docker-images.tar.gz
+    - name: Start Docker environment
+      shell: bash
+      run: |
+        . ci/ciLibrary.source
+        dockers_env_start
+    - name: Wait for MySQL to be ready
+      if: ${{ matrix.configurations.database == 'mysql' }}
+      run: sleep 30
+    - name: Run ${{ inputs.test-suite }} tests
+      if: ${{ inputs.test-suite != 'e2e' || (matrix.configurations.e2e_enabled == 'true' && inputs.enable-e2e-condition == 'true') }}
+      shell: bash
+      run: |
+        . ci/ciLibrary.source
+        build_test ${{ inputs.test-suite }}
+    - name: Upload E2E test videos
+      if: ${{ inputs.test-suite == 'e2e' && matrix.configurations.e2e_enabled == 'true' && hashFiles('selenium-videos/video.mp4') != '' && (success() || failure()) }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-test-videos-${{ matrix.configurations.docker_dir }}
+        path: selenium-videos/
+    - name: Upload ${{ inputs.test-suite }} test coverage
+      if: ${{ env.ENABLE_COVERAGE == 'true' && (success() || failure()) }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.test-suite }}-coverage-${{ matrix.configurations.docker_dir }}
+        path: |
+          tests/coverage/${{ inputs.test-suite }}/
+        retention-days: 1

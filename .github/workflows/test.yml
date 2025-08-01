@@ -19,6 +19,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Collect Docker Dirs
       id: docker-dirs
+      shell: bash
       ##
       # Parse out the test parameters from the ci subdirectories that contain
       # docker-compose.yml files. We'll use that output as a test matrix
@@ -112,8 +113,9 @@ jobs:
         } >> "$GITHUB_OUTPUT"
     outputs:
       configurations: ${{ steps.docker-dirs.outputs.configurations }}
-  build:
-    name: PHP ${{ matrix.configurations.php }} - ${{ matrix.configurations.webserver }} - ${{ matrix.configurations.database }} ${{ matrix.configurations.db }}
+
+  initialize:
+    name: Initialize - PHP ${{ matrix.configurations.php }} - ${{ matrix.configurations.webserver }} - ${{ matrix.configurations.database }} ${{ matrix.configurations.db }}
     runs-on: ubuntu-24.04
     needs: collect
     strategy:
@@ -161,9 +163,6 @@ jobs:
           npm config get cache
         } >> "$GITHUB_OUTPUT"
     - name: Cache node modules
-      # Use explicit restore and save actions to control
-      # precisely when in the workflow the cache is
-      # restored and saved.
       uses: actions/cache/restore@v4
       with:
         path: ${{ steps.npm-cache-dir.outputs.dir }}
@@ -172,11 +171,13 @@ jobs:
           ${{ runner.os }}-node-${{ matrix.configurations.node_version }}-
           ${{ runner.os }}-node-
     - name: Main build
+      shell: bash
       run: |
         . ci/ciLibrary.source
         composer_github_auth
         main_build
     - name: CCDA build
+      shell: bash
       run: |
         . ci/ciLibrary.source
         ccda_build
@@ -193,18 +194,18 @@ jobs:
         path: ${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-composer-${{ matrix.configurations.php }}-${{ hashFiles('**/composer.lock') }}
     - name: Docker Compose Config Output
+      shell: bash
       run: |
         . ci/ciLibrary.source
         dc config
     - name: Dockers environment start
+      shell: bash
       run: |
         . ci/ciLibrary.source
         dockers_env_start
     - name: Wait for MySQL to initialize
       if: ${{ matrix.configurations.database == 'mysql' }}
-      run: |
-        echo "Waiting 60 seconds for MySQL to initialize..."
-        sleep 60
+      run: sleep 30
     - name: Install and configure
       run: |
         . ci/ciLibrary.source
@@ -214,76 +215,146 @@ jobs:
       run: |
         . ci/ciLibrary.source
         configure_coverage
-    - name: Unit testing
-      if: ${{ success() || failure() }}
+    - name: Save running container state
+      shell: bash
+      run: docker compose ps --format json > docker-state.json
+    - name: Save Docker image list
+      shell: bash
       run: |
-        . ci/ciLibrary.source
-        build_test unit
-    ##
-    # To skip E2E tests for specific docker directories,
-    # rename the docker directory to end with "_no-e2e".
-    - name: E2e testing
-      if: ${{ (success() || failure()) && matrix.configurations.e2e_enabled == 'true' }}
-      env:
-        # Change this to just 'selenium' to disable video recording.
-        COMPOSE_PROFILES: video-recording
+        docker compose images --format json | jq -r '.[] | select(.Repository != "<none>") | .Repository + ":" + .Tag' | sort -u > image-list.txt
+    - name: Validate image list
+      if: hashFiles('image-list.txt') == ''
       run: |
-        . ci/ciLibrary.source
-        build_test e2e
-    - name: Upload E2E test videos
-      if: ${{ (success() || failure()) && matrix.configurations.e2e_enabled == 'true' && hashFiles('selenium-videos/video.mp4') != '' }}
+        echo 'Error: No Docker images found. This indicates a problem with the Docker environment setup.'
+        exit 1
+    - name: Save Docker images
+      run: |
+        docker save $(cat image-list.txt) | gzip > docker-images.tar.gz
+    - name: Create workspace archive excluding large directories
+      run: |
+        tar -czf workspace.tar.gz \
+          --exclude=node_modules \
+          --exclude=vendor/*/test* \
+          --exclude=vendor/*/Test* \
+          --exclude=.git \
+          --exclude=docker-images.tar.gz \
+          --exclude=workspace.tar.gz \
+          .
+    - name: Upload initialized environment
       uses: actions/upload-artifact@v4
       with:
-        name: e2e-test-videos-${{ matrix.configurations.docker_dir }}
-        path: selenium-videos/
-    - name: Api testing
-      if: ${{ success() || failure() }}
+        name: test-env-${{ matrix.configurations.docker_dir }}
+        path: |
+          docker-state.json
+          docker-images.tar.gz
+          image-list.txt
+          workspace.tar.gz
+        retention-days: 1
+
+  unit-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: unit
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  e2e-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: e2e
+      configurations: ${{ needs.collect.outputs.configurations }}
+      compose-profiles: video-recording
+
+  api-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: api
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  fixtures-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: fixtures
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  services-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: services
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  validators-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: validators
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  controllers-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: controllers
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  common-tests:
+    needs: [collect, initialize]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-suite: common
+      configurations: ${{ needs.collect.outputs.configurations }}
+
+  combine-coverage:
+    name: Combine Coverage - PHP ${{ matrix.configurations.php }} - ${{ matrix.configurations.webserver }} - ${{ matrix.configurations.database }} ${{ matrix.configurations.db }}
+    runs-on: ubuntu-24.04
+    needs: [collect, initialize, unit-tests, e2e-tests, api-tests, fixtures-tests, services-tests, validators-tests, controllers-tests, common-tests]
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        configurations: ${{ fromJson(needs.collect.outputs.configurations) }}
+    env:
+      DOCKER_DIR: ${{ matrix.configurations.docker_dir }}
+      ENABLE_COVERAGE: ${{ matrix.configurations.docker_dir == 'apache_84_114' && 'true' || 'false' }}
+      OPENEMR_DIR: ${{ matrix.configurations.openemr_dir }}
+      COMPOSE_FILE: "ci/${{ matrix.configurations.selenium_template }}:ci/${{ matrix.configurations.webserver_template }}:ci/${{ matrix.configurations.database_template }}:ci/${{ matrix.configurations.docker_dir }}/docker-compose.yml"
+    steps:
+    - name: Download initialized environment
+      if: ${{ env.ENABLE_COVERAGE == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: test-env-${{ matrix.configurations.docker_dir }}
+    - name: Download all coverage artifacts
+      if: ${{ env.ENABLE_COVERAGE == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        pattern: '*-coverage-${{ matrix.configurations.docker_dir }}'
+        merge-multiple: true
+    - name: Restore workspace and combine coverage
+      if: ${{ env.ENABLE_COVERAGE == 'true' }}
       run: |
-        . ci/ciLibrary.source
-        build_test api
-    - name: Fixtures testing
-      if: ${{ success() || failure() }}
-      run: |
-        . ci/ciLibrary.source
-        build_test fixtures
-    - name: Services testing
-      if: ${{ success() || failure() }}
-      run: |
-        . ci/ciLibrary.source
-        build_test services
-    - name: Validators testing
-      if: ${{ success() || failure() }}
-      run: |
-        . ci/ciLibrary.source
-        build_test validators
-    - name: Controllers testing
-      if: ${{ success() || failure() }}
-      run: |
-        . ci/ciLibrary.source
-        build_test controllers
-    - name: Common testing
-      if: ${{ success() || failure() }}
-      run: |
-        . ci/ciLibrary.source
-        build_test common
-    - name: Combine coverage
-      if: ${{ env.ENABLE_COVERAGE == 'true' && (success() || failure()) }}
-      run: |
+        tar -xzf workspace.tar.gz
         . ci/ciLibrary.source
         merge_coverage
     - name: Check if coverage files exist
-      if: ${{ env.ENABLE_COVERAGE == 'true' && (success() || failure()) }}
+      if: ${{ env.ENABLE_COVERAGE == 'true' }}
       id: check-files
       run: |
         echo "clover_exists=$(test -f coverage.clover.xml && echo true || echo false)" >> $GITHUB_OUTPUT
         echo "htmlcov_exists=$(test -d ./htmlcov && echo true || echo false)" >> $GITHUB_OUTPUT
-    - uses: actions/upload-artifact@v4
-      if: ${{ env.ENABLE_COVERAGE == 'true' && steps.check-files.outputs.clover_exists == 'true' && (success() || failure()) }}
+    - name: Upload combined coverage
+      if: ${{ env.ENABLE_COVERAGE == 'true' && steps.check-files.outputs.clover_exists == 'true' }}
+      uses: actions/upload-artifact@v4
       with:
         name: coverage.clover.xml
         path: coverage.clover.xml
-    - uses: actions/upload-artifact@v4
-      if: ${{ env.ENABLE_COVERAGE == 'true' && steps.check-files.outputs.htmlcov_exists == 'true' && (success() || failure()) }}
+    - name: Upload HTML coverage
+      if: ${{ env.ENABLE_COVERAGE == 'true' && steps.check-files.outputs.htmlcov_exists == 'true' }}
+      uses: actions/upload-artifact@v4
       with:
         name: htmlcov
         path: ./htmlcov/
