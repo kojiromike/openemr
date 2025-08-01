@@ -232,14 +232,14 @@ jobs:
         docker save $(cat image-list.txt) | gzip > docker-images.tar.gz
     - name: Create workspace archive excluding large directories
       run: |
-        tar -czf workspace.tar.gz \
+        tar -czf ../workspace.tar.gz \
           --exclude=node_modules \
           --exclude=vendor/*/test* \
           --exclude=vendor/*/Test* \
           --exclude=.git \
           --exclude=docker-images.tar.gz \
-          --exclude=workspace.tar.gz \
           .
+        mv ../workspace.tar.gz .
     - name: Upload initialized environment
       uses: actions/upload-artifact@v4
       with:
