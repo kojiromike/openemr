@@ -55,8 +55,20 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
             $this->fail('Could not find calendar schedule cells');
         }
 
-        // Trigger mousemove to create the apptMarker
-        $this->client->getMouse()->mouseMove($scheduleCell->getElement(0));
+        // Trigger mousemove to create the apptMarker by executing JavaScript directly
+        $this->client->executeScript('
+            var cell = document.querySelector("td.schedule");
+            if (cell) {
+                var event = new MouseEvent("mousemove", {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: cell.offsetLeft + 50,
+                    clientY: cell.offsetTop + 50
+                });
+                cell.dispatchEvent(event);
+            }
+        ');
 
         // Wait for apptMarker to appear and become clickable
         $this->client->waitFor("//a[contains(@class, 'apptMarker')]", 5);
@@ -153,7 +165,20 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->crawler = $this->client->refreshCrawler();
 
         $scheduleCell = $this->crawler->filterXPath("//td[contains(@class, 'schedule')]")->first();
-        $this->client->getMouse()->mouseMove($scheduleCell->getElement(0));
+        // Trigger mousemove to create the apptMarker by executing JavaScript directly
+        $this->client->executeScript('
+            var cell = document.querySelector("td.schedule");
+            if (cell) {
+                var event = new MouseEvent("mousemove", {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: cell.offsetLeft + 50,
+                    clientY: cell.offsetTop + 50
+                });
+                cell.dispatchEvent(event);
+            }
+        ');
 
         $this->client->waitFor("//a[contains(@class, 'apptMarker')]", 5);
         $this->crawler = $this->client->refreshCrawler();
