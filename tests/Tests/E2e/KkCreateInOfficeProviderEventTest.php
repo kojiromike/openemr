@@ -55,39 +55,36 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
             $this->fail('Could not find calendar schedule cells');
         }
 
-        // Directly call newEvt function (skip the apptMarker entirely)
-        $result = $this->client->executeScript('
-            if (typeof newEvt === "function") {
-                var today = new Date().toISOString().split("T")[0];
-                // Get provider info from schedule cell if available
-                var cell = document.querySelector("td.schedule[provider]");
-                var providerId = cell ? cell.getAttribute("provider") : "1";
-                
-                // Call newEvt with reasonable parameters
-                newEvt("AM", "14", "30", today, providerId, "0");
-                return "success";
-            }
-            return "no_function";
-        ');
+        // Look for and click the Provider link that opens add_edit_event.php
+        $providerLinkClicked = false;
+        $providerLinkSelectors = [
+            "//a[@class='nav-link' and contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
+            "//a[contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
+            "//a[text()='Provider' and contains(@href, 'add_edit_event.php')]"
+        ];
 
-        if ($result !== "success") {
-            $this->fail('newEvt function not available in calendar context');
+        foreach ($providerLinkSelectors as $selector) {
+            try {
+                $this->client->waitFor($selector, 5);
+                $this->crawler = $this->client->refreshCrawler();
+                $this->crawler->filterXPath($selector)->click();
+                $providerLinkClicked = true;
+                break;
+            } catch (\Exception $e) {
+                // Try next selector
+                continue;
+            }
         }
 
-        // Wait a moment for the dialog/popup to appear
-        sleep(2);
+        if (!$providerLinkClicked) {
+            $this->fail('Could not find Provider link to add_edit_event.php');
+        }
 
-        // Wait for Add Event form to load
-        $this->client->waitFor("//input[@name='form_title']", 10);
+        // Wait for Add Event form to load (looking for the duration field instead)
+        $this->client->waitFor("//input[@name='form_duration']", 10);
         $this->crawler = $this->client->refreshCrawler();
 
-        // Fill in event details
-        $eventTitle = 'Test In Office Event ' . date('Y-m-d H:i:s');
-
-        // Set event title
-        $titleField = $this->crawler->filterXPath("//input[@name='form_title']");
-        $titleField->clear();
-        $titleField->sendKeys($eventTitle);
+        // No need to fill in event title - focus on testing duration field behavior
 
         // Select "Specified time" radio button (rballday2) to enable time fields
         $this->crawler->filterXPath("//input[@id='rballday2']")->click();
@@ -164,44 +161,33 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->crawler = $this->client->refreshCrawler();
 
         $scheduleCell = $this->crawler->filterXPath("//td[contains(@class, 'schedule')]")->first();
-        // Trigger mousemove to create the apptMarker by executing JavaScript directly
-        $this->client->executeScript('
-            var cell = document.querySelector("td.schedule");
-            if (cell) {
-                var event = new MouseEvent("mousemove", {
-                    view: window,
-                    bubbles: true,
-                    cancelable: true,
-                    clientX: cell.offsetLeft + 50,
-                    clientY: cell.offsetTop + 50
-                });
-                cell.dispatchEvent(event);
+        // Look for and click the Provider link that opens add_edit_event.php
+        $providerLinkClicked = false;
+        $providerLinkSelectors = [
+            "//a[@class='nav-link' and contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
+            "//a[contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
+            "//a[text()='Provider' and contains(@href, 'add_edit_event.php')]"
+        ];
+
+        foreach ($providerLinkSelectors as $selector) {
+            try {
+                $this->client->waitFor($selector, 5);
+                $this->crawler = $this->client->refreshCrawler();
+                $this->crawler->filterXPath($selector)->click();
+                $providerLinkClicked = true;
+                break;
+            } catch (\Exception $e) {
+                // Try next selector
+                continue;
             }
-        ');
-
-        $this->client->waitFor("//a[contains(@class, 'apptMarker')]", 5);
-        $this->crawler = $this->client->refreshCrawler();
-
-        // Try alternative approach: directly call newEvt function with parameters
-        $result = $this->client->executeScript('
-            if (typeof newEvt === "function") {
-                // Call newEvt with sample parameters (AM, 14, 30, today, provider 1, category 0)
-                var today = new Date().toISOString().split("T")[0];
-                newEvt("AM", "14", "30", today, "1", "0");
-                return "success";
-            }
-            return "no_function";
-        ');
-
-        if ($result !== "success") {
-            $this->fail('newEvt function not available in calendar context');
         }
 
-        // Wait a moment for the dialog/popup to appear
-        sleep(2);
+        if (!$providerLinkClicked) {
+            $this->fail('Could not find Provider link to add_edit_event.php');
+        }
 
-        // Wait for form to load
-        $this->client->waitFor("//input[@name='form_title']", 10);
+        // Wait for form to load (looking for the duration field instead)
+        $this->client->waitFor("//input[@name='form_duration']", 10);
         $this->crawler = $this->client->refreshCrawler();
 
         // Select "Specified time" first to enable duration field potentially
