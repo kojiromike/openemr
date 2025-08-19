@@ -144,7 +144,7 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->assertActiveTab('Calendar');
 
         // Switch to calendar iframe
-        $calendarIframe = "//iframe[contains(@src, 'calendar') or @name='RBot']";
+        $calendarIframe = "//iframe[@name='cal']";
         $this->client->waitFor($calendarIframe, 10);
         $this->switchToIFrame($calendarIframe);
 
