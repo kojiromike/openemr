@@ -55,8 +55,14 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
             $this->fail('Could not find calendar schedule cells');
         }
 
-        // Look for and click the Provider link that opens add_edit_event.php
-        $this->client->filterXPath('//a[text()="Provider"]')->click();
+        // Switch back to main content to look for Provider link
+        $this->client->switchTo()->defaultContent();
+        $this->crawler = $this->client->refreshCrawler();
+        
+        // Look for and click the Provider link
+        $this->client->waitFor('//a[text()="Provider"]', 10);
+        $this->crawler = $this->client->refreshCrawler();
+        $this->crawler->filterXPath('//a[text()="Provider"]')->click();
 
         // Wait for Add Event form to load (looking for the duration field instead)
         $this->client->waitFor("//input[@name='form_duration']", 10);
@@ -139,30 +145,15 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->crawler = $this->client->refreshCrawler();
 
         $scheduleCell = $this->crawler->filterXPath("//td[contains(@class, 'schedule')]")->first();
-        // Look for and click the Provider link that opens add_edit_event.php
-        $providerLinkClicked = false;
-        $providerLinkSelectors = [
-            "//a[@class='nav-link' and contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
-            "//a[contains(@href, 'add_edit_event.php') and contains(@href, 'prov=true')]",
-            "//a[text()='Provider' and contains(@href, 'add_edit_event.php')]"
-        ];
-
-        foreach ($providerLinkSelectors as $selector) {
-            try {
-                $this->client->waitFor($selector, 5);
-                $this->crawler = $this->client->refreshCrawler();
-                $this->crawler->filterXPath($selector)->click();
-                $providerLinkClicked = true;
-                break;
-            } catch (\Exception $e) {
-                // Try next selector
-                continue;
-            }
-        }
-
-        if (!$providerLinkClicked) {
-            $this->fail('Could not find Provider link to add_edit_event.php');
-        }
+        
+        // Switch back to main content to look for Provider link
+        $this->client->switchTo()->defaultContent();
+        $this->crawler = $this->client->refreshCrawler();
+        
+        // Look for and click the Provider link
+        $this->client->waitFor('//a[text()="Provider"]', 10);
+        $this->crawler = $this->client->refreshCrawler();
+        $this->crawler->filterXPath('//a[text()="Provider"]')->click();
 
         // Wait for form to load (looking for the duration field instead)
         $this->client->waitFor("//input[@name='form_duration']", 10);
