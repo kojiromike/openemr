@@ -74,9 +74,25 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->client->waitFor("//a[contains(@class, 'apptMarker')]", 5);
         $this->crawler = $this->client->refreshCrawler();
 
-        // Click on the appointment marker to open add_edit_event.php
-        $apptMarker = $this->crawler->filterXPath("//a[contains(@class, 'apptMarker')]")->first();
-        $apptMarker->click();
+        // Click on the appointment marker using JavaScript since Selenium can't interact with it
+        $clicked = $this->client->executeScript('
+            var marker = document.querySelector("a.apptMarker");
+            if (marker && marker.href) {
+                var href = marker.getAttribute("href");
+                if (href && href.includes("javascript:newEvt")) {
+                    eval(href.replace("javascript:", ""));
+                    return true;
+                }
+            }
+            return false;
+        ');
+
+        if (!$clicked) {
+            $this->fail('Could not click appointment marker or execute newEvt function');
+        }
+
+        // Wait a moment for the dialog/popup to appear
+        sleep(2);
 
         // Wait for Add Event form to load
         $this->client->waitFor("//input[@name='form_title']", 10);
@@ -183,8 +199,25 @@ class KkCreateInOfficeProviderEventTest extends PantherTestCase
         $this->client->waitFor("//a[contains(@class, 'apptMarker')]", 5);
         $this->crawler = $this->client->refreshCrawler();
 
-        $apptMarker = $this->crawler->filterXPath("//a[contains(@class, 'apptMarker')]")->first();
-        $apptMarker->click();
+        // Click on the appointment marker using JavaScript since Selenium can't interact with it
+        $clicked = $this->client->executeScript('
+            var marker = document.querySelector("a.apptMarker");
+            if (marker && marker.href) {
+                var href = marker.getAttribute("href");
+                if (href && href.includes("javascript:newEvt")) {
+                    eval(href.replace("javascript:", ""));
+                    return true;
+                }
+            }
+            return false;
+        ');
+
+        if (!$clicked) {
+            $this->fail('Could not click appointment marker or execute newEvt function');
+        }
+
+        // Wait a moment for the dialog/popup to appear
+        sleep(2);
 
         // Wait for form to load
         $this->client->waitFor("//input[@name='form_title']", 10);
