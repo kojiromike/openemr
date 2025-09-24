@@ -33,25 +33,31 @@ $searchTerm = isset($_GET['sSearch']) ? $_GET['sSearch'] : '';
 $what = $_GET['what'];
 $layout_id = '';
 
-if ($what == 'codes') {
-    $codetype = $_GET['codetype'];
-    $prod = $codetype == 'PROD';
-    $ncodetype = $code_types[$codetype]['id'];
-    $include_inactive = !empty($_GET['inactive']);
-} elseif ($what == 'fields') {
-    $source = empty($_GET['source']) ? 'D' : $_GET['source'];
-    if ($source == 'D') {
-        $layout_id = 'DEM';
-    } elseif ($source == 'H') {
-        $layout_id = 'HIS';
-    } elseif ($source == 'E') {
-        $layout_id = 'LBF%';
-    }
-} elseif ($what == 'groups') {
-    if (!empty($_GET['layout_id'])) {
-        $layout_id = $_GET['layout_id'];
-    }
+// AI-generated code block start: switch statement conversion from if-elseif chain
+switch ($what) {
+    case 'codes':
+        $codetype = $_GET['codetype'];
+        $prod = $codetype == 'PROD';
+        $ncodetype = $code_types[$codetype]['id'];
+        $include_inactive = !empty($_GET['inactive']);
+        break;
+    case 'fields':
+        $source = empty($_GET['source']) ? 'D' : $_GET['source'];
+        // AI-generated match expression for layout_id assignment
+        $layout_id = match ($source) {
+            'D' => 'DEM',
+            'H' => 'HIS',
+            'E' => 'LBF%',
+            default => ''
+        };
+        break;
+    case 'groups':
+        if (!empty($_GET['layout_id'])) {
+            $layout_id = $_GET['layout_id'];
+        }
+        break;
 }
+// AI-generated code block end
 
 $form_encounter_layout = array(
   array('field_id'     => 'date',
