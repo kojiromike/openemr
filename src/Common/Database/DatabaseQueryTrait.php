@@ -120,4 +120,29 @@ trait DatabaseQueryTrait
     {
         return QueryUtils::escapeLimit($limit);
     }
+
+    protected function getAffectedRows()
+    {
+        return QueryUtils::getAffectedRows();
+    }
+
+    protected function getDatabaseName()
+    {
+        return QueryUtils::getDatabaseName();
+    }
+
+    protected function genId($seqname = "sequences")
+    {
+        return QueryUtils::genId($seqname);
+    }
+
+    protected function sqlQueryNoLog($statement, $binds = false, $throw_exception_on_error = false)
+    {
+        return QueryUtils::sqlQueryNoLog($statement, $binds, $throw_exception_on_error);
+    }
+
+    protected function sqlInsertCleanAudit($statement, $binds = false): void
+    {
+        QueryUtils::sqlInsertCleanAudit($statement, $binds);
+    }
 }

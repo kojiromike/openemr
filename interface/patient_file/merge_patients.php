@@ -24,6 +24,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Header;
 use OpenEMR\Common\Logging\EventAuditLogger;
+use OpenEMR\Common\Database\QueryUtils;
 
 $form_pid1 = empty($_GET['pid1']) ? 0 : intval($_GET['pid1']);
 $form_pid2 = empty($_GET['pid2']) ? 0 : intval($_GET['pid2']);
@@ -343,7 +344,7 @@ if (!AclMain::aclCheckCore('admin', 'super')) {
                 $sql = "SELECT DISTINCT TABLE_NAME as encounter_table, COLUMN_NAME as encounter_column " .
                     "FROM INFORMATION_SCHEMA.COLUMNS " .
                     "WHERE COLUMN_NAME IN('encounter', 'encounter_id') AND TABLE_SCHEMA = ?";
-                $res = sqlStatement($sql, [$GLOBALS['adodb']['db']->database]);
+                $res = sqlStatement($sql, [QueryUtils::getDatabaseName()]);
                 while ($tbl = sqlFetchArray($res)) {
                     $tables[] = $tbl;
                 }
@@ -357,7 +358,7 @@ if (!AclMain::aclCheckCore('admin', 'super')) {
 
                     if ($PRODUCTION) {
                         sqlStatement($sql, [$target, $source['encounter']]);
-                        if ($GLOBALS['adodb']['db']->_connectionID->affected_rows) {
+                        if (QueryUtils::getAffectedRows()) {
                             echo "<br />$sql (" . text($target) . ")" . " : (" . text($source['encounter']) . ")";
                             logMergeEvent(
                                 $target_pid,
@@ -378,7 +379,7 @@ if (!AclMain::aclCheckCore('admin', 'super')) {
                     sqlStatement($sql, [$source['encounter']]);
                     $sql = "DELETE FROM `form_encounter` WHERE `encounter` = ?";
                     sqlStatement($sql, [$source['encounter']]);
-                    if ($GLOBALS['adodb']['db']->_connectionID->affected_rows) {
+                    if (QueryUtils::getAffectedRows()) {
                         echo "<br />$sql" . text($source['encounter']);
                         logMergeEvent(
                             $target_pid,

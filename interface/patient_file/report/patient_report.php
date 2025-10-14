@@ -526,25 +526,20 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                     <ul>
                         <?php
                         // show available documents
-                        $db = $GLOBALS['adodb']['db'];
                         $sql = "SELECT d.id, d.url, d.name as document_name, c.name, c.aco_spec FROM documents AS d " .
                                 "LEFT JOIN categories_to_documents AS ctd ON d.id=ctd.document_id " .
                                 "LEFT JOIN categories AS c ON c.id = ctd.category_id WHERE " .
                                 "d.foreign_id = ? AND d.deleted = 0";
-                        $result = $db->Execute($sql, [$pid]);
-                        if ($db->ErrorMsg()) {
-                            echo $db->ErrorMsg();
-                        }
-                        while ($result && !$result->EOF) {
-                            if (empty($result->fields['aco_spec']) || AclMain::aclCheckAcoSpec($result->fields['aco_spec'])) {
+                        $result = sqlStatement($sql, [$pid]);
+                        while ($row = sqlFetchArray($result)) {
+                            if (empty($row['aco_spec']) || AclMain::aclCheckAcoSpec($row['aco_spec'])) {
                                 echo "<li class='font-weight-bold'>";
                                 echo '<input type="checkbox" name="documents[]" value="' .
-                                attr($result->fields['id']) . '">';
-                                echo '&nbsp;&nbsp;<i>' .  text(xl_document_category($result->fields['name'])) . "</i>";
-                                echo '&nbsp;&nbsp;' . xlt('Name') . ': <i>' . text($result->fields['document_name']) . '-' . text($result->fields['id']) . "</i>";
+                                attr($row['id']) . '">';
+                                echo '&nbsp;&nbsp;<i>' .  text(xl_document_category($row['name'])) . "</i>";
+                                echo '&nbsp;&nbsp;' . xlt('Name') . ': <i>' . text($row['document_name']) . '-' . text($row['id']) . "</i>";
                                 echo '</li>';
                             }
-                            $result->MoveNext();
                         }
                         ?>
                     </ul>
