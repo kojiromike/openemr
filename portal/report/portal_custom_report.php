@@ -531,11 +531,10 @@ if ($printable) {
     }
 
   /******************************************************************/
-    $db = $GLOBALS['adodb']['db'];
-    $results = $db->Execute($sql);
+    $results = sqlStatement($sql);
     $facility = [];
-    if (!$results->EOF) {
-        $facility = $results->fields;
+    if ($row = sqlFetchArray($results)) {
+        $facility = $row;
     }
 
     // Setup Headers and Footers for mPDF only Download

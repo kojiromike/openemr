@@ -7,10 +7,12 @@
 
 namespace OpenEMR\Common\ORDataObject;
 
+use OpenEMR\Common\Database\DatabaseQueryTrait;
 use OpenEMR\Common\Database\QueryUtils;
 
 class ORDataObject
 {
+    use DatabaseQueryTrait;
     // TODO: @adunsulag at some point we need to set this default to false
     // currently most objects assume we need to save when we call persist
     private $_isObjectModified = true;
@@ -32,7 +34,7 @@ class ORDataObject
             $this->_prefix = $prefix;
         }
 
-        $this->_db = $GLOBALS['adodb']['db'];
+        $this->_db = get_db();
     }
 
     public function markObjectModified()
@@ -102,9 +104,9 @@ class ORDataObject
         $sql .= " ON DUPLICATE KEY UPDATE " . $setClause;
 
         if ($this->_throwExceptionOnError) {
-            QueryUtils::sqlStatementThrowException($sql, []);
+            $this->sqlStatementThrowException($sql, []);
         } else {
-            sqlQuery($sql);
+            $this->querySingleRow($sql, []);
         }
         return true;
     }
@@ -112,7 +114,7 @@ class ORDataObject
     public function populate()
     {
         $sql = "SELECT * from " . escape_table_name($this->_prefix . $this->_table) . " WHERE id = ?";
-        $results = sqlQuery($sql, [strval($this->get_id())]);
+        $results = $this->querySingleRow($sql, [strval($this->get_id())]);
         $this->populate_array($results);
     }
 

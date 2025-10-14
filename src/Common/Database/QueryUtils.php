@@ -318,4 +318,84 @@ class QueryUtils
     {
         return \escape_limit($limit);
     }
+
+    /**
+     * Get the number of rows affected by the last query
+     *
+     * @return int Number of affected rows
+     */
+    public static function getAffectedRows()
+    {
+        return \affected_rows();
+    }
+
+    /**
+     * Get the current database name
+     *
+     * @return string The database name
+     */
+    public static function getDatabaseName()
+    {
+        return $GLOBALS['adodb']['db']->database;
+    }
+
+    /**
+     * Generate a unique ID from a sequence
+     *
+     * @param string $seqname The sequence name (default: "sequences")
+     * @return int The generated ID
+     */
+    public static function genId($seqname = "sequences")
+    {
+        return $GLOBALS['adodb']['db']->GenID($seqname);
+    }
+
+    /**
+     * Execute a query without logging (for audit system use)
+     *
+     * @param string $statement The SQL statement
+     * @param array|false $binds The bind parameters
+     * @param bool $throw_exception_on_error Whether to throw exception on error
+     * @return mixed The query result
+     * @throws SqlQueryException
+     */
+    public static function sqlQueryNoLog($statement, $binds = false, $throw_exception_on_error = false)
+    {
+        // Below line is to avoid a nasty bug in windows.
+        if (empty($binds)) {
+            $binds = false;
+        }
+
+        $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog($statement, $binds);
+
+        if ($recordset === false) {
+            if ($throw_exception_on_error) {
+                throw new SqlQueryException($statement, "Failed to execute statement. Error: " . \getSqlLastError() . " Statement: " . $statement);
+            } else {
+                \HelpfulDie("query failed: $statement", \getSqlLastError());
+            }
+        }
+
+        return $recordset;
+    }
+
+    /**
+     * Insert query without logging for audit system (clean insert for audit tables)
+     *
+     * @param string $statement The SQL statement
+     * @param array|false $binds The bind parameters
+     * @return void
+     */
+    public static function sqlInsertCleanAudit($statement, $binds = false): void
+    {
+        // Below line is to avoid a nasty bug in windows.
+        if (empty($binds)) {
+            $binds = false;
+        }
+
+        $ret = $GLOBALS['adodb']['db']->ExecuteNoLog($statement, $binds);
+        if ($ret === false) {
+            \HelpfulDie("insert failed: $statement", \getSqlLastError());
+        }
+    }
 }

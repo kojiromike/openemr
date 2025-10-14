@@ -16,11 +16,13 @@ namespace OpenEMR\Common\Logging;
 
 use DateTime;
 use OpenEMR\Common\Crypto\CryptoGen;
+use OpenEMR\Common\Database\DatabaseQueryTrait;
 use Waryway\PhpTraitsLibrary\Singleton;
 
 class EventAuditLogger
 {
     use Singleton;
+    use DatabaseQueryTrait;
 
     private CryptoGen $cryptoGen;
     private ?bool $breakglassUser = null;
@@ -181,9 +183,9 @@ MSG;
         if ($log_from == 'patient-portal') {
             $sqlMenuItems = "SELECT * FROM patient_portal_menu";
 
-            $resMenuItems = sqlStatement($sqlMenuItems);
+            $resMenuItems = $this->fetchRecords($sqlMenuItems);
             $menuItems = [];
-            for ($iter = 0; $rowMenuItem = sqlFetchArray($resMenuItems); $iter++) {
+            foreach ($resMenuItems as $rowMenuItem) {
                 $menuItems[$rowMenuItem['patient_portal_menu_id']] = $rowMenuItem['menu_name'];
             }
 
@@ -341,7 +343,7 @@ MSG;
             $sql .= " LIMIT 5000";
         }
 
-        return sqlStatement($sql, $sqlBindArray);
+        return $this->sqlStatementThrowException($sql, $sqlBindArray);
     }
 
     /**
@@ -692,13 +694,9 @@ MSG;
      */
     public function recordDisclosure($dates, $event, $pid, $recipient, $description, $user)
     {
-        $adodb = $GLOBALS['adodb']['db'];
-        $sql = "insert into extended_log ( date, event, user, recipient, patient_id, description) " .
-            "values (" . $adodb->qstr($dates) . "," . $adodb->qstr($event) . "," . $adodb->qstr($user) .
-            "," . $adodb->qstr($recipient) . "," .
-            $adodb->qstr($pid) . "," .
-            $adodb->qstr($description) . ")";
-        sqlInsertClean_audit($sql);
+        $sql = "INSERT INTO extended_log (date, event, user, recipient, patient_id, description) " .
+            "VALUES (?, ?, ?, ?, ?, ?)";
+        $this->sqlInsertCleanAudit($sql, [$dates, $event, $user, $recipient, $pid, $description]);
     }
 
     /**
@@ -715,14 +713,13 @@ MSG;
      */
     public function updateRecordedDisclosure($dates, $event, $recipient, $description, $disclosure_id)
     {
-        $adodb = $GLOBALS['adodb']['db'];
-        $sql = "update extended_log set
-                event=" . $adodb->qstr($event) . ",
-                date=" .  $adodb->qstr($dates) . ",
-                recipient=" . $adodb->qstr($recipient) . ",
-                description=" . $adodb->qstr($description) . "
-                where id=" . $adodb->qstr($disclosure_id) . "";
-        sqlInsertClean_audit($sql);
+        $sql = "UPDATE extended_log SET
+                event = ?,
+                date = ?,
+                recipient = ?,
+                description = ?
+                WHERE id = ?";
+        $this->sqlInsertCleanAudit($sql, [$event, $dates, $recipient, $description, $disclosure_id]);
     }
 
     /**
@@ -732,8 +729,8 @@ MSG;
      */
     public function deleteDisclosure($deletelid)
     {
-        $sql = "delete from extended_log where id='" . add_escape_custom($deletelid) . "'";
-        sqlInsertClean_audit($sql);
+        $sql = "DELETE FROM extended_log WHERE id = ?";
+        $this->sqlInsertCleanAudit($sql, [$deletelid]);
     }
 
     public function recordLogItem($success, $event, $user, $group, $comments, $patientId = null, $category = null, $logFrom = 'open-emr', $menuItemId = null, $ccdaDocId = null, $user_notes = '', $api = null)
@@ -789,9 +786,9 @@ MSG;
             $menuItemId,
             $ccdaDocId
         ];
-        sqlInsertClean_audit("insert into `log` (`date`, `event`, `category`, `user`, `groupname`, `comments`, `user_notes`, `patient_id`, `success`, `crt_user`, `log_from`, `menu_item_id`, `ccda_doc_id`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", $logEntry);
+        $this->sqlInsertCleanAudit("insert into `log` (`date`, `event`, `category`, `user`, `groupname`, `comments`, `user_notes`, `patient_id`, `success`, `crt_user`, `log_from`, `menu_item_id`, `ccda_doc_id`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", $logEntry);
         // 2. insert associated entry (in addition to calculating and storing applicable checksums) into log_comment_encrypt
-        $last_log_id = $GLOBALS['adodb']['db']->Insert_ID();
+        $last_log_id = $this->getLastInsertId();
         $checksumGenerate = hash('sha3-512', implode('', $logEntry));
         if (!empty($api)) {
             // api log
@@ -812,7 +809,7 @@ MSG;
         } else {
             $checksumGenerateApi = '';
         }
-        sqlInsertClean_audit(
+        $this->sqlInsertCleanAudit(
             "INSERT INTO `log_comment_encrypt` (`log_id`, `encrypt`, `checksum`, `checksum_api`, `version`) VALUES (?, ?, ?, ?, '4')",
             [
                 $last_log_id,
@@ -824,7 +821,7 @@ MSG;
         // 3. if api log entry, then insert insert associated entry into api_log
         if (!empty($api)) {
             // api log
-            sqlInsertClean_audit("INSERT INTO `api_log` (`log_id`, `user_id`, `patient_id`, `ip_address`, `method`, `request`, `request_url`, `request_body`, `response`, `created_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", $apiLogEntry);
+            $this->sqlInsertCleanAudit("INSERT INTO `api_log` (`log_id`, `user_id`, `patient_id`, `ip_address`, `method`, `request`, `request_url`, `request_body`, `response`, `created_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", $apiLogEntry);
         }
         // 4. if atna server is on, then send entry to atna server
         if ($patientId == null) {
@@ -963,7 +960,7 @@ MSG;
 
         // see if current user is in the breakglass group
         //  note we are bypassing gacl standard api to improve performance
-        $queryUser = sqlQueryNoLog(
+        $queryUser = $this->querySingleRow(
             "SELECT `gacl_aro`.`value`
             FROM `gacl_aro`, `gacl_groups_aro_map`, `gacl_aro_groups`
             WHERE `gacl_aro`.`id` = `gacl_groups_aro_map`.`aro_id`
