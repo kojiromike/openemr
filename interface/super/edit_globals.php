@@ -33,6 +33,7 @@ use OpenEMR\Core\Header;
 use OpenEMR\FHIR\Config\ServerConfig;
 use OpenEMR\OeUI\OemrUI;
 use OpenEMR\Services\Globals\GlobalSetting;
+use OpenEMR\Services\Globals\GlobalsEditorDataLoader;
 use Ramsey\Uuid\Uuid;
 
 
@@ -147,6 +148,15 @@ function checkBackgroundServices(): void
     updateBackgroundService('WenoExchange', $wenoservices, 60);
     updateBackgroundService('WenoExchangePharmacies', $wenoservices, 1440);
 }
+
+// Performance optimization: Pre-load all data needed for rendering to avoid N+1 query problems
+// This reduces database queries from 100+ to ~5-10
+$dataLoader = new GlobalsEditorDataLoader();
+$dataLoader->loadAll(
+    $userMode,
+    $_SESSION['authUserID'] ?? null,
+    "$webserver_root/public/themes"
+);
 
 ?>
 <!DOCTYPE html>
@@ -463,12 +473,8 @@ function checkBackgroundServices(): void
 
                                                 // Most parameters will have a single value, but some will be arrays.
                                                 // Here we cater to both possibilities.
-                                                $glres = sqlStatement("SELECT gl_index, gl_value FROM globals WHERE " .
-                                                    "gl_name = ? ORDER BY gl_index", [$fldid]);
-                                                $glarr = [];
-                                                while ($glrow = sqlFetchArray($glres)) {
-                                                    $glarr[] = $glrow;
-                                                }
+                                                // Use data loader instead of querying database
+                                                $glarr = $dataLoader->getGlobalsValues($fldid);
 
                                                 // $fldvalue is meaningful only for the single-value cases.
                                                 $fldvalue = count($glarr) ? $glarr[0]['gl_value'] : $flddef;
@@ -477,10 +483,11 @@ function checkBackgroundServices(): void
                                                 $userSetting = "";
                                                 $settingDefault = "checked='checked'";
                                                 if ($userMode) {
-                                                    $userSettingArray = sqlQuery("SELECT * FROM user_settings WHERE setting_user=? AND setting_label=?", [$_SESSION['authUserID'], "global:" . $fldid]);
-                                                    $userSetting = $userSettingArray['setting_value'] ?? '';
+                                                    // Use data loader instead of querying database
+                                                    $settingLabel = "global:" . $fldid;
+                                                    $userSetting = $dataLoader->getUserSetting($settingLabel);
                                                     $globalValue = $fldvalue;
-                                                    if (!empty($userSettingArray)) {
+                                                    if ($userSetting !== '') {
                                                         $fldvalue = $userSetting;
                                                         $settingDefault = "";
                                                     }
@@ -585,9 +592,9 @@ function checkBackgroundServices(): void
                                                     echo "  <input type='password' class='form-control' name='form_$i' " .
                                                         "maxlength='255' value='" . attr($fldvalue) . "' />\n";
                                                 } elseif ($fldtype == GlobalSetting::DATA_TYPE_LANGUAGE) {
-                                                    $res = sqlStatement("SELECT * FROM lang_languages ORDER BY lang_description");
+                                                    // Use data loader instead of querying database
                                                     echo "  <select class='form-control' name='form_$i' id='form_$i'>\n";
-                                                    while ($row = sqlFetchArray($res)) {
+                                                    foreach ($dataLoader->getLanguages() as $row) {
                                                         echo "   <option value='" . attr($row['lang_description']) . "'";
                                                         if ($row['lang_description'] == $fldvalue) {
                                                             echo " selected";
@@ -615,9 +622,9 @@ function checkBackgroundServices(): void
 
                                                     echo "  </select>\n";
                                                 } elseif ($fldtype == GlobalSetting::DATA_TYPE_MULTI_LANGUAGE_SELECT) {
-                                                    $res = sqlStatement("SELECT * FROM lang_languages  ORDER BY lang_description");
+                                                    // Use data loader instead of querying database
                                                     echo "  <select multiple class='form-control' name='form_{$i}[]' id='form_{$i}[]' size='3'>\n";
-                                                    while ($row = sqlFetchArray($res)) {
+                                                    foreach ($dataLoader->getLanguages() as $row) {
                                                         echo "   <option value='" . attr($row['lang_description']) . "'";
                                                         foreach ($glarr as $glrow) {
                                                             if ($glrow['gl_value'] == $row['lang_description']) {
@@ -631,11 +638,8 @@ function checkBackgroundServices(): void
                                                     }
                                                     echo "  </select>\n";
                                                 } elseif ($fldtype == GlobalSetting::DATA_TYPE_MULTI_DASHBOARD_CARDS) {
-                                                    $hiddenList = [];
-                                                    $ret = sqlStatement("SELECT gl_value FROM `globals` WHERE `gl_name` = 'hide_dashboard_cards'");
-                                                    while ($row = sqlFetchArray($ret)) {
-                                                        $hiddenList[] = $row['gl_value'];
-                                                    }
+                                                    // Use data loader instead of querying database
+                                                    $hiddenList = $dataLoader->getDashboardCards();
                                                     // The list of cards to hide. For now add to array new cards.
                                                     $res = [
                                                         ['card_abrev' => '', 'card_name' => xlt('None or Reset')],
@@ -672,13 +676,10 @@ function checkBackgroundServices(): void
                                                         "maxlength='15' value='" . attr($fldvalue) . "' />" .
                                                         "<input type='button' value='" . xla('Default') . "' onclick=\"document.forms[0].form_$i.jscolor.fromString(" . attr_js($flddef) . ")\">\n";
                                                 } elseif ($fldtype == GlobalSetting::DATA_TYPE_DEFAULT_VISIT_CATEGORY) {
-                                                    $sql = "SELECT pc_catid, pc_catname, pc_cattype
-                                                FROM openemr_postcalendar_categories
-                                                WHERE pc_active = 1 ORDER BY pc_seq";
-                                                    $result = sqlStatement($sql);
+                                                    // Use data loader instead of querying database
                                                     echo "<select class='form-control' name='form_{$i}' id='form_{$i}'>\n";
                                                     echo "<option value='_blank'>" . xlt('None{{Category}}') . "</option>";
-                                                    while ($row = sqlFetchArray($result)) {
+                                                    foreach ($dataLoader->getCalendarCategories() as $row) {
                                                         $catId = $row['pc_catid'];
                                                         $name = $row['pc_catname'];
                                                         if ($catId < 9 && $catId != "5") {
@@ -701,55 +702,21 @@ function checkBackgroundServices(): void
                                                     if ($userMode) {
                                                         $globalTitle = $globalValue;
                                                     }
-                                                    $themedir = "$webserver_root/public/themes";
-                                                    $dh = opendir($themedir);
-                                                    if ($dh) {
-                                                        // Collect styles
-                                                        $styleArray = [];
-                                                        while (false !== ($tfname = readdir($dh))) {
-                                                            // Only show files that contain tabs_style_ or style_ as options
-                                                            if ($fldtype == 'tabs_css') {
-                                                                $patternStyle = 'tabs_style_';
-                                                            } else {
-                                                                // $fldtype == 'css'
-                                                                $patternStyle = 'style_';
-                                                            }
-                                                            if (
-                                                                $tfname == 'style_blue.css' ||
-                                                                $tfname == 'style_pdf.css' ||
-                                                                !preg_match("/^" . $patternStyle . ".*\.css$/", $tfname)
-                                                            ) {
-                                                                continue;
-                                                            }
+                                                    // Use data loader instead of scanning directory
+                                                    $styleArray = $dataLoader->getCssFiles($fldtype == GlobalSetting::DATA_TYPE_TABS_CSS);
 
-                                                            if ($fldtype == GlobalSetting::DATA_TYPE_TABS_CSS) {
-                                                                // Drop the "tabs_style_" part and any replace any underscores with spaces
-                                                                $styleDisplayName = str_replace("_", " ", substr($tfname, 11));
-                                                            } else { // $fldtype == 'css'
-                                                                // Drop the "style_" part and any replace any underscores with spaces
-                                                                $styleDisplayName = str_replace("_", " ", substr($tfname, 6));
-                                                            }
-                                                            // Strip the ".css" and uppercase the first character
-                                                            $styleDisplayName = ucfirst(str_replace(".css", "", $styleDisplayName));
-
-                                                            $styleArray[$tfname] = $styleDisplayName;
+                                                    // Generate style selector
+                                                    echo "<select class='form-control' name='form_$i' id='form_$i'>\n";
+                                                    foreach ($styleArray as $styleKey => $styleValue) {
+                                                        echo "<option value='" . attr($styleKey) . "'";
+                                                        if ($styleKey == $fldvalue) {
+                                                            echo " selected";
                                                         }
-                                                        // Alphabetize styles
-                                                        asort($styleArray);
-                                                        // Generate style selector
-                                                        echo "<select class='form-control' name='form_$i' id='form_$i'>\n";
-                                                        foreach ($styleArray as $styleKey => $styleValue) {
-                                                            echo "<option value='" . attr($styleKey) . "'";
-                                                            if ($styleKey == $fldvalue) {
-                                                                echo " selected";
-                                                            }
-                                                            echo ">";
-                                                            echo text($styleValue);
-                                                            echo "</option>\n";
-                                                        }
-                                                        echo "</select>\n";
+                                                        echo ">";
+                                                        echo text($styleValue);
+                                                        echo "</option>\n";
                                                     }
-                                                    closedir($dh);
+                                                    echo "</select>\n";
                                                 } elseif ($fldtype == GlobalSetting::DATA_TYPE_HOUR) {
                                                     if ($userMode) {
                                                         $globalTitle = $globalValue;
