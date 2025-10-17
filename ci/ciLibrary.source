@@ -162,7 +162,7 @@ enable_e2e_coverage() {
         echo "auto_append_file=${OPENEMR_DIR}/ci/coverage-append.php"
         echo 'xdebug.mode=coverage'
     } > coverage.ini
-    dc cp coverage.ini "openemr:${php_scan_dir}/conf.d/coverage.ini"
+    dc cp coverage.ini "openemr:${php_scan_dir}/coverage.ini"
 
     echo 'Restarting services to pick up the new PHP configuration'
     _exec sh -xc '
