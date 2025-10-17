@@ -28,22 +28,26 @@ permissions:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php }} - ${{ matrix.database }}
+    name: PHP ${{ matrix.php }} - ${{ matrix.database.name }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.3', '8.4']
+        php:
+        - '8.2'
+        - '8.3'
+        - '8.4'
+        - '8.5'
         database:
-          - name: 'MySQL 8.0'
-            image: 'mysql:8.0'
-            type: 'mysql'
-          - name: 'MariaDB 11.4'
-            image: 'mariadb:11.4'
-            type: 'mariadb'
+        - name: 'MySQL 8.0'
+          image: 'mysql:8.0'
+          type: 'mysql'
+        - name: 'MariaDB 11.4'
+          image: 'mariadb:11.4'
+          type: 'mariadb'
 
     env:
-      ENABLE_COVERAGE: ${{ matrix.php == '8.4' && matrix.database.type == 'mariadb' && 'true' || 'false' }}
+      ENABLE_COVERAGE: true
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
       DB_DATABASE: openemr
