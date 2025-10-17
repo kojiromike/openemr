@@ -7,7 +7,7 @@
  */
 
 // Write marker to prove this file executes
-$marker = '/var/www/localhost/htdocs/openemr/coverage/PREPEND_EXECUTED';
+$marker = '/tmp/openemr-coverage-PREPEND_EXECUTED';
 $data = date('Y-m-d H:i:s') . " - prepend executed\n";
 if (file_put_contents($marker, $data, FILE_APPEND | LOCK_EX) === false) {
     error_log("COVERAGE DEBUG: Failed to write prepend marker to $marker");

@@ -7,11 +7,11 @@
  */
 
 define('WEBROOT', dirname(__DIR__));
-define('COVERAGE_DIR', WEBROOT . '/coverage');
+define('COVERAGE_DIR', '/tmp/openemr-coverage');
 define('E2E_COVERAGE_DIR', COVERAGE_DIR . '/e2e');
 
 // Write marker to prove this file executes
-$marker = COVERAGE_DIR . '/APPEND_EXECUTED';
+$marker = '/tmp/openemr-coverage-APPEND_EXECUTED';
 $data = date('Y-m-d H:i:s') . " - append executed\n";
 if (file_put_contents($marker, $data, FILE_APPEND | LOCK_EX) === false) {
     error_log("COVERAGE DEBUG: Failed to write append marker to $marker");
@@ -45,15 +45,20 @@ $filename = sprintf(
 require_once WEBROOT . '/vendor/autoload.php';
 
 use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Data\RawCodeCoverageData;
 use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
 use SebastianBergmann\CodeCoverage\Filter;
 use SebastianBergmann\CodeCoverage\Report\PHP;
 
-// Create a CodeCoverage object and set the data
+// Create a CodeCoverage object
 $codeCoverageFilter = new Filter();  // a filter is required, but an empty filter includes everything
 $codeCoverageDriver = new XdebugDriver($codeCoverageFilter);
 $codeCoverage = new CodeCoverage($codeCoverageDriver, $codeCoverageFilter);
-$codeCoverage->setData($coverage);
+
+// Convert raw xdebug array to RawCodeCoverageData and append it
+// Note: We're not using branch coverage (XDEBUG_CC_BRANCH_CHECK), so we use fromXdebugWithoutPathCoverage
+$rawData = RawCodeCoverageData::fromXdebugWithoutPathCoverage($coverage);
+$codeCoverage->append($rawData, 'e2e-test');
 
 // Save using the PHP writer
 $writer = new PHP();
