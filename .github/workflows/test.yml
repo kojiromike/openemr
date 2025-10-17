@@ -56,7 +56,7 @@ jobs:
       DB_ROOT_PASSWORD: root
 
     services:
-      mysql:
+      db:
         image: ${{ matrix.database.image }}
         env:
           MYSQL_ROOT_PASSWORD: root
