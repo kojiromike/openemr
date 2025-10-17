@@ -155,6 +155,8 @@ jobs:
         exit 1
 
     - name: Install and configure OpenEMR
+      env:
+        OPENEMR_ENABLE_INSTALLER_AUTO: '1'
       run: |
         # Run OpenEMR installer
         php -f ./contrib/util/installScripts/InstallerAuto.php \
