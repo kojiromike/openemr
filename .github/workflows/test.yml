@@ -66,7 +66,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd=/usr/local/bin/healthcheck.sh --su-mysql --connect --innodb_initialized
           --health-interval=10s
           --health-timeout=5s
           --health-retries=25
