@@ -35,31 +35,14 @@ if (!is_dir(E2E_COVERAGE_DIR)) {
 }
 
 $filename = sprintf(
-    '%s/coverage.e2e.%s.%s.cov',
+    '%s/coverage.e2e.%s.%s.raw.php',
     E2E_COVERAGE_DIR,
     date('YmdHis'),
     bin2hex(random_bytes(8))
 );
 
-// Save coverage data in PHP_CodeCoverage format
-require_once WEBROOT . '/vendor/autoload.php';
-
-use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Data\RawCodeCoverageData;
-use SebastianBergmann\CodeCoverage\Driver\XdebugDriver;
-use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\Report\PHP;
-
-// Create a CodeCoverage object
-$codeCoverageFilter = new Filter();  // a filter is required, but an empty filter includes everything
-$codeCoverageDriver = new XdebugDriver($codeCoverageFilter);
-$codeCoverage = new CodeCoverage($codeCoverageDriver, $codeCoverageFilter);
-
-// Convert raw xdebug array to RawCodeCoverageData and append it
-// Note: We're not using branch coverage (XDEBUG_CC_BRANCH_CHECK), so we use fromXdebugWithoutPathCoverage
-$rawData = RawCodeCoverageData::fromXdebugWithoutPathCoverage($coverage);
-$codeCoverage->append($rawData, 'e2e-test');
-
-// Save using the PHP writer
-$writer = new PHP();
-$writer->process($codeCoverage, $filename);
+// Save the raw Xdebug coverage data directly to avoid memory exhaustion
+// This will be processed later when merging coverage files
+// Format: just the raw array from xdebug_get_code_coverage()
+$exported = var_export($coverage, true);
+file_put_contents($filename, "<?php\nreturn " . $exported . ";\n");
