@@ -284,6 +284,8 @@ build_test_e2e() {
         disable_e2e_coverage
 
         echo 'Fetching coverage files'
+        echo 'Changing ownership of coverage files in container to avoid permission issues during copy'
+        _exec chown -R "$(id -u):$(id -g)" /tmp/openemr-coverage/e2e 2>/dev/null || true
         dc cp openemr:/tmp/openemr-coverage/e2e ./coverage
 
         echo 'Merging E2E coverage files…'
