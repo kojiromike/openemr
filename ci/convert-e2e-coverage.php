@@ -11,6 +11,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\Selector;
 use SebastianBergmann\CodeCoverage\Filter;
+use SebastianBergmann\CodeCoverage\RawCodeCoverageData;
 
 $coverageDir = '/tmp/openemr-coverage/e2e';
 $outputFile = '/tmp/openemr-coverage/coverage.e2e.cov';
@@ -42,8 +43,11 @@ foreach ($files as $file) {
             continue;
         }
 
+        // Wrap in RawCodeCoverageData object
+        $rawData = RawCodeCoverageData::fromXdebugWithoutPathCoverage($rawCoverage);
+
         // Merge the raw data into the coverage object
-        $coverage->append($rawCoverage, basename($file));
+        $coverage->append($rawData, basename($file));
         $processedCount++;
 
         if ($processedCount % 100 === 0) {
