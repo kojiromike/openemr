@@ -292,11 +292,8 @@ build_test_e2e() {
         fi
         echo "Found ${coverage_file_count} coverage file(s) to merge"
 
-        echo 'Merging E2E coverage files inside container…'
-        phpcov merge /tmp/openemr-coverage/e2e --php /tmp/openemr-coverage/coverage.e2e.cov
-
-        echo 'Generating E2E clover report inside container…'
-        phpcov merge /tmp/openemr-coverage/e2e --clover /tmp/openemr-coverage/coverage.e2e.clover.xml
+        echo 'Converting and merging raw E2E coverage files…'
+        _exec php -d memory_limit=8G ci/convert-e2e-coverage.php
 
         echo 'Copying merged coverage files to local machine…'
         mkdir -p e2ecov
