@@ -284,6 +284,8 @@ build_test_e2e() {
         disable_e2e_coverage
 
         echo 'Fetching coverage files'
+        echo 'Fixing permissions in container before copy'
+        dc exec --user root openemr chmod -R 755 /tmp/openemr-coverage/e2e
         echo 'Copying coverage files using tar to avoid permission issues'
         mkdir -p ./coverage
         dc exec --user root openemr tar czf - -C /tmp/openemr-coverage e2e | tar xzf - -C ./coverage
