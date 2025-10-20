@@ -185,7 +185,6 @@ enable_e2e_coverage() {
 }
 
 disable_e2e_coverage() {
-    return
     # Detect the PHP configuration scan directory dynamically
     local php_scan_dir
     php_scan_dir=$(_exec php -r "echo ini_get('cfg_file_path') ?: dirname(php_ini_loaded_file());" 2>/dev/null)
