@@ -11,7 +11,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\Selector;
 use SebastianBergmann\CodeCoverage\Filter;
-use SebastianBergmann\CodeCoverage\RawCodeCoverageData;
+use SebastianBergmann\CodeCoverage\Data\RawCodeCoverageData;
 
 $coverageDir = '/tmp/openemr-coverage/e2e';
 $outputFile = '/tmp/openemr-coverage/coverage.e2e.cov';
