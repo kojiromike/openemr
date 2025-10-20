@@ -285,24 +285,21 @@ build_test_e2e() {
 
         echo 'Fetching coverage files'
         echo 'Preparing local coverage directory'
-        mkdir -p ./coverage
-        # Remove existing e2e directory if it exists to avoid permission conflicts
-        rm -rf ./coverage/e2e
         echo 'Copying coverage files using tar to avoid permission issues'
-        dc exec --user root openemr tar czf - -C /tmp/openemr-coverage e2e | tar xzf - -C ./coverage
+        dc cp openemr:/tmp/openemr-coverage/e2e e2ecov
 
         echo 'Merging E2E coverage files…'
         # Check if E2E coverage files exist and merge them
         shopt -s nullglob
-        e2e_coverage_files=( ./coverage/e2e/*.php )
+        e2e_coverage_files=( ./e2ecov/*.php )
         if (( ${#e2e_coverage_files[@]} == 0 )); then
             echo 'Error: No E2E coverage files found to merge'
             return 1
         fi
-        phpcov merge coverage/e2e --cov coverage/coverage.e2e.cov
+        phpcov merge e2ecov --cov e2ecov/coverage.e2e.cov
 
         echo 'Generating E2E clover report…'
-        phpcov merge coverage/e2e --clover coverage.e2e.clover.xml
+        phpcov merge e2ecov --clover coverage.e2e.clover.xml
     fi
 
     # Stop selenium and video containers if they were started and extract videos
