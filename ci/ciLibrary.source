@@ -283,23 +283,25 @@ build_test_e2e() {
         echo 'Disabling E2E coverage collection…'
         disable_e2e_coverage
 
-        echo 'Fetching coverage files'
-        echo 'Preparing local coverage directory'
-        echo 'Copying coverage files using tar to avoid permission issues'
-        dc cp openemr:/tmp/openemr-coverage/e2e e2ecov
-
-        echo 'Merging E2E coverage files…'
-        # Check if E2E coverage files exist and merge them
-        shopt -s nullglob
-        e2e_coverage_files=( ./e2ecov/*.php )
-        if (( ${#e2e_coverage_files[@]} == 0 )); then
+        echo 'Checking for E2E coverage files inside container…'
+        # Check if E2E coverage files exist inside the container
+        coverage_file_count=$(_exec sh -c 'ls -1 /tmp/openemr-coverage/e2e/*.php 2>/dev/null | wc -l' | tr -d '[:space:]')
+        if (( "${coverage_file_count}" == 0 )); then
             echo 'Error: No E2E coverage files found to merge'
             return 1
         fi
-        phpcov merge e2ecov --php e2ecov/coverage.e2e.cov
+        echo "Found ${coverage_file_count} coverage file(s) to merge"
 
-        echo 'Generating E2E clover report…'
-        phpcov merge e2ecov --clover coverage.e2e.clover.xml
+        echo 'Merging E2E coverage files inside container…'
+        phpcov merge /tmp/openemr-coverage/e2e --php /tmp/openemr-coverage/coverage.e2e.cov
+
+        echo 'Generating E2E clover report inside container…'
+        phpcov merge /tmp/openemr-coverage/e2e --clover /tmp/openemr-coverage/coverage.e2e.clover.xml
+
+        echo 'Copying merged coverage files to local machine…'
+        mkdir -p e2ecov
+        dc cp openemr:/tmp/openemr-coverage/coverage.e2e.cov e2ecov/coverage.e2e.cov
+        dc cp openemr:/tmp/openemr-coverage/coverage.e2e.clover.xml coverage.e2e.clover.xml
     fi
 
     # Stop selenium and video containers if they were started and extract videos
