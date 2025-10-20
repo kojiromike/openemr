@@ -296,7 +296,7 @@ build_test_e2e() {
             echo 'Error: No E2E coverage files found to merge'
             return 1
         fi
-        phpcov merge e2ecov --cov e2ecov/coverage.e2e.cov
+        phpcov merge e2ecov --php e2ecov/coverage.e2e.cov
 
         echo 'Generating E2E clover report…'
         phpcov merge e2ecov --clover coverage.e2e.clover.xml
