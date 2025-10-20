@@ -286,7 +286,7 @@ build_test_e2e() {
         echo 'Fetching coverage files'
         echo 'Copying coverage files using tar to avoid permission issues'
         mkdir -p ./coverage
-        dc exec openemr tar czf - -C /tmp/openemr-coverage e2e | tar xzf - -C ./coverage
+        dc exec --user root openemr tar czf - -C /tmp/openemr-coverage e2e | tar xzf - -C ./coverage
 
         echo 'Merging E2E coverage files…'
         # Check if E2E coverage files exist and merge them
