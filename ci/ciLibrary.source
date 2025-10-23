@@ -249,7 +249,7 @@ build_test_e2e() {
 
     echo 'Running E2E tests…'
     set +e
-    _exec php -d memory_limit=8G ./vendor/bin/phpunit --log-junit junit-e2e.xml --testsuite e2e --testdox
+    _exec php -d memory_limit=8G ./vendor/bin/phpunit --log-junit junit-e2e.xml --testsuite e2e --teamcity
     status=$?
     set -e
 
@@ -317,7 +317,7 @@ phpunit() {
         shift
     done
     [[ -n "${testsuite_arg}" ]] && args+=( --log-junit "junit-${testsuite_arg}.xml" )
-    _exec php -d memory_limit=8G ./vendor/bin/phpunit --testdox "${args[@]}"
+    _exec php -d memory_limit=8G ./vendor/bin/phpunit --teamcity "${args[@]}"
 }
 
 ##

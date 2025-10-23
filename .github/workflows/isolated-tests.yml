@@ -76,7 +76,7 @@ jobs:
                            --coverage-filter=tests \
                            --coverage-html=htmlcov \
                            --log-junit=junit.xml \
-                           --testdox
+                           --teamcity
 
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
