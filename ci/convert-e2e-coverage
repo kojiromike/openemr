@@ -185,9 +185,13 @@ class ConvertE2ECoverageCommand extends Command
             }
 
             // Save the merged coverage object
+            // The .cov file must be a PHP file that returns the coverage object
+            // This matches the format PHPUnit uses with --coverage-php
             $io->section('Saving results');
             $io->text("Writing merged coverage to: {$outputFile}");
-            file_put_contents($outputFile, serialize($coverage));
+            $serialized = serialize($coverage);
+            $content = "<?php\nreturn unserialize(" . var_export($serialized, true) . ");\n";
+            file_put_contents($outputFile, $content);
             $io->success('Merged coverage saved');
 
             // Generate clover report if requested
