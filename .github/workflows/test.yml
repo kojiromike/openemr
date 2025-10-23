@@ -191,6 +191,7 @@ jobs:
       run: |
         . ci/ciLibrary.source
         configure_coverage
+        echo "COVERAGE_RAW_TMPDIR=${RUNNER_TEMP}/coverage-e2e-raw" >> "${GITHUB_ENV}"
 
     # - name: Unit testing
     #   if: ${{ success() || failure() }}
@@ -394,18 +395,20 @@ jobs:
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         . ci/ciLibrary.source
-        mkdir -p coverage-e2e
-        dc cp openemr:/tmp/openemr-coverage/e2e coverage-e2e || true
-        find coverage-e2e -type f -name '*.php' | wc -l | xargs echo "Found raw E2E coverage files:"
+        mkdir -p "${COVERAGE_RAW_TMPDIR}
+        dc cp openemr:/tmp/openemr-coverage/e2e "${COVERAGE_RAW_TMPDIR}" || true
+        find "${COVERAGE_RAW_TMPDIR}" -type f -name '*.php' |
+          wc -l |
+          xargs echo 'Found raw E2E coverage files:'
 
     - name: Convert E2E coverage to .cov format
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         mkdir -p coverage
-        ./ci/convert-e2e-coverage \
-          coverage-e2e/e2e \
-          coverage/coverage.e2e.cov \
-          --clover=coverage.e2e.clover.xml
+        ./ci/convert-e2e-coverage "${COVERAGE_RAW_TMPDIR}/e2e" \
+                                  coverage/coverage.e2e.cov \
+                                  --clover=coverage.e2e.clover.xml
+        ls -lah coverage.e2e.clover.xml coverage/coverage.e2e.cov
 
     ##
     # The logs for the e2e run are directly in the container logs for nginx/php-fpm
