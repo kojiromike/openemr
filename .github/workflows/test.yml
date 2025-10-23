@@ -394,10 +394,12 @@ jobs:
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         . ci/ciLibrary.source
+        set +e
         _exec find /tmp/openemr-coverage | head
         mkdir -p coverage-e2e
         dc cp openemr:/tmp/openemr-coverage coverage-e2e
-        find coverage-e2e
+        find coverage-e2e | head
+        true
 
     ##
     # The logs for the e2e run are directly in the container logs for nginx/php-fpm
