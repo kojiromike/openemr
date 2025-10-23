@@ -405,6 +405,7 @@ jobs:
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         mkdir -p coverage
+        sudo chmod -R 777 coverage
         ./ci/convert-e2e-coverage "${COVERAGE_RAW_TMPDIR}/e2e" \
                                   coverage/coverage.e2e.cov \
                                   --clover=coverage.e2e.clover.xml
