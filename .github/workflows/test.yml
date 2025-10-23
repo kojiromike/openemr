@@ -395,7 +395,7 @@ jobs:
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         . ci/ciLibrary.source
-        mkdir -p "${COVERAGE_RAW_TMPDIR}
+        mkdir -p "${COVERAGE_RAW_TMPDIR}"
         dc cp openemr:/tmp/openemr-coverage/e2e "${COVERAGE_RAW_TMPDIR}" || true
         find "${COVERAGE_RAW_TMPDIR}" -type f -name '*.php' |
           wc -l |
