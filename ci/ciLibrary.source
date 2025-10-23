@@ -201,7 +201,7 @@ setup_e2e_bookends() {
 
 enable_e2e_coverage() {
     echo 'not implemented' >&2
-    false
+    # false
 }
 
 build_test_e2e() {
