@@ -390,16 +390,22 @@ jobs:
         . ci/ciLibrary.source
         build_test e2e
 
-    - name: E2e coverage dump (just for testing)
+    - name: Copy E2E coverage files from container
       if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
       run: |
         . ci/ciLibrary.source
-        set +e
-        _exec find /tmp/openemr-coverage | head
         mkdir -p coverage-e2e
-        dc cp openemr:/tmp/openemr-coverage coverage-e2e
-        find coverage-e2e | head
-        true
+        dc cp openemr:/tmp/openemr-coverage/e2e coverage-e2e || true
+        find coverage-e2e -type f -name '*.php' | wc -l | xargs echo "Found raw E2E coverage files:"
+
+    - name: Convert E2E coverage to .cov format
+      if: ${{ (success() || failure()) && steps.parse.outputs.e2e_enabled == 'true' && env.ENABLE_COVERAGE == 'true' }}
+      run: |
+        mkdir -p coverage
+        ./ci/convert-e2e-coverage \
+          coverage-e2e/e2e \
+          coverage/coverage.e2e.cov \
+          --clover=coverage.e2e.clover.xml
 
     ##
     # The logs for the e2e run are directly in the container logs for nginx/php-fpm
