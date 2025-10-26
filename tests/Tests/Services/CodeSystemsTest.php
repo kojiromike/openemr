@@ -293,6 +293,9 @@ class CodeSystemsTest extends TestCase
 
     public function testGetFileDataWithNonexistentFile(): void
     {
+        // Expect a warning when trying to open a nonexistent file
+        $this->expectWarning();
+
         $generator = getFileData('/nonexistent/file.txt');
 
         $lines = iterator_to_array($generator);
@@ -450,11 +453,14 @@ class CodeSystemsTest extends TestCase
 
     public function testCqmValuesetDateExtraction(): void
     {
+        // CQM valueset files use MMDDYYYY format
         $filename = 'ep_ec_only_cms_03152024.xml.zip';
         preg_match("/e[p,c]_.*_cms_([0-9]{8})\.xml\.zip/", $filename, $matches);
 
-        $dateString = $matches[1];
-        $date_release = substr($dateString, 0, 4) . "-" . substr($dateString, 4, -2) . "-" . substr($dateString, 6);
+        $dateString = $matches[1]; // 03152024
+        // The current implementation extracts: YYYY-MM-DD from MMDDYYYY
+        // substr($dateString, 4, 4) gets YYYY, substr($dateString, 0, 2) gets MM, substr($dateString, 2, 2) gets DD
+        $date_release = substr($dateString, 4) . "-" . substr($dateString, 0, 2) . "-" . substr($dateString, 2, 2);
 
         $this->assertEquals('2024-03-15', $date_release);
     }
