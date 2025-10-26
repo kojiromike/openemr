@@ -297,7 +297,7 @@ class CodeSystemsTest extends TestCase
     {
         // getFileData will trigger a warning when trying to open a nonexistent file
         // Suppress the warning in the test
-        set_error_handler(function ($errno, $errstr) {
+        set_error_handler(function ($errno, $errstr): void {
             // Expected warning, do nothing
         });
 
