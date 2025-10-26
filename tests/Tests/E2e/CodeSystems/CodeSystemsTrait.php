@@ -55,6 +55,24 @@ trait CodeSystemsTrait
                 WebDriverBy::id("{$dbType}_install_details")
             )
         );
+
+        // Wait for loading spinners to disappear (AJAX calls to complete)
+        $this->client->wait(10, 500)->until(function ($driver) use ($dbType) {
+            try {
+                // Check if the loading spinner is no longer visible
+                $instLoading = $driver->findElement(WebDriverBy::id("{$dbType}_inst_loading"));
+                $stgLoading = $driver->findElement(WebDriverBy::id("{$dbType}_stg_loading"));
+
+                // Spinners should be hidden or display:none
+                return !$instLoading->isDisplayed() && !$stgLoading->isDisplayed();
+            } catch (\Exception) {
+                // If we can't find the spinners, assume they're gone
+                return true;
+            }
+        });
+
+        // Give a small additional wait for content to render
+        sleep(1);
     }
 
     /**
@@ -62,8 +80,14 @@ trait CodeSystemsTrait
      */
     private function isDatabaseNotInstalled(string $dbType): bool
     {
-        $installDetails = $this->crawler->filter("#{$dbType}_install_details")->text();
-        return str_contains($installDetails, 'Not installed');
+        try {
+            // Re-fetch the crawler to get updated DOM
+            $this->crawler = $this->client->refreshCrawler();
+            $installDetails = $this->crawler->filter("#{$dbType}_install_details")->text();
+            return str_contains((string) $installDetails, 'Not installed');
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**
@@ -71,10 +95,16 @@ trait CodeSystemsTrait
      */
     private function isDatabaseInstalled(string $dbType): bool
     {
-        $installDetails = $this->crawler->filter("#{$dbType}_install_details")->text();
-        return str_contains($installDetails, 'Name:') ||
-               str_contains($installDetails, 'Revision:') ||
-               str_contains($installDetails, 'Release Date:');
+        try {
+            // Re-fetch the crawler to get updated DOM
+            $this->crawler = $this->client->refreshCrawler();
+            $installDetails = $this->crawler->filter("#{$dbType}_install_details")->text();
+            return str_contains((string) $installDetails, 'Name:') ||
+                   str_contains((string) $installDetails, 'Revision:') ||
+                   str_contains((string) $installDetails, 'Release Date:');
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**
@@ -82,11 +112,16 @@ trait CodeSystemsTrait
      */
     private function hasStageErrors(string $dbType): bool
     {
-        $stageDetails = $this->crawler->filter("#{$dbType}_stage_details")->text();
-        return str_contains($stageDetails, 'ERROR') ||
-               str_contains($stageDetails, 'UNSUPPORTED') ||
-               str_contains($stageDetails, 'installation directory needs to be created') ||
-               str_contains($stageDetails, 'No files staged');
+        try {
+            $this->crawler = $this->client->refreshCrawler();
+            $stageDetails = $this->crawler->filter("#{$dbType}_stage_details")->text();
+            return str_contains((string) $stageDetails, 'ERROR') ||
+                   str_contains((string) $stageDetails, 'UNSUPPORTED') ||
+                   str_contains((string) $stageDetails, 'installation directory needs to be created') ||
+                   str_contains((string) $stageDetails, 'No files staged');
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**
@@ -97,7 +132,7 @@ trait CodeSystemsTrait
         try {
             $button = $this->crawler->filter("#{$dbType}_install_button");
             return $button->count() > 0;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -142,7 +177,7 @@ trait CodeSystemsTrait
         try {
             $link = $this->crawler->filter("#{$dbType}_instrmsg");
             return $link->count() > 0;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
