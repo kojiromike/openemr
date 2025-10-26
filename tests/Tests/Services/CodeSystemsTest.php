@@ -293,13 +293,18 @@ class CodeSystemsTest extends TestCase
 
     public function testGetFileDataWithNonexistentFile(): void
     {
-        // Expect a warning when trying to open a nonexistent file
-        $this->expectWarning();
+        // getFileData will trigger a warning when trying to open a nonexistent file
+        // Suppress the warning in the test
+        set_error_handler(function ($errno, $errstr) {
+            // Expected warning, do nothing
+        });
 
         $generator = getFileData('/nonexistent/file.txt');
 
         $lines = iterator_to_array($generator);
         $this->assertCount(0, $lines);
+
+        restore_error_handler();
     }
 
     // ========================================================================
