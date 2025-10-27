@@ -56,23 +56,33 @@ trait CodeSystemsTrait
             )
         );
 
-        // Wait for loading spinners to disappear (AJAX calls to complete)
-        $this->client->wait(10, 500)->until(function ($driver) use ($dbType) {
+        // Wait for AJAX content to actually load (check for non-empty content)
+        $this->client->wait(15, 500)->until(function ($driver) use ($dbType) {
             try {
-                // Check if the loading spinner is no longer visible
-                $instLoading = $driver->findElement(WebDriverBy::id("{$dbType}_inst_loading"));
-                $stgLoading = $driver->findElement(WebDriverBy::id("{$dbType}_stg_loading"));
+                $installDetails = $driver->findElement(WebDriverBy::id("{$dbType}_install_details"));
+                $text = $installDetails->getText();
 
-                // Spinners should be hidden or display:none
-                return !$instLoading->isDisplayed() && !$stgLoading->isDisplayed();
+                // Content should be loaded - either "Not installed" or version info
+                // But exclude the loading spinner image text
+                return !empty($text) && !str_contains($text, 'ajax-loader');
             } catch (\Exception) {
-                // If we can't find the spinners, assume they're gone
-                return true;
+                return false;
             }
         });
 
-        // Give a small additional wait for content to render
-        sleep(1);
+        // Also wait for stage details to load
+        $this->client->wait(15, 500)->until(function ($driver) use ($dbType) {
+            try {
+                $stageDetails = $driver->findElement(WebDriverBy::id("{$dbType}_stage_details"));
+                $text = $stageDetails->getText();
+
+                // Stage details should have content
+                return !empty($text);
+            } catch (\Exception) {
+                // Stage details might be empty if no files, that's ok
+                return true;
+            }
+        });
     }
 
     /**
