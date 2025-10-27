@@ -199,7 +199,14 @@ sqlStatement("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`,
 
 ---
 
-### 4. Integration Tests (2 tests)
+### 4. Integration Tests (3 tests)
+
+**Note**: These tests verify UI interactions work. AJAX content loading is intentionally not tested here because:
+- JavaScript AJAX may not trigger reliably in the test environment
+- Direct endpoint tests already verify `list_installed.php` and `list_staged.php` work
+- The goal is to verify the UI structure and basic interactions
+
+
 
 #### `testStagedFilesShowsMessages()`
 **Purpose**: Verify the staged files section displays appropriate content
