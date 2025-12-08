@@ -95,26 +95,32 @@ if [ ! -f "$INSTALLER_PHP" ]; then
   exit 1
 fi
 
-php_args=()
-php_args+=("server=$MYSQL_HOST")
-php_args+=("port=$MYSQL_PORT")
-php_args+=("root=$MYSQL_ROOT_USER")
-php_args+=("rootpass=$MYSQL_ROOT_PASS")
-php_args+=("login=$MYSQL_USER")
-php_args+=("pass=$MYSQL_PASS")
-php_args+=("dbname=$MYSQL_DB")
-php_args+=("site=$SITE")
-php_args+=("iuser=$IUSER")
-php_args+=("iuname=$IUNAME")
-php_args+=("iuserpass=$IUSERPASS")
-php_args+=("igroup=$IGROUP")
-php_args+=("source_site_id=$SOURCE_SITE_ID")
-php_args+=("clone_database=$CLONE_DATABASE")
-php_args+=("no_root_db_access=$NO_ROOT_DB_ACCESS")
-php_args+=("development_translations=$DEVELOPMENT_TRANSLATIONS")
-php_args+=("loginhost=$LOGINHOST")
+declare -A php_args=(
+  [server]="$MYSQL_HOST"
+  [port]="$MYSQL_PORT"
+  [root]="$MYSQL_ROOT_USER"
+  [rootpass]="$MYSQL_ROOT_PASS"
+  [login]="$MYSQL_USER"
+  [pass]="$MYSQL_PASS"
+  [dbname]="$MYSQL_DB"
+  [site]="$SITE"
+  [iuser]="$IUSER"
+  [iuname]="$IUNAME"
+  [iuserpass]="$IUSERPASS"
+  [igroup]="$IGROUP"
+  [source_site_id]="$SOURCE_SITE_ID"
+  [clone_database]="$CLONE_DATABASE"
+  [no_root_db_access]="$NO_ROOT_DB_ACCESS"
+  [development_translations]="$DEVELOPMENT_TRANSLATIONS"
+  [loginhost]="$LOGINHOST"
+)
 
 echo "Running automatic installer..."
-php -d memory_limit=1024M -f "$INSTALLER_PHP" "${php_args[@]}"
+# Build argument array from associative array
+args=()
+for key in "${!php_args[@]}"; do
+  args+=("${key}=${php_args[$key]}")
+done
+php -d memory_limit=1024M -f "$INSTALLER_PHP" "${args[@]}"
 
 echo "Installer finished."
