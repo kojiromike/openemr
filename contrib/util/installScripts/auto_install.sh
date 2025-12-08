@@ -95,32 +95,27 @@ if [ ! -f "$INSTALLER_PHP" ]; then
   exit 1
 fi
 
-declare -A php_args=(
-  [server]="$MYSQL_HOST"
-  [port]="$MYSQL_PORT"
-  [root]="$MYSQL_ROOT_USER"
-  [rootpass]="$MYSQL_ROOT_PASS"
-  [login]="$MYSQL_USER"
-  [pass]="$MYSQL_PASS"
-  [dbname]="$MYSQL_DB"
-  [site]="$SITE"
-  [iuser]="$IUSER"
-  [iuname]="$IUNAME"
-  [iuserpass]="$IUSERPASS"
-  [igroup]="$IGROUP"
-  [source_site_id]="$SOURCE_SITE_ID"
-  [clone_database]="$CLONE_DATABASE"
-  [no_root_db_access]="$NO_ROOT_DB_ACCESS"
-  [development_translations]="$DEVELOPMENT_TRANSLATIONS"
-  [loginhost]="$LOGINHOST"
+php_args=(
+  server="$MYSQL_HOST"
+  port="$MYSQL_PORT"
+  root="$MYSQL_ROOT_USER"
+  rootpass="$MYSQL_ROOT_PASS"
+  login="$MYSQL_USER"
+  pass="$MYSQL_PASS"
+  dbname="$MYSQL_DB"
+  site="$SITE"
+  iuser="$IUSER"
+  iuname="$IUNAME"
+  iuserpass="$IUSERPASS"
+  igroup="$IGROUP"
+  source_site_id="$SOURCE_SITE_ID"
+  clone_database="$CLONE_DATABASE"
+  no_root_db_access="$NO_ROOT_DB_ACCESS"
+  development_translations="$DEVELOPMENT_TRANSLATIONS"
+  loginhost="$LOGINHOST"
 )
 
 echo "Running automatic installer..."
-# Build argument array from associative array
-args=()
-for key in "${!php_args[@]}"; do
-  args+=("${key}=${php_args[$key]}")
-done
-php -d memory_limit=1024M -f "$INSTALLER_PHP" "${args[@]}"
+php -d memory_limit=1024M -f "$INSTALLER_PHP" "${php_args[@]}"
 
 echo "Installer finished."
