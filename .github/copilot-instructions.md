@@ -25,9 +25,9 @@ This file contains explicit, repeatable instructions for Copilot and other autom
      OPENEMR_ENABLE_INSTALLER_AUTO=1 \
      MYSQL_HOST=localhost \
      MYSQL_PORT=3306 \
-     MYSQL_ROOT_PASS="${{secret.DB_ROOT_PASS}}" \
+     MYSQL_ROOT_PASS="${{secrets.DB_ROOT_PASS}}" \
      MYSQL_USER=openemr \
-     MYSQL_PASS="${{secret.DB_PASS}}" \
+     MYSQL_PASS="${{secrets.DB_PASS}}" \
      MYSQL_DB=openemr \
      contrib/util/installScripts/auto_install.sh
      ```

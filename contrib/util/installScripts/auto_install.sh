@@ -63,10 +63,19 @@ fi
 if [ -f package.json ]; then
   if command -v npm >/dev/null 2>&1; then
     echo "Running npm ci..."
-    if ! npm ci --no-audit --no-fund; then
+    if ! npm ci --no-audit --no-fund 2>&1; then
+      echo "npm ci failed; falling back to npm install..."
       npm install --no-audit --no-fund
     fi
-    if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+    # Check for build script - use node if jq not available
+    if command -v jq >/dev/null 2>&1; then
+      if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+        echo "Running npm run build..."
+        npm run build
+      else
+        echo "No npm build script found; skipping build."
+      fi
+    elif grep -q '"build"' package.json; then
       echo "Running npm run build..."
       npm run build
     else
