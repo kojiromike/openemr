@@ -196,7 +196,7 @@ class SmokingStatusType implements IOptionFormType {
             $s .= "<td class='text align-top'>" . htmlspecialchars((string) $resnote, ENT_NOQUOTES) . "&nbsp;&nbsp;</td>";
         }
         if (!empty($res)) {
-            $s .= "<td class='text align-top'><strong>" . htmlspecialchars((string) xl('Status'), ENT_NOQUOTES) . "</strong>:&nbsp;" . htmlspecialchars((string) $res, ENT_NOQUOTES) . "&nbsp;</td>";
+            $s .= "<td class='text align-top'><strong>" . htmlspecialchars((string) xl('Status'), ENT_NOQUOTES) . "</strong>:&nbsp;" . htmlspecialchars($res, ENT_NOQUOTES) . "&nbsp;</td>";
         }
 
         if ($restype == "quit" . $field_id) {

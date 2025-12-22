@@ -2710,7 +2710,7 @@ function generate_display_field($frow, $currvalue)
         }
 
         if (!empty($res)) {
-            $s .= "<td class='text align-top'><strong>" . htmlspecialchars((string) xl('Status'), ENT_NOQUOTES) . "</strong>:&nbsp;" . htmlspecialchars((string) $res, ENT_NOQUOTES) . "&nbsp;</td>";
+            $s .= "<td class='text align-top'><strong>" . htmlspecialchars((string) xl('Status'), ENT_NOQUOTES) . "</strong>:&nbsp;" . htmlspecialchars($res, ENT_NOQUOTES) . "&nbsp;</td>";
         }
 
         if ($restype == "quit" . $field_id) {
