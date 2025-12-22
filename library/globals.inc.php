@@ -708,6 +708,20 @@ $GLOBALS_METADATA = [
             xl('Are appointment category names to be translated?')
         ],
 
+        'translate_skip_english_lookup' => [
+            xl('Skip English Translation Lookups'),
+            'bool',                           // data type
+            '0',                              // default = false
+            xl('Skip database lookups for translations entirely when enabled and the language is English. This significantly improves page load performance, but disables any custom English text in Administration > Language.')
+        ],
+
+        'translate_preload_cache' => [
+            xl('Preload Translation Cache'),
+            'bool',                           // data type
+            '0',                              // default = false
+            xl('Load all translations for the current language into memory at startup. Uses more memory but eliminates individual database lookups during page rendering.')
+        ],
+
         'units_of_measurement' => [
             xl('Units for Visit Forms'),
             [

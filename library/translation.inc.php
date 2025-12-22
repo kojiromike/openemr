@@ -1,9 +1,72 @@
 <?php
 
+use OpenEMR\Common\Database\QueryUtils;
+use OpenEMR\Common\Logging\SystemLogger;
+use OpenEMR\Core\OEGlobalsBag;
+
+// Translation function
+// This is the translation engine
+//
+//  Note there are cases in installation where this function has already been
+//   declared, so check to ensure has not been declared yet.
+//
+
+// Returns a reference to the shared translation cache
+if (!(function_exists('xlGetCache'))) {
+    function &xlGetCache(): array
+    {
+        static $translationCache = [];
+        return $translationCache;
+    }
+}
+
+// Preloads all translations for the given language into the cache.
+// Call this early in the request lifecycle for best performance.
+if (!(function_exists('xlWarmCache'))) {
+    function xlWarmCache(): void
+    {
+        $globals = OEGlobalsBag::getInstance();
+        $lang_id = !empty($_SESSION['language_choice']) ? (int) $_SESSION['language_choice'] : 1;
+
+        // Check for conflicting settings
+        if ($lang_id === 1 && $globals->getBoolean('translate_skip_english_lookup')) {
+            (new SystemLogger())->warning(
+                "Both 'translate_preload_cache' and 'translate_skip_english_lookup' are enabled. " .
+                "These settings are mutually exclusive for English. Using 'translate_skip_english_lookup' (skipping cache warm)."
+            );
+            return;
+        }
+
+        $cache = &xlGetCache();
+
+        // Skip if already warmed for this language
+        if (!empty($cache[$lang_id]['_warmed'])) {
+            return;
+        }
+
+        // Load all translations for this language in a single query
+        $sql = "SELECT lc.constant_name, ld.definition FROM lang_definitions ld " .
+            "JOIN lang_constants lc ON ld.cons_id = lc.cons_id " .
+            "WHERE ld.lang_id = ?";
+        $rows = QueryUtils::fetchRecordsNoLog($sql, [$lang_id]);
+
+        if (!isset($cache[$lang_id])) {
+            $cache[$lang_id] = [];
+        }
+
+        foreach ($rows as $row) {
+            $cache[$lang_id][$row['constant_name']] = $row['definition'];
+        }
+
+        // Mark as warmed so we don't repeat
+        $cache[$lang_id]['_warmed'] = true;
+    }
+}
+
 if (!(function_exists('xl'))) {
     /**
      * Translation function - the translation engine for OpenEMR
-     * 
+     *
      * Translates a given constant string into the current session language.
      * Note: In some installation scenarios this function may already be declared,
      * so we check to ensure it hasn't been declared yet.
@@ -13,12 +76,20 @@ if (!(function_exists('xl'))) {
      */
     function xl(string $constant): string
     {
-        if (!empty($GLOBALS['temp_skip_translations'])) {
+        $cache = &xlGetCache();
+        $globals = OEGlobalsBag::getInstance();
+
+        if ($globals->getBoolean('temp_skip_translations')) {
             return $constant;
         }
 
         // set language id
-        $lang_id = !empty($_SESSION['language_choice']) ? $_SESSION['language_choice'] : 1;
+        $lang_id = !empty($_SESSION['language_choice']) ? (int) $_SESSION['language_choice'] : 1;
+
+        // Short-circuit for English when configured to skip lookups
+        if ($lang_id === 1 && $globals->getBoolean('translate_skip_english_lookup')) {
+            return $constant;
+        }
 
         // TRANSLATE
         // first, clean lines
@@ -26,18 +97,30 @@ if (!(function_exists('xl'))) {
         $patterns =  ['/\n/','/\r/'];
         $replace =  [' ',''];
         $constant = preg_replace($patterns, $replace, $constant);
-        // second, attempt translation
-        $sql = "SELECT * FROM lang_definitions JOIN lang_constants ON " .
-        "lang_definitions.cons_id = lang_constants.cons_id WHERE " .
-        "lang_id=? AND constant_name = ? LIMIT 1";
-        $res = sqlStatementNoLog($sql, [$lang_id,$constant]);
-        $row = sqlFetchArray($res);
-        $string = $row['definition'] ?? '';
+
+        // Check cache first
+        if (isset($cache[$lang_id][$constant])) {
+            $string = $cache[$lang_id][$constant];
+        } else {
+            // second, attempt translation
+            $sql = "SELECT ld.definition FROM lang_definitions ld " .
+                "JOIN lang_constants lc ON ld.cons_id = lc.cons_id " .
+                "WHERE ld.lang_id = ? AND lc.constant_name = ? LIMIT 1";
+            $rows = QueryUtils::fetchRecordsNoLog($sql, [$lang_id, $constant]);
+            $string = $rows[0]['definition'] ?? '';
+
+            // Cache the result (empty string means no translation found)
+            if (!isset($cache[$lang_id])) {
+                $cache[$lang_id] = [];
+            }
+            $cache[$lang_id][$constant] = $string;
+        }
+
         if ($string == '') {
             $string = "$constant";
         }
         // remove dangerous characters and remove comments
-        if (!empty($GLOBALS['translate_no_safe_apostrophe'])) {
+        if ($globals->getBoolean('translate_no_safe_apostrophe')) {
             $patterns =  ['/\n/','/\r/','/\{\{.*\}\}/'];
             $replace =  [' ','',''];
             $string = preg_replace($patterns, $replace, (string) $string);
@@ -67,7 +150,7 @@ if (!(function_exists('xl'))) {
 //
 /**
  * Conditionally translates list labels based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_lists'] is set to true.
  * Added 5-09 by BM.
  *
@@ -81,7 +164,7 @@ function xl_list_label(string $constant): string
 
 /**
  * Conditionally translates layout labels based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_layout'] is set to true.
  * Added 5-09 by BM.
  *
@@ -95,7 +178,7 @@ function xl_layout_label(string $constant): string
 
 /**
  * Conditionally translates access control group labels based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_gacl_groups'] is set to true.
  * Added 6-2009 by BM.
  *
@@ -109,7 +192,7 @@ function xl_gacl_group(string $constant): string
 
 /**
  * Conditionally translates patient form (notes) titles based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_form_titles'] is set to true.
  * Added 6-2009 by BM.
  *
@@ -123,7 +206,7 @@ function xl_form_title(string $constant): string
 
 /**
  * Conditionally translates document categories based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_document_categories'] is set to true.
  * Added 6-2009 by BM.
  *
@@ -137,7 +220,7 @@ function xl_document_category(string $constant): string
 
 /**
  * Conditionally translates appointment categories based on global setting
- * 
+ *
  * Only translates if $GLOBALS['translate_appt_categories'] is set to true.
  * Added 6-2009 by BM.
  *
@@ -153,16 +236,18 @@ function xl_appt_category(string $constant): string
 // ---------------------------------
 // Miscellaneous language translation functions
 
-// Function to return the title of a language from the id
-// @param integer (language id)
-// return string (language title)
-function getLanguageTitle($val)
+/**
+ * Returns the title/description of a language from its ID
+ *
+ * @param int|string $val The language ID
+ * @return string The language description/title
+ */
+function getLanguageTitle($val): string
 {
-
- // validate language id
+    // validate language id
     $lang_id = !empty($val) ? $val : 1;
 
- // get language title
+    // get language title
     $res = sqlStatement("select lang_description from lang_languages where lang_id =?", [$lang_id]);
     for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
         $result[$iter] = $row;
@@ -171,16 +256,14 @@ function getLanguageTitle($val)
     return $languageTitle;
 }
 
-
-
-
 /**
  * Returns language directionality as string 'rtl' or 'ltr'
+ *
  * @param int $lang_id language code
- * @return string 'ltr' 'rtl'
+ * @return string 'ltr' or 'rtl'
  * @author Amiel <amielel@matrix.co.il>
  */
-function getLanguageDir($lang_id)
+function getLanguageDir($lang_id): string
 {
     // validate language id
     $lang_id = empty($lang_id) ? 1 : $lang_id;
