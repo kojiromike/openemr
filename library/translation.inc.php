@@ -22,7 +22,7 @@ if (!(function_exists('xlWarmCache'))) {
      */
     function xlWarmCache(): void
     {
-        $globals = OEGlobalsBag::getInstance();
+        $globals = OEGlobalsBag::getInstance(true);
         $lang_id = !empty($_SESSION['language_choice']) ? (int) $_SESSION['language_choice'] : 1;
 
         // Check for conflicting settings
@@ -60,7 +60,7 @@ if (!(function_exists('xlWarmCache'))) {
  */
 function xlLangHasTranslations(int $lang_id): bool
 {
-    if ($lang_id === 1 && OEGlobalsBag::getInstance()->getBoolean('translate_skip_english_lookup')) {
+    if ($lang_id === 1 && OEGlobalsBag::getInstance(true)->getBoolean('translate_skip_english_lookup')) {
         return false;
     }
 
@@ -107,7 +107,7 @@ function xlLangHasTranslations(int $lang_id): bool
 function xlskip(int $lang_id): bool
 {
     $cache = &xlGetCache();
-    $globals = OEGlobalsBag::getInstance();
+    $globals = OEGlobalsBag::getInstance(true);
     return ($globals->getBoolean('temp_skip_translations')
         || ($lang_id === 1 && $globals->getBoolean('translate_skip_english_lookup'))
         || (isset($cache[$lang_id]) ? empty($cache[$lang_id]) : !xlLangHasTranslations($lang_id))
@@ -129,7 +129,7 @@ if (!(function_exists('xl'))) {
     function xl(string $constant): string
     {
         $cache = &xlGetCache();
-        $globals = OEGlobalsBag::getInstance();
+        $globals = OEGlobalsBag::getInstance(true);
         $lang_id = (int) ($_SESSION['language_choice'] ?? 1);
 
         if (xlskip($lang_id)) {
@@ -196,7 +196,7 @@ if (!(function_exists('xl'))) {
  */
 function xlw(string $globalFlag, string $constant): string
 {
-    return OEGlobalsBag::getInstance()->getBoolean($globalFlag) ? xl($constant) : $constant;
+    return OEGlobalsBag::getInstance(true)->getBoolean($globalFlag) ? xl($constant) : $constant;
 }
 
 /**
