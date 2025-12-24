@@ -5,6 +5,7 @@ on:
     branches:
     - master
     - rel-*
+    - catch-database-changes  # Temporary for testing
     paths:
     - 'sql/database.sql'
     - 'sql/*_upgrade.sql'
@@ -14,6 +15,7 @@ on:
     branches:
     - master
     - rel-*
+    - catch-database-changes  # Temporary for testing
     paths:
     - 'sql/database.sql'
     - 'sql/*_upgrade.sql'
