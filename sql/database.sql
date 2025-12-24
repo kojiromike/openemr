@@ -15368,3 +15368,4 @@ CREATE TABLE `preference_value_sets` (
     -- General Preferences
     INSERT INTO preference_value_sets(`loinc_code`,`answer_code`,`answer_system`,`answer_display`,`sort_order`,`active`) VALUES
     ('95541-9', 314433002, 'http://snomed.info/sct', 'Preference for health professional (finding)', 1, 1);
+ALTER TABLE users ADD COLUMN test_col INT;
