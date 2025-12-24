@@ -1,0 +1,292 @@
+name: Database Changes
+
+on:
+  push:
+    branches:
+      - master
+      - rel-*
+    paths:
+      - 'sql/database.sql'
+      - 'sql/*_upgrade.sql'
+      - 'version.php'
+      - '.github/workflows/database-changes.yml'
+  pull_request:
+    branches:
+      - master
+      - rel-*
+    paths:
+      - 'sql/database.sql'
+      - 'sql/*_upgrade.sql'
+      - 'version.php'
+      - '.github/workflows/database-changes.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'pull_request' && github.event.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate-database-changes:
+    name: Validate Database Changes
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            sql/database.sql
+            sql/*_upgrade.sql
+            version.php
+
+      - name: Detect file changes
+        id: detect-changes
+        run: |
+          DATABASE_CHANGED=false
+          MIGRATION_CHANGED=false
+          VERSION_CHANGED=false
+          MIGRATION_FILES=""
+
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            case "$file" in
+              sql/database.sql)
+                DATABASE_CHANGED=true
+                ;;
+              sql/*_upgrade.sql)
+                MIGRATION_CHANGED=true
+                MIGRATION_FILES="$MIGRATION_FILES $file"
+                ;;
+              version.php)
+                VERSION_CHANGED=true
+                ;;
+            esac
+          done
+
+          echo "database_changed=$DATABASE_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "migration_changed=$MIGRATION_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "version_changed=$VERSION_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "migration_files=$MIGRATION_FILES" >> "$GITHUB_OUTPUT"
+
+          echo "Database changed: $DATABASE_CHANGED"
+          echo "Migration changed: $MIGRATION_CHANGED"
+          echo "Version changed: $VERSION_CHANGED"
+          echo "Migration files: $MIGRATION_FILES"
+
+      - name: Check for trivial database.sql changes
+        id: trivial-check
+        if: steps.detect-changes.outputs.database_changed == 'true'
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+          fi
+
+          echo "Comparing against base: $BASE_REF"
+
+          # Check for whitespace-only changes
+          WHITESPACE_DIFF=$(git diff --ignore-all-space --ignore-blank-lines "$BASE_REF" -- sql/database.sql || true)
+
+          if [[ -z "$WHITESPACE_DIFF" ]]; then
+            echo "trivial=true" >> "$GITHUB_OUTPUT"
+            echo "reason=whitespace-only" >> "$GITHUB_OUTPUT"
+            echo "Changes are whitespace-only"
+            exit 0
+          fi
+
+          # Check for comment-only changes
+          # Get added/removed lines, strip SQL comments (-- style), check if anything remains
+          CONTENT_DIFF=$(git diff "$BASE_REF" -- sql/database.sql | \
+            grep -E '^[+-]' | \
+            grep -v '^[+-]{3}' | \
+            sed 's/^[+-]//' | \
+            sed 's/--.*$//' | \
+            sed 's/^[[:space:]]*//' | \
+            sed 's/[[:space:]]*$//' | \
+            grep -v '^$' || true)
+
+          if [[ -z "$CONTENT_DIFF" ]]; then
+            echo "trivial=true" >> "$GITHUB_OUTPUT"
+            echo "reason=comment-only" >> "$GITHUB_OUTPUT"
+            echo "Changes are comment-only"
+          else
+            echo "trivial=false" >> "$GITHUB_OUTPUT"
+            echo "reason=substantial" >> "$GITHUB_OUTPUT"
+            echo "Changes are substantial"
+          fi
+
+      - name: Extract version database values
+        id: version-check
+        run: |
+          # Get current v_database value
+          CURRENT_VERSION=$(grep -oP '\$v_database\s*=\s*\K[0-9]+' version.php)
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Current \$v_database: $CURRENT_VERSION"
+
+          # Get base v_database value
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+          fi
+
+          BASE_VERSION=$(git show "$BASE_REF:version.php" 2>/dev/null | grep -oP '\$v_database\s*=\s*\K[0-9]+' || echo "$CURRENT_VERSION")
+          echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Base \$v_database: $BASE_VERSION"
+
+          if [[ "$CURRENT_VERSION" != "$BASE_VERSION" ]]; then
+            echo "version_bumped=true" >> "$GITHUB_OUTPUT"
+            echo "Version was bumped: $BASE_VERSION -> $CURRENT_VERSION"
+          else
+            echo "version_bumped=false" >> "$GITHUB_OUTPUT"
+            echo "Version was not bumped"
+          fi
+
+      - name: Validate database change consistency
+        id: validate
+        run: |
+          DATABASE_CHANGED="${{ steps.detect-changes.outputs.database_changed }}"
+          MIGRATION_CHANGED="${{ steps.detect-changes.outputs.migration_changed }}"
+          VERSION_BUMPED="${{ steps.version-check.outputs.version_bumped }}"
+          TRIVIAL="${{ steps.trivial-check.outputs.trivial }}"
+          TRIVIAL_REASON="${{ steps.trivial-check.outputs.reason }}"
+          CURRENT_VERSION="${{ steps.version-check.outputs.current_version }}"
+
+          ERRORS=""
+          HAS_ERROR=false
+
+          # Skip validation for trivial changes
+          if [[ "$DATABASE_CHANGED" == "true" && "$TRIVIAL" == "true" ]]; then
+            echo "::notice::Skipping validation - database.sql changes are trivial ($TRIVIAL_REASON)"
+            echo "validation_skipped=true" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=$TRIVIAL_REASON" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "validation_skipped=false" >> "$GITHUB_OUTPUT"
+
+          # Rule 1: database.sql changed without $v_database bump
+          if [[ "$DATABASE_CHANGED" == "true" && "$VERSION_BUMPED" != "true" ]]; then
+            ERRORS="${ERRORS}
+          - **database.sql changed without \\\$v_database bump**
+            - You modified \`sql/database.sql\` but did not increment \`\\\$v_database\` in \`version.php\`
+            - Fix: Increment the value of \`\\\$v_database\` in \`version.php\` (current: ${CURRENT_VERSION})"
+            HAS_ERROR=true
+          fi
+
+          # Rule 2: database.sql changed without migration file change
+          if [[ "$DATABASE_CHANGED" == "true" && "$MIGRATION_CHANGED" != "true" ]]; then
+            ERRORS="${ERRORS}
+          - **database.sql changed without migration file**
+            - You modified \`sql/database.sql\` but did not add/update a migration file
+            - Fix: Add your schema changes to the appropriate \`sql/*_upgrade.sql\` migration file"
+            HAS_ERROR=true
+          fi
+
+          # Rule 3: Migration file changed without database.sql change
+          if [[ "$MIGRATION_CHANGED" == "true" && "$DATABASE_CHANGED" != "true" ]]; then
+            ERRORS="${ERRORS}
+          - **Migration file changed without database.sql change**
+            - You modified a migration file but did not update \`sql/database.sql\`
+            - Fix: Ensure \`sql/database.sql\` reflects the final schema state after your migration"
+            HAS_ERROR=true
+          fi
+
+          # Rule 4: $v_database changed without database.sql change
+          if [[ "$VERSION_BUMPED" == "true" && "$DATABASE_CHANGED" != "true" ]]; then
+            ERRORS="${ERRORS}
+          - **\\\$v_database changed without database.sql change**
+            - You incremented \`\\\$v_database\` but did not modify \`sql/database.sql\`
+            - Fix: If there are no schema changes, revert the \\\$v_database change"
+            HAS_ERROR=true
+          fi
+
+          if [[ "$HAS_ERROR" == "true" ]]; then
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+            {
+              echo 'errors<<EOF'
+              echo "$ERRORS"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+            echo "Validation failed with errors"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+            echo "All database change consistency checks passed!"
+          fi
+
+      - name: Add label to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelName = 'Database Changes';
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelName]
+              });
+              console.log(`Added label "${labelName}" to PR #${context.issue.number}`);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`Label "${labelName}" does not exist, leaving comment instead`);
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `> **Note**: This PR contains database changes but the "${labelName}" label does not exist in this repository. Please create this label for better PR categorization.`
+                });
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Report validation errors
+        if: steps.validate.outputs.has_errors == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errors = `${{ steps.validate.outputs.errors }}`;
+
+            const body = `## Database Change Validation Failed
+
+            This PR has database-related changes that are inconsistent. Please address the following issues:
+            ${errors}
+
+            ### How Database Changes Work in OpenEMR
+
+            When making database schema changes, you must update all three files together:
+            1. **\`sql/database.sql\`** - Update with the final schema state (for fresh installs)
+            2. **\`sql/*_upgrade.sql\`** - Add migration SQL to the appropriate upgrade file (for existing installs)
+            3. **\`version.php\`** - Increment \`$v_database\` value
+
+            All three files must be updated together for any schema change.`;
+
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+            core.setFailed('Database change validation failed. See PR comment for details.');
+
+      - name: Report trivial changes skipped
+        if: steps.validate.outputs.validation_skipped == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason = '${{ steps.trivial-check.outputs.reason }}';
+            console.log(`Validation skipped: ${reason} changes only`);
