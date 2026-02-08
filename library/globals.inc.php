@@ -3631,6 +3631,8 @@ $GLOBALS_METADATA = [
                 1 => xl('Care Coordination Only'),
                 2 => xl('Portal Only'),
                 3 => xl('Both'),
+                4 => xl('PHP Engine (No Node.js)'),
+                5 => xl('PHP Engine with Debug Logging'),
             ],
             '0',
             xl('Enable C-CDA Service')

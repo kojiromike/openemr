@@ -13,8 +13,8 @@
 
 namespace Carecoordination\Model;
 
-use Carecoordination\Controller\EncountermanagerController;
 use DOMDocument;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\CcdaBuilder;
 use OpenEMR\Common\Logging\SystemLogger;
 use XSLTProcessor;
 
@@ -124,8 +124,25 @@ class CcdaGenerator
             $send,
             $date_options
         );
-        $content = $this->socket_get($data);
-        $content = trim($content);
+
+        // Toggle between Node.js and PHP CCDA generators
+        // 4 = Use PHP engine, 5 = PHP engine with debug logging
+        $serviceMode = (int)($GLOBALS['ccda_alt_service_enable'] ?? 0);
+        $usePhpBuilder = ($serviceMode === 4 || $serviceMode === 5);
+
+        if ($usePhpBuilder) {
+            $builder = new CcdaBuilder();
+            $content = $builder->generate($data);
+            if ($serviceMode === 5) {
+                // Debug: write generated CCDA to site directory
+                $logFile = $GLOBALS['OE_SITE_DIR'] . '/CCDA_debug.xml';
+                file_put_contents($logFile, $content);
+            }
+        } else {
+            $content = $this->socket_get($data);
+        }
+
+        $content = trim((string)$content);
         // split content if unstructured is included from service.
         // service will send back a CDA and an auto created unstructured document
         // if CCM sends the documents(patient_files object) with data array.
