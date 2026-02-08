@@ -84,50 +84,17 @@ class CcdaDataTransformer
         $data['procedures'] = $this->processSection($pd, 'procedures', 'procedure', 'populateProcedure');
         // NOTE: Node.js doesn't have a 'results' section - lab results may be in other sections
         // $data['results'] = $this->processSection($pd, 'results', 'result', 'populateResult');
-
-        // Vitals - single object at history_physical.vitals_list.vitals
-        $data['vitals'] = [];
-        if (!empty($pd['history_physical']['vitals_list']['vitals'])) {
-            $vitalsData = $pd['history_physical']['vitals_list']['vitals'];
-            // This is a SINGLE object with all vital fields, not an array
-            $populated = $this->populateVital($vitalsData);
-            if (!empty($populated)) {
-                $data['vitals'][] = $populated;
-            }
-        }
-
+        $data['vitals'] = $this->processSection($pd, 'vitals', 'vital', 'populateVital');
         $data['immunizations'] = $this->processSection($pd, 'immunizations', 'immunization', 'populateImmunization');
         $data['encounters'] = $this->processSection($pd, 'encounter_list', 'encounter', 'populateEncounter');
         $data['plan_of_care'] = $this->processSection($pd, 'planofcare', 'item', 'populatePlanOfCare');
-        $data['goals'] = $this->processSection($pd, 'goals', 'item', 'populateGoal');  // Fixed: use 'item' not 'goal'
+        $data['goals'] = $this->processSection($pd, 'goals', 'goal', 'populateGoal');
         $data['health_concerns'] = $this->processSection($pd, 'health_concerns', 'concern', 'populateHealthConcern');
         $data['medical_devices'] = $this->processSection($pd, 'medical_devices', 'device', 'populateMedicalDevice');
 
-        // Social History - comes from history_physical.social_history.history_element
-        $data['social_history'] = [];
-        if (!empty($pd['history_physical']['social_history']['history_element'])) {
-            $shData = $pd['history_physical']['social_history']['history_element'];
-            if (isset($shData[0])) {
-                // Array of elements
-                foreach ($shData as $element) {
-                    $populated = $this->populateSocialHistory($element);
-                    if (!empty($populated)) {
-                        $data['social_history'][] = $populated;
-                    }
-                }
-            } else {
-                // Single element
-                $populated = $this->populateSocialHistory($shData);
-                if (!empty($populated)) {
-                    $data['social_history'][] = $populated;
-                }
-            }
-        } elseif (!empty($pd['patient']['sex_observation'])) {
-            // Fallback: just sex observation
-            $populated = $this->populateSocialHistory($pd);
-            if (!empty($populated)) {
-                $data['social_history'][] = $populated;
-            }
+        // Social History
+        if (!empty($pd['history_physical'])) {
+            $data['social_history'] = $this->populateSocialHistory($pd['history_physical']);
         }
 
         // Care Team
@@ -1160,20 +1127,23 @@ class CcdaDataTransformer
     /**
      * Populate procedure data - matches serveccda.js populateProcedure()
      */
-    /**
-     * Populate procedure - EXACT PORT from serveccda.js populateProcedure()
-     */
     private function populateProcedure(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
+        $author = $pd['author'] ?? [];
 
         return [
             'procedure' => [
-                'name' => $pd['description'] ?? '',
+                'name' => $pd['code_text'] ?? $pd['description'] ?? '',
                 'code' => CodeCleaner::clean($pd['code'] ?? ''),
-                'code_system_name' => $pd['code_type'] ?? '',
+                'code_system' => $pd['code_type'] === 'SNOMED-CT' ? '2.16.840.1.113883.6.96' :
+                    ($pd['code_type'] === 'CPT4' ? '2.16.840.1.113883.6.12' : ''),
+                'code_system_name' => $pd['code_type'] ?? 'CPT4',
+                'translations' => !empty($pd['code2']) ? [
+                    [
+                        'code' => CodeCleaner::clean($pd['code2']),
+                        'code_system_name' => $pd['code_type2'] ?? '',
+                    ]
+                ] : [],
             ],
             'identifiers' => [
                 [
@@ -1184,16 +1154,22 @@ class CcdaDataTransformer
             'status' => 'completed',
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => DateFormatter::fDate($pd['date'] ?? $pd['encounter'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
-            'performers' => [
+            'performers' => [  // FIXED: Changed from 'performer' to 'performers' (plural)
                 [
                     'identifiers' => [
                         [
                             'identifier' => '2.16.840.1.113883.4.6',
-                            'extension' => $pd['npi'] ?? '',
+                            'extension' => $pd['npi'] ?? $this->npiProvider,
+                        ],
+                    ],
+                    'name' => [
+                        [
+                            'last' => $pd['provider_lname'] ?? '',
+                            'first' => $pd['provider_fname'] ?? '',
                         ],
                     ],
                     'address' => [
@@ -1219,7 +1195,7 @@ class CcdaDataTransformer
                                     'extension' => $pd['facility_extension'] ?? '',
                                 ],
                             ],
-                            'name' => [$pd['facility_name'] ?? ''],
+                            'name' => [$pd['facility_name'] ?? $this->all['encounter_provider']['facility_name'] ?? ''],
                             'address' => [
                                 [
                                     'street_lines' => [$pd['facility_address'] ?? ''],
@@ -1239,11 +1215,10 @@ class CcdaDataTransformer
                     ],
                 ],
             ],
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
-            'procedure_type' => 'procedure',
+            'author' => $this->buildAuthorBlock($author),
+            'procedure_type' => 'procedure',  // FIXED: Added required field for template existsWhen condition
         ];
     }
-
 
     /**
      * Populate result data - matches serveccda.js populateResult()
@@ -1320,272 +1295,105 @@ class CcdaDataTransformer
     /**
      * Populate vital signs data
      */
-    /**
-     * Populate vital signs - EXACT PORT from serveccda.js populateVital()
-     * Creates ALL 17 vital signs regardless of whether they have values (matches Node.js)
-     */
     private function populateVital(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
+        $vitalList = [];
 
-        // Extract author from the vitals container
-        $author = $this->populateAuthorFromAuthorContainer($pd);
+        // Map common vital signs
+        $vitalsMap = [
+            'bps' => ['code' => '8480-6', 'name' => 'Systolic Blood Pressure', 'unit' => 'mm[Hg]'],
+            'bpd' => ['code' => '8462-4', 'name' => 'Diastolic Blood Pressure', 'unit' => 'mm[Hg]'],
+            'pulse' => ['code' => '8867-4', 'name' => 'Heart Rate', 'unit' => '/min'],
+            'temperature' => ['code' => '8310-5', 'name' => 'Body Temperature', 'unit' => 'Cel'],
+            'respiration' => ['code' => '9279-1', 'name' => 'Respiratory Rate', 'unit' => '/min'],
+            'height' => ['code' => '8302-2', 'name' => 'Body Height', 'unit' => 'cm'],
+            'weight' => ['code' => '29463-7', 'name' => 'Body Weight', 'unit' => 'kg'],
+            'BMI' => ['code' => '39156-5', 'name' => 'Body Mass Index', 'unit' => 'kg/m2'],
+            'oxygen_saturation' => ['code' => '2708-6', 'name' => 'Oxygen Saturation', 'unit' => '%'],
+            'head_circ' => ['code' => '9843-4', 'name' => 'Head Circumference', 'unit' => 'cm'],
+        ];
 
-        // Format date with spaces (matches Node.js output format)
-        $effectiveTime = $pd['effectivetime'] ?? '';
-        $effectiveDate = DateFormatter::fDate($effectiveTime);
-
-        $shaExtension = $pd['sha_extension'] ?? '';
-
-        // Build BMI interpretation based on BMI_status
-        $bmiInterpretation = 'Normal';
-        if (!empty($pd['BMI_status'])) {
-            if ($pd['BMI_status'] === 'Overweight') {
-                $bmiInterpretation = 'High';
-            } elseif ($pd['BMI_status'] === 'Underweight') {
-                $bmiInterpretation = 'Low';
+        foreach ($vitalsMap as $key => $info) {
+            if (!empty($pd[$key])) {
+                $vitalList[] = [
+                    'identifiers' => [
+                        [
+                            'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
+                            'extension' => $pd['extension_' . $key] ?? $pd['extension'] ?? '',
+                        ],
+                    ],
+                    'vital' => [
+                        'name' => $info['name'],
+                        'code' => $info['code'],
+                        'code_system_name' => 'LOINC',
+                    ],
+                    'status' => 'completed',
+                    'date_time' => [
+                        'point' => [
+                            'date' => DateFormatter::fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
+                            'precision' => 'day',
+                        ],
+                    ],
+                    'interpretations' => ['Normal'],  // ADDED: Required by template
+                    'value' => floatval($pd[$key]),
+                    'unit' => $pd[$key . '_unit'] ?? $info['unit'],
+                    'author' => $this->buildAuthorBlock($pd['author'] ?? []),  // ADDED: Required by template
+                ];
             }
         }
-
-        // EXACT port: Node.js creates ALL vital signs in this exact order
-        $vitalList = [
-            // 1. Blood Pressure Systolic
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_bps'] ?? '']],
-                'vital' => ['name' => 'Blood Pressure Systolic', 'code' => '8480-6', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['bps']) ? floatval($pd['bps']) : '',
-                'unit' => 'mm[Hg]',
-                'author' => $author,
-            ],
-            // 2. Blood Pressure Diastolic
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_bpd'] ?? '']],
-                'vital' => ['name' => 'Blood Pressure Diastolic', 'code' => '8462-4', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['bpd']) ? floatval($pd['bpd']) : '',
-                'unit' => 'mm[Hg]',
-                'author' => $author,
-            ],
-            // 3. Average Blood Pressure
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_bp_avg'] ?? '']],
-                'vital' => ['name' => 'Average Blood Pressure', 'code' => '96607-7', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => isset($pd['bp_avg']) && $pd['bp_avg'] !== '' && $pd['bp_avg'] !== null ? floatval($pd['bp_avg']) : '',
-                'unit' => 'mm[Hg]',
-                'author' => $author,
-            ],
-            // 4. Average Systolic Blood Pressure
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_avg_systolic'] ?? '']],
-                'vital' => ['name' => 'Average Systolic Blood Pressure', 'code' => '96608-5', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => isset($pd['avg_systolic']) && $pd['avg_systolic'] !== '' && $pd['avg_systolic'] !== null ? floatval($pd['avg_systolic']) : '',
-                'unit' => 'mm[Hg]',
-                'author' => $author,
-            ],
-            // 5. Average Diastolic Blood Pressure
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_avg_diastolic'] ?? '']],
-                'vital' => ['name' => 'Average Diastolic Blood Pressure', 'code' => '96609-3', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => isset($pd['avg_diastolic']) && $pd['avg_diastolic'] !== '' && $pd['avg_diastolic'] !== null ? floatval($pd['avg_diastolic']) : '',
-                'unit' => 'mm[Hg]',
-                'author' => $author,
-            ],
-            // 6. Height
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_height'] ?? '']],
-                'vital' => ['name' => 'Height', 'code' => '8302-2', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['height']) ? floatval($pd['height']) : '',
-                'unit' => $pd['unit_height'] ?? '',
-                'author' => $author,
-            ],
-            // 7. Weight Measured
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_weight'] ?? '']],
-                'vital' => ['name' => 'Weight Measured', 'code' => '29463-7', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['weight']) ? floatval($pd['weight']) : '',
-                'unit' => $pd['unit_weight'] ?? '',
-                'author' => $author,
-            ],
-            // 8. BMI (Body Mass Index)
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_BMI'] ?? '']],
-                'vital' => ['name' => 'BMI (Body Mass Index)', 'code' => '39156-5', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => [$bmiInterpretation],
-                'value' => !empty($pd['BMI']) ? floatval($pd['BMI']) : '',
-                'unit' => 'kg/m2',
-                'author' => $author,
-            ],
-            // 9. Heart Rate
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_pulse'] ?? '']],
-                'vital' => ['name' => 'Heart Rate', 'code' => '8867-4', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['pulse']) ? floatval($pd['pulse']) : '',
-                'unit' => '/min',
-                'author' => $author,
-            ],
-            // 10. Respiratory Rate
-            [
-                'identifiers' => [['identifier' => '2.16.840.1.113883.3.140.1.0.6.10.14.2', 'extension' => $pd['extension_breath'] ?? '']],
-                'vital' => ['name' => 'Respiratory Rate', 'code' => '9279-1', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['breath']) ? floatval($pd['breath']) : '',
-                'unit' => '/min',
-                'author' => $author,
-            ],
-            // 11. Body Temperature (note: Node.js uses Math.ceil on the value)
-            [
-                'identifiers' => [['identifier' => '2.16.840.1.113883.3.140.1.0.6.10.14.3', 'extension' => $pd['extension_temperature'] ?? '']],
-                'vital' => ['name' => 'Body Temperature', 'code' => '8310-5', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['temperature']) ? ceil(floatval($pd['temperature'])) : '',
-                'unit' => $pd['unit_temperature'] ?? '',
-                'author' => $author,
-            ],
-            // 12. O2 % BldC Oximetry
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_oxygen_saturation'] ?? '']],
-                'vital' => ['name' => 'O2 % BldC Oximetry', 'code' => '59408-5', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['oxygen_saturation']) ? floatval($pd['oxygen_saturation']) : '',
-                'unit' => '%',
-                'author' => $author,
-            ],
-            // 13. Weight for Height Percentile
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_ped_weight_height'] ?? '']],
-                'vital' => ['name' => 'Weight for Height Percentile', 'code' => '77606-2', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['ped_weight_height']) ? floatval($pd['ped_weight_height']) : '',
-                'unit' => '%',
-                'author' => $author,
-            ],
-            // 14. Inhaled Oxygen Concentration
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_inhaled_oxygen_concentration'] ?? '']],
-                'vital' => ['name' => 'Inhaled Oxygen Concentration', 'code' => '3150-0', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['inhaled_oxygen_concentration']) ? floatval($pd['inhaled_oxygen_concentration']) : '',
-                'unit' => '%',
-                'author' => $author,
-            ],
-            // 15. BMI Percentile
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_ped_bmi'] ?? '']],
-                'vital' => ['name' => 'BMI Percentile', 'code' => '59576-9', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['ped_bmi']) ? floatval($pd['ped_bmi']) : '',
-                'unit' => '%',
-                'author' => $author,
-            ],
-            // 16. Head Occipital-frontal Circumference Percentile
-            [
-                'identifiers' => [['identifier' => $shaExtension, 'extension' => $pd['extension_ped_head_circ'] ?? '']],
-                'vital' => ['name' => 'Head Occipital-frontal Circumference Percentile', 'code' => '8289-1', 'code_system_name' => 'LOINC'],
-                'status' => 'completed',
-                'date_time' => ['point' => ['date' => $effectiveDate, 'precision' => 'day']],
-                'interpretations' => ['Normal'],
-                'value' => !empty($pd['ped_head_circ']) ? floatval($pd['ped_head_circ']) : '',
-                'unit' => '%',
-                'author' => $author,
-            ],
-        ];
 
         return [
             'identifiers' => [
                 [
-                    'identifier' => $shaExtension,
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
                     'extension' => $pd['extension'] ?? '',
                 ],
             ],
             'status' => 'completed',
             'date_time' => [
                 'point' => [
-                    'date' => $effectiveDate,
+                    'date' => DateFormatter::fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
-            'vital_list' => $vitalList,
+            'vital_list' => $vitalList,  // Already correct!
         ];
     }
 
     /**
      * Populate immunization data
      */
-    /**
-     * Populate immunization - EXACT PORT from serveccda.js populateImmunization()
-     */
     private function populateImmunization(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
+        $author = $pd['author'] ?? [];
 
         return [
             'date_time' => [
-                'low' => [
-                    'date' => DateFormatter::fDate($pd['administered_on'] ?? ''),
+                'low' => [  // FIXED: Changed from 'point' to 'low' to match template expectation
+                    'date' => DateFormatter::fDate($pd['administered_date'] ?? $pd['administered_on'] ?? $pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
             'identifiers' => [
                 [
-                    'identifier' => $pd['sha_extension'] ?? '',
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
                     'extension' => $pd['extension'] ?? '',
                 ],
             ],
-            'status' => 'complete',
+            'status' => !empty($pd['completion_status']) ? $pd['completion_status'] : 'complete',
             'product' => [
-                'product' => [
-                    'name' => $pd['code_text'] ?? '',
+                'product' => [  // FIXED: Added nested product structure as expected by template
+                    'name' => $pd['cvx_code_text'] ?? $pd['code_text'] ?? $pd['title'] ?? '',
                     'code' => CodeCleaner::clean($pd['cvx_code'] ?? ''),
                     'code_system_name' => 'CVX',
                     'lot_number' => '',
                 ],
-                'lot_number' => '',
-                'manufacturer' => '',
+                'lot_number' => $pd['lot_number'] ?? '',
+                'manufacturer' => $pd['manufacturer'] ?? '',
             ],
             'administration' => [
                 'route' => [
-                    'name' => $pd['route_of_administration'] ?? '',
+                    'name' => $pd['route'] ?? $pd['route_of_administration'] ?? '',
                     'code' => $this->mapRouteCode($pd['route_code'] ?? ''),
                     'code_system_name' => 'Medication Route FDA',
                 ],
@@ -1594,13 +1402,13 @@ class CcdaDataTransformer
                 'identifiers' => [
                     [
                         'identifier' => '2.16.840.1.113883.4.6',
-                        'extension' => $pd['npi'] ?? '',
+                        'extension' => $pd['npi'] ?? $this->npiProvider,
                     ],
                 ],
                 'name' => [
                     [
-                        'last' => $pd['lname'] ?? '',
-                        'first' => $pd['fname'] ?? '',
+                        'last' => $pd['provider_lname'] ?? $pd['lname'] ?? '',
+                        'first' => $pd['provider_fname'] ?? $pd['fname'] ?? '',
                     ],
                 ],
                 'address' => [
@@ -1632,368 +1440,229 @@ class CcdaDataTransformer
                 ],
                 'free_text' => 'Needs Attention for more data.',
             ],
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
+            'author' => $this->buildAuthorBlock($author),
         ];
     }
-
 
     /**
      * Populate encounter data
      */
-    /**
-     * Populate encounter - EXACT PORT from serveccda.js populateEncounter()
-     */
     private function populateEncounter(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
+        $author = $pd['author'] ?? [];
 
-        // Get findings
-        $findingObj = [];
-        $count = $this->countEntities($pd['encounter_problems']['problem'] ?? []);
-
-        if ($count > 1) {
-            foreach ($pd['encounter_problems']['problem'] as $problem) {
-                $findingObj[] = $this->getFinding($pd, $problem);
+        // Process findings/diagnoses
+        $findings = [];
+        if (!empty($pd['encounter_diagnosis'])) {
+            $diagnoses = $pd['encounter_diagnosis'];
+            if (!isset($diagnoses[0])) {
+                $diagnoses = [$diagnoses];
             }
-        } elseif ($count !== 0 && !empty($pd['encounter_problems']['problem']['code'])) {
-            $findingObj[] = $this->getFinding($pd, $pd['encounter_problems']['problem']);
+            foreach ($diagnoses as $dx) {
+                $findings[] = [
+                    'value' => [
+                        'name' => $dx['diagnosis'] ?? $dx['title'] ?? '',
+                        'code' => CodeCleaner::clean($dx['code'] ?? ''),
+                        'code_system' => $dx['code_type'] === 'SNOMED-CT' ? '2.16.840.1.113883.6.96' : '2.16.840.1.113883.6.103',
+                        'code_system_name' => $dx['code_type'] ?? 'ICD-10-CM',
+                    ],
+                ];
+            }
         }
 
-        $encounterProcedures = $pd['encounter_procedures']['procedures'] ?? [];
+        // ADDED: Process locations (required by template)
+        $locations = [];
+        if (!empty($pd['facility_name'])) {
+            $locations[] = [
+                'name' => $pd['facility_name'],
+                'location_type' => [
+                    'name' => 'General Acute Care Hospital',
+                    'code' => '1118-9',
+                    'code_system_name' => 'HealthcareServiceLocation',
+                ],
+                'address' => [
+                    [
+                        'street_lines' => [$pd['facility_address'] ?? ''],
+                        'city' => $pd['facility_city'] ?? '',
+                        'state' => $pd['facility_state'] ?? '',
+                        'zip' => $pd['facility_zip'] ?? '',
+                        'country' => 'US',
+                    ],
+                ],
+                'telecom' => [
+                    [
+                        'number' => $pd['facility_phone'] ?? '',
+                        'type' => 'work place',
+                    ],
+                ],
+            ];
+        }
 
         return [
             'encounter' => [
-                'name' => !empty($pd['visit_category'])
-                    ? $pd['visit_category'] . ' | ' . ($pd['encounter_reason'] ?? '')
-                    : ($pd['code_description'] ?? ''),
-                'code' => $encounterProcedures['code'] ?? '185347001',
-                'code_system' => $encounterProcedures['code_type'] ?? '2.16.840.1.113883.6.96',
-                'code_system_name' => $encounterProcedures['code_type_name'] ?? 'SNOMED CT',
-                'translations' => [
-                    [
-                        'name' => 'Ambulatory',
-                        'code' => 'AMB',
-                        'code_system_name' => 'ActCode',
-                    ],
-                ],
+                'name' => $pd['pc_catname'] ?? $pd['code_text'] ?? '',
+                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code_system' => '2.16.840.1.113883.6.12',
+                'code_system_name' => 'CPT4',
+                'translations' => [],
             ],
             'identifiers' => [
                 [
-                    'identifier' => $pd['sha_extension'] ?? '',
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
                     'extension' => $pd['extension'] ?? '',
                 ],
             ],
             'date_time' => [
-                'point' => [
+                'low' => [
                     'date' => DateFormatter::fDate($pd['date'] ?? ''),
                     'precision' => 'tz',
                 ],
+                'high' => [
+                    'date' => DateFormatter::fDate($pd['date_end'] ?? $pd['date'] ?? ''),
+                    'precision' => 'tz',
+                ],
             ],
-            'performers' => [
+            'performers' => [  // FIXED: Changed from 'performer' to 'performers' (plural)
                 [
+                    'code' => [
+                        'name' => $pd['provider_specialty'] ?? '',
+                        'code' => $pd['provider_taxonomy'] ?? '',
+                        'code_system' => '2.16.840.1.113883.6.101',
+                        'code_system_name' => 'NUCC Health Care Provider Taxonomy',
+                    ],
                     'identifiers' => [
                         [
                             'identifier' => '2.16.840.1.113883.4.6',
-                            'extension' => $pd['npi'] ?? '',
-                        ],
-                    ],
-                    'code' => [
-                        [
-                            'name' => $pd['physician_type'] ?? '',
-                            'code' => CodeCleaner::clean($pd['physician_type_code'] ?? ''),
-                            'code_system_name' => $pd['physician_code_type'] ?? '',
+                            'extension' => $pd['npi'] ?? $this->npiProvider,
                         ],
                     ],
                     'name' => [
                         [
-                            'last' => $pd['lname'] ?? '',
-                            'first' => $pd['fname'] ?? '',
-                        ],
-                    ],
-                    'phone' => [
-                        [
-                            'number' => $pd['work_phone'] ?? '',
-                            'type' => 'work place',
+                            'last' => $pd['provider_lname'] ?? '',
+                            'first' => $pd['provider_fname'] ?? '',
                         ],
                     ],
                 ],
             ],
-            'locations' => [
-                [
-                    'name' => $pd['location'] ?? '',
-                    'location_type' => [
-                        'name' => $pd['location_details'] ?? '',
-                        'code' => '1160-1',
-                        'code_system_name' => 'HealthcareServiceLocation',
-                    ],
-                    'address' => [
-                        [
-                            'street_lines' => [$pd['facility_address'] ?? ''],
-                            'city' => $pd['facility_city'] ?? '',
-                            'state' => $pd['facility_state'] ?? '',
-                            'zip' => $pd['facility_zip'] ?? '',
-                            'country' => $pd['facility_country'] ?? 'US',
-                        ],
-                    ],
-                    'phone' => [
-                        [
-                            'number' => $pd['facility_phone'] ?? '',
-                            'type' => 'work place',
-                        ],
-                    ],
-                ],
-            ],
-            'findings' => $findingObj,
+            'locations' => $locations,  // ADDED: Required by template
+            'findings' => $findings,
         ];
     }
-
-    /**
-     * Helper function for encounter findings
-     */
-    private function getFinding(array $pd, array $problem): array
-    {
-        return [
-            'value' => [
-                'name' => $problem['text'] ?? $problem['title'] ?? '',
-                'code' => CodeCleaner::clean($problem['code'] ?? ''),
-                'code_system_name' => $problem['code_type'] ?? '',
-            ],
-        ];
-    }
-
 
     /**
      * Populate plan of care data
      */
-    /**
-     * Populate plan of care - EXACT PORT from serveccda.js getPlanOfCare()
-     */
     private function populatePlanOfCare(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
+        $author = $pd['author'] ?? [];
 
-        // Determine plan type
-        $planType = 'observation';
-        switch ($pd['care_plan_type'] ?? '') {
-            case 'plan_of_care':
-                $planType = 'observation';
-                break;
-            case 'test_or_order':
-                $planType = 'observation';
-                break;
-            case 'procedure':
-                $planType = 'procedure';
-                break;
-            case 'planned_procedure':
-                $planType = 'planned_procedure';
-                break;
-            case 'appointments':
-                $planType = 'encounter';
-                break;
-            case 'instructions':
-                $planType = 'instructions';
-                break;
-            case 'referral':
-                return []; // Exclude for now
-            default:
-                $planType = 'observation';
-        }
-
-        if (($pd['code_type'] ?? '') === 'RXCUI') {
-            $pd['code_type'] = 'RXNORM';
-        }
-        if (($pd['code_type'] ?? '') === 'RXNORM') {
-            $planType = 'substanceAdministration';
-        }
-
-        // Get encounter data
-        $encounter = $this->getEncounterForPlanOfCare($pd);
-        $name = '';
-        $code = '';
-        $code_system_name = '';
-        $status = '';
-
-        if ($encounter) {
-            $encounterDiagnosis = $encounter['encounter_diagnosis'] ?? [];
-            $name = $encounterDiagnosis['text'] ?? '';
-            $code = CodeCleaner::clean($encounterDiagnosis['code'] ?? '');
-            $code_system_name = $encounterDiagnosis['code_type'] ?? '';
-            $status = $encounterDiagnosis['status'] ?? '';
-        }
-
-        return [
-            'plan' => [
-                'name' => $pd['code_text'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
-                'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
-            ],
-            'identifiers' => [
-                [
-                    'identifier' => $pd['sha_extension'] ?? '',
-                    'extension' => $pd['extension'] ?? '',
+        // Process performers
+        $performers = [];
+        if (!empty($pd['provider'])) {
+            $performers[] = [
+                'identifiers' => [
+                    [
+                        'identifier' => '2.16.840.1.113883.4.6',
+                        'extension' => $pd['provider']['npi'] ?? $this->npiProvider,
+                    ],
                 ],
-            ],
-            'goal' => [
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
-                'name' => trim($pd['description'] ?? ''),
-            ],
-            'date_time' => [
-                'point' => [
-                    'date' => !empty($pd['proposed_date'])
-                        ? DateFormatter::fDate($pd['proposed_date'])
-                        : DateFormatter::fDate($pd['date'] ?? ''),
-                    'precision' => 'day',
+                'code' => [
+                    [
+                        'name' => $pd['provider']['specialty'] ?? 'General physician',
+                        'code' => $pd['provider']['specialty_code'] ?? '59058001',
+                        'code_system_name' => 'SNOMED CT',
+                    ],
                 ],
-            ],
-            'type' => $planType,
-            'status' => [
-                'code' => CodeCleaner::clean($pd['status'] ?? ''),
-            ],
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
-            'performers' => [
-                [
+                'name' => [
+                    [
+                        'last' => $pd['provider']['lname'] ?? '',
+                        'first' => $pd['provider']['fname'] ?? '',
+                    ],
+                ],
+                'phone' => [
+                    [
+                        'number' => $pd['provider']['phone'] ?? '',
+                        'type' => 'work place',
+                    ],
+                ],
+            ];
+        }
+
+        // Process locations
+        $locations = [];
+        if (!empty($pd['facility_name'])) {
+            $locations[] = [
+                'name' => $pd['facility_name'],
+                'location_type' => [
+                    'name' => $pd['facility_address'] ?? '',
+                    'code' => '1160-1',
+                    'code_system_name' => 'HealthcareServiceLocation',
+                ],
+                'address' => [
+                    [
+                        'street_lines' => [$pd['facility_address'] ?? ''],
+                        'city' => $pd['facility_city'] ?? '',
+                        'state' => $pd['facility_state'] ?? '',
+                        'zip' => $pd['facility_zip'] ?? '',
+                        'country' => 'US',
+                    ],
+                ],
+                'phone' => [
+                    [
+                        'number' => $pd['facility_phone'] ?? '',
+                        'type' => 'work place',
+                    ],
+                ],
+            ];
+        }
+
+        // Process findings
+        $findings = [];
+        if (!empty($pd['findings'])) {
+            $findingsList = $pd['findings'];
+            if (!isset($findingsList[0])) {
+                $findingsList = [$findingsList];
+            }
+            foreach ($findingsList as $finding) {
+                $findings[] = [
                     'identifiers' => [
                         [
-                            'identifier' => '2.16.840.1.113883.4.6',
-                            'extension' => $encounter['npi'] ?? '',
-                        ],
-                    ],
-                    'code' => [
-                        [
-                            'name' => $encounter['physician_type'] ?? '',
-                            'code' => CodeCleaner::clean($encounter['physician_type_code'] ?? ''),
-                            'code_system_name' => 'SNOMED CT',
-                        ],
-                    ],
-                    'name' => [
-                        [
-                            'last' => $encounter['lname'] ?? '',
-                            'first' => $encounter['fname'] ?? '',
-                        ],
-                    ],
-                    'phone' => [
-                        [
-                            'number' => $encounter['work_phone'] ?? '',
-                            'type' => 'work place',
-                        ],
-                    ],
-                ],
-            ],
-            'locations' => [
-                [
-                    'name' => $encounter['location'] ?? '',
-                    'location_type' => [
-                        'name' => $encounter['location_details'] ?? '',
-                        'code' => '1160-1',
-                        'code_system_name' => 'HealthcareServiceLocation',
-                    ],
-                    'address' => [
-                        [
-                            'street_lines' => [$encounter['facility_address'] ?? ''],
-                            'city' => $encounter['facility_city'] ?? '',
-                            'state' => $encounter['facility_state'] ?? '',
-                            'zip' => $encounter['facility_zip'] ?? '',
-                            'country' => $encounter['facility_country'] ?? 'US',
-                        ],
-                    ],
-                    'phone' => [
-                        [
-                            'number' => $encounter['facility_phone'] ?? '',
-                            'type' => 'work place',
-                        ],
-                    ],
-                ],
-            ],
-            'findings' => [
-                [
-                    'identifiers' => [
-                        [
-                            'identifier' => $encounter['sha_extension'] ?? '',
-                            'extension' => $encounter['extension'] ?? '',
+                            'identifier' => $finding['sha_extension'] ?? '',
+                            'extension' => $finding['extension'] ?? '',
                         ],
                     ],
                     'value' => [
-                        'name' => $name,
-                        'code' => $code,
-                        'code_system_name' => $code_system_name,
+                        'name' => $finding['name'] ?? $finding['title'] ?? '',
+                        'code' => CodeCleaner::clean($finding['code'] ?? ''),
+                        'code_system_name' => $finding['code_type'] ?? 'SNOMED CT',
                     ],
                     'date_time' => [
                         'low' => [
-                            'date' => DateFormatter::fDate($encounter['date'] ?? ''),
+                            'date' => DateFormatter::fDate($finding['date'] ?? ''),
                             'precision' => 'day',
                         ],
                     ],
-                    'status' => $status,
-                    'reason' => $pd['reason'] ?? '',
-                ],
-            ],
-            'name' => trim($pd['description'] ?? ''),
-            'mood_code' => 'INT',
-        ];
-    }
-
-    /**
-     * Helper to get encounter for plan of care
-     */
-    private function getEncounterForPlanOfCare(array $pd): ?array
-    {
-        $encounterList = $this->all['encounter_list']['encounter'] ?? [];
-
-        if (empty($encounterList)) {
-            return null;
-        }
-
-        // Check if it's a single encounter or array
-        if (isset($encounterList['encounter_id'])) {
-            // Single encounter
-            if ($encounterList['encounter_id'] === ($pd['encounter'] ?? '')) {
-                return $encounterList;
-            }
-            return $encounterList; // Return it anyway as default
-        }
-
-        // Array of encounters
-        foreach ($encounterList as $encounter) {
-            if (($encounter['encounter_id'] ?? '') === ($pd['encounter'] ?? '')) {
-                return $encounter;
+                    'status' => $finding['status'] ?? 'Completed',
+                    'reason' => $finding['reason'] ?? '',
+                ];
             }
         }
-
-        // Return first encounter as default
-        return is_array($encounterList) && !empty($encounterList) ? reset($encounterList) : null;
-    }
-
-
-    /**
-     * Populate goal data
-     */
-    /**
-     * Populate goal - EXACT PORT from serveccda.js getGoals()
-     */
-    private function populateGoal(array $pd): array
-    {
-        if (empty($pd)) {
-            return [];
-        }
-
-        // Clean description based on value_type
-        $description = ($pd['value_type'] ?? '') !== 'CD' ? trim($pd['description'] ?? '') : '';
 
         return [
-            'goal_code' => [
-                'name' => ($pd['code_text'] ?? 'NULL') !== 'NULL' ? ($pd['code_text'] ?? '') : '',
+            'plan' => [  // ADDED: Required field
+                'name' => $pd['code_text'] ?? $pd['title'] ?? '',
                 'code' => CodeCleaner::clean($pd['code'] ?? ''),
-                'code_system_name' => $pd['code_type'] ?? '',
+                'code_system_name' => $pd['code_type'] ?? 'LOINC',
             ],
             'identifiers' => [
                 [
-                    'identifier' => $pd['sha_extension'] ?? '',
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
                     'extension' => $pd['extension'] ?? '',
                 ],
+            ],
+            'goal' => [  // ADDED: Goal field
+                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'name' => $pd['description'] ?? $pd['text'] ?? '',
             ],
             'date_time' => [
                 'point' => [
@@ -2001,17 +1670,43 @@ class CcdaDataTransformer
                     'precision' => 'day',
                 ],
             ],
-            'sdoh_name' => $pd['sdoh_code_text'] ?? '',
-            'sdoh_code' => $pd['sdoh_code'] ?? '',
-            'sdoh_code_system' => $pd['sdoh_code_system'] ?? '',
-            'sdoh_code_system_name' => $pd['sdoh_code_type'] ?? '',
-            'value_type' => $pd['value_type'] ?? 'ST',
-            'type' => 'observation',
+            'type' => $pd['type'] ?? 'observation',  // ADDED: Required for template selection
             'status' => [
-                'code' => 'active',
+                'code' => $pd['status'] ?? 'active',
             ],
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
-            'name' => $description,
+            'author' => $this->buildAuthorBlock($author),
+            'performers' => $performers,  // ADDED: Required field
+            'locations' => $locations,    // ADDED: Required field
+            'findings' => $findings,      // ADDED: Required field
+            'name' => $pd['description'] ?? $pd['text'] ?? '',
+            'mood_code' => $pd['moodCode'] ?? 'INT',
+        ];
+    }
+
+    /**
+     * Populate goal data
+     */
+    private function populateGoal(array $pd): array
+    {
+        return [
+            'identifiers' => [
+                [
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
+                    'extension' => $pd['extension'] ?? '',
+                ],
+            ],
+            'goal' => [
+                'name' => $pd['description'] ?? $pd['title'] ?? '',
+                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
+            ],
+            'date_time' => [
+                'low' => [
+                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'precision' => 'day',
+                ],
+            ],
+            'status' => $pd['status'] ?? 'active',
         ];
     }
 
@@ -2045,50 +1740,28 @@ class CcdaDataTransformer
     /**
      * Populate medical device data
      */
-    /**
-     * Populate medical device - EXACT PORT from serveccda.js populateMedicalDevice()
-     */
     private function populateMedicalDevice(array $pd): array
     {
-        if (empty($pd)) {
-            return [];
-        }
-
         return [
             'identifiers' => [
                 [
-                    'identifier' => $pd['sha_extension'] ?? '',
+                    'identifier' => $pd['sha_extension'] ?? $this->oidFacility,
                     'extension' => $pd['extension'] ?? '',
                 ],
             ],
+            'device' => [
+                'name' => $pd['title'] ?? $pd['code_text'] ?? '',
+                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
+            ],
+            'udi' => $pd['udi'] ?? '',
+            'status' => $pd['status'] ?? 'completed',
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['start_date'] ?? ''),
+                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
-            'device_type' => 'UDI',
-            'device' => [
-                'name' => $pd['code_text'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
-                'code_system_name' => 'SNOMED CT',
-                'identifiers' => [
-                    [
-                        'identifier' => '2.16.840.1.113883.3.3719',
-                        'extension' => $pd['udi'] ?? '',
-                    ],
-                ],
-                'status' => 'completed',
-                'body_sites' => [
-                    [
-                        'name' => '',
-                        'code' => '',
-                        'code_system_name' => '',
-                    ],
-                ],
-                'udi' => $pd['udi'] ?? '',
-            ],
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
         ];
     }
 

@@ -15,16 +15,13 @@
 
 namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder;
 
-use DOMDocument;
 use OpenEMR\Common\Logging\SystemLogger;
-use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
 use OpenEMR\Core\OEGlobalsBag;
 
 class CcdaBuilder
 {
     private readonly CcdaDataTransformer $transformer;
     private readonly CcdaTemplateEngine $templateEngine;
-    private readonly CcdaXmlBuilder $xmlBuilder;
     private readonly SystemLogger $logger;
     private bool $debug = true;
     private string $documentLocation = '';
@@ -34,7 +31,6 @@ class CcdaBuilder
     {
         $this->transformer = new CcdaDataTransformer();
         $this->templateEngine = new CcdaTemplateEngine();
-        $this->xmlBuilder = new CcdaXmlBuilder();
         $this->logger = new SystemLogger();
         $this->debug = OEGlobalsBag::getInstance()->getInt('ccda_alt_service_enable') === 5;
     }
@@ -272,7 +268,7 @@ class CcdaBuilder
      */
     private function writeDebugFile(string $filename, string $content): void
     {
-        $path = $this->documentLocation ?: ($GLOBALS['OE_SITE_DIR'] ?? '/tmp');
+        $path = $this->documentLocation ?: (OEGlobalsBag::getInstance()->getString('OE_SITE_DIR') ?: '/tmp');
         $debugPath = $path . '/documents/temp/';
 
         if (!is_dir($debugPath)) {

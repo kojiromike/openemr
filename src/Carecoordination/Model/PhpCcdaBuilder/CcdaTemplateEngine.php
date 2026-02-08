@@ -44,7 +44,7 @@ class CcdaTemplateEngine
      * @param string $xmlContent The raw CCDA XML string.
      * @param bool   $removeBr   Whether to remove <br/> tags. Defaults to false.
      * @return string Cleaned XML content.
-     * @throws Exception If the input XML is invalid or cannot be parsed.
+     * @throws \RuntimeException If the input XML is invalid or cannot be parsed.
      */
     protected function cleanCcdaXmlContent(string $xmlContent, bool $replaceBr = false): string
     {
@@ -65,7 +65,7 @@ class CcdaTemplateEngine
         if (!$dom->loadXML($xmlContent, LIBXML_NOERROR | LIBXML_NOWARNING)) {
             $errors = libxml_get_errors();
             libxml_clear_errors();
-            throw new Exception("Invalid XML provided: " . implode(", ", array_map(fn($e): string => $e->message, $errors)));
+            throw new \RuntimeException("Invalid XML provided: " . implode(", ", array_map(fn($e): string => $e->message, $errors)));
         }
         // Normalize and ensure UTF-8 encoding
         $dom->encoding = 'UTF-8';
@@ -283,7 +283,7 @@ class CcdaTemplateEngine
             // -> LeafLevel::inputProperty('family') returns a closure
             if (count($callable) > 2) {
                 $args = array_slice($callable, 2);
-                $factory = call_user_func([$class, $method], ...$args);
+                $factory = [$class, $method](...$args);
 
                 // The factory returns a closure - invoke it with input
                 if ($factory instanceof \Closure || is_callable($factory)) {
@@ -294,7 +294,7 @@ class CcdaTemplateEngine
 
             // Direct static method call with input
             // e.g., [Translate::class, 'name'] -> Translate::name($input)
-            return call_user_func([$class, $method], $input);
+            return [$class, $method]($input);
         }
 
         // Standard callable
