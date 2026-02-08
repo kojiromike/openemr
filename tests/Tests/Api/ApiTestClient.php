@@ -123,6 +123,7 @@ class ApiTestClient
         'user/practitioner.read',
         'user/practitioner.write',
         'user/prescription.read',
+        'user/prescription.write',
         'user/procedure.read',
         'user/soap_note.read',
         'user/soap_note.write',
@@ -452,5 +453,18 @@ class ApiTestClient
             "query" => $params
             ]);
         return $getResponse;
+    }
+
+    /**
+     * Submits a HTTP DELETE request.
+     * @param $url - The target URL (relative)
+     * @param $id - The resource id
+     * @return $deleteResponse - HTTP response
+     */
+    public function delete($url, $id)
+    {
+        $resourceUrl = $url . "/" . $id;
+        $deleteResponse = $this->client->delete($resourceUrl, ["headers" => $this->headers]);
+        return $deleteResponse;
     }
 }
