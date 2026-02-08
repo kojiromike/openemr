@@ -27,6 +27,8 @@ class HeaderLevel
 {
     /**
      * Patient name with use="L" (legal name)
+     *
+     * @return array<string, mixed>
      */
     public static function patientName(): array
     {
@@ -37,6 +39,8 @@ class HeaderLevel
 
     /**
      * Patient element within patientRole
+     *
+     * @return array<string, mixed>
      */
     public static function patient(): array
     {
@@ -52,35 +56,36 @@ class HeaderLevel
                         [
                             'key' => 'given',
                             'attributes' => ['qualifier' => 'BR'],
-                            'text' => fn($input) => $input['first'] ?? null,
+                            'text' => fn(mixed $input): ?string => is_array($input) ? ($input['first'] ?? null) : null,
                         ],
                         [
                             'key' => 'given',
-                            'text' => fn($input) => $input['middle'] ?? null,
-                            'existsWhen' => fn($input) => !empty($input['middle']),
+                            'text' => fn(mixed $input): ?string => is_array($input) ? ($input['middle'] ?? null) : null,
+                            'existsWhen' => fn(mixed $input): bool => is_array($input) && !empty($input['middle']),
                         ],
                         [
                             'key' => 'family',
                             'attributes' => ['qualifier' => 'BR'],
-                            'text' => fn($input) => $input['last'] ?? null,
+                            'text' => fn(mixed $input): ?string => is_array($input) ? ($input['last'] ?? null) : null,
                         ],
                     ],
                     'dataKey' => 'birth_name',
-                    'existsWhen' => fn($input) => !empty($input['last']),
+                    'existsWhen' => fn(mixed $input): bool => is_array($input) && !empty($input['last']),
                 ],
                 // Administrative Gender
                 [
                     'key' => 'administrativeGenderCode',
                     'attributes' => [
-                        'code' => function ($input) {
+                        'code' => function (mixed $input): string {
                             if (is_string($input)) {
                                 return strtoupper(substr($input, 0, 1));
                             }
-                            return strtoupper(substr($input['code'] ?? $input, 0, 1));
+                            $code = is_array($input) ? ($input['code'] ?? $input) : $input;
+                            return strtoupper(substr(is_string($code) ? $code : '', 0, 1));
                         },
                         'codeSystem' => '2.16.840.1.113883.5.1',
                         'codeSystemName' => 'HL7 AdministrativeGender',
-                        'displayName' => fn($input) => is_string($input) ? $input : ($input['name'] ?? $input),
+                        'displayName' => fn(mixed $input): mixed => is_string($input) ? $input : (is_array($input) ? ($input['name'] ?? $input) : $input),
                     ],
                     'dataKey' => 'gender',
                 ],
@@ -88,7 +93,9 @@ class HeaderLevel
                 [
                     'key' => 'birthTime',
                     'attributes' => [
-                        'value' => fn($input) => $input['point']['date'] ?? $input['date'] ?? null,
+                        'value' => fn(mixed $input): ?string => is_array($input)
+                            ? (is_array($input['point'] ?? null) ? ($input['point']['date'] ?? null) : ($input['date'] ?? null))
+                            : null,
                     ],
                     'dataKey' => 'dob',
                 ],
