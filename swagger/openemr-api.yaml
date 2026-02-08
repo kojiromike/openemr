@@ -3689,6 +3689,65 @@ paths:
       security:
         -
           openemr_auth: {  }
+    post:
+      tags:
+        - standard
+      description: 'Creates a new prescription'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                patient_id:
+                  type: integer
+                drug:
+                  type: string
+                dosage:
+                  type: string
+                quantity:
+                  type: string
+                provider_id:
+                  type: integer
+              type: object
+              example:
+                patient_id: 1
+                drug: Aspirin
+                dosage: 100mg
+                quantity: '30'
+      responses:
+        201:
+          description: 'Prescription created successfully'
+        400:
+          $ref: '#/components/responses/badrequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+      security:
+        -
+          openemr_auth: {  }
+  '/api/prescription/{id}':
+    delete:
+      tags:
+        - standard
+      description: 'Deletes a prescription'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'The id for the prescription.'
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'Prescription deleted successfully'
+        400:
+          $ref: '#/components/responses/badrequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+      security:
+        -
+          openemr_auth: {  }
   '/api/prescription/{uuid}':
     get:
       tags:
