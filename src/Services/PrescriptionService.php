@@ -389,24 +389,25 @@ class PrescriptionService extends BaseService
     /**
      * Inserts a new prescription record.
      *
-     * @param array $data The prescription fields to insert.
+     * @param array<string, mixed> $data The prescription fields to insert.
      * @return ProcessingResult which contains validation messages, internal error messages, and the data
      * payload.
      */
-    public function insert($data)
+    public function insert(array $data): ProcessingResult
     {
         $processingResult = new ProcessingResult();
 
         $data['uuid'] = UuidRegistry::getRegistryForTable(self::PRESCRIPTION_TABLE)->createUuid();
 
         $query = $this->buildInsertColumns($data);
-        $sql = " INSERT INTO " . self::PRESCRIPTION_TABLE . " SET ";
-        $sql .= $query['set'];
 
-        $results = sqlInsert(
-            $sql,
-            $query['bind']
-        );
+        /** @var string $setClause */
+        $setClause = $query['set'];
+        /** @var array<mixed> $binds */
+        $binds = $query['bind'];
+
+        $sql = " INSERT INTO " . self::PRESCRIPTION_TABLE . " SET " . $setClause;
+        $results = QueryUtils::sqlInsert($sql, $binds);
 
         if ($results) {
             $processingResult->addData([
@@ -426,7 +427,7 @@ class PrescriptionService extends BaseService
      * @param int|string $id The prescription id.
      * @return ProcessingResult with deletion status.
      */
-    public function delete($id)
+    public function delete(int|string $id): ProcessingResult
     {
         $processingResult = new ProcessingResult();
 

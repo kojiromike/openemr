@@ -17,7 +17,7 @@ use OpenEMR\RestControllers\RestControllerHelper;
 
 class PrescriptionRestController
 {
-    private $prescriptionService;
+    private readonly PrescriptionService $prescriptionService;
 
     public function __construct()
     {
@@ -26,10 +26,11 @@ class PrescriptionRestController
 
     /**
      * Process a HTTP POST request used to create a prescription record.
-     * @param $data - array of prescription fields.
-     * @return a 201/Created status code and the prescription identifier if successful.
+     *
+     * @param array<string, mixed> $data array of prescription fields.
+     * @return array<mixed> 201/Created status code and the prescription identifier if successful.
      */
-    public function post($data)
+    public function post(array $data): array
     {
         $processingResult = $this->prescriptionService->insert($data);
         return RestControllerHelper::handleProcessingResult($processingResult, 201);
@@ -59,9 +60,15 @@ class PrescriptionRestController
         return RestControllerHelper::handleProcessingResult($processingResult, 200, true);
     }
 
-    public function delete($id)
+    /**
+     * Deletes a prescription record.
+     *
+     * @param string|int $id The prescription id.
+     * @return array<mixed> 200 status on success.
+     */
+    public function delete(string|int $id): array
     {
-        $serviceResult = $this->prescriptionService->delete($id);
-        return RestControllerHelper::responseHandler($serviceResult, null, 200);
+        $processingResult = $this->prescriptionService->delete($id);
+        return RestControllerHelper::handleProcessingResult($processingResult, 200);
     }
 }
