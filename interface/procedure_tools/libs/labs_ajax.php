@@ -20,11 +20,17 @@ if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
     CsrfUtils::csrfNotVerified();
 }
 
+function orderDate($order)
+{
+    $sql = "SELECT DATE_FORMAT(date_ordered, '%m/%d/%Y') AS date_ordered FROM procedure_order WHERE procedure_order_id = ? ";
+    return sqlQuery($sql, [$order]);
+}
+
 $action = $_GET['action'];
 
 if ($action === 'code_detail') {
-    $code = strtoupper($_GET['code']);
-    $dos = array();
+    $code = strtoupper((string) $_GET['code']);
+    $dos = [];
 
     $query = "SELECT detail.name, ord.procedure_code AS code, detail.name AS title, detail.description, detail.notes FROM procedure_type det ";
     $query .= "LEFT JOIN procedure_type ord ON ord.procedure_type_id = detail.parent ";
@@ -60,15 +66,17 @@ if ($action === 'print_labels') {
     $client = $_GET['acctid'];
     $pid = $_GET['pid'];
     $order = $_GET['order'];
-    $specimen = array();
-    $specimens = explode(";", $_GET['specimen']);
-    $patient = strtoupper($_GET['patient']);
+    $specimen = [];
+    $specimens = explode(";", (string) $_GET['specimen']);
+    $patient = strtoupper((string) $_GET['patient']);
+    $order_date = orderDate($order);
+    $dob = $_GET['dob'];
     $count = 1;
     if ($_GET['count']) {
         $count = (int)$_GET['count'];
     }
 
-    $pdf = new mPDF(array(
+    $pdf = new mPDF([
         'tempDir' => $GLOBALS['MPDF_WRITE_DIR'],
         'mode' => 'utf-8',
         'format' => [45, 19],
@@ -80,7 +88,7 @@ if ($action === 'print_labels') {
         'margin_bottom' => '0',
         'margin_header' => '0',
         'margin_footer' => '0'
-    ));
+    ]);
     $pdf->text_input_as_HTML = true;
 
     while ($count > 0) {
@@ -88,21 +96,18 @@ if ($action === 'print_labels') {
             if (empty($t)) {
                 continue;
             }
-            if ($t === 'none') {
-                $ord = $order;
-            } else {
-                $ord = $order . '-' . $t;
-            }
+            $ord = $t === 'none' ? $order : $order . '-' . $t;
 
             $pdf->AddPage();
             $barcode = '<div style="text-align: center;vertical-align: bottom;">';
-            $pdf->SetFont('', '', 7);
-            $pdf->writeCell(0, 3, 'CLIENT #: ' . $client, 0, 1, 'C');
-            $pdf->writeCell(0, 3, 'LAB REF #: ' . $ord, 0, 1, 'C');
             $pdf->SetFont('', 'B', 8);
             $pdf->writeCell(0, 3, $patient, 0, 1, 'C');
+            $pdf->SetFont('', '', 7);
+            $pdf->writeCell(0, 3, 'CLIENT#: ' . $client . '-WDL', 0, 1, 'C');
+            $pdf->writeCell(0, 3, 'DOS: ' . $order_date['date_ordered'], 0, 1, 'C');
+            $pdf->writeCell(0, 3, 'DOB: ' . $dob, 0, 1, 'C');
             $code_info = $client . '-' . $ord;
-            $barcode .= '<barcode size=".8" pr=".4" code="' . attr($code_info) . '" type="C39" /></div>';
+            $barcode .= '<barcode size=".6" pr=".4" code="' . attr($code_info) . '" type="C39" /></div>';
             $pdf->writeHTML($barcode);
         }
         $count--;
@@ -112,7 +117,7 @@ if ($action === 'print_labels') {
     // send to display where user decides to print etc...
     try {
         $pdf->Output($label_file, 'I');
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         echo $e->getMessage();
     }
 }

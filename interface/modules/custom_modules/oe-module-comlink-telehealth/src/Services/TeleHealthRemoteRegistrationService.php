@@ -21,14 +21,10 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use OpenEMR\Common\Database\SqlQueryException;
 use OpenEMR\Common\Logging\SystemLogger;
+use Ramsey\Uuid\Rfc4122\UuidV4;
 
 class TeleHealthRemoteRegistrationService
 {
-    /**
-     * @var TelehealthRegistrationCodeService
-     */
-    private $codeService;
-
     /**
      * API url endpoint to send registration requests to.
      * @var string
@@ -76,7 +72,9 @@ class TeleHealthRemoteRegistrationService
      */
     private $logger;
 
-    public function __construct(TelehealthGlobalConfig $config, TelehealthRegistrationCodeService $codeService)
+    private TeleHealthUserRepository $userRepository;
+
+    public function __construct(TelehealthGlobalConfig $config, private readonly TelehealthRegistrationCodeService $codeService)
     {
         $this->apiURL = $config->getRegistrationAPIURI();
         $this->apiId = $config->getRegistrationAPIUserId();
@@ -87,7 +85,6 @@ class TeleHealthRemoteRegistrationService
         $this->userRepository = new TeleHealthUserRepository();
         $this->httpClient = new Client();
         $this->logger = new SystemLogger();
-        $this->codeService = $codeService;
     }
 
     public function createPatientRegistration($patient)
@@ -157,17 +154,6 @@ class TeleHealthRemoteRegistrationService
     public function setTelehealthUserRepository(TeleHealthUserRepository $userRepository)
     {
         $this->userRepository = $userRepository;
-    }
-
-    /**
-     * Returns if a registration should be created for the given provider id.  This does not answer whether a registration
-     * exists, but whether the user passes the criteria for creating a registration record regardless of whether it exists or not.
-     * @param $providerId
-     * @return bool
-     */
-    public function shouldCreateRegistrationForProvider($providerId)
-    {
-        return $this->providerRepository->isEnabledProvider($providerId);
     }
 
     /**
@@ -284,6 +270,8 @@ class TeleHealthRemoteRegistrationService
         if ($response['status'] != 200) {
             $this->logger->errorLogCaller("Failed to suspend user", ['username' => $username, 'response' => $response]);
             return false;
+        } else {
+            $this->logger->debug("Suspended user on comlink api ", ['username' => $username]);
         }
         $dbUserRecord->setIsActive(false);
         $this->userRepository->saveUser($dbUserRecord);
@@ -307,6 +295,8 @@ class TeleHealthRemoteRegistrationService
         if ($response['status'] != 200) {
             $this->logger->errorLogCaller("Failed to resume user", ['username' => $username, 'response' => $response]);
             return false;
+        } else {
+            $this->logger->debug("Resumed user on comlink api ", ['username' => $username]);
         }
         $dbUserRecord->setIsActive(true);
         $this->userRepository->saveUser($dbUserRecord);
@@ -328,10 +318,22 @@ class TeleHealthRemoteRegistrationService
         if ($response['status'] != 200) {
             $this->logger->errorLogCaller("Failed to deactivate user", ['username' => $username, 'response' => $response]);
             return false;
+        } else {
+            $this->logger->debug("Deactivated user on comlink api ", ['username' => $username]);
         }
         $dbUserRecord->setIsActive(false);
         $this->userRepository->saveUser($dbUserRecord);
         return true;
+    }
+
+    public function verifyProvisioningServiceIsValid()
+    {
+        $randomUuid = UuidV4::uuid4()->toString();
+        $randomPassword = UuidV4::uuid4()->toString();
+
+        // if we are not authorized we will get a 401 response from this.
+        $response = $this->sendAPIRequest($this->getEndpointUrl('usersuspend'), ['userName' => $randomUuid, 'passwordString' => $randomPassword]);
+        return ['status' => $response['internalStatus'], 'message' => $response['internalError']];
     }
 
     private function sendAPIRequest($endpointUrl, array $body)
@@ -346,6 +348,7 @@ class TeleHealthRemoteRegistrationService
         $internalErrorResponse = null;
         $bodyResponse = null;
         $statusCode = 500;
+        $internalStatusCode = 200;
 
         try {
             $httpRequestOptions = [
@@ -365,9 +368,13 @@ class TeleHealthRemoteRegistrationService
                 "Failed to send registration request Exception: " . $exception->getMessage(),
                 ['trace' => $exception->getTraceAsString(), 'endUrl' => $endpointUrl]
             );
+            if ($exception->getCode() == 401) { // unauthorized exception meaning the credentials are incorrect
+                $statusCode = 401;
+            }
             $internalErrorResponse = $exception->getMessage();
+            $internalStatusCode = $exception->getCode();
         }
 
-        return ['status' => $statusCode, 'bodyResponse' => $bodyResponse, 'internalError' => $internalErrorResponse];
+        return ['status' => $statusCode, 'internalStatus' => $internalStatusCode, 'bodyResponse' => $bodyResponse, 'internalError' => $internalErrorResponse];
     }
 }

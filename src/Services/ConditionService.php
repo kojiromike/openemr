@@ -48,6 +48,7 @@ class ConditionService extends BaseService
         patient.puuid,
         patient.patient_uuid,
         condition_ids.condition_uuid,
+        condition_ids.last_updated_time,
         verification.title as verification_title
         ,provider.provider_id
         ,provider.provider_npi
@@ -55,7 +56,7 @@ class ConditionService extends BaseService
         ,provider.provider_username
     FROM lists
         INNER JOIN (
-            SELECT lists.uuid AS condition_uuid FROM lists
+            SELECT lists.uuid AS condition_uuid, lists.modifydate as last_updated_time FROM lists
         ) condition_ids ON lists.uuid = condition_ids.condition_uuid
         LEFT JOIN list_options as verification ON verification.option_id = lists.verification and verification.list_id = 'condition-verification'
         RIGHT JOIN (
@@ -68,7 +69,7 @@ class ConditionService extends BaseService
         LEFT JOIN issue_encounter as issue ON issue.list_id =lists.id
         LEFT JOIN form_encounter as encounter ON encounter.encounter =issue.encounter
         LEFT JOIN (
-                select 
+                select
                    id AS provider_id
                    ,uuid AS provider_uuid
                    ,npi AS provider_npi
@@ -94,7 +95,7 @@ class ConditionService extends BaseService
 
     public function getUuidFields(): array
     {
-        return ['condition_uuid', 'puuid', 'encounter_uuid', 'uuid', 'patient_uuid'];
+        return ['condition_uuid', 'puuid', 'encounter_uuid', 'uuid', 'patient_uuid', 'provider_uuid'];
     }
 
     public function createResultRecordFromDatabaseResult($row)
@@ -117,12 +118,20 @@ class ConditionService extends BaseService
      * @return ProcessingResult which contains validation messages, internal error messages, and the data
      * payload.
      */
-    public function getAll($search = array(), $isAndCondition = true, $puuidBind = null)
+    public function getAll($search = [], $isAndCondition = true, $puuidBind = null)
     {
         $newSearch = [];
+
+        // override puuid with the token search field
+        // standard api will send a string which needs to be a token to be converted to the binary field value
+        // FHIR api will send an already populated TokenSearchField
+        if (!empty($search['puuid']) && !($search['puuid'] instanceof ISearchField)) {
+            $newSearch['puuid'] = new TokenSearchField('puuid', $search['puuid'], true);
+        }
+
         foreach ($search as $key => $value) {
             if (!$value instanceof ISearchField) {
-                $newSearch[] = new StringSearchField($key, [$value], SearchModifier::EXACT);
+                $newSearch[$key] = new StringSearchField($key, [$value], SearchModifier::EXACT);
             } else {
                 $newSearch[$key] = $value;
             }
@@ -187,10 +196,10 @@ class ConditionService extends BaseService
         );
 
         if ($results) {
-            $processingResult->addData(array(
+            $processingResult->addData([
                 'id' => $results,
                 'uuid' => UuidRegistry::uuidToString($data['uuid'])
-            ));
+            ]);
         } else {
             $processingResult->addInternalError("error processing SQL Insert");
         }
@@ -269,12 +278,12 @@ class ConditionService extends BaseService
         $pid = $this->getIdByUuid($puuidBytes, self::PATIENT_TABLE, "pid");
         $sql  = "DELETE FROM lists WHERE pid=? AND uuid=? AND type='medical_problem'";
 
-        $results = sqlStatement($sql, array($pid, $auuid));
+        $results = sqlStatement($sql, [$pid, $auuid]);
 
         if ($results) {
-            $processingResult->addData(array(
+            $processingResult->addData([
                 'uuid' => $uuid
-            ));
+            ]);
         } else {
             $processingResult->addInternalError("error processing SQL Insert");
         }

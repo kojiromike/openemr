@@ -30,9 +30,10 @@ var page = {
         if (page.isInitialized || page.isInitializing) return;
         page.isInitializing = true;
         if (cuser < 1)
+            // where is savePatientButton used?
             $('#savePatientButton').hide();
 
-        $("#donePatientButton").hide();
+        $("#donePatientButton").addClass("disabled");
         $("#replaceAllButton").hide();
 
         if (!$.isReady && console) console.warn('page was initialized before dom is ready.  views may not render properly.');
@@ -48,6 +49,10 @@ var page = {
         });
         $("#donePatientButton").click(function (e) {
             e.preventDefault();
+            if ($(this).hasClass("disabled")) {
+                alert(window.top.xl("You must change a value in order to save"));
+                return;
+            }
             page.updateModel();
         });
         $("#replaceAllButton").click(function (e) {
@@ -135,8 +140,11 @@ var page = {
                     }
                 }
                 page.replaceAll();
-                $('form :input').on("change", function () {
-                    $("#donePatientButton").show();
+                // for mobile devices the change event does not fire during edit and so we are using input even though
+                // the event will fire more frequently... we want that instead of user having to tap or click something
+                // else in order to get the save button to be turned on.
+                $('form :input').on("input", function () {
+                    $("#donePatientButton").removeClass("disabled");
                     $('#savePatientButton').show();
                 });
             });
@@ -290,7 +298,7 @@ var page = {
                 page.fetchInProgress = false;
             },
             error: function (m, r) {
-                app.appendAlert(app.getErrorMessage(r), 'alert-danger', 0, 'collectionAlert');
+                app.appendAlert(app.getErrorMessage(r), 'danger', 15000, 'collectionAlert');
                 app.hideProgress('modelLoader');
                 page.fetchInProgress = false;
             }
@@ -316,7 +324,7 @@ var page = {
                     page.getEditedPatient(pm)
                 },
                 error: function (m, r) {
-                    app.appendAlert(app.getErrorMessage(r), 'alert-danger', 0, 'modelAlert');
+                    app.appendAlert(app.getErrorMessage(r), 'danger', 15000, 'modelAlert');
                     app.hideProgress('modelLoader');
                 }
             });
@@ -444,7 +452,7 @@ var page = {
             wait: true,
             success: function () {
                 if (live !== 1) {
-                    setTimeout("app.appendAlert('Patient was successfully " + (isNew ? "inserted" : "updated") + "','alert-success',2000,'collectionAlert')", 200);
+                    setTimeout("app.appendAlert('Patient was successfully " + (isNew ? "inserted" : "updated") + "','success',5000,'collectionAlert')", 200);
                     setTimeout("window.location.href ='" + webRoot + "/portal/home.php'", 2500);
                 } else if (live === 1 && register !== '0') { // for testing
                     //alert('Save Success');
@@ -462,7 +470,7 @@ var page = {
             },
             error: function (model, response, scope) {
                 app.hideProgress('modelLoader');
-                app.appendAlert(app.getErrorMessage(response), 'alert-danger', 0, 'modelAlert');
+                app.appendAlert(app.getErrorMessage(response), 'danger', 15000, 'modelAlert');
                 try {
                     var json = $.parseJSON(response.responseText);
                     if (json.errors) {
@@ -493,7 +501,7 @@ var page = {
             wait: true,
             success: function () {
                 $('#patientDetailDialog').modal('hide');
-                setTimeout("app.appendAlert('The Patient record was deleted','alert-success',3000,'collectionAlert')", 500);
+                setTimeout("app.appendAlert('The Patient record was deleted','success',5000,'collectionAlert')", 500);
                 app.hideProgress('modelLoader');
 
                 if (model.reloadCollectionOnModelUpdate) {
@@ -502,7 +510,7 @@ var page = {
                 }
             },
             error: function (model, response, scope) {
-                app.appendAlert(app.getErrorMessage(response), 'alert-danger', 0, 'modelAlert');
+                app.appendAlert(app.getErrorMessage(response), 'danger', 15000, 'modelAlert');
                 app.hideProgress('modelLoader');
             }
         });

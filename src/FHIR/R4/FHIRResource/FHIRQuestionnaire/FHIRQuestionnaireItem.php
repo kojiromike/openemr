@@ -615,7 +615,7 @@ class FHIRQuestionnaireItem extends FHIRBackboneElement implements \JsonSerializ
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -623,7 +623,7 @@ class FHIRQuestionnaireItem extends FHIRBackboneElement implements \JsonSerializ
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->linkId)) {

@@ -17,6 +17,26 @@ use OpenEMR\Billing\BillingUtilities;
 
 abstract class AbstractProcessingTask
 {
+    public function __construct(protected $action)
+    {
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAction()
+    {
+        return $this->action;
+    }
+
+    /**
+     * @param mixed $action
+     */
+    public function setAction($action): void
+    {
+        $this->action = $action;
+    }
+
     /**
      * Mark claim as 'billed' available to all children of
      * AbstractProcessingTask

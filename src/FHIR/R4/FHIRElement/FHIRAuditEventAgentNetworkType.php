@@ -124,7 +124,7 @@ class FHIRAuditEventAgentNetworkType extends FHIRElement implements \JsonSeriali
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return (string)$this->getValue();
     }
@@ -132,7 +132,7 @@ class FHIRAuditEventAgentNetworkType extends FHIRElement implements \JsonSeriali
     /**
      * @return mixed
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->value;
     }

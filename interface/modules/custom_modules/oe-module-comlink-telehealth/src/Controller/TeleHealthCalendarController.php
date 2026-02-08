@@ -19,18 +19,17 @@ use Comlink\OpenEMR\Modules\TeleHealthModule\TelehealthGlobalConfig;
 use Comlink\OpenEMR\Modules\TeleHealthModule\The;
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Utils\CacheUtils;
+use OpenEMR\Events\Appointments\AppointmentJavascriptEventNames;
 use OpenEMR\Events\Appointments\AppointmentRenderEvent;
 use OpenEMR\Events\Appointments\CalendarUserGetEventsFilter;
 use OpenEMR\Events\Core\ScriptFilterEvent;
 use OpenEMR\Events\Core\StyleFilterEvent;
 use OpenEMR\Services\AppointmentService;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Twig\Environment;
 
 class TeleHealthCalendarController
 {
-    private $logger;
-    private $assetPath;
     /**
      * @var The database record if of the currently logged in user
      */
@@ -46,30 +45,45 @@ class TeleHealthCalendarController
      */
     private $apptService;
 
-    /**
-     * @var Environment Twig container
-     */
-    private $twig;
+    private readonly TeleHealthProviderRepository $teleHealthProviderRepository;
 
-    public function __construct(TelehealthGlobalConfig $config, Environment $twig, SystemLogger $logger, $assetPath, $loggedInUserId)
-    {
-        $this->twig = $twig;
-        $this->logger = $logger;
-        $this->assetPath = $assetPath;
+    /**
+     * @param TelehealthGlobalConfig $config
+     * @param Environment $twig Twig container
+     * @param SystemLogger $logger
+     * @param mixed $assetPath
+     * @param mixed $loggedInUserId
+     */
+    public function __construct(
+        TelehealthGlobalConfig $config,
+        private readonly Environment $twig,
+        private readonly SystemLogger $logger,
+        private $assetPath,
+        $loggedInUserId
+    ) {
         $this->loggedInUserId = $loggedInUserId;
         $this->calendarEventCategoryRepository = new CalendarEventCategoryRepository();
         $this->teleHealthProviderRepository = new TeleHealthProviderRepository($this->logger, $config);
-        $this->apptService = new AppointmentService();
+//        $this->apptService = new AppointmentService();
     }
 
-    public function subscribeToEvents(EventDispatcher $eventDispatcher)
+    public function subscribeToEvents(EventDispatcherInterface $eventDispatcher)
     {
-        $eventDispatcher->addListener(CalendarUserGetEventsFilter::EVENT_NAME, [$this, 'filterTelehealthCalendarEvents']);
-        $eventDispatcher->addListener(ScriptFilterEvent::EVENT_NAME, [$this, 'addCalendarJavascript']);
-        $eventDispatcher->addListener(StyleFilterEvent::EVENT_NAME, [$this, 'addCalendarStylesheet']);
+        $eventDispatcher->addListener(CalendarUserGetEventsFilter::EVENT_NAME, $this->filterTelehealthCalendarEvents(...));
+        $eventDispatcher->addListener(ScriptFilterEvent::EVENT_NAME, $this->addCalendarJavascript(...));
+        $eventDispatcher->addListener(StyleFilterEvent::EVENT_NAME, $this->addCalendarStylesheet(...));
 
-        $eventDispatcher->addListener(AppointmentRenderEvent::RENDER_JAVASCRIPT, [$this, 'renderAppointmentJavascript']);
-        $eventDispatcher->addListener(AppointmentRenderEvent::RENDER_BELOW_PATIENT, [$this, 'renderAppointmentsLaunchSessionButton']);
+        $eventDispatcher->addListener(AppointmentRenderEvent::RENDER_JAVASCRIPT, $this->renderAppointmentJavascript(...));
+        $eventDispatcher->addListener(AppointmentRenderEvent::RENDER_BELOW_PATIENT, $this->renderPatientValidationDiv(...));
+        $eventDispatcher->addListener(AppointmentRenderEvent::RENDER_BELOW_PATIENT, $this->renderAppointmentsLaunchSessionButton(...));
+    }
+
+    public function getAppointmentService()
+    {
+        if (!isset($this->apptService)) {
+            $this->apptService = new AppointmentService();
+        }
+        return $this->apptService;
     }
 
     public function filterTelehealthCalendarEvents(CalendarUserGetEventsFilter $event)
@@ -78,7 +92,7 @@ class TeleHealthCalendarController
 
         $eventsByDay = $event->getEventsByDays();
         $keys = array_keys($eventsByDay);
-        $apptService = $this->apptService;
+        $apptService = $this->getAppointmentService();
         foreach ($keys as $key) {
             $eventCount = count($eventsByDay[$key]);
             for ($i = 0; $i < $eventCount; $i++) {
@@ -135,12 +149,20 @@ class TeleHealthCalendarController
         $categories = $this->calendarEventCategoryRepository->getEventCategories();
         $categoryIds = array_keys($categories);
         $providers = $this->teleHealthProviderRepository->getEnabledProviders();
-        $providerIds = array_map(function ($provider) {
-            return intval($provider->getDbRecordId());
-        }, $providers);
+        $providerIds = array_map(fn($provider): int => intval($provider->getDbRecordId()), $providers);
+
+        $jsAppointmentEventNames = [
+            'appointmentSetEvent' => AppointmentJavascriptEventNames::APPOINTMENT_PATIENT_SET_EVENT
+        ];
         //
-        echo $this->twig->render("comlink/appointment/add_edit_event.js.twig", ['appt' => $appt
-            , 'providers' => $providerIds, 'categories' => $categoryIds]);
+        echo $this->twig->render(
+            "comlink/appointment/add_edit_event.js.twig",
+            [
+                'appt' => $appt
+                , 'providers' => $providerIds, 'categories' => $categoryIds
+                , 'jsAppointmentEventNames' => $jsAppointmentEventNames
+            ]
+        );
     }
 
     public function addCalendarJavascript(ScriptFilterEvent $event)
@@ -172,6 +194,10 @@ class TeleHealthCalendarController
         }
     }
 
+    public function renderPatientValidationDiv(AppointmentRenderEvent $event)
+    {
+        echo "<div class='patient-validation-div d-none alert mt-1 mb-1'></div>";
+    }
     public function renderAppointmentsLaunchSessionButton(AppointmentRenderEvent $event)
     {
         $row = $event->getAppt();
@@ -182,18 +208,35 @@ class TeleHealthCalendarController
             return;
         }
         // don't show the launch button for a complete status
-        if ($this->apptService->isCheckOutStatus($row['pc_apptstatus'])) {
+        if ($this->getAppointmentService()->isCheckOutStatus($row['pc_apptstatus'])) {
+            echo "<button class='mt-2 btn btn-disabled' disabled><i class='fa fa-video m-2'></i>"
+                . xlt("TeleHealth Session Ended") . "</button>";
+            echo "<p>" . xlt("Session has been completed.") . " "
+                . xlt("Change the appointment status in order to launch this session again.") . "</p>";
             return;
         }
-        echo "<button data-eid='" . attr($row['pc_eid']) . "' data-pid='" . attr($row['pc_pid'])
-            . "' class='mt-2 btn btn-primary btn-add-edit-appointment-launch-telehealth'><i class='fa fa-video m-2'></i>"
-            . xlt("Launch TeleHealth Session") . "</button>";
+        $eventDateTimeString = $row['pc_eventDate'] . " " . $row['pc_startTime'];
+        $dateTime = \DateTime::createFromFormat("Y-m-d H:i:s", $eventDateTimeString);
+        if ($dateTime === false) {
+            (new SystemLogger())->errorLogCaller("appointment date time string was invalid", ['pc_eid' => $row['pc_eid'], 'dateTime' => $eventDateTimeString]);
+            return;
+        }
+
+        if (CalendarUtils::isAppointmentDateTimeInSafeRange($dateTime)) {
+            echo "<button data-eid='" . attr($row['pc_eid']) . "' data-pid='" . attr($row['pc_pid'])
+                . "' class='mt-2 btn btn-primary btn-add-edit-appointment-launch-telehealth'><i class='fa fa-video m-2'></i>"
+                . xlt("Launch TeleHealth Session") . "</button>";
+        } else {
+            echo "<button class='mt-2 btn btn-disabled' disabled><i class='fa fa-video m-2'></i>"
+                . xlt("TeleHealth Session Expired") . "</button>";
+            echo "<p>" . xlt("Session can only be launched two hours before or after an appointment") . "</p>";
+        }
     }
 
     private function isAppointmentPageInclude($pageName, $scriptPath)
     {
         // make sure our script path is in calendar
-        return $pageName == "add_edit_event.php" && basename(dirname($scriptPath)) == 'calendar';
+        return $pageName == "add_edit_event.php" && basename(dirname((string) $scriptPath)) == 'calendar';
     }
 
     private function isCalendarPageInclude($pageName)

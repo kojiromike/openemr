@@ -41,17 +41,17 @@ use OpenEMR\OeUI\OemrUI;
 <?php require_once("$include_root/patient_file/erx_patient_portal_js.php"); // jQuery for popups for eRx and patient portal ?>
 </script>
 <?php
-$arrOeUiSettings = array(
+$arrOeUiSettings = [
     'heading_title' => xl('Patient Transactions'),
     'include_patient_name' => true,
     'expandable' => false,
-    'expandable_files' => array(),//all file names need suffix _xpd
+    'expandable_files' => [],//all file names need suffix _xpd
     'action' => "",//conceal, reveal, search, reset, link or back
     'action_title' => "",
     'action_href' => "",//only for actions - reset, link or back
     'show_help_icon' => true,
     'help_file_name' => "transactions_dashboard_help.php"
-);
+];
 $oemr_ui = new OemrUI($arrOeUiSettings);
 ?>
 </head>
@@ -142,7 +142,7 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                                                 <?php } ?>
                                             </div>
                                         </td>
-                                        <td><?php echo getLayoutTitle('Transactions', $item['title']); ?></td>
+                                        <td><?php echo text(getLayoutTitle('Transactions', $item['title'])); ?></td>
                                         <td><?php echo text($date); ?></td>
                                         <td><?php echo text($item['user']); ?></td>
                                         <td><?php echo text($item['body']); ?></td>

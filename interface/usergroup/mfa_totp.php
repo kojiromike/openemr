@@ -68,17 +68,17 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
         }
     </style>
     <?php
-    $arrOeUiSettings = array(
+    $arrOeUiSettings = [
         'heading_title' => xl('Register Time Based One Time Password Key') . " - " . xl('TOTP'),
         'include_patient_name' => false,
         'expandable' => false,
-        'expandable_files' => array(),//all file names need suffix _xpd
+        'expandable_files' => [],//all file names need suffix _xpd
         'action' => "",//conceal, reveal, search, reset, link or back
         'action_title' => "",
         'action_href' => "",//only for actions - reset, link or back
         'show_help_icon' => false,
         'help_file_name' => ""
-    );
+    ];
     $oemr_ui = new OemrUI($arrOeUiSettings);
     ?>
 </head>
@@ -96,7 +96,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
         <?php
     } ?>    <div class="row">
                 <div class="col-sm-12">
-                    <form method='post' class="form-horizontal" action='mfa_totp.php' onsubmit='return top.restoreSession()'>
+                    <form method='post' class="form-horizontal" action='mfa_totp.php' onsubmit="doregister('reg2')">
                         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
 
 
@@ -105,7 +105,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                         <?php
                         // step 1 is to verify the password
                         if ($action == 'reg1') {
-                            $error = (isset($_GET["error"])) ? $_GET["error"] : false;
+                            $error = $_GET["error"] ?? false;
                             ?>
                             <div>
                                 <fieldset>
@@ -126,7 +126,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                                 </fieldset>
                                 <div class="form-group clearfix">
                                 <div class="col-sm-12 text-left position-override">
-                                        <button type="button" class="btn btn-secondary btn-save" value="<?php echo xla('Submit'); ?>" onclick="doregister('reg2')"><?php echo xlt('Submit'); ?></button>
+                                        <button type="submit" class="btn btn-secondary btn-save" value="<?php echo xla('Submit'); ?>"><?php echo xlt('Submit'); ?></button>
                                         <button type="button" class="btn btn-link btn-cancel" value="<?php echo xla('Cancel'); ?>" onclick="docancel()" ><?php echo xlt('Cancel'); ?></button>
                                     </div>
                                 </div>
@@ -148,7 +148,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                             $existingSecret = privQuery(
                                 "SELECT var1 FROM login_mfa_registrations WHERE " .
                                 "`user_id` = ? AND `method` = 'TOTP'",
-                                array($userid)
+                                [$userid]
                             );
                             if (empty($existingSecret['var1'])) {
                                 $secret = false;
@@ -185,7 +185,9 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                                             <br />
                                             <img src="<?php echo attr($qr); ?>" class="img-responsive center-block" style="height:200px !Important"/>
                                             <br />
-                                            <p><?php echo xlt('Example authenticator apps include'); ?></p>:
+                                            <p><?php echo xlt("Or paste in the following code into your authenticator app"); ?></p>
+                                            <p><?php echo $mfaAuth->getSecret(); ?></p>
+                                            <p><?php echo xlt('Example authenticator apps include'); ?>:</p>
                                             <div class="col-sm-4 offset-sm-4">
                                                 <ul>
                                                     <li><?php echo xlt('Google Auth'); ?>
@@ -226,7 +228,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                             $row = privQuery(
                                 "SELECT COUNT(*) AS count FROM login_mfa_registrations WHERE " .
                                 "`user_id` = ? AND `method` = 'TOTP'",
-                                array($userid)
+                                [$userid]
                             );
 
 
@@ -236,7 +238,7 @@ $user_full_name = $user_name['fname'] . " " . $user_name['lname'];
                                     "INSERT INTO login_mfa_registrations " .
                                     "(`user_id`, `method`, `name`, `var1`, `var2`) VALUES " .
                                     "(?, 'TOTP', 'App Based 2FA', ?, '')",
-                                    array($userid, $cryptoGen->encryptStandard($_SESSION['totpSecret']))
+                                    [$userid, $cryptoGen->encryptStandard($_SESSION['totpSecret'])]
                                 );
                                 unset($_SESSION['totpSecret']);
                             } else {

@@ -12,6 +12,11 @@
 
 namespace Comlink\OpenEMR\Modules\TeleHealthModule\Repository;
 
+if (!defined('OPENEMR_GLOBALS_LOADED')) {
+    http_response_code(404);
+    exit();
+}
+
 use Comlink\OpenEMR\Modules\TeleHealthModule\Models\TeleHealthUser;
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Common\Database\QueryUtils;
@@ -96,7 +101,7 @@ class TeleHealthUserRepository extends BaseService
             ->setDbRecordId($row['patient_id'] ?? $row['user_id'])
             ->setIsPatient(isset($row['patient_id']))
             ->setIsActive($row['active'] == 1)
-            ->setRegistrationCode($row['app_registration_code']);
+            ->setRegistrationCode($row['app_registration_code'] ?? null);
 
         if (isset($row['date_registered'])) {
             $date = \DateTime::createFromFormat($dateFormat, $row['date_registered']);

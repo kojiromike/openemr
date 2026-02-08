@@ -691,7 +691,7 @@ class FHIRSubstanceSpecification extends FHIRDomainResource implements \JsonSeri
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -699,7 +699,7 @@ class FHIRSubstanceSpecification extends FHIRDomainResource implements \JsonSeri
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         $json['resourceType'] = $this->_fhirElementName;

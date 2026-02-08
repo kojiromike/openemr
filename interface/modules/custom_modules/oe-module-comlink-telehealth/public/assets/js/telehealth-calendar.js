@@ -40,7 +40,11 @@
     function setCurrentEncounterForAppointment(pid, appointmentId)
     {
         window.top.restoreSession();
-        return window.fetch(moduleLocation + 'public/index.php?action=set_current_appt_encounter&pc_eid=' + encodeURIComponent(appointmentId), {redirect: "manual"})
+        const params = new URLSearchParams({
+            action: 'set_current_appt_encounter',
+            pc_eid: appointmentId
+        });
+        return window.fetch(moduleLocation + 'public/index.php?' + params, {redirect: "manual"})
             .then(response => {
                 if (!response.ok)
                 {
@@ -87,6 +91,7 @@
             return setCurrentEncounterForAppointment(pid, pc_eid)
                 .then(encounterData => {
                     loadEncounterFromEncounterData(encounterData, pid, pc_eid);
+                    // the ChangeProviders function comes from the internal OpenEMR calendar view
                     if (window.ChangeProviders && encounterData.user && encounterData.user.username)
                     {
                         // set our encounter
@@ -158,8 +163,12 @@
          */
         window.top.window.parent.left_nav.setPatientEncounter(encounterData.encounterList.ids, encounterData.encounterList.dates, encounterData.encounterList.categories);
         window.top.left_nav.setEncounter(encounterData.selectedEncounter.dateStr, encounterData.selectedEncounter.id, "");
-        window.top.RTop.location = '../../patient_file/encounter/encounter_top.php?set_pid=' + encodeURIComponent(pid)
-            + '&set_encounter=' + encodeURIComponent(encounterData.selectedEncounter.id) + '&launch_telehealth=1';
+        const params = new URLSearchParams({
+            launch_telehealth: 1,
+            set_encounter: encounterData.selectedEncounter.id,
+            set_pid: pid
+        });
+        window.top.RTop.location = '../../patient_file/encounter/encounter_top.php?' + params;
         if (window.top.comlink && window.top.comlink.telehealth && window.top.comlink.telehealth.launchProviderVideoMessage) {
             window.top.comlink.telehealth.launchProviderVideoMessage({
                 pc_eid: pc_eid

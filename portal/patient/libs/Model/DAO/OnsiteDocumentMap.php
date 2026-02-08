@@ -57,7 +57,7 @@ class OnsiteDocumentMap implements IDaoMap, IDaoMap2
     public static function GetFieldMaps()
     {
         if (self::$FM == null) {
-            self::$FM = array();
+            self::$FM = [];
             self::$FM["Id"] = new FieldMap("Id", "onsite_documents", "id", true, FM_TYPE_INT, 10, null, true);
             self::$FM["Pid"] = new FieldMap("Pid", "onsite_documents", "pid", false, FM_TYPE_INT, 10, null, false);
             self::$FM["Facility"] = new FieldMap("Facility", "onsite_documents", "facility", false, FM_TYPE_INT, 10, null, false);
@@ -77,6 +77,7 @@ class OnsiteDocumentMap implements IDaoMap, IDaoMap2
             self::$FM["FullDocument"] = new FieldMap("FullDocument", "onsite_documents", "full_document", false, FM_TYPE_BLOB, null, null, false);
             self::$FM["FileName"] = new FieldMap("FileName", "onsite_documents", "file_name", false, FM_TYPE_VARCHAR, 255, null, false);
             self::$FM["FilePath"] = new FieldMap("FilePath", "onsite_documents", "file_path", false, FM_TYPE_VARCHAR, 255, null, false);
+            self::$FM["TemplateData"] = new FieldMap("TemplateData", "onsite_documents", "template_data", false, FM_TYPE_LONGTEXT, null, null, false);
         }
 
         return self::$FM;
@@ -88,7 +89,7 @@ class OnsiteDocumentMap implements IDaoMap, IDaoMap2
     public static function GetKeyMaps()
     {
         if (self::$KM == null) {
-            self::$KM = array();
+            self::$KM = [];
         }
 
         return self::$KM;

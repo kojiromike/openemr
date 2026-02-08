@@ -12,7 +12,7 @@
  * @copyright Copyright (C) 2011 Tony McCormick <tony@mi-squared.com>
  * @copyright Copyright (C) 2011-2018 Brady Miller   <brady.g.miller@gmail.com>
  * @copyright Copyright (C) 2017 Roberto Vasquez <robertogagliotta@gmail.com>
- * @copyright Copyright (c) 2022 Robert Down <robertdown@live.com>
+ * @copyright Copyright (c) 2022-2023 Robert Down <robertdown@live.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE CNU General Public License 3
  *
  */
@@ -40,8 +40,8 @@ foreach ($options as $opt) {
 }
 
 // Collect variables
-$form_lookup_at = (isset($_POST['form_lookup_at'])) ? $_POST['form_lookup_at'] : '';
-$form_diagnosis = (isset($_POST['form_diagnosis'])) ? $_POST['form_diagnosis'] : '';
+$form_lookup_at = $_POST['form_lookup_at'] ?? '';
+$form_diagnosis = $_POST['form_diagnosis'] ?? '';
 ?>
 
 <html>

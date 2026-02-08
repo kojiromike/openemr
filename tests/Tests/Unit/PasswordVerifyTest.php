@@ -4,7 +4,7 @@
  * PasswordVerifyTest.
  *
  * Test to ensure works with following hashes
- *   - pre OpenEMR 5.0.0 $2a$05 hashes
+ *   - pre OpenEMR 5.0.0 $2a$05 hashes (removed these tests on 3/9/23 since no longer work in modern operating systems)
  *   - at and post OpenEMR 5.0.0 $2a$05 hashes
  *   - standard OpenEMR PASSWORD_BCRYPT hashes (at and post OpenEMR 6.0.0)
  *   - standard OpenEMR PASSWORD_ARGON2I hashes (at and post OpenEMR 6.0.0)
@@ -25,19 +25,7 @@ use PHPUnit\Framework\TestCase;
 
 class PasswordVerifyTest extends TestCase
 {
-    private function checkSupportShortBlowfishSalt(): bool
-    {
-        $pass = 'notempty';
-        $salt = '$2a$05$DFlv44ByJMa7NgZTdztaH$';
-        $result = crypt($pass, $salt);
-        if ($result === '*') {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public function testBlankPassword()
+    public function testBlankPassword(): void
     {
         $pass = '';
         $hash = '$2y$10$Fikd4N/8KfwNjU0xruzckO5R068vRCg/OR47kIlg5B9FAHpAk9s2e';
@@ -46,7 +34,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testBlankHash()
+    public function testBlankHash(): void
     {
         $pass = 'pass';
         $hash = '';
@@ -55,7 +43,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testBlankPasswordAndHash()
+    public function testBlankPasswordAndHash(): void
     {
         $pass = '';
         $hash = '';
@@ -64,7 +52,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testMalformedHash()
+    public function testMalformedHash(): void
     {
         $pass = 'pass';
         $hash = 'sgdf55';
@@ -73,87 +61,10 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    // Old Legacy are hashes created prior to OpenEMR 5.0.0
-    public function testOldLegacyBcryptCorrectPasswordOne()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = 'pass';
-        $hash = '$2a$05$DFlv44ByJMa7NgZTdztaH.nJ.vk48Wh7aMb7WPcDu10tbLSIJCtDG';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = true;
-        $this->assertTrue($result === $expected);
-    }
-
-    public function testOldLegacyBcryptIncorrectPasswordOne()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = 'wrongpass';
-        $hash = '$2a$05$DFlv44ByJMa7NgZTdztaH.nJ.vk48Wh7aMb7WPcDu10tbLSIJCtDG';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = false;
-        $this->assertTrue($result === $expected);
-    }
-
-    public function testOldLegacyBcryptCorrectPasswordTwo()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = '1234';
-        $hash = '$2a$05$AB5w1h20i4vyQXLHR6y3G.826pG7pn7kSaMW6boLYf7pHnmn1SQ5S';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = true;
-        $this->assertTrue($result === $expected);
-    }
-
-    public function testOldLegacyBcryptIncorrectPasswordTwo()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = 'wrongpass';
-        $hash = '$2a$05$AB5w1h20i4vyQXLHR6y3G.826pG7pn7kSaMW6boLYf7pHnmn1SQ5S';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = false;
-        $this->assertTrue($result === $expected);
-    }
-
-    public function testOldLegacyBcryptCorrectPasswordThree()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = 'password';
-        $hash = '$2a$05$JEMklMtoLkBWy5A3BFjNs.Hryelvg3K7fenyfLlyUXqasnnUHnWqi';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = true;
-        $this->assertTrue($result === $expected);
-    }
-
-    public function testOldLegacyBcryptIncorrectPasswordThree()
-    {
-        if (!$this->checkSupportShortBlowfishSalt()) {
-            $this->markTestSkipped("Skipping this test since this operating system does not support 21 character blowfish salt!");
-        }
-
-        $pass = 'wrongpass';
-        $hash = '$2a$05$JEMklMtoLkBWy5A3BFjNs.Hryelvg3K7fenyfLlyUXqasnnUHnWqi';
-        $result = AuthHash::passwordVerify($pass, $hash);
-        $expected = false;
-        $this->assertTrue($result === $expected);
-    }
-
     // Legacy are hashes created at and after OpenEMR 5.0.0 (and prior to 6.0.0)
-    public function testLegacyBcryptCorrectPasswordOne()
+    //  (note that 'Old Legacy' hashes prior to OpenEMR 5.0.0 do not work in modern
+    //   OpenEMR versions)
+    public function testLegacyBcryptCorrectPasswordOne(): void
     {
         $pass = 'pass';
         $hash = '$2a$05$.hH4Godes3dORmHjOjtXXekQPf2n5tQsw2H/ahwsBECLA/QCgWRS.';
@@ -162,7 +73,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testLegacyBcryptIncorrectPasswordOne()
+    public function testLegacyBcryptIncorrectPasswordOne(): void
     {
         $pass = 'wrongpass';
         $hash = '$2a$05$.hH4Godes3dORmHjOjtXXekQPf2n5tQsw2H/ahwsBECLA/QCgWRS.';
@@ -171,7 +82,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testLegacyBcryptCorrectPasswordTwo()
+    public function testLegacyBcryptCorrectPasswordTwo(): void
     {
         $pass = 'pass';
         $hash = '$2a$05$MKtnxYsfFPlb2mOW7Qzq2Oz61S26s5E80Yd60lKdX4Wy3PBdEufNu';
@@ -180,7 +91,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testLegacyBcryptIncorrectPasswordTwo()
+    public function testLegacyBcryptIncorrectPasswordTwo(): void
     {
         $pass = 'wrongpass';
         $hash = '$2a$05$MKtnxYsfFPlb2mOW7Qzq2Oz61S26s5E80Yd60lKdX4Wy3PBdEufNu';
@@ -189,7 +100,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testLegacyBcryptCorrectPasswordThree()
+    public function testLegacyBcryptCorrectPasswordThree(): void
     {
         $pass = 'receptionist';
         $hash = '$2a$05$bHD9eIJ0dc6fISnNdqJtbe2/LVUPWhWGSuJOxRGab/NaUZYV3vqBO';
@@ -198,7 +109,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testLegacyBcryptIncorrectPasswordThree()
+    public function testLegacyBcryptIncorrectPasswordThree(): void
     {
         $pass = 'wrongpass';
         $hash = '$2a$05$bHD9eIJ0dc6fISnNdqJtbe2/LVUPWhWGSuJOxRGab/NaUZYV3vqBO';
@@ -208,7 +119,7 @@ class PasswordVerifyTest extends TestCase
     }
 
     // Standard are hashes created at and after OpenEMR 6.0.0
-    public function testStandardBcryptCorrectPasswordOne()
+    public function testStandardBcryptCorrectPasswordOne(): void
     {
         $pass = 'pass';
         $hash = '$2y$10$Fikd4N/8KfwNjU0xruzckO5R068vRCg/OR47kIlg5B9FAHpAk9s2e';
@@ -217,7 +128,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardBcryptIncorrectPasswordOne()
+    public function testStandardBcryptIncorrectPasswordOne(): void
     {
         $pass = 'wrongpass';
         $hash = '$2y$10$Fikd4N/8KfwNjU0xruzckO5R068vRCg/OR47kIlg5B9FAHpAk9s2e';
@@ -226,7 +137,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardBcryptCorrectPasswordTwo()
+    public function testStandardBcryptCorrectPasswordTwo(): void
     {
         $pass = 'pass';
         $hash = '$2y$10$jEdmgbdVbEn4XuSKRfS8yOBD13EVqRu/on2UFhwfLgcGo6OZgmkYG';
@@ -235,7 +146,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardBcryptIncorrectPasswordTwo()
+    public function testStandardBcryptIncorrectPasswordTwo(): void
     {
         $pass = 'wrongpass';
         $hash = '$2y$10$jEdmgbdVbEn4XuSKRfS8yOBD13EVqRu/on2UFhwfLgcGo6OZgmkYG';
@@ -244,7 +155,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardBcryptCorrectPasswordThree()
+    public function testStandardBcryptCorrectPasswordThree(): void
     {
         $pass = 'pass';
         $hash = '$2y$10$1AdOj/O7G6kEZrFgXt5BvOukG.gCkpTung.676ajdYzDmjU3HPILu';
@@ -253,7 +164,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardBcryptIncorrectPasswordThree()
+    public function testStandardBcryptIncorrectPasswordThree(): void
     {
         $pass = 'wrongpass';
         $hash = '$2y$10$1AdOj/O7G6kEZrFgXt5BvOukG.gCkpTung.676ajdYzDmjU3HPILu';
@@ -262,7 +173,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iCorrectPasswordOne()
+    public function testStandardArgon2iCorrectPasswordOne(): void
     {
         $pass = 'pass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$djZ4NjhPMFJWd1Z0bjNaUg$2YH7/1DA+pCsFduPZZ2V0xUUorir3b6UbEuHcufD0EY';
@@ -271,7 +182,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iIncorrectPasswordOne()
+    public function testStandardArgon2iIncorrectPasswordOne(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$djZ4NjhPMFJWd1Z0bjNaUg$2YH7/1DA+pCsFduPZZ2V0xUUorir3b6UbEuHcufD0EY';
@@ -280,7 +191,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iCorrectPasswordTwo()
+    public function testStandardArgon2iCorrectPasswordTwo(): void
     {
         $pass = 'pass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$NXpYa2ZyVWZrbHdJbWpqbg$oL/S2VMqT9ovD4hc3sTWaXw1uZ2BS4FI57AlNtFcPKI';
@@ -289,7 +200,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iIncorrectPasswordTwo()
+    public function testStandardArgon2iIncorrectPasswordTwo(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$NXpYa2ZyVWZrbHdJbWpqbg$oL/S2VMqT9ovD4hc3sTWaXw1uZ2BS4FI57AlNtFcPKI';
@@ -298,7 +209,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iCorrectPasswordThree()
+    public function testStandardArgon2iCorrectPasswordThree(): void
     {
         $pass = 'pass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$dnhsZ0h3UFpGQ3NydHo3Tw$bp4YjHK97kHcMgEq6K41HAODUJ4ypvEM4xIrvCnodlc';
@@ -307,7 +218,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2iIncorrectPasswordThree()
+    public function testStandardArgon2iIncorrectPasswordThree(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2i$v=19$m=65536,t=4,p=1$dnhsZ0h3UFpGQ3NydHo3Tw$bp4YjHK97kHcMgEq6K41HAODUJ4ypvEM4xIrvCnodlc';
@@ -316,7 +227,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idCorrectPasswordOne()
+    public function testStandardArgon2idCorrectPasswordOne(): void
     {
         $pass = 'pass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$V1lLdWVRMXpoaEVpTkFjVA$qJWxvShuN64245CAvn5AGaNThmKJkcJx8lZk42YXc0o';
@@ -325,7 +236,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idIncorrectPasswordOne()
+    public function testStandardArgon2idIncorrectPasswordOne(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$V1lLdWVRMXpoaEVpTkFjVA$qJWxvShuN64245CAvn5AGaNThmKJkcJx8lZk42YXc0o';
@@ -334,7 +245,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idCorrectPasswordTwo()
+    public function testStandardArgon2idCorrectPasswordTwo(): void
     {
         $pass = 'pass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$R1ltOUpkS2Z6YlBTcExQag$RlO+SqO8FRaZu1Luhv8uUOBzRXFLrCaqwDC3TLhW6nk';
@@ -343,7 +254,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idIncorrectPasswordTwo()
+    public function testStandardArgon2idIncorrectPasswordTwo(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$R1ltOUpkS2Z6YlBTcExQag$RlO+SqO8FRaZu1Luhv8uUOBzRXFLrCaqwDC3TLhW6nk';
@@ -352,7 +263,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idCorrectPasswordThree()
+    public function testStandardArgon2idCorrectPasswordThree(): void
     {
         $pass = 'pass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$UlhNaFczNE1XZXp0RmgvZw$d7AA4Kd2ac8gSnHi0ra3ODWcMA70fWyWjVcrOHPorKE';
@@ -361,7 +272,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardArgon2idIncorrectPasswordThree()
+    public function testStandardArgon2idIncorrectPasswordThree(): void
     {
         $pass = 'wrongpass';
         $hash = '$argon2id$v=19$m=65536,t=4,p=1$UlhNaFczNE1XZXp0RmgvZw$d7AA4Kd2ac8gSnHi0ra3ODWcMA70fWyWjVcrOHPorKE';
@@ -370,7 +281,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512CorrectPasswordOne()
+    public function testStandardSha512CorrectPasswordOne(): void
     {
         $pass = 'pass';
         $hash = '$6$rounds=100000$qbXwbkFptuwCMIi5$c86qZe.lyrjQiMCo6T/vSD1w3AUdrjBUMUyU0Tfyo6xKuC7Fz1pBHht08OE5aFyf3/4Hi2kX6Y1rpdWB1OZuf/';
@@ -379,7 +290,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512IncorrectPasswordOne()
+    public function testStandardSha512IncorrectPasswordOne(): void
     {
         $pass = 'wrongpass';
         $hash = '$6$rounds=100000$qbXwbkFptuwCMIi5$c86qZe.lyrjQiMCo6T/vSD1w3AUdrjBUMUyU0Tfyo6xKuC7Fz1pBHht08OE5aFyf3/4Hi2kX6Y1rpdWB1OZuf/';
@@ -388,7 +299,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512CorrectPasswordTwo()
+    public function testStandardSha512CorrectPasswordTwo(): void
     {
         $pass = 'pass';
         $hash = '$6$rounds=100000$WL7zSdykUtnTz6Jd$mOZ7rI7JRnl/r8rnoWNbVuRDbIcw8ROAryA.yeOPE2EE6qxocg.8MFM1VQp53Q1qS2r9VcyOLRUbLAFIZW3yZ1';
@@ -397,7 +308,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512IncorrectPasswordTwo()
+    public function testStandardSha512IncorrectPasswordTwo(): void
     {
         $pass = 'wrongpass';
         $hash = '$6$rounds=100000$WL7zSdykUtnTz6Jd$mOZ7rI7JRnl/r8rnoWNbVuRDbIcw8ROAryA.yeOPE2EE6qxocg.8MFM1VQp53Q1qS2r9VcyOLRUbLAFIZW3yZ1';
@@ -406,7 +317,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512CorrectPasswordThree()
+    public function testStandardSha512CorrectPasswordThree(): void
     {
         $pass = 'pass';
         $hash = '$6$rounds=100000$9EhQm5xpBIUgJIFx$lB913XUfwK4/1K1sSGKtaF9JXvLbRvtFvhp5UAp4z7S2OEK4HwhFqQvP/mzVO55NXtxCx5mi08SPU6VQgWfXI/';
@@ -415,7 +326,7 @@ class PasswordVerifyTest extends TestCase
         $this->assertTrue($result === $expected);
     }
 
-    public function testStandardSha512IncorrectPasswordThree()
+    public function testStandardSha512IncorrectPasswordThree(): void
     {
         $pass = 'wrongpass';
         $hash = '$6$rounds=100000$9EhQm5xpBIUgJIFx$lB913XUfwK4/1K1sSGKtaF9JXvLbRvtFvhp5UAp4z7S2OEK4HwhFqQvP/mzVO55NXtxCx5mi08SPU6VQgWfXI/';

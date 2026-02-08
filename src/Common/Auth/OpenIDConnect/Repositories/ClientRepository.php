@@ -12,22 +12,130 @@
 
 namespace OpenEMR\Common\Auth\OpenIDConnect\Repositories;
 
+use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 use OpenEMR\Common\Auth\OpenIDConnect\Entities\ClientEntity;
 use OpenEMR\Common\Crypto\CryptoGen;
+use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Logging\SystemLogger;
+use OpenEMR\Common\Logging\SystemLoggerAwareTrait;
+use OpenEMR\Common\Utils\HttpUtils;
+use OpenEMR\Common\Utils\RandomGenUtils;
 use Psr\Log\LoggerInterface;
 
 class ClientRepository implements ClientRepositoryInterface
 {
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    use SystemLoggerAwareTrait;
+
+    private $cryptoGen;
 
     public function __construct()
     {
-        $this->logger = new SystemLogger();
+        $this->cryptoGen = new CryptoGen();
+    }
+
+    /**
+     * @return CryptoGen
+     */
+    public function getCryptoGen(): CryptoGen
+    {
+        return $this->cryptoGen;
+    }
+
+    /**
+     * @param CryptoGen $cryptoGen
+     * @return ClientRepository
+     */
+    public function setCryptoGen(CryptoGen $cryptoGen): ClientRepository
+    {
+        $this->cryptoGen = $cryptoGen;
+        return $this;
+    }
+
+    // TODO: @adunsulag this function needs to be updated to remove usage of $_SESSION and other superglobals
+    public function insertNewClient($clientId, $info, $site): bool
+    {
+        $user = $_SESSION['authUserID'] ?? null; // future use for provider client.
+        $is_confidential_client = empty($info['client_secret']) ? 0 : 1;
+        $skip_ehr_launch_authorization_flow = ($info['skip_ehr_launch_authorization_flow'] ?? false) == true ? 1 : 0;
+
+        $contacts = $info['contacts'];
+        $redirects = $info['redirect_uris'];
+        if (is_array($redirects)) {
+            // need to combine our redirects if we are an array... this is due to the legacy implementation of this data
+            $redirects = implode("|", $redirects);
+        }
+        $logout_redirect_uris = $info['post_logout_redirect_uris'] ?? null;
+        $info['client_secret'] ??= null; // just to be sure empty is null;
+        // set our list of default scopes for the registration if our scope is empty
+        // This is how a client can set if they support SMART apps and other stuff by passing in the 'launch'
+        // scope to the dynamic client registration.
+        // per RFC 7591 @see https://tools.ietf.org/html/rfc7591#section-2
+        // TODO: adunsulag do we need to reject the registration if there are certain scopes here we do not support
+        // TODO: adunsulag should we check these scopes against our '$this->supportedScopes'?
+        $info['scope'] ??= 'openid email phone address api:oemr api:fhir api:port';
+
+        $scopes = explode(" ", $info['scope']);
+        $scopeRepo = new ScopeRepository();
+
+        if (
+            $scopeRepo->hasScopesThatRequireManualApproval(
+                $is_confidential_client == 1,
+                $scopes,
+                $GLOBALS['oauth_app_manual_approval'] ?? '0'
+            )
+        ) {
+            $is_client_enabled = 0; // disabled
+        } else {
+            $is_client_enabled = 1; // enabled
+        }
+
+        // encrypt the client secret
+        if (!empty($info['client_secret'])) {
+            $cryptoGen = $this->getCryptoGen();
+            $info['client_secret'] = $cryptoGen->encryptStandard($info['client_secret']);
+        }
+
+        // TODO: @adunsulag why do we skip over request_uris when we have it in the outer function?
+        $sql = "INSERT INTO `oauth_clients` (`client_id`, `client_role`, `client_name`, `client_secret`, `registration_token`, `registration_uri_path`, `register_date`, `revoke_date`, `contacts`, `redirect_uri`, `grant_types`, `scope`, `user_id`, `site_id`, `is_confidential`, `logout_redirect_uris`, `jwks_uri`, `jwks`, `initiate_login_uri`, `endorsements`, `policy_uri`, `tos_uri`, `is_enabled`, `skip_ehr_launch_authorization_flow`, `dsi_type`) VALUES (?, ?, ?, ?, ?, ?, NOW(), NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $i_vals = [
+            $clientId,
+            $info['client_role'],
+            $info['client_name'],
+            $info['client_secret'],
+            $info['registration_access_token'],
+            $info['registration_client_uri_path'],
+            $contacts,
+            $redirects,
+            $info['grant_types'] ?? 'authorization_code',
+            $info['scope'],
+            $user,
+            $site,
+            $is_confidential_client,
+            $logout_redirect_uris,
+            ($info['jwks_uri'] ?? null),
+            ($info['jwks'] ?? null),
+            ($info['initiate_login_uri'] ?? null),
+            ($info['endorsements'] ?? null),
+            ($info['policy_uri'] ?? null),
+            ($info['tos_uri'] ?? null),
+            $is_client_enabled,
+            $skip_ehr_launch_authorization_flow,
+            $info['dsi_type'] ?? 0
+        ];
+
+        $result = QueryUtils::sqlInsert($sql, $i_vals);
+        return $result !== false;
+    }
+
+    public function generateClientId()
+    {
+        return HttpUtils::base64url_encode(RandomGenUtils::produceRandomBytes(32));
+    }
+
+    public function generateClientSecret()
+    {
+        return HttpUtils::base64url_encode(RandomGenUtils::produceRandomBytes(64));
     }
 
     /**
@@ -45,20 +153,20 @@ class ClientRepository implements ClientRepositoryInterface
         return $list;
     }
 
-    public function getClientEntity($clientIdentifier)
+    public function getClientEntity($clientIdentifier): ClientEntity|false
     {
-        $clients = sqlQueryNoLog("Select * From oauth_clients Where client_id=?", array($clientIdentifier));
+        $clients = sqlQueryNoLog("Select * From oauth_clients Where client_id=?", [$clientIdentifier]);
 
         // Check if client is registered
         if ($clients === false) {
-            $this->logger->error(
+            $this->getSystemLogger()->error(
                 "ClientRepository->getClientEntity() no client found for identifier ",
                 ["client" => $clientIdentifier]
             );
             return false;
         }
 
-        $this->logger->debug(
+        $this->getSystemLogger()->debug(
             "ClientRepository->getClientEntity() client found",
             [
                 "client" => [
@@ -73,7 +181,7 @@ class ClientRepository implements ClientRepositoryInterface
 
     public function validateClient($clientIdentifier, $clientSecret, $grantType): bool
     {
-        $this->logger->debug(
+        $this->getSystemLogger()->debug(
             "ClientRepository->validateClient() checking client validation",
             ["client" => $clientIdentifier, "grantType" => $grantType]
         );
@@ -82,7 +190,7 @@ class ClientRepository implements ClientRepositoryInterface
 
             // Check if client is registered
             if ($client === false) {
-                $this->logger->error(
+                $this->getSystemLogger()->error(
                     "ClientRepository->validateClient() no client found for identifier ",
                     ["client" => $clientIdentifier]
                 );
@@ -97,7 +205,7 @@ class ClientRepository implements ClientRepositoryInterface
                 }
                 $secretMatches = hash_equals($clientSecret, $secret);
                 if (!$secretMatches) {
-                    $this->logger->error(
+                    $this->getSystemLogger()->error(
                         "ClientRepository->validateClient() Confidential client sent invalid client secret.  Validation failed",
                         ["client" => $clientIdentifier, "grantType" => $grantType]
                     );
@@ -140,6 +248,13 @@ class ClientRepository implements ClientRepositoryInterface
      */
     private function hydrateClientEntityFromArray($client_record): ClientEntity
     {
+        // note redirect_uris in the database is actually named redirect_uri
+        $pipedValues = ['contacts', 'redirect_uri', 'request_uri', 'post_logout_redirect_uris', 'grant_types', 'response_types', 'default_acr_values'];
+        foreach ($pipedValues as $value) {
+            if (!empty($client_record[$value])) {
+                $client_record[$value] = explode('|', (string) $client_record[$value]);
+            }
+        }
         $client = new ClientEntity();
         $client->setIdentifier($client_record['client_id']);
         $client->setName($client_record['client_name']);
@@ -156,6 +271,38 @@ class ClientRepository implements ClientRepositoryInterface
         $client->setLogoutRedirectUris($client_record['logout_redirect_uris']);
         $client->setContacts($client_record['contacts']);
         $client->setRegistrationDate($client_record['register_date']);
+        $client->setSkipEHRLaunchAuthorizationFlow($client_record['skip_ehr_launch_authorization_flow'] == "1");
+        $client->setDSIType(intval($client_record['dsi_type'] ?? 0));
         return $client;
+    }
+
+    public function generateRegistrationAccessToken()
+    {
+        return HttpUtils::base64url_encode(RandomGenUtils::produceRandomBytes(32));
+    }
+
+    public function generateRegistrationClientUriPath()
+    {
+        return HttpUtils::base64url_encode(RandomGenUtils::produceRandomBytes(16));
+    }
+
+    public function saveSkipEHRLaunchFlow(ClientEntity $client, bool $skipFlow)
+    {
+        // TODO: adunsulag do we want to eventually just have a save() method.. it would be very handy but not sure
+        // we want any oauth2 values being overwritten.
+        $skipFlowValue = $skipFlow === true ? 1 : 0;
+        $clientId = $client->getIdentifier();
+        $params = [$skipFlowValue, $clientId];
+        $res = sqlStatement("UPDATE oauth_clients SET skip_ehr_launch_authorization_flow=? WHERE client_id = ?", $params);
+        if ($res === false) {
+            // TODO: adunsulag is there a better exception to throw here in OpenEMR than runtime?
+            throw new \RuntimeException("Failed to save oauth_clients skip_ehr_launch_authorization_flow flag.  Check logs for sql error");
+        }
+        return true;
+    }
+
+    public function remove(ClientEntity $clientEntity, bool $noLog = false)
+    {
+        QueryUtils::sqlStatementThrowException("DELETE FROM oauth_clients WHERE client_id = ?", [$clientEntity->getIdentifier()], $noLog);
     }
 }

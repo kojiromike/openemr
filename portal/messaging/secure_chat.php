@@ -8,7 +8,7 @@
  * @author    Jerry Padgett <sjpadgett@gmail.com>
  * @author    Brady Miller <brady.g.miller@gmail.com>
  * @author    Tyler Wrenn <tyler@tylerwrenn.com>
- * @copyright Copyright (c) 2016-2021 Jerry Padgett <sjpadgett@gmail.com>
+ * @copyright Copyright (c) 2016-2023 Jerry Padgett <sjpadgett@gmail.com>
  * @copyright Copyright (c) 2019 Brady Miller <brady.g.miller@gmail.com>
  * @copyright Copyright (c) 2022 Tyler Wrenn <tyler@tylerwrenn.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
@@ -16,31 +16,35 @@
 
 namespace PatientPortal;
 
-// Will start the (patient) portal OpenEMR session/cookie.
-require_once(__DIR__ . "/../../src/Common/Session/SessionUtil.php");
-\OpenEMR\Common\Session\SessionUtil::portalSessionStart();
+use OpenEMR\Common\Session\SessionUtil;
+use OpenEMR\Common\Session\SessionWrapperFactory;
 
-if (isset($_SESSION['pid']) && isset($_SESSION['patient_portal_onsite_two'])) {
-    $pid = $_SESSION['pid'];
+// Will start the (patient) portal OpenEMR session/cookie.
+// Need access to classes, so run autoloader now instead of in globals.php.
+require_once(__DIR__ . "/../../vendor/autoload.php");
+$session = SessionWrapperFactory::getInstance()->getWrapper();
+
+if ($session->isSymfonySession() && !empty($session->get('pid')) && !empty($session->get('patient_portal_onsite_two'))) {
+    $pid = $session->get('pid');
     $ignoreAuth_onsite_portal = true;
     require_once(__DIR__ . "/../../interface/globals.php");
     define('IS_DASHBOARD', false);
-    define('IS_PORTAL', $_SESSION['pid']);
+    define('IS_PORTAL', $session->get('pid'));
 } else {
-    \OpenEMR\Common\Session\SessionUtil::portalSessionCookieDestroy();
+    SessionUtil::portalSessionCookieDestroy();
     $ignoreAuth = false;
     require_once(__DIR__ . "/../../interface/globals.php");
-    if (!isset($_SESSION['authUserID'])) {
+    if (!$session->has('authUserID')) {
         $landingpage = "index.php";
         header('Location: ' . $landingpage);
         exit;
     }
     $admin = sqlQueryNoLog(
         "SELECT CONCAT(users.fname,' ',users.lname) as user_name FROM users WHERE id = ?",
-        array($_SESSION['authUserID'])
+        [$session->get('authUserID')]
     );
     define('ADMIN_USERNAME', $admin['user_name']);
-    define('IS_DASHBOARD', $_SESSION['authUser']);
+    define('IS_DASHBOARD', $session->get('authUser'));
     define('IS_PORTAL', false);
     $_SERVER['REMOTE_ADDR'] = 'admin::' . $_SERVER['REMOTE_ADDR'];
 }
@@ -53,7 +57,7 @@ if (!empty($_GET['username']) && ($_GET['username'] != 'currentol')) {
             $usernameManipulatedFlag = true;
         }
     } else {
-        if ($_GET['username'] != $_SESSION['ptName']) {
+        if ($_GET['username'] != $session->get('ptName')) {
             $usernameManipulatedFlag = true;
         }
     }
@@ -64,7 +68,7 @@ if (!empty($_POST['username'])) {
             $usernameManipulatedFlag = true;
         }
     } else {
-        if ($_POST['username'] != $_SESSION['ptName']) {
+        if ($_POST['username'] != $session->get('ptName')) {
             $usernameManipulatedFlag = true;
         }
     }
@@ -90,8 +94,13 @@ $msgApp = new ChatController();
 <head>
     <meta charset="utf-8" />
     <?php
-    Header::setupHeader(['no_main-theme', 'ckeditor', 'angular', 'angular-sanitize', 'checklist-model']);
+    if (IS_PORTAL) {
+        Header::setupHeader(['no_main-theme',  'portal-theme', 'ckeditor', 'angular', 'angular-sanitize', 'checklist-model']);
+    } else {
+        Header::setupHeader(['ckeditor', 'angular', 'angular-sanitize', 'checklist-model']);
+    }
     ?>
+
     <title><?php echo xlt('Secure Chat'); ?></title>
     <meta name="author" content="Jerry Padgett sjpadgett{{at}} gmail {{dot}} com" />
 </head>
@@ -156,8 +165,8 @@ $msgApp = new ChatController();
             $scope.lastMessageId = null;
             $scope.historyFromId = null;
             $scope.onlines = []; // all online users id and ip's
-            $scope.user = <?php echo $_SESSION['ptName'] ? js_escape($_SESSION['ptName']) : js_escape(ADMIN_USERNAME); ?>;// current user - dashboard user is from session authUserID
-            $scope.userid = <?php echo IS_PORTAL ? js_escape($_SESSION['pid']) : js_escape($_SESSION['authUser']); ?>;
+            $scope.user = <?php echo !empty($session->get('ptName')) ? js_escape($session->get('ptName')) : js_escape(ADMIN_USERNAME); ?>;// current user - dashboard user is from session authUserID
+            $scope.userid = <?php echo IS_PORTAL ? js_escape($session->get('pid')) : js_escape($session->get('authUser')); ?>;
             $scope.isPortal = "<?php echo IS_PORTAL;?>";
             $scope.pusers = []; // selected recipients for chat
             $scope.chatusers = []; // authorize chat recipients for dashboard user

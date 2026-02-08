@@ -271,7 +271,7 @@ class FHIRMolecularSequenceRepository extends FHIRBackboneElement implements \Js
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -279,7 +279,7 @@ class FHIRMolecularSequenceRepository extends FHIRBackboneElement implements \Js
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->type)) {

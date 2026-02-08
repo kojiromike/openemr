@@ -15,13 +15,13 @@ require_once("verysimple/Phreeze/Reporter.php");
 
 /**
  * This is an example Reporter based on the OnsiteDocument object.  The reporter object
- * allows you to run arbitrary queries that return data which may or may not fith within
+ * allows you to run arbitrary queries that return data which may or may not fit within
  * the data access API.  This can include aggregate data or subsets of data.
  *
  * Note that Reporters are read-only and cannot be used for saving data.
  *
  * @package Openemr::Model::DAO
- * @author ClassBuilder
+ * @author  ClassBuilder
  * @version 1.0
  */
 class OnsiteDocumentReporter extends Reporter
@@ -49,6 +49,7 @@ class OnsiteDocumentReporter extends Reporter
     public $FullDocument;
     public $FileName;
     public $FilePath;
+    public $TemplateData;
 
     /*
     * GetCustomQuery returns a fully formed SQL statement.  The result columns
@@ -81,6 +82,7 @@ class OnsiteDocumentReporter extends Reporter
 			,`onsite_documents`.`full_document` as FullDocument
 			,`onsite_documents`.`file_name` as FileName
 			,`onsite_documents`.`file_path` as FilePath
+			,`onsite_documents`.`template_data` as TemplateData
 		from `onsite_documents`";
 
         // the criteria can be used or you can write your own custom logic.

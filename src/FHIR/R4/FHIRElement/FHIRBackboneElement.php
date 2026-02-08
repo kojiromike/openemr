@@ -139,7 +139,7 @@ Modifier extensions SHALL NOT change the meaning of any elements on Resource or 
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -147,7 +147,7 @@ Modifier extensions SHALL NOT change the meaning of any elements on Resource or 
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (0 < count($this->modifierExtension)) {

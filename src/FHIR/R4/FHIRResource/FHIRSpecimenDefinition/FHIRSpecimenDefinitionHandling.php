@@ -213,7 +213,7 @@ class FHIRSpecimenDefinitionHandling extends FHIRBackboneElement implements \Jso
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -221,7 +221,7 @@ class FHIRSpecimenDefinitionHandling extends FHIRBackboneElement implements \Jso
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->temperatureQualifier)) {

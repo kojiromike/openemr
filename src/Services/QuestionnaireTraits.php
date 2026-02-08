@@ -139,7 +139,7 @@ trait QuestionnaireTraits
      * @return false|string
      * @throws Exception
      */
-    public function jsonSerialize($fhirObjectOrArray)
+    public function jsonSerialize($fhirObjectOrArray): mixed
     {
         $a = $this->fhirObjectToArray($fhirObjectOrArray);
         return json_encode($a, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -157,7 +157,7 @@ trait QuestionnaireTraits
         } elseif (is_object($fhirObjectOrArray)) {
             $a = $fhirObjectOrArray->jsonSerialize();
             $a = json_decode(json_encode($a), true);
-            $handle = function (&$a) use (&$handle) {
+            $handle = function (&$a) use (&$handle): void {
                 foreach ($a as $key => &$value) {
                     if (gettype($key) === 'string' && $key[0] === '_') {
                         unset($a[$key]);
@@ -211,7 +211,7 @@ trait QuestionnaireTraits
      */
     private function parseAnswer($answer, $display = false)
     {
-        $obv = array();
+        $obv = [];
         $type = key($answer);
         switch ($type) {
             case "valueBoolean":
@@ -247,12 +247,12 @@ trait QuestionnaireTraits
                 $obv['display'] = $answer[$type];
                 break;
             case "valueCoding":
-                $obv = array(
+                $obv = [
                     'type' => 'coding',
-                    'system' => $answer[$type]['system'],
+                    'system' => $answer[$type]['system'] ?? null,
                     'code' => $answer[$type]['code'],
                     'display' => $answer[$type]['display'],
-                );
+                ];
                 break;
             case "valueQuantity":
                 $obv['type'] = 'quantity';

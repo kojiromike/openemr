@@ -39,7 +39,7 @@ trait MappedServiceTrait
             if ($service instanceof FhirServiceBase) {
                 $validServices[] = $service;
             } else {
-                throw new \InvalidArgumentException("Expected service of type " . FhirServiceBase::class . " and instead received class of type " . get_class($service));
+                throw new \InvalidArgumentException("Expected service of type " . FhirServiceBase::class . " and instead received class of type " . $service::class);
             }
         }
         $this->services = $validServices;
@@ -53,6 +53,21 @@ trait MappedServiceTrait
          * @var $service BaseService
          */
         foreach ($this->getMappedServices() as $service) {
+            $innerResult = $service->getAll($fhirSearchParams, $puuidBind);
+            $processingResult->addProcessingResult($innerResult);
+            if ($processingResult->hasErrors()) {
+                // clear our data out and just return the errors
+                $processingResult->clearData();
+                return $processingResult;
+            }
+        }
+        return $processingResult;
+    }
+
+    public function searchServices(array $services, $fhirSearchParams, $puuidBind)
+    {
+        $processingResult = new ProcessingResult();
+        foreach ($services as $service) {
             $innerResult = $service->getAll($fhirSearchParams, $puuidBind);
             $processingResult->addProcessingResult($innerResult);
             if ($processingResult->hasErrors()) {

@@ -3,9 +3,11 @@
  *
  * @package   OpenEMR
  * @link      http://www.open-emr.org
+ * @link      https://www.open-emr.org/wiki/index.php/OEMR_wiki_page OEMR
  * @author    Kevin Yeh <kevin.y@integralemr.com>
  * @author    Rod Roark <rod@sunsetsystems.com>
- * @copyright Copyright (c) 2013-2014 Kevin Yeh <kevin.y@integralemr.com> and OEMR <www.oemr.org>
+ * @copyright Copyright (c) 2013-2014 Kevin Yeh <kevin.y@integralemr.com>
+ * @copyright Copyright (c) 2013-2014 OEMR
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
@@ -48,6 +50,7 @@ function update_display_table(data)
     }
 
     // need refresh the diagnosis list
+    /* eslint-disable-next-line no-control-regex */
     var diag_regex=new RegExp("diags.push(.*);\n","g");
     var diags_matches=data.match(diag_regex);
     if(diags_matches!=null)
@@ -173,7 +176,6 @@ function tag_justify_rows(display) {
             var html = jqElem.html().substr(label.length);
             jqElem.html(html);
             $("<a class='justify_label'>" + label + "</a>").appendTo(jqElem).on({click: justify_start}).attr("title", justify_click_title);
-            ;
         }
     });
     var id_fields = justify_rows.find("input[type='hidden'][name$='[id]']");

@@ -36,23 +36,19 @@ class GeneratorX12 extends AbstractGenerator implements GeneratorInterface, Gene
     use WritesToBillingLog;
 
     /**
-     * If "Allow Encounter Claims" is enabled, this allows the claims to use
-     * the alternate payor ID on the claim and sets the claims to report,
-     * not chargeable. ie: RP = reporting, CH = chargeable
-     *
-     * @var bool|mixed
-     */
-    protected $encounter_claim = false;
-
-    /**
      * @var BillingClaimBatch
      */
     protected $batch;
 
-    public function __construct($action, $encounter_claim = false)
-    {
+    /**
+     * @param mixed $action
+     * @param bool $encounter_claim If "Allow Encounter Claims" is enabled, this allows the claims to use the alternate payor ID on the claim and sets the claims to report, not chargeable. ie: RP = reporting, CH = chargeable
+     */
+    public function __construct(
+        $action,
+        protected $encounter_claim = false
+    ) {
         parent::__construct($action);
-        $this->encounter_claim = $encounter_claim;
     }
 
     /**
@@ -66,8 +62,20 @@ class GeneratorX12 extends AbstractGenerator implements GeneratorInterface, Gene
     protected function updateBatchFile(BillingClaim $claim)
     {
         // Generate the file
-        $log = '';
-        $segs = explode("~\n", X125010837P::genX12837P($claim->getPid(), $claim->getEncounter(), $log, $this->encounter_claim));
+        $log = 'X12 ' . $claim->action . ' ';
+        $hlCount = 1;
+        $segs = explode(
+            "~\n",
+            (string) X125010837P::genX12837P(
+                $claim->getPid(),
+                $claim->getEncounter(),
+                $claim->getPartner(),
+                $log,
+                $this->encounter_claim,
+                false,
+                $hlCount
+            )
+        );
         $this->appendToLog($log);
         $this->batch->append_claim($segs);
 
@@ -84,7 +92,7 @@ class GeneratorX12 extends AbstractGenerator implements GeneratorInterface, Gene
      */
     public function setup(array $context)
     {
-        $this->batch = new BillingClaimBatch('.txt');
+        $this->batch = new BillingClaimBatch('.txt', $context);
     }
 
     /**
@@ -200,7 +208,7 @@ class GeneratorX12 extends AbstractGenerator implements GeneratorInterface, Gene
         // Tell the billing_process.php script to initiate a download of this file
         // that's in the edi directory unless it's going to be sent via sftp
         if (!$GLOBALS['auto_sftp_claims_to_x12_partner']) {
-            $this->logger->setLogCompleteCallback(function () {
+            $this->logger->setLogCompleteCallback(function (): void {
                 // This uses our parent's method to print the JS that automatically initiates
                 // the download of this file, after the screen bill_log messages have printed
                 $this->printDownloadClaimFileJS($this->batch->getBatFilename());

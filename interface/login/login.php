@@ -21,7 +21,7 @@
  * @copyright Copyright (c) 2020 Tyler Wrenn <tyler@tylerwrenn.com>
  * @copyright Copyright (c) 2021 Ken Chapple <ken@mi-squared.com>
  * @copyright Copyright (c) 2021 Daniel Pflieger <daniel@mi-squared.com> <daniel@growlingflea.com>
- * @copyright Copyright (c) 2021-2022 Robert Down <robertdown@live.com>
+ * @copyright Copyright (c) 2021-2023 Robert Down <robertdown@live.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
@@ -29,32 +29,55 @@
 Header("X-Frame-Options: DENY");
 Header("Content-Security-Policy: frame-ancestors 'none'");
 
+use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Common\Twig\TwigContainer;
+use OpenEMR\Events\Core\TemplatePageEvent;
+use OpenEMR\Common\Session\SessionUtil;
 use OpenEMR\Services\FacilityService;
+use OpenEMR\Services\LogoService;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
+
+require_once(__DIR__ . "/../../vendor/autoload.php");
+
+$globalsBag = OEGlobalsBag::getInstance();
+
+SessionUtil::setAppCookie(SessionUtil::CORE_SESSION_ID);
 
 $ignoreAuth = true;
 // Set $sessionAllowWrite to true to prevent session concurrency issues during authorization related code
 $sessionAllowWrite = true;
 require_once("../globals.php");
 
-$twig = new TwigContainer(null, $GLOBALS["kernel"]);
+$twig = new TwigContainer(null, $globalsBag->get("kernel"));
 $t = $twig->getTwig();
+
+$logoService = new LogoService();
+$primaryLogo = $logoService->getLogo("core/login/primary");
+$secondaryLogo = $logoService->getLogo("core/login/secondary");
+$smallLogoOne = $logoService->getLogo("core/login/small_logo_1");
+$smallLogoTwo = $logoService->getLogo("core/login/small_logo_2");
+
+$layout = $globalsBag->get('login_page_layout');
 
 // mdsupport - Add 'App' functionality for user interfaces without standard menu and frames
 // If this script is called with app parameter, validate it without showing other apps.
 //
 // Build a list of valid entries
-$emr_app = array();
+// Original merge v5.0.1
+$emr_app = [];
 $sql = "SELECT option_id, title,is_default FROM list_options WHERE list_id=? and activity=1 ORDER BY seq, option_id";
 $rs = sqlStatement($sql, ['apps']);
 if (sqlNumRows($rs)) {
     while ($app = sqlFetchArray($rs)) {
-        $app_req = explode('?', trim($app['title']));
+        $app_req = explode('?', trim((string) $app['title']));
         if (! file_exists('../' . $app_req[0])) {
             continue;
         }
 
-        $emr_app [trim($app ['option_id'])] = trim($app ['title']);
+        $emr_app [trim((string) $app ['option_id'])] = trim((string) $app ['title']);
         if ($app ['is_default']) {
             $emr_app_def = $app ['option_id'];
         }
@@ -72,20 +95,21 @@ if (count($emr_app)) {
     if (isset($_REQUEST['app']) && $emr_app[$_REQUEST['app']]) {
         $div_app = sprintf('<input type="hidden" name="appChoice" value="%s">', attr($_REQUEST['app']));
     } else {
+        $opt_htm = '';
         foreach ($emr_app as $opt_disp => $opt_value) {
             $opt_htm .= sprintf(
                 '<option value="%s" %s>%s</option>\n',
                 attr($opt_disp),
-                ($opt_disp == $opt_default ? 'selected="selected"' : ''),
+                ($opt_disp == ($emr_app_def ?? '') ? 'selected="selected"' : ''),
                 text(xl_list_label($opt_disp))
             );
         }
 
         $div_app = sprintf(
             '
-            <div id="divApp" class="form-group">
-                <label for="appChoice" class="text-right">%s:</label>
-                <div>
+            <div id="divApp" class="form-group row">
+                <label for="appChoice" class="col-form-label col-sm-4">%s:</label>
+                <div class="col">
                     <select class="form-control" id="selApp" name="appChoice" size="1">%s</select>
                 </div>
             </div>',
@@ -95,39 +119,12 @@ if (count($emr_app)) {
     }
 }
 
-// This code allows configurable positioning in the login page
-$logoarea = "py-2 px-2 py-md-3 px-md-5 order-1 bg-primary";
-$formarea = "py-3 px-2 p-sm-5 bg-white order-2";
-$loginrow = "row login-row bg-primary shadow-lg align-items-center m-0 my-sm-5";
-
-// Apply these classes to the logo area if the login page is left or right
-$lrArr = ['left', 'right'];
-$logoarea .= (in_array($GLOBALS['login_page_layout'], $lrArr)) ? " col-md-6" : " col-md-12";
-$formarea .= (in_array($GLOBALS['login_page_layout'], $lrArr)) ? " col-md-6" : " col-md-12";
-
-// More finite control on a per-setting basis
-switch ($GLOBALS['login_page_layout']) {
-    case 'left':
-        $logoarea .= " order-md-2";
-        $formarea .= " order-md-1";
-        break;
-
-    case 'right':
-        $logoarea .= " order-md-1";
-        $formarea .= " order-md-2";
-        break;
-
-    default:
-        $logoarea .= " order-1";
-        $formarea .= " col-12";
-        $loginrow .= " login-row-center";
-        break;
-}
 
 function getDefaultLanguage(): array
 {
+    global $globalsBag;
     $sql = "SELECT * FROM lang_languages where lang_description = ?";
-    $res = sqlStatement($sql, [$GLOBALS['language_default']]);
+    $res = sqlStatement($sql, [$globalsBag->get('language_default')]);
     $langs = [];
 
     while ($row = sqlFetchArray($res)) {
@@ -147,6 +144,7 @@ function getDefaultLanguage(): array
 
 function getLanguagesList(): array
 {
+    global $globalsBag;
     $mainLangID = empty($_SESSION['language_choice']) ? '1' : $_SESSION['language_choice'];
     $sql = "SELECT ll.lang_id, IF(LENGTH(ld.definition), ld.definition, ll.lang_description) AS trans_lang_description, ll.lang_description
         FROM lang_languages AS ll
@@ -157,7 +155,17 @@ function getLanguagesList(): array
     $langList = [];
 
     while ($row = sqlFetchArray($res)) {
-        $langList[] = $row;
+        if (!$globalsBag->get('allow_debug_language') && $row['lang_description'] == 'dummy') {
+            continue; // skip the dummy language
+        }
+
+        if ($globalsBag->get('language_menu_showall')) {
+            $langList[] = $row;
+        } else {
+            if (in_array($row['lang_description'], $globalsBag->get('language_menu_show'))) {
+                $langList[] = $row;
+            }
+        }
     }
 
     return $langList;
@@ -165,10 +173,10 @@ function getLanguagesList(): array
 
 $facilities = [];
 $facilitySelected = false;
-if ($GLOBALS['login_into_facility']) {
+if ($globalsBag->get('login_into_facility')) {
     $facilityService = new FacilityService();
     $facilities = $facilityService->getAllFacility();
-    $facilitySelected = ($GLOBALS['set_facility_cookie'] && isset($_COOKIE['pc_facility'])) ? $_COOKIE['pc_facility'] : null;
+    $facilitySelected = ($globalsBag->get('set_facility_cookie') && isset($_COOKIE['pc_facility'])) ? $_COOKIE['pc_facility'] : null;
 }
 
 $defaultLanguage = getDefaultLanguage();
@@ -180,29 +188,16 @@ if ($relogin) {
     unset($_SESSION["relogin"]);
 }
 
-$t1 = $GLOBALS['tiny_logo_1'];
-$t2 = $GLOBALS['tiny_logo_2'];
-$displayTinyLogo = false;
+$t1 = $globalsBag->get('tiny_logo_1');
+$t2 = $globalsBag->get('tiny_logo_2');
+$displaySmallLogo = false;
 if ($t1 && !$t2) {
-    $displayTinyLogo = 1;
+    $displaySmallLogo = 1;
 } if ($t2 && !$t1) {
-    $displayTinyLogo = 2;
+    $displaySmallLogo = 2;
 } if ($t1 && $t2) {
-    $displayTinyLogo = 3;
+    $displaySmallLogo = 3;
 }
-
-$regTranslations = json_encode(array(
-    'title' => xla('OpenEMR Product Registration'),
-    'pleaseProvideValidEmail' => xla('Please provide a valid email address'),
-    'success' => xla('Success'),
-    'registeredSuccess' => xla('Your installation of OpenEMR has been registered'),
-    'submit' => xla('Submit'),
-    'noThanks' => xla('No Thanks'),
-    'registeredEmail' => xla('Registered email'),
-    'registeredId' => xla('Registered id'),
-    'genericError' => xla('Error. Try again later'),
-    'closeTooltip' => ''
-));
 
 $cookie = '';
 if (session_name()) {
@@ -223,37 +218,55 @@ if (session_name()) {
     $cookie = json_encode($cookie);
 }
 
+if ($_GET['testing_mode'] ?? 0 == 1) {
+    $_SESSION['testing_mode'] = 1;
+}
+
 $viewArgs = [
     'title' => $openemr_name,
-    'displayLanguage' => ($GLOBALS["language_menu_login"] && (count($languageList) != 1)) ? true : false,
+    'displayLanguage' => $globalsBag->get("language_menu_login") && (count($languageList) != 1),
     'defaultLangID' => $defaultLanguage['id'],
     'defaultLangName' => $defaultLanguage['language'],
     'languageList' => $languageList,
     'relogin' => $relogin,
-    'loginFail' => (isset($_SESSION["loginfailure"]) && $_SESSION["loginfailure"] == 1) ? true : false,
-    'displayFacilities' => ($GLOBALS["login_into_facility"]) ? true : false,
+    'loginFail' => isset($_SESSION["loginfailure"]) && $_SESSION["loginfailure"] == 1,
+    'displayFacilities' => (bool)$globalsBag->get("login_into_facility"),
     'facilityList' => $facilities,
     'facilitySelected' => $facilitySelected,
-    'displayGoogleSignin' => (!empty($GLOBALS['google_signin_enabled']) && !empty($GLOBALS['google_signin_client_id'])) ? true : false,
-    'googleSigninClientID' => $GLOBALS['google_signin_client_id'],
-    'logoArea' => $logoarea,
-    'displayExtraLogo' => $GLOBALS['extra_logo_login'],
-    'primaryLogoSrc' => file_get_contents($GLOBALS["images_static_absolute"] . "/login-logo.svg"),
-    'logocode' => $logocode,
-    'displayLoginLabel' => ($GLOBALS["show_label_login"]) ? true : false,
-    'displayTinyLogo' => $displayTinyLogo,
-    'tinyLogo1' => $tinylogocode1,
-    'tinyLogo2' => $tinylogocode2,
-    'displayTagline' => $GLOBALS['show_tagline_on_login'],
-    'tagline' => $GLOBALS['login_tagline_text'],
-    'displayAck' => $GLOBALS['display_acknowledgements'],
-    'hasSession' => (session_name()) ? true : false,
+    'displayGoogleSignin' => !empty($globalsBag->get('google_signin_enabled')) && !empty($globalsBag->get('google_signin_client_id')),
+    'googleSigninClientID' => $globalsBag->get('google_signin_client_id'),
+    'displaySmallLogo' => $displaySmallLogo,
+    'smallLogoOne' => $smallLogoOne,
+    'smallLogoTwo' => $smallLogoTwo,
+    'showTitleOnLogin' => $globalsBag->get('show_label_login'),
+    'displayTagline' => $globalsBag->get('show_tagline_on_login'),
+    'tagline' => $globalsBag->get('login_tagline_text'),
+    'displayAck' => $globalsBag->get('display_acknowledgements_on_login'),
+    'hasSession' => (bool)session_name(),
     'cookieText' => $cookie,
-    'regTranslations' => $regTranslations,
-    'regConstants' => json_encode(['webroot' => $GLOBALS['webroot']]),
+    'regConstants' => json_encode(['webroot' => $globalsBag->get('webroot')]),
     'siteID' => $_SESSION['site_id'],
-    'loginRow' => $loginrow,
-    'formArea' => $formarea,
-    'showLabels' => $GLOBALS['show_labels_on_login_form'],
+    'showLabels' => $globalsBag->get('show_labels_on_login_form'),
+    'displayPrimaryLogo' => $globalsBag->get('show_primary_logo'),
+    'primaryLogo'   => $primaryLogo,
+    'primaryLogoWidth' => $globalsBag->get('primary_logo_width'),
+    'logoPosition' => $globalsBag->get('logo_position'),
+    'secondaryLogoWidth' => $globalsBag->get('secondary_logo_width'),
+    'displaySecondaryLogo' => $globalsBag->get('extra_logo_login'),
+    'secondaryLogo' => $secondaryLogo,
+    'secondaryLogoPosition' => $globalsBag->get('secondary_logo_position'),
 ];
-echo $t->render("login/login_core.html.twig", $viewArgs);
+
+/**
+ * @var EventDispatcher;
+ */
+$ed = $globalsBag->get('kernel')->getEventDispatcher();
+
+$templatePageEvent = new TemplatePageEvent('login/login.php', [], $layout, $viewArgs);
+$event = $ed->dispatch($templatePageEvent, TemplatePageEvent::RENDER_EVENT);
+
+try {
+    echo $t->render($event->getTwigTemplate(), $event->getTwigVariables());
+} catch (LoaderError | RuntimeError | SyntaxError $e) {
+    echo "<p style='font-size:24px; color: red;'>" . text($e->getMessage()) . '</p>';
+}

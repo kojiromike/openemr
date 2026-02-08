@@ -761,7 +761,7 @@ class FHIRMedicationAdministration extends FHIRDomainResource implements \JsonSe
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -769,7 +769,7 @@ class FHIRMedicationAdministration extends FHIRDomainResource implements \JsonSe
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         $json['resourceType'] = $this->_fhirElementName;

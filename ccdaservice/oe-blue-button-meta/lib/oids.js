@@ -1,4 +1,7 @@
 module.exports = OIDs = {
+    "2.16.840.1.113883.11.20.12.1": {
+        name: "Personal And Legal Relationship Role Type",
+    },
     "2.16.840.1.113883.11.20.9.19": {
         name: "Problem Status",
         table: {
@@ -81,6 +84,8 @@ module.exports = OIDs = {
         name: "CPT",
         uri: "http://purl.bioontology.org/ontology/CPT/"
     },
+    // TODO: check why this property is duplicated
+    /* eslint-disable-next-line no-dupe-keys */
     "2.16.840.1.113883.6.12": {
         name: "CPT4",
         uri: "http://purl.bioontology.org/ontology/CPT/"
@@ -172,14 +177,14 @@ module.exports = OIDs = {
 
         }
     },
-    "2.16.840.1.113883.5.111": {
+    "2.16.840.1.113883.5.110": {
         name: "HL7 Role",
         uri: "http://hl7.org/codes/PersonalRelationship#",
         table: {
             "PRN": "Parent"
         }
     },
-    "2.16.840.1.113883.5.110": {
+    "2.16.840.1.113883.5.111": {
         name: "HL7 RoleCode"
     },
     "2.16.840.1.113883.5.1119": {

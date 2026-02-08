@@ -21,6 +21,10 @@ class MedicationPatientIssueService extends BaseService
     const LIST_OPTION_MEDICATION_REQUEST_INTENT = "medication-request-intent";
     const LIST_OPTION_MEDICATION_USAGE_CATEGORY = "medication-usage-category";
 
+    const LIST_OPTION_MEDICATION_ADHERENCE = "medication_adherence";
+
+    const LIST_OPTION_MEDICATION_ADHERENCE_INFORMATION_SOURCE = "medication_adherence_information_source";
+
     public function __construct()
     {
         parent::__construct(self::TABLE_NAME);
@@ -40,7 +44,7 @@ class MedicationPatientIssueService extends BaseService
         $insert = $this->buildInsertColumns($whiteListDict);
 
         $sql = "INSERT INTO " . self::TABLE_NAME . " SET " . $insert['set'];
-        QueryUtils::sqlStatementThrowException($sql, $insert['bind']);
+        return QueryUtils::sqlInsert($sql, $insert['bind']);
     }
 
     public function updateIssue($record)
@@ -74,13 +78,22 @@ class MedicationPatientIssueService extends BaseService
             $option = $listService->getListOption(self::LIST_OPTION_MEDICATION_USAGE_CATEGORY, $dataRecord['usage_category']);
             $dataRecord['usage_category_title'] = $option['title'] ?? null;
         }
+        // TODO: investigate why title is used above but not for the other two list options
+        if (!empty($dataRecord['adherence_type'])) {
+            $option = $listService->getListOption(self::LIST_OPTION_MEDICATION_ADHERENCE, $dataRecord['adherence_type']);
+            $dataRecord['adherence_type'] = $option['option_id'] ?? null;
+        }
+        if (!empty($dataRecord['adherence_information_source'])) {
+            $option = $listService->getListOption(self::LIST_OPTION_MEDICATION_ADHERENCE, $dataRecord['adherence_information_source']);
+            $dataRecord['adherence_information_source'] = $option['option_id'] ?? null;
+        }
     }
 
     public function getRecordByIssueListId($list_id)
     {
-        $records = $this->search(['list_id' => new TokenSearchField('list_id', [$list_id])]);
-        if (!empty($records->getData())) {
-            return array_pop($records->getData());
+        $records = $this->search(['list_id' => new TokenSearchField('list_id', [$list_id])])->getData();
+        if (!empty($records)) {
+            return array_pop($records);
         }
         return null;
     }

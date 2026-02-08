@@ -219,7 +219,7 @@ class FHIRInsurancePlanContact extends FHIRBackboneElement implements \JsonSeria
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -227,7 +227,7 @@ class FHIRInsurancePlanContact extends FHIRBackboneElement implements \JsonSeria
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->purpose)) {

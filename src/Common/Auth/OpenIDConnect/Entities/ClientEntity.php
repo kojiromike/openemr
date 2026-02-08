@@ -21,6 +21,7 @@ class ClientEntity implements ClientEntityInterface
     use EntityTrait;
     use ClientTrait;
 
+    const DSI_TYPES = ["DSI_TYPE_NONE" => self::DSI_TYPE_NONE, "DSI_TYPE_EVIDENCE" => self::DSI_TYPE_EVIDENCE, "DSI_TYPE_PREDICTIVE" => self::DSI_TYPE_PREDICTIVE];
     protected $userId;
     protected $clientRole;
     protected $scopes;
@@ -31,7 +32,7 @@ class ClientEntity implements ClientEntityInterface
     protected $jwksUri;
 
     /**
-     * Confidential apps or apps with a 'launch' scope must be manually authorized by an adminstrator before their
+     * Confidential apps or apps with a 'launch' scope must be manually authorized by an administrator before their
      * client can be used.
      * @var bool
      */
@@ -54,11 +55,35 @@ class ClientEntity implements ClientEntityInterface
 
     protected $registrationDate;
 
+    /**
+     * @var bool true if the authorization flow (authentication and scope authorization) should be skipped for logged in ehr users
+     */
+    private $skipEHRLaunchAuthorizationFlow;
+
+
+    private int $dsiType;
+
+    const DSI_TYPE_NONE = 0;
+
+    const DSI_TYPE_EVIDENCE = 1;
+    const DSI_TYPE_PREDICTIVE = 2;
+
+
     public function __construct()
     {
         $this->scopes = [];
+        $this->skipEHRLaunchAuthorizationFlow = false;
+        $this->isEnabled = false;
+        $this->dsiType = self::DSI_TYPE_NONE;
     }
 
+    public function setDSIType($type)
+    {
+        if (!in_array($type, [self::DSI_TYPE_NONE, self::DSI_TYPE_PREDICTIVE, self::DSI_TYPE_EVIDENCE])) {
+            throw new \InvalidArgumentException("Invalid DSI type");
+        }
+        $this->dsiType = $type;
+    }
     public function setName($name): void
     {
         $this->name = $name;
@@ -66,7 +91,13 @@ class ClientEntity implements ClientEntityInterface
 
     public function setRedirectUri($uri): void
     {
-        $this->redirectUri = $uri;
+        if (\is_string($uri)) {
+            $this->redirectUri = [$uri];
+        } elseif (\is_array($uri)) {
+            $this->redirectUri = $uri;
+        } else {
+            throw new \InvalidArgumentException("redirectUri must be a string or array");
+        }
     }
 
     public function setIsConfidential($set): void
@@ -118,7 +149,7 @@ class ClientEntity implements ClientEntityInterface
 
         if (is_string($scopes)) {
             $scopes = explode(" ", $scopes);
-        } else if (!is_array($scopes)) {
+        } elseif (!is_array($scopes)) {
             throw new \InvalidArgumentException("scopes parameter must be a valid array or string");
         }
         $this->scopes = $scopes;
@@ -142,7 +173,7 @@ class ClientEntity implements ClientEntityInterface
      */
     public function getLaunchUri($launchParams = '')
     {
-        $launchParams = isset($launchParams) ? $launchParams : '';
+        $launchParams ??= '';
         return $this->launchUri . $launchParams;
     }
 
@@ -203,6 +234,7 @@ class ClientEntity implements ClientEntityInterface
 
     public function getContacts()
     {
+        $this->contacts = (!empty($this_contacts)) ?: [];
         return $this->contacts;
     }
 
@@ -235,5 +267,34 @@ class ClientEntity implements ClientEntityInterface
     public function setLogoutRedirectUris(?string $logoutRedirectUris): void
     {
         $this->logoutRedirectUris = $logoutRedirectUris;
+    }
+
+    /**
+     * Whether the ehr launch should skip the authorization flow for a logged in user.
+     * @return bool
+     */
+    public function shouldSkipEHRLaunchAuthorizationFlow(): bool
+    {
+        return $this->skipEHRLaunchAuthorizationFlow;
+    }
+
+    public function setSkipEHRLaunchAuthorizationFlow(bool $shouldSkip)
+    {
+        $this->skipEHRLaunchAuthorizationFlow = $shouldSkip;
+    }
+
+    public function hasDSI()
+    {
+        return $this->dsiType != self::DSI_TYPE_NONE;
+    }
+
+    public function hasPredictiveDSI()
+    {
+        return self::DSI_TYPE_PREDICTIVE == $this->dsiType;
+    }
+
+    public function hasEvidenceDSI()
+    {
+        return self::DSI_TYPE_EVIDENCE == $this->dsiType;
     }
 }

@@ -295,7 +295,7 @@ http://hl7.org/fhir/NamingSystem/iccbba-other-di.
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -303,7 +303,7 @@ http://hl7.org/fhir/NamingSystem/iccbba-other-di.
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->deviceIdentifier)) {

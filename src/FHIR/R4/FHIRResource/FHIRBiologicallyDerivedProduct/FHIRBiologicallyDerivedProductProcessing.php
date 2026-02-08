@@ -77,7 +77,7 @@ class FHIRBiologicallyDerivedProductProcessing extends FHIRBackboneElement imple
     public $description = null;
 
     /**
-     * Procesing code.
+     * Processing code.
      * @var \OpenEMR\FHIR\R4\FHIRElement\FHIRCodeableConcept
      */
     public $procedure = null;
@@ -124,7 +124,7 @@ class FHIRBiologicallyDerivedProductProcessing extends FHIRBackboneElement imple
     }
 
     /**
-     * Procesing code.
+     * Processing code.
      * @return \OpenEMR\FHIR\R4\FHIRElement\FHIRCodeableConcept
      */
     public function getProcedure()
@@ -133,7 +133,7 @@ class FHIRBiologicallyDerivedProductProcessing extends FHIRBackboneElement imple
     }
 
     /**
-     * Procesing code.
+     * Processing code.
      * @param \OpenEMR\FHIR\R4\FHIRElement\FHIRCodeableConcept $procedure
      * @return $this
      */
@@ -237,7 +237,7 @@ class FHIRBiologicallyDerivedProductProcessing extends FHIRBackboneElement imple
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -245,7 +245,7 @@ class FHIRBiologicallyDerivedProductProcessing extends FHIRBackboneElement imple
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->description)) {

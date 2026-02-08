@@ -7,7 +7,7 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  * @package   OpenEMR\Events\Patient\Summary\Card
  * @author    Robert Down <robertdown@live.com>
- * @copyright Copyright (c) 2022 Robert Down <robertdown@live.com>
+ * @copyright Copyright (c) 2022-2023 Robert Down <robertdown@live.com>
  */
 
 namespace OpenEMR\Events\Patient\Summary\Card;
@@ -113,7 +113,7 @@ class RenderEvent extends Event
             if (count($this->$property) === 0) {
                 $this->$property[] = $object;
             } else {
-                $position = $position ?? -1;
+                $position ??= -1;
                 array_splice($this->$property, $position, 0, $object);
             }
         }

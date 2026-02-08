@@ -184,7 +184,7 @@ class FHIRExplanationOfBenefitRelated extends FHIRBackboneElement implements \Js
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -192,7 +192,7 @@ class FHIRExplanationOfBenefitRelated extends FHIRBackboneElement implements \Js
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->claim)) {

@@ -130,6 +130,15 @@ $old_key = "";
 $display_current_medications_below = 1;
 
 // Process Medical Problems, Allergies, and Medications
+$reducedIssueTypes = $ISSUE_TYPES;
+$refactoredIssues = ['allergy', 'medication', 'medical_problem'];
+
+foreach ($refactoredIssues as $i) {
+    if (array_key_exists($i, $reducedIssueTypes)) {
+        unset($ISSUE_TYPES[$i]);
+    }
+}
+
 foreach ($ISSUE_TYPES as $key => $arr) {
     // Skip if user has no access to this issue type.
     if (!AclMain::aclCheckIssue($key)) {
@@ -144,10 +153,10 @@ foreach ($ISSUE_TYPES as $key => $arr) {
             $list = [];
             $rxArr = [];
             while ($row = sqlFetchArray($res)) {
-                $row['unit'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_units'), $row['unit']);
-                $row['form'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_form'), $row['form']);
-                $row['route'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_route'), $row['route']);
-                $row['interval'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_interval'), $row['interval']);
+                $row['unit'] = generate_display_field(['data_type' => '1', 'list_id' => 'drug_units'], $row['unit']);
+                $row['form'] = generate_display_field(['data_type' => '1', 'list_id' => 'drug_form'], $row['form']);
+                $row['route'] = generate_display_field(['data_type' => '1', 'list_id' => 'drug_route'], $row['route']);
+                $row['interval'] = generate_display_field(['data_type' => '1', 'list_id' => 'drug_interval'], $row['interval']);
                 $unit = ($row['size'] > 0) ? text($row['size']) . " " . $row['unit'] : "";
                 $row['unit'] = $unit;
                 $rxArr[] = $row;
@@ -157,7 +166,7 @@ foreach ($ISSUE_TYPES as $key => $arr) {
             $viewArgs = [
                 'title' => xl('Current Medications'),
                 'id' => $id,
-                'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
+                'initiallyCollapsed' => (getUserSetting($id) == 0) ? true : false,
                 'auth' => false,
                 'rxList' => $rxArr,
             ];
@@ -173,7 +182,7 @@ foreach ($ISSUE_TYPES as $key => $arr) {
     //
     if (count($issues) > 0 || $arr[4] == 1) {
         $old_key = $key;
-        if ($GLOBALS['erx_enable'] && $key = "medication") {
+        if ($GLOBALS['erx_enable'] && $key == "medication") {
             $sqlUploadedArr = [
                 "SELECT * FROM lists WHERE pid = ? AND type = 'medication' AND",
                 dateEmptySql('enddate'),
@@ -192,7 +201,7 @@ foreach ($ISSUE_TYPES as $key => $arr) {
         $viewArgs = [
             'title' => xl($arr[0]),
             'id' => $id,
-            'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
+            'initiallyCollapsed' => (getUserSetting($id) == 0) ? true : false,
             'linkMethod' => "javascript",
             'list' => $listData,
             'auth' => AclMain::aclCheckIssue($key, '', ['write', 'addonly'])
@@ -236,7 +245,7 @@ foreach (['treatment_protocols', 'injury_log'] as $formname) {
         if (sqlNumRows($dres) > 0 && $need_head) {
             $formRows = [];
             while ($row = sqlFetchArray($dres)) {
-                list($completed, $start_date, $template_name) = explode('|', $row['value'], 3);
+                [$completed, $start_date, $template_name] = explode('|', (string) $row['value'], 3);
                 $formRows['startDate'] = $start_date;
                 $formRws['templateName'] = $template_name;
                 $formRows['id'] = $row['id'];
@@ -246,7 +255,7 @@ foreach (['treatment_protocols', 'injury_log'] as $formname) {
             echo $t->render('patient/card/tp_il.html.twig', [
                 'title' => xl("Injury Log"),
                 'id' => $id,
-                'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
+                'initiallyCollapsed' => (getUserSetting($id) == 0) ? true : false,
                 'formName' => $formname,
                 'formRows' => $formRows,
             ]);
@@ -273,23 +282,23 @@ if (!$GLOBALS['disable_immunizations'] && !$GLOBALS['weight_loss_clinic']) :
 
         // Figure out which name to use (ie. from cvx list or from the custom list)
         if ($GLOBALS['use_custom_immun_list']) {
-            $row['field'] = generate_display_field(array('data_type' => '1', 'list_id' => 'immunizations'), $row['immunization_id']);
+            $row['field'] = generate_display_field(['data_type' => '1', 'list_id' => 'immunizations'], $row['immunization_id']);
         } else {
             if (!(empty($row['cvx_text']))) {
                 $row['field'] = htmlspecialchars(xl($row['cvx_text']), ENT_NOQUOTES);
             } else {
-                $row['field'] = generate_display_field(array('data_type' => '1', 'list_id' => 'immunizations'), $row['immunization_id']);
+                $row['field'] = generate_display_field(['data_type' => '1', 'list_id' => 'immunizations'], $row['immunization_id']);
             }
         }
 
-        $row['url'] = attr_js("immunizations.php?mode=edit&id=" . urlencode($row['id']) . "&csrf_token_form=" . urlencode(CsrfUtils::collectCsrfToken()));
+        $row['url'] = attr_js("immunizations.php?mode=edit&id=" . urlencode((string) $row['id']) . "&csrf_token_form=" . urlencode((string) CsrfUtils::collectCsrfToken()));
         $imxList[] = $row;
     }
     $id = "immunizations_ps_expand";
     echo $t->render('patient/card/immunizations.html.twig', [
         'title' => xl('Immunizations'),
         'id' => $id,
-        'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
+        'initiallyCollapsed' => (getUserSetting($id) == 0) ? true : false,
         'btnLabel' => 'Edit',
         'btnLink' => 'immunizations.php',
         'linkMethod' => 'html',
@@ -297,76 +306,6 @@ if (!$GLOBALS['disable_immunizations'] && !$GLOBALS['weight_loss_clinic']) :
         'imx' => $imxList,
     ]);
 endif; // End immunizations
-
-// Render the Prescriptions card if turned on
-if (!$GLOBALS['disable_prescriptions'] && AclMain::aclCheckCore('patients', 'rx')) :
-    if ($GLOBALS['erx_enable'] && $display_current_medications_below == 1) {
-        $sql = "SELECT * FROM prescriptions WHERE patient_id = ? AND active = '1'";
-        $res = sqlStatement($sql, [$pid]);
-
-        $rxArr = [];
-        while ($row = sqlFetchArray($res)) {
-            $row['unit'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_units'), $row['unit']);
-            $row['form'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_form'), $row['form']);
-            $row['route'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_route'), $row['route']);
-            $row['interval'] = generate_display_field(array('data_type' => '1', 'list_id' => 'drug_interval'), $row['interval']);
-            $rxArr[] = $row;
-        }
-        $id = "current_prescriptions_ps_expand";
-        $viewArgs = [
-            'title' => xl('Current Medications'),
-            'id' => $id,
-            'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
-            'auth' => false,
-            'rxList' => $rxArr,
-        ];
-
-        echo $t->render('patient/card/erx.html.twig', $viewArgs);
-    }
-
-    $id = "prescriptions_ps_expand";
-    $viewArgs = [
-        'title' => xl("Prescriptions"),
-        'id' => $id,
-        'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
-        'linkMethod' => "html",
-        'btnLabel' => "Edit",
-        'auth' => AclMain::aclCheckCore('patients', 'rx', '', ['write', 'addonly']),
-    ];
-
-    if ($GLOBALS['erx_enable']) {
-        $viewArgs['title'] = 'Prescription History';
-        $viewArgs['btnLabel'] = 'Add';
-        $viewArgs['btnLink'] = "{$GLOBALS['webroot']}/interface/eRx.php?page=compose";
-    } elseif ($GLOBALS['weno_rx_enable']) {
-        // weno plus button which opens their iframe
-        $viewArgs['weno'] = true;
-        $viewArgs['title'] = "WENO ComposeRx";
-        $viewArgs['btnLabel'] = 'Add';
-        $viewArgs['btnLink'] = "{$GLOBALS['webroot']}/interface/weno/indexrx.php";
-        $viewArgs['oemrBtnClass'] = "iframe rx_modal";
-        $viewArgs['oemrLinkMethod'] = "javascript";
-        $viewArgs['oemrBtnLink'] = "editScripts('{$GLOBALS['webroot']}/controller.php?prescription&list&id=" . attr_url($pid) . "')";
-        $viewArgs['oemrBtnIcon'] = "fa-pencil-alt";
-    } else {
-        $viewArgs['btnLink'] = "editScripts('{$GLOBALS['webroot']}/controller.php?prescription&list&id=" . attr_url($pid) . "')";
-        $viewArgs['linkMethod'] = "javascript";
-        $viewArgs['btnClass'] = "iframe rx_modal";
-    }
-
-    $cwd = getcwd();
-    chdir("../../../");
-    $c = new Controller();
-    // This is a hacky way to get a Smarty template from the controller and injecting it into
-    // a Twig template. This reduces the amount of refactoring that is required but ideally the
-    // Smarty template should be upgraded to Twig
-    ob_start();
-    echo $c->act(['prescription' => '', 'fragment' => '', 'patient_id' => $pid]);
-    $viewArgs['content'] = ob_get_contents();
-    ob_end_clean();
-
-    echo $t->render('patient/card/rx.html.twig', $viewArgs);
-endif;
 
 // Render Old Medications card
 if ($erx_upload_complete == 1) {
@@ -386,9 +325,9 @@ if ($erx_upload_complete == 1) {
     $viewArgs = [
         'title' => xl('Old Medication'),
         'label' => $id,
-        'initiallyCollapsed' => (getUserSetting($id) == 0) ? false : true,
+        'initiallyCollapsed' => (getUserSetting($id) == 0) ? true : false,
         'btnLabel' => 'Edit',
-        'btnLink' => "return load_location(\"${GLOBALS['webroot']}/interface/patient_file/summary/stats_full.php?active=all&category=medication\")",
+        'btnLink' => "return load_location(\"{$GLOBALS['webroot']}/interface/patient_file/summary/stats_full.php?active=all&category=medication\")",
         'linkMethod' => 'javascript',
         'auth' => true,
         'list' => $rxList,

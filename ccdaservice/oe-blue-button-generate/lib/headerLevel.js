@@ -88,8 +88,8 @@ var patient = exports.patient = {
             key: "guardian",
             content: [{
                 key: "code",
-                attributes: leafLevel.codeFromName("2.16.840.1.113883.5.111"),
-                dataKey: "relation"
+                attributes: leafLevel.code,
+                dataKey: "code"
             },
                 [fieldLevel.usRealmAddress, dataKey("addresses")],
                 fieldLevel.telecom, {
@@ -224,18 +224,25 @@ var providers = exports.providers = {
     dataKey: "data.demographics"
 };
 
-var participants = exports.participant = [{
-    key: "participant"
-    , attributes: {
-        typeCode: leafLevel.inputProperty("typeCode")
-    }
-    , content: [
-        [fieldLevel.effectiveTime, required, key("time")],
-        // associatedEntity
-        , fieldLevel.associatedEntity
-    ]
-    , dataKey: "meta.ccda_header.participants"
-}];
+var participants = (exports.participant = [
+    {
+        key: "participant",
+        attributes: {
+            typeCode: leafLevel.inputProperty("typeCode"),
+        },
+        content: [
+            fieldLevel.templateIdExt("2.16.840.1.113883.10.20.22.5.8", "2023-05-01"),
+            [
+                fieldLevel.effectiveTime, required, key("time")
+            ],
+            // associatedEntity
+            fieldLevel.associatedEntity,
+        ],
+        /* eslint-enable no-sparse-arrays */
+        dataKey: "meta.ccda_header.participants",
+        existsWhen: condition.propertyNotEmpty('meta.ccda_header.participants'),
+    },
+]);
 
 var attributed_provider = exports.attributed_provider = {
     key: "providerOrganization",

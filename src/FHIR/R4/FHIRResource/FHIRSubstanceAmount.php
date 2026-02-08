@@ -263,7 +263,7 @@ class FHIRSubstanceAmount extends FHIRBackboneElement implements \JsonSerializab
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -271,7 +271,7 @@ class FHIRSubstanceAmount extends FHIRBackboneElement implements \JsonSerializab
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         $json['resourceType'] = $this->_fhirElementName;

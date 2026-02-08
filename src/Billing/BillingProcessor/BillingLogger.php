@@ -61,6 +61,8 @@ class BillingLogger
      */
     protected $onLogCompleteCallback;
 
+    protected $cryptoGen;
+
     public function __construct()
     {
         $this->cryptoGen = new CryptoGen();
@@ -99,7 +101,7 @@ class BillingLogger
 
         // If the generator set a callback function for when the log completes, call it here
         if (isset($this->onLogCompleteCallback)) {
-            return call_user_func($this->onLogCompleteCallback);
+            return ($this->onLogCompleteCallback)();
         }
 
         return false;

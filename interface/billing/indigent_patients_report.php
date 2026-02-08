@@ -20,6 +20,7 @@ require_once("$srcdir/patient.inc.php");
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Twig\TwigContainer;
+use OpenEMR\Common\Utils\FormatMoney;
 use OpenEMR\Core\Header;
 
 if (!AclMain::aclCheckCore('acct', 'rep_a')) {
@@ -28,15 +29,6 @@ if (!AclMain::aclCheckCore('acct', 'rep_a')) {
 }
 
 $alertmsg = '';
-
-function bucks($amount)
-{
-    if ($amount) {
-        return oeFormatMoney($amount);
-    }
-
-    return "";
-}
 
 $form_start_date = (!empty($_POST['form_start_date'])) ?  DateToYYYYMMDD($_POST['form_start_date']) : date('Y-01-01');
 $form_end_date  = (!empty($_POST['form_end_date'])) ? DateToYYYYMMDD($_POST['form_end_date']) : date('Y-m-d');
@@ -192,7 +184,7 @@ if (!empty($_POST['form_refresh'])) {
     }
 
     $where = "";
-    $sqlBindArray = array();
+    $sqlBindArray = [];
 
     if ($form_start_date) {
         $where .= " AND e.date >= ?";
@@ -220,20 +212,20 @@ if (!empty($_POST['form_refresh'])) {
         $invnumber = $row['pid'] . "." . $row['encounter'];
         $inv_duedate = '';
         $arow = sqlQuery("SELECT SUM(fee) AS amount FROM drug_sales WHERE " .
-        "pid = ? AND encounter = ?", array($patient_id, $encounter_id));
+        "pid = ? AND encounter = ?", [$patient_id, $encounter_id]);
         $inv_amount = $arow['amount'];
         $arow = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
           "pid = ? AND encounter = ? AND " .
-          "activity = 1 AND code_type != 'COPAY'", array($patient_id, $encounter_id));
+          "activity = 1 AND code_type != 'COPAY'", [$patient_id, $encounter_id]);
         $inv_amount += $arow['amount'];
         $arow = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
           "pid = ? AND encounter = ? AND " .
-          "activity = 1 AND code_type = 'COPAY'", array($patient_id, $encounter_id));
+          "activity = 1 AND code_type = 'COPAY'", [$patient_id, $encounter_id]);
         $inv_paid = 0 - $arow['amount'];
         $arow = sqlQuery(
             "SELECT SUM(pay_amount) AS pay, sum(adj_amount) AS adj " .
             "FROM ar_activity WHERE pid = ? AND encounter = ? AND deleted IS NULL",
-            array($patient_id, $encounter_id)
+            [$patient_id, $encounter_id]
         );
         $inv_paid   += floatval($arow['pay']);
         $inv_amount -= floatval($arow['adj']);
@@ -253,19 +245,19 @@ if (!empty($_POST['form_refresh'])) {
  &nbsp;<?php echo text($invnumber); ?></a>
 </td>
 <td class="detail">
- &nbsp;<?php echo text(oeFormatShortDate(substr($row['date'], 0, 10))); ?>
+ &nbsp;<?php echo text(oeFormatShortDate(substr((string) $row['date'], 0, 10))); ?>
 </td>
 <td class="detail">
  &nbsp;<?php echo text(oeFormatShortDate($inv_duedate)); ?>
 </td>
 <td class="detail" align="right">
-        <?php echo bucks($inv_amount); ?>&nbsp;
+        <?php echo FormatMoney::getBucks($inv_amount); ?>&nbsp;
 </td>
 <td class="detail" align="right">
-        <?php echo bucks($inv_paid); ?>&nbsp;
+        <?php echo FormatMoney::getBucks($inv_paid); ?>&nbsp;
 </td>
 <td class="detail" align="right">
-        <?php echo bucks($inv_amount - $inv_paid); ?>&nbsp;
+        <?php echo FormatMoney::getBucks($inv_amount - $inv_paid); ?>&nbsp;
 </td>
 </tr>
         <?php
@@ -288,13 +280,13 @@ if (!empty($_POST['form_refresh'])) {
  &nbsp;
 </td>
 <td class="detail" align="right">
-    <?php echo bucks($total_amount); ?>&nbsp;
+    <?php echo FormatMoney::getBucks($total_amount); ?>&nbsp;
 </td>
 <td class="detail" align="right">
-    <?php echo bucks($total_paid); ?>&nbsp;
+    <?php echo FormatMoney::getBucks($total_paid); ?>&nbsp;
 </td>
 <td class="detail" align="right">
-    <?php echo bucks($total_amount - $total_paid); ?>&nbsp;
+    <?php echo FormatMoney::getBucks($total_amount - $total_paid); ?>&nbsp;
 </td>
 </tr>
     <?php

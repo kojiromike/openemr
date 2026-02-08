@@ -213,7 +213,7 @@ class FHIRConceptMapDependsOn extends FHIRBackboneElement implements \JsonSerial
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return (string)$this->getValue();
     }
@@ -221,7 +221,7 @@ class FHIRConceptMapDependsOn extends FHIRBackboneElement implements \JsonSerial
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->property)) {

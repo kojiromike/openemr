@@ -300,7 +300,7 @@ The dosage instructions should reflect the dosage of the medication that was adm
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -308,7 +308,7 @@ The dosage instructions should reflect the dosage of the medication that was adm
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (isset($this->text)) {

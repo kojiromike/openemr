@@ -12,24 +12,14 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
+use OpenEMR\Common\Utils\FormatMoney;
 use OpenEMR\Services\Utils\DateFormatterUtils;
 
 // TODO: look at moving all of the date functions into the DateFormatterUtils class.
 
 function oeFormatMoney($amount, $symbol = false)
 {
-    $s = number_format(
-        floatval($amount),
-        $GLOBALS['currency_decimals'],
-        $GLOBALS['currency_dec_point'],
-        $GLOBALS['currency_thousands_sep']
-    );
-  // If the currency symbol exists and is requested, prepend it.
-    if ($symbol && !empty($GLOBALS['gbl_currency_symbol'])) {
-        $s = $GLOBALS['gbl_currency_symbol'] . " $s";
-    }
-
-    return $s;
+    return FormatMoney::getFormattedMoney($amount, $symbol);
 }
 
 function oeFormatShortDate($date = 'today', $showYear = true)
@@ -37,46 +27,31 @@ function oeFormatShortDate($date = 'today', $showYear = true)
     return DateFormatterUtils::oeFormatShortDate($date, $showYear);
 }
 
-// 0 - Time format 24 hr
-// 1 - Time format 12 hr
+
+/**
+ * Returns the formatted time string according the global time format
+ * 0 - Time format 24 hr
+ * 1 - Time format 12 hr
+ * @param $time
+ * @param $format
+ * @param $seconds
+ * @return string
+ *@deprecated use DateFormatterUtils::oeFormatTime()
+ */
 function oeFormatTime($time, $format = "global", $seconds = false)
 {
-    if (empty($time)) {
-        return "";
-    }
-
-    $formatted = $time;
-
-    if ($format === "global") {
-        $format = $GLOBALS['time_display_format'];
-    }
-
-
-    if ($format == 1) {
-        if ($seconds) {
-            $formatted = date("g:i:s a", strtotime($time));
-        } else {
-            $formatted = date("g:i a", strtotime($time));
-        }
-    } else { // ($format == 0)
-        if ($seconds) {
-            $formatted = date("H:i:s", strtotime($time));
-        } else {
-            $formatted = date("H:i", strtotime($time));
-        }
-    }
-
-    return $formatted;
+    return DateFormatterUtils::oeFormatTime($time, $format, $seconds);
 }
 
 /**
  * Returns the complete formatted datetime string according the global date and time format
+ * @deprecated use DateFormatterUtils::oeFormatDateTime()
  * @param $datetime
  * @return string
  */
 function oeFormatDateTime($datetime, $formatTime = "global", $seconds = false)
 {
-    return oeFormatShortDate(substr($datetime ?? '', 0, 10)) . " " . oeFormatTime(substr($datetime ?? '', 11), $formatTime, $seconds);
+    return DateFormatterUtils::oeFormatDateTime($datetime, $formatTime, $seconds);
 }
 
 /**
@@ -118,11 +93,11 @@ function oeFormatPatientNote($note)
 {
     $i = 0;
     while ($i !== false) {
-        if (preg_match('/^\d\d\d\d-\d\d-\d\d/', substr($note, $i))) {
-            $note = substr($note, 0, $i) . oeFormatShortDate(substr($note, $i, 10)) . substr($note, $i + 10);
+        if (preg_match('/^\d\d\d\d-\d\d-\d\d/', substr((string) $note, $i))) {
+            $note = substr((string) $note, 0, $i) . oeFormatShortDate(substr((string) $note, $i, 10)) . substr((string) $note, $i + 10);
         }
 
-        $i = strpos($note, "\n", $i);
+        $i = strpos((string) $note, "\n", $i);
         if ($i !== false) {
             ++$i;
         }
@@ -139,6 +114,7 @@ function oeFormatClientID($id)
     return $id;
 }
 //----------------------------------------------------
+// note this function is implemented in the javascript side in the js/xl/formatting.js file
 function DateFormatRead($mode = 'legacy')
 {
     //For the 3 supported date format,the javascript code also should be twicked to display the date as per it.
@@ -178,14 +154,12 @@ function DateToYYYYMMDD($DateValue)
 
 function TimeToHHMMSS($TimeValue)
 {
-    //For now, just return the $TimeValue, since input fields are not formatting time.
-    // This can be upgraded if decided to format input time fields.
-
-    if (trim($TimeValue) == '') {
+    if (trim((string) $TimeValue) == '') {
         return '';
     }
 
-    return $TimeValue;
+    $date = new DateTimeImmutable('1970-01-01' . $TimeValue);
+    return $date->format('H:i:s');
 }
 
 
@@ -194,10 +168,10 @@ function DateTimeToYYYYMMDDHHMMSS($DateTimeValue)
     //This function accepts a timestamp in any of the selected formats, and as per the global setting, converts it to the yyyy-mm-dd hh:mm:ss format.
 
     // First deal with the date
-    $fixed_date = DateToYYYYMMDD(substr($DateTimeValue, 0, 10));
+    $fixed_date = DateToYYYYMMDD(substr((string) $DateTimeValue, 0, 10));
 
     // Then deal with the time
-    $fixed_time = TimeToHHMMSS(substr($DateTimeValue, 11));
+    $fixed_time = TimeToHHMMSS(substr((string) $DateTimeValue, 11));
 
     if (empty($fixed_date) && empty($fixed_time)) {
         return "";
@@ -217,11 +191,11 @@ function DateTimeToYYYYMMDDHHMMSS($DateTimeValue)
 function oeFormatAge($dobYMD, $nowYMD = '', $format = 0)
 {
   // Strip any dashes from the dates.
-    $dobYMD = preg_replace('/-/', '', $dobYMD);
-    $nowYMD = preg_replace('/-/', '', $nowYMD);
-    $dobDay   = substr($dobYMD, 6, 2);
-    $dobMonth = substr($dobYMD, 4, 2);
-    $dobYear  = substr($dobYMD, 0, 4);
+    $dobYMD = preg_replace('/-/', '', (string) $dobYMD);
+    $nowYMD = preg_replace('/-/', '', (string) $nowYMD);
+    $dobDay   = substr((string) $dobYMD, 6, 2);
+    $dobMonth = substr((string) $dobYMD, 4, 2);
+    $dobYear  = substr((string) $dobYMD, 0, 4);
 
     if ($nowYMD) {
         $nowDay   = substr($nowYMD, 6, 2);
@@ -239,7 +213,7 @@ function oeFormatAge($dobYMD, $nowYMD = '', $format = 0)
             mktime(0, 0, 0, $dobMonth, $dobDay, $dobYear);
         $days  = intval($secs / (24 * 60 * 60));
         $weeks = intval($days / 7);
-        $days  = $days % 7;
+        $days %= 7;
         $age   = "$weeks " . ($weeks == 1 ? xl('week') : xl('weeks')) .
              " $days " . ($days  == 1 ? xl('day') : xl('days'));
     } else {

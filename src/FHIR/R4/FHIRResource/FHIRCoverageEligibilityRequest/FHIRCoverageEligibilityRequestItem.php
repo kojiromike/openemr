@@ -411,7 +411,7 @@ class FHIRCoverageEligibilityRequestItem extends FHIRBackboneElement implements 
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->get_fhirElementName();
     }
@@ -419,7 +419,7 @@ class FHIRCoverageEligibilityRequestItem extends FHIRBackboneElement implements 
     /**
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $json = parent::jsonSerialize();
         if (0 < count($this->supportingInfoSequence)) {

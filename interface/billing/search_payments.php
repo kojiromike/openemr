@@ -26,12 +26,18 @@ require_once("$srcdir/payment.inc.php");
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Core\Header;
+use OpenEMR\Events\Billing\Payments\DeletePayment;
 use OpenEMR\OeUI\OemrUI;
 
 if (!AclMain::aclCheckCore('acct', 'bill', '', 'write') && !AclMain::aclCheckCore('acct', 'eob', '', 'write')) {
     echo (new TwigContainer(null, $GLOBALS['kernel']))->getTwig()->render('core/unauthorized.html.twig', ['pageTitle' => xl("Search Payment")]);
     exit;
 }
+
+/**
+ * @var EventDispatcherInterface $eventDispatcher
+ */
+$eventDispatcher = $GLOBALS['kernel']->getEventDispatcher();
 
 //===============================================================================
 //Deletion of payment and its corresponding distributions.
@@ -51,7 +57,8 @@ if (isset($_POST["mode"])) {
                 sqlStatement("update form_encounter set last_level_closed=last_level_closed - 1 where pid =? and encounter=?", [$PId, $Encounter]);
             }
         }
-
+        //dispatch this payment is being deleted trigger refund process
+        $eventDispatcher->dispatch(new DeletePayment($DeletePaymentId), DeletePayment::ACTION_DELETE_PAYMENT, 10);
     //delete and log that action
         row_delete("ar_session", "session_id ='" . add_escape_custom($DeletePaymentId) . "'");
         row_modify("ar_activity", "deleted = NOW()", "deleted IS NULL AND session_id = '" . add_escape_custom($DeletePaymentId) . "'");
@@ -78,7 +85,7 @@ if (isset($_POST["mode"])) {
         $QueryString = "Select * from  ar_session where  ";
         $And = '';
 
-        $sqlBindArray = array();
+        $sqlBindArray = [];
 
         if ($PaymentDate == 'date_val') {
             $PaymentDateString = ' check_date ';
@@ -184,7 +191,7 @@ if (isset($_POST["mode"])) {
                 $StringSessionId .= $rowrs['session_id'] . ',';
             }
 
-            $StringSessionId = substr($StringSessionId, 0, -1);
+            $StringSessionId = substr((string) $StringSessionId, 0, -1);
             if ($PaymentStatus == 'fully_paid') {
                 $QueryString .= " $And session_id in(" . add_escape_custom($StringSessionId) . ") ";
             } elseif ($PaymentStatus == 'unapplied') {
@@ -198,11 +205,7 @@ if (isset($_POST["mode"])) {
             $SortFieldOld = isset($_POST['SortFieldOld']) ? trim($_POST['SortFieldOld']) : '';
             $Sort = isset($_POST['Sort']) ? trim($_POST['Sort']) : '';
             if ($SortFieldOld == $PaymentSortBy) {
-                if ($Sort == 'DESC' || $Sort == '') {
-                    $Sort = 'ASC';
-                } else {
-                    $Sort = 'DESC';
-                }
+                $Sort = $Sort == 'DESC' || $Sort == '' ? 'ASC' : 'DESC';
             } else {
                 $Sort = 'ASC';
             }
@@ -335,17 +338,17 @@ if (isset($_POST["mode"])) {
 }
 </style>
 <?php
-$arrOeUiSettings = array(
+$arrOeUiSettings = [
 'heading_title' => xl('Payments'),
 'include_patient_name' => false,// use only in appropriate pages
 'expandable' => true,
-'expandable_files' => array("search_payments_xpd", "new_payment_xpd", "era_payments_xpd"),//all file names need suffix _xpd
+'expandable_files' => ["search_payments_xpd", "new_payment_xpd", "era_payments_xpd"],//all file names need suffix _xpd
 'action' => "",//conceal, reveal, search, reset, link or back
 'action_title' => "",
 'action_href' => "",//only for actions - reset, link or back
 'show_help_icon' => false,
 'help_file_name' => ""
-);
+];
 $oemr_ui = new OemrUI($arrOeUiSettings);
 ?>
 </head>
@@ -499,11 +502,7 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                                         }
                                         //=============================================
                                         $CountIndex++;
-                                        if ($CountIndex % 2 == 1) {
-                                            $bgcolor = '#ddddff';
-                                        } else {
-                                            $bgcolor = '#ffdddd';
-                                        }
+                                        $bgcolor = $CountIndex % 2 == 1 ? '#ddddff' : '#ffdddd';
                                         ?>
                                         <tr bgcolor='<?php echo attr($bgcolor); ?>' class="text">
                                             <td>
@@ -532,7 +531,7 @@ $oemr_ui = new OemrUI($arrOeUiSettings);
                                                 ?></a>
                                             </td>
                                             <td>
-                                                <!--<a class='iframe medium_modal' href="edit_payment.php?payment_id=<?php echo htmlspecialchars($RowSearch['session_id']); ?>"><?php echo $Payer == '' ? '&nbsp;' : htmlspecialchars($Payer); ?></a>-->
+                                                <!--<a class='iframe medium_modal' href="edit_payment.php?payment_id=<?php echo htmlspecialchars((string) $RowSearch['session_id']); ?>"><?php echo $Payer == '' ? '&nbsp;' : htmlspecialchars((string) $Payer); ?></a>-->
                                                 <a class="medium_modal" href='edit_payment.php?payment_id=<?php echo attr_url($RowSearch['session_id']); ?>')"><?php echo $Payer == '' ? '&nbsp;' : text($Payer); ?></a><!--link to iframe-->
                                             </td>
                                             <td>

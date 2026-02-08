@@ -19,33 +19,11 @@ namespace OpenEMR\Billing\BillingProcessor\Tasks;
 use OpenEMR\Billing\BillingProcessor\BillingClaim;
 use OpenEMR\Billing\BillingProcessor\BillingProcessor;
 use OpenEMR\Billing\BillingProcessor\GeneratorCanValidateInterface;
+use OpenEMR\Billing\BillingProcessor\GeneratorInterface;
 use OpenEMR\Common\Csrf\CsrfUtils;
 
-abstract class AbstractGenerator extends AbstractProcessingTask
+abstract class AbstractGenerator extends AbstractProcessingTask implements GeneratorInterface
 {
-    protected $action = null;
-
-    public function __construct($action)
-    {
-        $this->action = $action;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getAction()
-    {
-        return $this->action;
-    }
-
-    /**
-     * @param mixed $action
-     */
-    public function setAction($action): void
-    {
-        $this->action = $action;
-    }
-
     /**
      * This abstract class for generators implements the execute method
      * so we can further hone exactly which operation we want to run.
@@ -120,15 +98,15 @@ abstract class AbstractGenerator extends AbstractProcessingTask
      *
      * @param $filename
      * @param $location
-     * @param false $delete
+     * @param bool $delete
      */
     public function printDownloadClaimFileJS($filename, $location = '', $delete = false)
     {
         $url = $GLOBALS['webroot'] . '/interface/billing/get_claim_file.php?' .
-            'key=' . urlencode($filename) .
-            '&location=' . urlencode($location) .
+            'key=' . urlencode((string) $filename) .
+            '&location=' . urlencode((string) $location) .
             '&delete=' . urlencode($delete) .
-            '&csrf_token_form=' . urlencode(CsrfUtils::collectCsrfToken());
+            '&csrf_token_form=' . urlencode((string) CsrfUtils::collectCsrfToken());
         echo "<script type='text/JavaScript'>window.location = " . js_escape($url) . "</script>";
     }
 }

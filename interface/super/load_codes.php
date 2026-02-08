@@ -14,8 +14,8 @@
 
 set_time_limit(0);
 
-require_once('../globals.php');
-require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
+require_once '../globals.php';
+require_once $GLOBALS['fileroot'] . '/custom/code_types.inc.php';
 
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
@@ -72,7 +72,7 @@ if (!empty($_POST['bn_upload'])) {
 
     $inscount = 0;
     $repcount = 0;
-    $seen_codes = array();
+    $seen_codes = [];
 
     if (is_uploaded_file($tmp_name) && $_FILES['form_file']['size']) {
         $zipin = new ZipArchive();
@@ -96,7 +96,7 @@ if (!empty($_POST['bn_upload'])) {
         }
 
         if ($form_replace) {
-            sqlStatement("DELETE FROM codes WHERE code_type = ?", array($code_type_id));
+            sqlStatement("DELETE FROM codes WHERE code_type = ?", [$code_type_id]);
         }
 
 
@@ -124,27 +124,16 @@ if (!empty($_POST['bn_upload'])) {
                 }
 
                 $seen_codes[$code] = 1;
-                ++$inscount;
                 if (!$form_replace) {
-                    $tmp = sqlQuery(
-                        "SELECT id FROM codes WHERE code_type = ? AND code = ? LIMIT 1",
-                        array($code_type_id, $code)
-                    );
-                    if ($tmp['id']) {
-                              sqlStatementNoLog(
-                                  "UPDATE codes SET code_text = ? WHERE code_type = ? AND code = ?",
-                                  array($a[14], $code_type_id, $code)
-                              );
-                              ++$repcount;
-                              continue;
+                    $tmp = sqlQuery("SELECT id FROM codes WHERE code_type = ? AND code = ? LIMIT 1", [$code_type_id, $code]);
+                    if (!empty($tmp)) {
+                        sqlStatementNoLog("UPDATE codes SET code_text = ? WHERE code_type = ? AND code = ?", [$a[14], $code_type_id, $code]);
+                        ++$repcount;
+                        continue;
                     }
                 }
 
-                sqlStatementNoLog(
-                    "INSERT INTO codes SET code_type = ?, code = ?, code_text = ?, " .
-                    "fee = 0, units = 0",
-                    array($code_type_id, $code, $a[14])
-                );
+                sqlStatementNoLog("INSERT INTO codes SET code_type = ?, code = ?, code_text = ?, fee = 0, units = 0", [$code_type_id, $code, $a[14]]);
                 ++$inscount;
             }
 
@@ -156,13 +145,16 @@ if (!empty($_POST['bn_upload'])) {
         sqlStatementNoLog("SET autocommit=1");
 
         fclose($eres);
-        $zipin->close();
-    }
+        // Cannot close ZIP object if not initialised, catch and do nothing
+        try {
+            $zipin->close();
+        } catch (ValueError) {
+        }
 
-    echo "<p class='text-success'>" .
-       xlt('LOAD SUCCESSFUL. Codes inserted') . ": " . text($inscount) . ", " .
-       xlt('replaced') . ": " . text($repcount) .
-       "</p>\n";
+        echo "<p class='text-success'>" . xlt('LOAD SUCCESSFUL. Codes inserted') . ": " . text($inscount) . ", " . xlt('replaced') . ": " . text($repcount) . "</p>\n";
+    } else {
+        echo "<p class='text-danger'>" . xlt('ERROR. Could not open') . ". " . (php_ini_loaded_file() ?? "Server") . " upload_max_filesize: " . xlt('Your file is too large') . ". " . xlt('Set To') . " ≥ post_max_size.";
+    }
 }
 
 ?>
@@ -188,7 +180,7 @@ if (!empty($_POST['bn_upload'])) {
                             <td>
                                 <select name='form_code_type'>
                                     <?php
-                                    foreach (array('RXCUI') as $codetype) {
+                                    foreach (['RXCUI'] as $codetype) {
                                         echo "    <option value='" . attr($codetype) . "'>" . text($codetype) . "</option>\n";
                                     }
                                     ?>
@@ -234,7 +226,10 @@ if (!empty($_POST['bn_upload'])) {
             that (zipped or not). You may do the same with the weekly updates, but for those uncheck the
             "<?php echo xlt('Replace entire code set'); ?>" checkbox above.
             </p>
-
+            <div class="alert alert-info"><p>
+                    <i class="fa fa-circle-info"></i> <?php echo xlt("If you're Code Sets are not loading, verify your php.ini post_max_size value and your upload_max_filesize has been set large enough to handle the file size you are uploading."); ?>
+            </p>
+            </div>
             <!-- TBD: Another paragraph of instructions here for each code type. -->
         </form>
     </div>

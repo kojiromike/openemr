@@ -36,7 +36,7 @@ if (!empty($_POST)) {
 
 // These settings are sticky user preferences linked to a given page.
 // mdsupport - user_settings prefix
-$uspfx = substr(__FILE__, strlen($webserver_root)) . '.';
+$uspfx = substr(__FILE__, strlen((string) $webserver_root)) . '.';
 $setting_new_window = prevSetting($uspfx, 'setting_new_window', 'setting_new_window', ' ');
 // flow board and recall board share bootstrap settings:
 $setting_bootstrap_submenu = prevSetting('', 'setting_bootstrap_submenu', 'setting_bootstrap_submenu', ' ');
@@ -54,12 +54,6 @@ if (
     // These are not form elements. We only ever change them via ajax, so exit now.
     exit();
 }
-if (($_POST['saveCALLback'] ?? '') == "Save") {
-    $sqlINSERT = "INSERT INTO medex_outgoing (msg_pc_eid,msg_pid,campaign_uid,msg_type,msg_reply,msg_extra_text)
-                  VALUES
-                (?,?,?,'NOTES','CALLED',?)";
-    sqlQuery($sqlINSERT, array($_POST['pc_eid'], $_POST['pc_pid'], $_POST['campaign_uid'], $_POST['txtCALLback']));
-}
 
 //set default start date of flow board to value based on globals
 if (!$GLOBALS['ptkr_date_range']) {
@@ -69,7 +63,7 @@ if (!$GLOBALS['ptkr_date_range']) {
 } elseif (($GLOBALS['ptkr_start_date']) == 'D0') {
     $from_date = date('Y-m-d');
 } elseif (($GLOBALS['ptkr_start_date']) == 'B0') {
-    if (date(w) == GLOBALS['first_day_week']) {
+    if (date('w') == $GLOBALS['first_day_week']) {
         //today is the first day of the week
         $from_date = date('Y-m-d');
     } elseif ($GLOBALS['first_day_week'] == 0) {
@@ -83,20 +77,20 @@ if (!$GLOBALS['ptkr_date_range']) {
         $from_date = date('Y-m-d', strtotime('previous saturday'));
     }
 } else {
-    //shouldnt be able to get here...
+    //shouldn't be able to get here...
     $from_date = date('Y-m-d');
 }
 
 //set default end date of flow board to value based on globals
 if ($GLOBALS['ptkr_date_range']) {
-    if (substr($GLOBALS['ptkr_end_date'], 0, 1) == 'Y') {
-        $ptkr_time = substr($GLOBALS['ptkr_end_date'], 1, 1);
+    if (str_starts_with((string) $GLOBALS['ptkr_end_date'], 'Y')) {
+        $ptkr_time = substr((string) $GLOBALS['ptkr_end_date'], 1, 1);
         $ptkr_future_time = mktime(0, 0, 0, date('m'), date('d'), date('Y') + $ptkr_time);
-    } elseif (substr($GLOBALS['ptkr_end_date'], 0, 1) == 'M') {
-        $ptkr_time = substr($GLOBALS['ptkr_end_date'], 1, 1);
+    } elseif (str_starts_with((string) $GLOBALS['ptkr_end_date'], 'M')) {
+        $ptkr_time = substr((string) $GLOBALS['ptkr_end_date'], 1, 1);
         $ptkr_future_time = mktime(0, 0, 0, date('m') + $ptkr_time, date('d'), date('Y'));
-    } elseif (substr($GLOBALS['ptkr_end_date'], 0, 1) == 'D') {
-        $ptkr_time = substr($GLOBALS['ptkr_end_date'], 1, 1);
+    } elseif (str_starts_with((string) $GLOBALS['ptkr_end_date'], 'D')) {
+        $ptkr_time = substr((string) $GLOBALS['ptkr_end_date'], 1, 1);
         $ptkr_future_time = mktime(0, 0, 0, date('m'), date('d') + $ptkr_time, date('Y'));
     }
 
@@ -110,11 +104,11 @@ $form_patient_name = !is_null($_POST['form_patient_name'] ?? null) ? $_POST['for
 $form_patient_id = !is_null($_POST['form_patient_id'] ?? null) ? $_POST['form_patient_id'] : null;
 
 
-$lres = sqlStatement("SELECT option_id, title FROM list_options WHERE list_id = ? AND activity=1", array('apptstat'));
+$lres = sqlStatement("SELECT option_id, title FROM list_options WHERE list_id = ? AND activity=1", ['apptstat']);
 while ($lrow = sqlFetchArray($lres)) {
     // if exists, remove the legend character
     if ($lrow['title'][1] == ' ') {
-        $splitTitle = explode(' ', $lrow['title']);
+        $splitTitle = explode(' ', (string) $lrow['title']);
         array_shift($splitTitle);
         $title = implode(' ', $splitTitle);
     } else {
@@ -133,18 +127,15 @@ if ($GLOBALS['medex_enable'] == '1') {
     $sql = "SELECT * FROM medex_prefs LIMIT 1";
     $preferences = sqlStatement($sql);
     $prefs = sqlFetchArray($preferences);
-    $results = json_decode($prefs['status'], true);
+    $results = json_decode((string) $prefs['status'], true);
     $logged_in = $results;
     $logged_in = $results;
-    if (!empty($logged_in['token'])) {
-        $current_events = xlt("On-line");
-    } else {
-        $current_events = xlt("Currently off-line");
-    }
+    $current_events = !empty($logged_in['token']) ? xlt("On-line") : xlt("Currently off-line");
 }
 
 if (!($_REQUEST['flb_table'] ?? null)) {
     ?>
+<!DOCTYPE html>
 <html>
 <head>
     <meta name="author" content="OpenEMR: MedExBank" />
@@ -170,7 +161,7 @@ if (!($_REQUEST['flb_table'] ?? null)) {
         $MedEx->display->navigation($logged_in);
     }
     ?>
-    <div class="container mt-3">
+    <div class="container-fluid mt-3">
         <div id="flb_selectors" style="display:<?php echo attr($setting_selectors); ?>;">
             <h2 class="text-center"><?php echo xlt('Flow Board'); ?></h2>
             <div class="jumbotron p-4">
@@ -333,14 +324,14 @@ if (!($_REQUEST['flb_table'] ?? null)) {
 } else {
     //end of if !$_REQUEST['flb_table'] - this is the table we fetch via ajax during a refreshMe() call
     // get all appts for date range and refine view client side.  very fast...
-    $appointments = array();
+    $appointments = [];
     $datetime = date("Y-m-d H:i:s");
-    $appointments = fetch_Patient_Tracker_Events($from_date, $to_date, '', '', '', '', $form_patient_name, $form_patient_id);
-    $appointments = sortAppointments($appointments, 'date', 'time');
+    $appointments = fetch_Patient_Tracker_Events($from_date, $to_date, $provider, $facility, $form_apptstatus, $form_apptcat, $form_patient_name, $form_patient_id);
+    $appointments = sortAppointments($appointments, 'date');
     //grouping of the count of every status
     $appointments_status = getApptStatus($appointments);
 
-    $chk_prov = array();  // list of providers with appointments
+    $chk_prov = [];  // list of providers with appointments
     // Scan appointments for additional info
     foreach ($appointments as $apt) {
         $chk_prov[$apt['uprovider_id']] = $apt['ulname'] . ', ' . $apt['ufname'] . ' ' . $apt['umname'];
@@ -392,7 +383,7 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         </td>
                         <?php if ($GLOBALS['ptkr_visit_reason'] == '1') { ?>
                             <td class="dehead text-center text-ovr-dark" name="kiosk_hide">
-                                <?php echo xlt('Reason'); ?>
+                                <?php echo xlt('Appt Comment'); ?>
                             </td>
                         <?php } ?>
                         <?php if ($GLOBALS['ptkr_show_encounter']) { ?>
@@ -476,17 +467,13 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                             $other_title = '';
                             $title = '';
                             $icon2_here = '';
-                            $icon_CALL = '';
-                            $icon_4_CALL = '';
                             $appt['stage'] = '';
-                            $icon_here = array();
+                            $icon_here = [];
                             $prog_text = '';
-                            $CALLED = '';
                             $FINAL = '';
-                            $icon_CALL = '';
 
                             $query = "SELECT * FROM medex_outgoing WHERE msg_pc_eid =? ORDER BY medex_uid asc";
-                            $myMedEx = sqlStatement($query, array($appointment['eid']));
+                            $myMedEx = sqlStatement($query, [$appointment['eid']]);
                             /**
                              * Each row for this pc_eid in the medex_outgoing table represents an event.
                              * Every event is recorded in $prog_text.
@@ -527,11 +514,6 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                                 } elseif (($row['msg_reply'] == "CONFIRMED") || ($appointment[$row['msg_type']]['stage'] == "CONFIRMED")) {
                                     $appointment[$row['msg_type']]['stage'] = "CONFIRMED";
                                     $icon_here[$row['msg_type']]  = $icons[$row['msg_type']]['CONFIRMED']['html'];
-                                } elseif ($row['msg_type'] == "NOTES") {
-                                    $CALLED = "1";
-                                    $FINAL = $icons['NOTES']['CALLED']['html'];
-                                    $icon_CALL = str_replace("Call Back: COMPLETED", attr(oeFormatShortDate($row['msg_date'])) . " :: " . xla('Callback Performed') . " | " . xla('NOTES') . ": " . $row['msg_extra_text'] . " | ", $FINAL);
-                                    continue;
                                 } elseif (($row['msg_reply'] == "READ") || ($appointment[$row['msg_type']]['stage'] == "READ")) {
                                     $appointment[$row['msg_type']]['stage'] = "READ";
                                     $icon_here[$row['msg_type']] = $icons[$row['msg_type']]['READ']['html'];
@@ -540,39 +522,25 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                                     $icon_here[$row['msg_type']] = $icons[$row['msg_type']]['SENT']['html'];
                                 } elseif (($row['msg_reply'] == "To Send") || (empty($appointment['stage']))) {
                                     if (
-                                        ($appointment[$row['msg_type']]['stage'] != "CONFIRMED") &&
-                                        ($appointment[$row['msg_type']]['stage'] != "READ") &&
-                                        ($appointment[$row['msg_type']]['stage'] != "SENT") &&
-                                        ($appointment[$row['msg_type']]['stage'] != "FAILED")
+                                        !in_array($appointment[$row['msg_type']]['stage'], ["CONFIRMED", "READ", "SENT", "FAILED"])
                                     ) {
                                         $appointment[$row['msg_type']]['stage'] = "QUEUED";
                                         $icon_here[$row['msg_type']] = $icons[$row['msg_type']]['SCHEDULED']['html'];
                                     }
                                 }
                                 //these are additional icons if present
-                                if (($row['msg_reply'] == "CALL") && (!$CALLED)) {
-                                    $icon_here = '';
-                                    $icon_4_CALL = $icons[$row['msg_type']]['CALL']['html'];
-                                    $icon_CALL = "<span onclick=\"doCALLback(" . attr_js($date_squash) . "," . attr_js($appointment['eid']) . "," . attr_js($appointment['pc_cattype']) . ")\">" . $icon_4_CALL . "</span>
-                                    <span class='hidden' name='progCALLback_" . attr($appointment['eid']) . "' id='progCALLback_" . attr($appointment['eid']) . "'>
-                                      <form id='notation_" . attr($appointment['eid']) . "' method='post'
-                                      action='#'>
-                                        <input type='hidden' name='csrf_token_form' value='" . attr(CsrfUtils::collectCsrfToken()) . "' />
-                                        <h4>" . xlt('Call Back Notes') . ":</h4>
-                                        <input type='hidden' name='pc_eid' id='pc_eid' value='" . attr($appointment['eid']) . "'>
-                                        <input type='hidden' name='pc_pid' id='pc_pid' value='" . attr($appointment['pc_pid']) . "'>
-                                        <input type='hidden' name='campaign_uid' id='campaign_uid' value='" . attr($row['campaign_uid']) . "'>
-                                        <textarea name='txtCALLback' id='txtCALLback' rows=6 cols=20></textarea>
-                                        <input type='submit' name='saveCALLback' id='saveCALLback' value='" . xla("Save") . "'>
-                                      </form>
-                                    </span>
-                                      ";
+                                if ($row['msg_reply'] == "CALL") {
+                                    $icon_here[$row['msg_type']] = $icons[$row['msg_type']]['CALL']['html'];
+                                    if (($appointment['allow_sms'] != "NO") && ($appointment['phone_cell'] > '')) {
+                                        $icon_4_CALL = "<span class='input-group-addon'
+                                                              onclick='SMS_bot(" . attr_js($row['msg_pid']) . ");'>
+                                                              <i class='fas fa-sms'></i>
+                                                        </span>";
+                                    }
                                 } elseif ($row['msg_reply'] == "STOP") {
                                     $icon2_here .= $icons[$row['msg_type']]['STOP']['html'];
                                 } elseif ($row['msg_reply'] == "Other") {
                                     $icon2_here .= $icons[$row['msg_type']]['Other']['html'];
-                                } elseif ($row['msg_reply'] == "CALLED") {
-                                    $icon2_here .= $icons[$row['msg_type']]['CALLED']['html'];
                                 }
                             }
                             //if pc_apptstatus == '-', update it now to=status
@@ -609,7 +577,7 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         $statalert = $colorevents['time_alert'];
                         // process the time to allow items with a check out status to be displayed
                         if (is_checkout($status) && (($GLOBALS['checkout_roll_off'] > 0) && strlen($form_apptstatus) != 1)) {
-                            $to_time = strtotime($newend);
+                            $to_time = strtotime((string) $newend);
                             $from_time = strtotime($datetime);
                             $display_check_out = round(abs($from_time - $to_time) / 60, 0);
                             if ($display_check_out >= $GLOBALS['checkout_roll_off']) {
@@ -624,7 +592,7 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                             data-pid="' . attr($appointment['pc_pid']) . '"
                             data-pname="' . attr($ptname) . '"
                             class="text-small"
-                            style="background-color:' . attr($bgcolor) . ';" >';
+                            style="background-color:#' . attr($bgcolor) . ';" >';
 
                         if ($GLOBALS['ptkr_show_pid']) {
                             ?>
@@ -696,9 +664,9 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         //time in current status
                         $to_time = strtotime(date("Y-m-d H:i:s"));
                         $yestime = '0';
-                        if (strtotime($newend) != '') {
-                            $from_time = strtotime($newarrive);
-                            $to_time = strtotime($newend);
+                        if (strtotime((string) $newend) != '') {
+                            $from_time = strtotime((string) $newarrive);
+                            $to_time = strtotime((string) $newend);
                             $yestime = '0';
                         } else {
                             $from_time = (($appointment['start_datetime'] ?? null) ? strtotime($appointment['start_datetime']) : null);
@@ -711,10 +679,10 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         } else {
                             echo "<td class='detail text-center' nowrap> "; // and if not do not blink
                         }
-                        if (($yestime == '1') && ($timecheck >= 1) && (strtotime($newarrive) != '')) {
+                        if (($yestime == '1') && ($timecheck >= 1) && (strtotime((string) $newarrive) != '')) {
                             echo text($timecheck . ' ' . ($timecheck >= 2 ? xl('minutes') : xl('minute')));
-                        } elseif (($icon_here ?? null) || ($icon2_here ?? null) || ($icon_CALL ?? null)) {
-                            echo "<span style='font-size:0.7rem;' onclick='return calendarpopup(" . attr_js($appt_eid) . "," . attr_js($date_squash) . ")'>" . implode($icon_here) . $icon2_here . "</span> " . $icon_CALL;
+                        } elseif (($icon_here ?? null) || ($icon2_here ?? null)) {
+                            echo "<span style='font-size:0.7rem;' onclick='return calendarpopup(" . attr_js($appt_eid) . "," . attr_js($date_squash) . ")'>" . implode('', $icon_here) . $icon2_here . "</span> " . $icon_4_CALL;
                         } elseif ($logged_in ?? null) {
                             $pat = $MedEx->display->possibleModalities($appointment);
                             echo "<span style='font-size:0.7rem;' onclick='return calendarpopup(" . attr_js($appt_eid) . "," . attr_js($date_squash) . ")'>" . $pat['SMS'] . $pat['AVM'] . $pat['EMAIL'] . "</span>";
@@ -735,15 +703,15 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         <td class="detail text-center">
                             <?php
                             // total time in practice
-                            if (strtotime($newend) != '') {
-                                $from_time = strtotime($newarrive);
-                                $to_time = strtotime($newend);
+                            if (strtotime((string) $newend) != '') {
+                                $from_time = strtotime((string) $newarrive);
+                                $to_time = strtotime((string) $newend);
                             } else {
-                                $from_time = strtotime($newarrive);
+                                $from_time = strtotime((string) $newarrive);
                                 $to_time = strtotime(date("Y-m-d H:i:s"));
                             }
                             $timecheck2 = round(abs($to_time - $from_time) / 60, 0);
-                            if (strtotime($newarrive) != '' && ($timecheck2 >= 1)) {
+                            if (strtotime((string) $newarrive) != '' && ($timecheck2 >= 1)) {
                                 echo text($timecheck2 . ' ' . ($timecheck2 >= 2 ? xl('minutes') : xl('minute')));
                             }
                             // end total time in practice
@@ -751,8 +719,8 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                         </td>
                         <td class="detail text-center">
                             <?php
-                            if (strtotime($newend) != '') {
-                                echo text(oeFormatTime(substr($newend, 11))) ;
+                            if (strtotime((string) $newend) != '') {
+                                echo text(oeFormatTime(substr((string) $newend, 11))) ;
                             }
                             ?>
                         </td>
@@ -765,7 +733,7 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                             <?php
                         }
                         if ($GLOBALS['drug_screen']) {
-                            if (strtotime($newarrive) != '') { ?>
+                            if (strtotime((string) $newarrive) != '') { ?>
                                 <td class="detail text-center" name="kiosk_hide">
                                     <?php
                                     if ($appointment['random_drug_test'] == '1') {
@@ -778,10 +746,10 @@ if (!($_REQUEST['flb_table'] ?? null)) {
                             } else { ?>
                                 <td class="detail text-center" name="kiosk_hide"></td>
                             <?php }
-                            if (strtotime($newarrive) != '' && $appointment['random_drug_test'] == '1') { ?>
+                            if (strtotime((string) $newarrive) != '' && $appointment['random_drug_test'] == '1') { ?>
                                 <td class="detail text-center" name="kiosk_hide">
                                     <?php
-                                    if (strtotime($newend) != '') {
+                                    if (strtotime((string) $newend) != '') {
                                         // the following block allows the check box for drug screens to be disabled once the status is check out ?>
                                         <input type='checkbox' disabled='disable' class="drug_screen_completed" id="<?php echo attr($appointment['pt_tracker_id']) ?>" <?php echo ($appointment['drug_screen_completed'] == "1") ? "checked" : ""; ?> />
                                         <?php
@@ -819,7 +787,7 @@ if (!($_REQUEST['flb_table'] ?? null)) { ?>
         <input type='hidden' name='encounterID' value='0' />
     </form>
 
-    <?php echo myLocalJS(); ?>
+    <?php myLocalJS(); ?>
 </body>
 </html>
     <?php
@@ -828,7 +796,7 @@ if (!($_REQUEST['flb_table'] ?? null)) { ?>
 
 exit;
 
-function myLocalJS()
+function myLocalJS(): void
 {
     ?>
     <script>
@@ -998,12 +966,6 @@ function myLocalJS()
             }
         }
 
-        function doCALLback(eventdate, eid, pccattype) {
-            $("#progCALLback_" + eid).parent().removeClass('js-blink-infinite').css('animation-name', 'none');
-            $("#progCALLback_" + eid).removeClass("hidden");
-            clearInterval(auto_refresh);
-        }
-
         // opens the demographic and encounter screens in a new window
         function openNewTopWindow(newpid, newencounterid) {
             document.fnew.patientID.value = newpid;
@@ -1016,15 +978,26 @@ function myLocalJS()
         /**
          * @return {boolean}
          */
+        // AI-generated code start (GitHub Copilot) - Refactored to use URLSearchParams
         function SMS_bot(pid) {
             top.restoreSession();
             var from = <?php echo js_escape($from_date ?? ''); ?>;
             var to = <?php echo js_escape($to_date ?? ''); ?>;
             var oefrom = <?php echo js_escape(oeFormatShortDate($from_date ?? null)); ?>;
             var oeto = <?php echo js_escape(oeFormatShortDate($to_date ?? null)); ?>;
-            window.open('../main/messages/messages.php?nomenu=1&go=SMS_bot&pid=' + encodeURIComponent(pid) + '&to=' + encodeURIComponent(to) + '&from=' + encodeURIComponent(from) + '&oeto=' + encodeURIComponent(oeto) + '&oefrom=' + encodeURIComponent(oefrom), 'SMS_bot', 'width=370,height=600,resizable=0');
+            const params = new URLSearchParams({
+                nomenu: '1',
+                go: 'SMS_bot',
+                pid: pid,
+                to: to,
+                from: from,
+                oeto: oeto,
+                oefrom: oefrom
+            });
+            window.open('../main/messages/messages.php?' + params.toString(), 'SMS_bot', 'width=370,height=600,resizable=0');
             return false;
         }
+        // AI-generated code end
 
         function kiosk_FLB() {
             $("#kiosk").val('1');

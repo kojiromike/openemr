@@ -1,5 +1,5 @@
 // Copyright (C) 2005 Rod Roark <rod@sunsetsystems.com>
-// Copyright (C) 2018-2021 Jerry Padgett <sjpadgett@gmail.com>
+// Copyright (C) 2018-2025 Jerry Padgett <sjpadgett@gmail.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -46,7 +46,7 @@
                 type: 'Alert',
                 sizeHeight: 'auto',
                 resolvePromiseOn: 'close',
-                html: '<p class="text-center">' + data + '</p>'
+                html: '<p class="text-center bg-light text-dark">' + data + '</p>'
             });
         }
 
@@ -62,7 +62,7 @@
                 type: 'Confirm',
                 resolvePromiseOn: 'confirm',
                 sizeHeight: 'auto',
-                html: '<p class="text-center">' + data + '</p>'
+                html: '<p class="text-center bg-light text-dark">' + data + '</p>'
             });
         }
 
@@ -126,6 +126,7 @@
     if (typeof includeScript !== 'function') {
         // Obviously utility.js has not been included for an unknown reason!
         // Will include below.
+        /* eslint-disable-next-line no-inner-declarations */
         function includeScript(srcUrl, type) {
             return new Promise(function (resolve, reject) {
                 if (type == 'script') {
@@ -189,7 +190,7 @@ function cascwin(url, winname, width, height, options) {
     // to adjust the height of this box for IE only -- JRM
     if (navigator.appName == 'Microsoft Internet Explorer') {
         var ua = navigator.userAgent;
-        var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+        var re = new RegExp("MSIE ([0-9]{1,}[.0-9]{0,})");
         if (re.exec(ua) != null)
             rv = parseFloat(RegExp.$1); // this holds the version number
         height = height + 28;
@@ -312,11 +313,11 @@ if (typeof top.webroot_url === "undefined" && opener) {
 //
 if (typeof top.set_opener !== "function") {
     var opener_list = [];
-
+    /* eslint-disable-next-line no-inner-declarations */
     function set_opener(window, opener) {
         top.opener_list[window] = opener;
     }
-
+    /* eslint-disable-next-line no-inner-declarations */
     function get_opener(window) {
         return top.opener_list[window];
     }
@@ -324,38 +325,60 @@ if (typeof top.set_opener !== "function") {
 
 // universal alert popup message
 if (typeof alertMsg !== "function") {
-    function alertMsg(message, timer = 5000, type = 'danger', size = '', persist = '') {
-        // this xl() is just so cool.
-        let gotIt = xl("Got It");
-        let title = xl("Alert");
-        let dismiss = xl("Dismiss");
+    /* eslint-disable-next-line no-inner-declarations */
+    function alertMsg(message, timer = 5000, type = 'danger', size = '', persist = '', hideDismiss = false) {
+        const gotIt   = xl("Dismiss Forever");
+        const title   = xl("Alert");
+        const dismiss = xl("Dismiss");
+
         $('#alert_box').remove();
-        let oHidden = '';
-        oHidden = !persist ? "hidden" : '';
-        let oSize = (size == 'lg') ? 'left:10%;width:80%;' : 'left:25%;width:50%;';
-        let style = "position:fixed;top:25%;" + oSize + " bottom:0;z-index:9999;";
-        $("body").prepend("<div class='container text-center' id='alert_box' style='" + style + "'></div>");
-        let mHtml = '<div id="alertmsg" class="alert alert-' + type + ' alert-dismissable">' +
-            '<button type="button" class="btn btn-link ' + oHidden + '" id="dontShowAgain" data-dismiss="alert">' +
-            gotIt + '&nbsp;<i class="fa fa-thumbs-up"></i></button>' +
-            '<h4 class="alert-heading text-center">' + title + '!</h4><hr>' + '<p style="color:#000;">' + message + '</p>' +
-            '<button type="button" id="alertDismissButton" class="pull-right btn btn-link" data-dismiss="alert">' + dismiss + '</button><br /></div>';
+
+        // hidden attribute to hide the "Dismiss Forever" button
+        const hiddenAttr = (hideDismiss || !persist) ? ' hidden' : '';
+
+        const oSize = (size === 'lg') ? 'left:10%;width:80%;' : 'left:30%;width:40%;';
+        const style = `position:fixed;top:25%;${oSize}bottom:0;z-index:9999;`;
+
+        $('body').prepend(`<div class="container text-center" id="alert_box" style="${jsAttr(style)}"></div>`);
+
+        const mHtml = `
+        <div id="alertmsg" class="alert alert-${jsAttr(type)} alert-dismissible" role="alert">
+            <h5 class="alert-heading text-center">${jsText(title)}!</h5>
+            <hr>
+            <p class="text-dark">${jsText(message)}</p>
+
+            <button type="button" class="btn btn-link" id="dontShowAgain" data-dismiss="alert"${hiddenAttr}>
+                ${jsText(gotIt)}
+            </button>
+
+            <button type="button" id="alertDismissButton" class="btn btn-link float-right"
+                data-dismiss="alert" aria-label="${jsAttr(dismiss)}">
+                ${jsText(dismiss)}
+            </button>
+        </div>`;
+
         $('#alert_box').append(mHtml);
+
         $('#alertmsg').on('closed.bs.alert', function () {
             clearTimeout(AlertMsg);
             $('#alert_box').remove();
             return false;
         });
-        $('#dontShowAgain').on('click', function (e) {
+
+        $('#dontShowAgain').on('click', function () {
             clearTimeout(AlertMsg);
             $('#alert_box').remove();
-            persistUserOption(persist, 1);
+            if (persist) {
+                persistUserOption(persist, 1);
+            }
         });
-        $('#alertDismissButton').on('click', function (e) {
+
+        $('#alertDismissButton').on('click', function () {
             clearTimeout(AlertMsg);
             $('#alert_box').remove();
         });
-        let AlertMsg = setTimeout(function () {
+
+        const AlertMsg = setTimeout(function () {
             $('#alertmsg').fadeOut(800, function () {
                 $('#alert_box').remove();
             });
@@ -395,25 +418,26 @@ if (typeof alertMsg !== "function") {
 //
 if (typeof dlgclose !== "function") {
     if (!opener) {
+        /* eslint-disable-next-line no-global-assign */
         opener = window;
     }
-
+    /* eslint-disable-next-line no-inner-declarations */
     function dlgclose(call, args) {
         var frameName = window.name;
         var wframe = top;
-        if (frameName === '') {
+        if (frameName === "") {
             // try to find dialog. dialogModal is embedded dialog class
             // It has to be here somewhere.
-            frameName = $(".dialogModal").attr('id');
+            frameName = $(".dialogModal").attr("id");
             if (!frameName) {
-                frameName = parent.$(".dialogModal").attr('id');
+                frameName = parent.$(".dialogModal").attr("id");
                 if (!frameName) {
                     console.log("Unable to find dialog.");
                     return false;
                 }
             }
         }
-        var dialogModal = top.$('div#' + frameName);
+        var dialogModal = top.$("div#" + frameName);
 
         var removeFrame = dialogModal.find("iframe[name='" + frameName + "']");
         if (removeFrame.length > 0) {
@@ -424,10 +448,10 @@ if (typeof dlgclose !== "function") {
             if (call) {
                 wframe.setCallBack(call, args); // sets/creates callback function in dialogs scope.
             }
-            dialogModal.modal('hide');
+            dialogModal.modal("hide");
         } else {
             // no opener not iframe must be in here
-            $(this.document).find(".dialogModal").modal('hide');
+            $(this.document).find(".dialogModal").modal("hide");
         }
     }
 }
@@ -508,7 +532,7 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
         type: 'iframe', // POST, GET (ajax) or iframe
         async: true,
         frameContent: "", // for iframe embedded content
-        html: "", // content for alerts, comfirm etc ajax
+        html: "", // content for alerts, confirm etc ajax
         allowDrag: false,
         allowResize: true,
         sizeHeight: 'auto', // 'full' will use as much height as allowed
@@ -556,7 +580,7 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
         width = "modal-full";
     }
     // Convert dialog size to percentages and/or css class.
-    var sizeChoices = ['modal-sm', 'modal-md', 'modal-mlg', 'modal-lg', 'modal-xl', 'modal-full'];
+    const sizeChoices = ['modal-sm', 'modal-md', 'modal-mlg', 'modal-lg', 'modal-xl', 'modal-full'];
     if (Math.abs(width) > 0) {
         width = Math.abs(width);
         mWidth = (width / where.innerWidth * 100).toFixed(1) + '%';
@@ -708,11 +732,16 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
                 if (opts.resolvePromiseOn === 'shown') {
                     resolve(dlgContainer);
                 }
+            }).on('hide.bs.modal', function (e) {
+                console.log("Dialog is closing...");
+                e.currentTarget.style.cursor = "auto";
             }).on('hidden.bs.modal', function (e) {
+                console.log("Dialog is closed...");
                 // clear cursor
-                e.target.style.cursor = "pointer";
+                e.currentTarget.style.cursor = "auto";
                 // remove our dialog
                 jQuery(this).remove();
+                document.body.style.cursor = "auto";
                 // now we can run functions in our window.
                 if (opts.onClosed) {
                     console.log('Doing onClosed:[' + opts.onClosed + ']');
@@ -826,23 +855,25 @@ function dlgopen(url, winname, width, height, forceNewWindow, title, opts) {
                     btnOp.style = "";
                 }
                 for (var index in btnOp) {
-                    if (btnOp.hasOwnProperty(index)) {
+                    if (Object.prototype.hasOwnProperty.call(btnOp, index)) {
                         switch (index) {
-                            case 'close':
+                            case "close":
                                 //add close event
                                 if (btnOp[index]) {
-                                    btn.attr('data-dismiss', 'modal');
+                                    btn.attr("data-dismiss", "modal");
                                 }
                                 break;
-                            case 'click':
+                            case "click":
                                 //binds button to click event of fn defined in calling document/form
-                                var fn = btnOp.click.bind(dlgContainer.find('.modal-content'));
+                                var fn = btnOp.click.bind(
+                                    dlgContainer.find(".modal-content")
+                                );
                                 btn.click(fn);
                                 break;
-                            case 'text':
+                            case "text":
                                 btn.html(btnOp[index]);
                                 break;
-                            case 'class':
+                            case "class":
                                 break;
                             default:
                                 //all other possible HTML attributes to button element

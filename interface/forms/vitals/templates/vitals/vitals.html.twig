@@ -14,9 +14,9 @@
 <script src="{{ FORM_ACTION|attr }}/interface/forms/vitals/vitals.js?v={{ assetVersion|attr_url }}" type="text/javascript"></script>
 <script>
     let vitalsTranslations = {
-        'weight_input': window.xl("Weight") + ' (' + window.xl("lbs") + ')'
+        'weight_input_usa': window.xl("Weight") + ' (' + window.xl("lbs") + ')'
         ,'weight_input_metric': window.xl("Weight") + ' (' + window.xl("kg") + ')'
-        ,'height_input': window.xl("Height/Length") + ' (' + window.xl("in") + ')'
+        ,'height_input_usa': window.xl("Height/Length") + ' (' + window.xl("in") + ')'
         ,'height_input_metric': window.xl("Height/Length") + ' (' + window.xl("cm") + ')'
         ,'bps_input': window.xl("BP Systolic")
         ,'bpd_input': window.xl("BP Diastolic")
@@ -52,6 +52,7 @@
         <div class="col-sm-12">
             <form id="vitalsForm" name="vitals" method="post" action="{{ FORM_ACTION|attr }}/interface/forms/vitals/save.php">
                 <input type="hidden" name="csrf_token_form" value="{{ CSRF_TOKEN_FORM|attr }}" />
+                {% if has_id %}
                 <div class="row">
                     <div class="col-md-auto p-3 font-weight-bold text-right">
                         <label for="date">{{ "Date"|xlt }}</label>
@@ -60,6 +61,7 @@
                         <input title="{{ 'Date and time of this observation'|xla }}" type='text' size='14' class='form-control datetimepicker oe-patient-background' name='date' id='date' value='{{ vitals.get_date|dateToTime|date("Y-m-d H:i")|attr }}' />
                     </div>
                 </div>
+                {% endif %}
                 <div id="chart" class="chart-dygraphs" style="margin-left: -15px"></div>
                     <div class="table-responsive">
 
@@ -87,7 +89,7 @@
                                 {% endif %}
                                  {% if field.type == "textbox" %}
                                      {% include "vitals_textbox.html.twig" with {title:field.title, input:field.input
-                                         , vitals:vitals, vitalsValue:field.vitalsValue, unit:field.unit,
+                                         , vitals:vitals, vitalsValue:field.vitalsValue, unit:field.unit, unitLabel: field.unitLabel,
                                          precision:field.precision, codes:field.codes, results: vitalsHistoryLookback, is_edit: true }
                                      %}
                                  {% endif %}
@@ -127,7 +129,7 @@ let vitals = [];
 vitals[0] = formdate + '-' + {{ vitals.get_height()|js_escape }} + '-' + {{ vitals.get_weight()|js_escape }}
     + '-' + {{ vitals.get_head_circ()|js_escape }};
 // historic values
-{% for result in reuslts %}
+{% for result in results %}
 vitals[vitals.length] = {{ result.get_date()|dateToTime|date("Ymd")|js_escape }} + '-' + {{ result.get_height()|js_escape }}
     + '-' + {{ result.get_weight()|js_escape }} + '-' + {{ result.get_head_circ()|js_escape }};
 {% endfor %}
@@ -190,7 +192,7 @@ $(function () {
 
 function ShowGrowthchart(doPDF) {
     // get values from the current form elements
-    vitals[0] = formdate+'-'+$("#height_input").val()+'-'+$("#weight_input").val()+'-'+$("#head_circ_input").val();
+    vitals[0] = formdate+'-'+$("#height_input_usa").val()+'-'+$("#weight_input_usa").val()+'-'+$("#head_circ_input_usa").val();
     // build the data string
     var datastring = "";
     for(let i=0; i<vitals.length; i++) {

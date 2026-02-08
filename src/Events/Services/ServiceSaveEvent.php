@@ -18,31 +18,23 @@ use Symfony\Contracts\EventDispatcher\Event;
 class ServiceSaveEvent extends Event
 {
     /**
-     * This event is triggered after a user has been created, and an assoc
-     * array containing the POST of new user data is passed to the event object
+     * This event is triggered before a record has been created, and an assoc
+     * array containing the POST of the record data is passed to the event object
      */
     const EVENT_PRE_SAVE = 'service.save.pre';
 
+    /**
+     * This event is triggered after a record has been created, and an assoc
+     * array containing the POST of new record data is passed to the event object
+     */
     const EVENT_POST_SAVE = 'service.save.post';
 
     /**
-     * @var BaseService
-     */
-    private $service;
-
-    /**
-     * @var array
-     */
-    private $saveData;
-
-    /**
      * UserCreatedEvent constructor.
-     * @param $userData
+     * @param $saveData
      */
-    public function __construct(BaseService $service, array $saveData)
+    public function __construct(private readonly BaseService $service, private array $saveData)
     {
-        $this->service = $service;
-        $this->saveData = $saveData;
     }
 
     public function getService(): BaseService

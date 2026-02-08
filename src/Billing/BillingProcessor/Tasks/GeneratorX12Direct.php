@@ -25,21 +25,13 @@ use OpenEMR\Billing\BillingProcessor\BillingClaim;
 use OpenEMR\Billing\BillingProcessor\BillingClaimBatch;
 use OpenEMR\Billing\BillingProcessor\Traits\WritesToBillingLog;
 use OpenEMR\Billing\BillingUtilities;
+use OpenEMR\Billing\Claim;
 use OpenEMR\Billing\X125010837P;
 use OpenEMR\Common\Csrf\CsrfUtils;
 
 class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface, GeneratorCanValidateInterface, LoggerInterface
 {
     use WritesToBillingLog;
-
-    /**
-     * If "Allow Encounter Claims" is enabled, this allows the claims to use
-     * the alternate payor ID on the claim and sets the claims to report,
-     * not chargeable. ie: RP = reporting, CH = chargeable
-     *
-     * @var bool|mixed
-     */
-    protected $encounter_claim = false;
 
     /**
      * An array of batches, one for each x-12 partner, indexed by partner id
@@ -61,10 +53,21 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
      */
     protected $edi_counts = [];
 
-    public function __construct($action, $encounter_claim = false)
-    {
+    /**
+     * For each X12 partner, track patient segment counts
+     * @var array
+     */
+    protected $pat_segment_counts = [];
+
+    /**
+     * @param mixed $action
+     * @param bool $encounter_claim If "Allow Encounter Claims" is enabled, this allows the claims to use the alternate payor ID on the claim and sets the claims to report, not chargeable. ie: RP = reporting, CH = chargeable
+     */
+    public function __construct(
+        $action,
+        protected $encounter_claim = false
+    ) {
         parent::__construct($action);
-        $this->encounter_claim = $encounter_claim;
     }
 
     /**
@@ -100,7 +103,7 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
                 }
             }
 
-            $batch = new BillingClaimBatch();
+            $batch = new BillingClaimBatch('.txt', $context);
             $filename = $batch->getBatFilename();
             $filename = str_replace('batch', 'batch-p' . $row['id'], $filename);
             $batch->setBatFilename($filename);
@@ -115,6 +118,9 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
 
             // We need to track the edi count for each x-12 partner, initialize them to zero here
             $this->edi_counts[$row['id']] = 0;
+
+            // We need to track the patient segment count for each x-12 partner, initialize them to zero here
+            $this->pat_segment_counts[$row['id']] = 0;
 
             // Store the directory in an associative array with the partner ID as the index
             $this->x12_partner_batches[$row['id']] = $batch;
@@ -142,6 +148,7 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
     public function validateOnly(BillingClaim $claim)
     {
         $this->updateBatchFile($claim);
+        $this->printToScreen(xl("Successfully validated claim") . ": " . $claim->getId());
     }
 
     /**
@@ -204,24 +211,46 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
         // Get the correct edi count for this x-12 partner using the partner ID
         $edicount = $this->edi_counts[$claim->getPartner()];
 
+        // Get the correct patient segment count for this x-12 partner using the partner ID
+        $patSegmentCount = $this->pat_segment_counts[$claim->getPartner()];
+
         // Tell our batch that we've processed this claim
         $batch->addClaim($claim);
 
-        // Use the tr3 format to output for direct-submission to insurance companies
-        $log = '';
+        $log = 'X12Direct ' . $claim->action . ' ';
         $is_last_claim = $claim->getIsLast();
         $HLCount = count($batch->getClaims());
-        $segs = explode("~\n", X125010837P::genX12837P(
+        if ($HLCount > 1) {
+            $idx = $HLCount - 2;
+            $prior_claim = $batch->getClaims()[$idx];
+            $priorX12ClaimSelfInsured = (
+                new Claim(
+                    $prior_claim->getPid(),
+                    $prior_claim->getEncounter(),
+                    $prior_claim->getPartner()
+                )
+                )->isSelfOfInsured($prior_claim->getPayorType() - 1);
+            if (!$priorX12ClaimSelfInsured) {
+                $patSegmentCount++;
+            }
+        }
+
+        //$is_self_of_insured = $claim->isSelfOfInsured();
+        $segs = explode("~\n", (string) X125010837P::genX12837P(
             $claim->getPid(),
             $claim->getEncounter(),
+            $claim->getPartner(),
             $log,
             $this->encounter_claim,
             $is_last_claim,
             $HLCount,
-            $edicount
+            $edicount,
+            $patSegmentCount
         ));
-        // edi count is passed by reference and incremented in the tr3 function, and we need to set it back here
+        // edi count is passed by reference and incremented in the genX12837P function, and we need to set it back here
         $this->edi_counts[$claim->getPartner()] = $edicount;
+        // also for the patient segment counts
+        $this->pat_segment_counts[$claim->getPartner()] = $patSegmentCount;
         $this->appendToLog($log);
         $batch->append_claim($segs);
 
@@ -240,7 +269,7 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
      */
     public function completeToFile(array $context)
     {
-        $this->finish($context, function ($context) {
+        $this->finish($context, function ($context): void {
 
             // Get the created_batches from the finish method
             $created_batches = $context['created_batches'];
@@ -266,7 +295,7 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
                 $url = $GLOBALS['webroot'] . '/interface/billing/get_claim_file.php?' .
                     'key=' . urlencode($file) .
                     '&partner=' . urlencode($x12_partner_id) .
-                    '&csrf_token_form=' . urlencode(CsrfUtils::collectCsrfToken());
+                    '&csrf_token_form=' . urlencode((string) CsrfUtils::collectCsrfToken());
                 $html .=
                     "<li class='list-group-item d-flex justify-content-between align-items-center'>
                         <a href='" . attr($url) . "'>" . text($file) . "</a>
@@ -282,7 +311,7 @@ class GeneratorX12Direct extends AbstractGenerator implements GeneratorInterface
 
     public function completeToScreen(array $context)
     {
-        $this->finish($context, function ($context) {
+        $this->finish($context, function ($context): void {
 
             // Get the format_bat string from the finish method
             $format_bat = $context['format_bat'];
