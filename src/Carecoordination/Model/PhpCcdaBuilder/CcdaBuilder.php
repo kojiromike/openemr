@@ -25,7 +25,6 @@ class CcdaBuilder
     private readonly SystemLogger $logger;
     private bool $debug = true;
     private string $documentLocation = '';
-    private string $stylesheetPath = "../../../../interface/modules/zend_modules/public/xsl/cda.xsl";
 
     public function __construct()
     {
@@ -52,7 +51,6 @@ class CcdaBuilder
      */
     public function setStylesheetPath(string $path): self
     {
-        $this->stylesheetPath = $path;
         $this->templateEngine->setStylesheetPath($path);
         return $this;
     }
@@ -79,9 +77,10 @@ class CcdaBuilder
             throw new \RuntimeException("Invalid CCDA input data");
         }
 
-        $ccdaData = $data['CCDA'];
-        $docType = $ccdaData['doc_type'] ?? 'ccd';
-        $xslUrl = $ccdaData['xslUrl'] ?? '';
+        /** @var array<string, mixed> $ccdaData */
+        $ccdaData = is_array($data['CCDA']) ? $data['CCDA'] : [];
+        $docType = is_string($ccdaData['doc_type'] ?? null) ? $ccdaData['doc_type'] : 'ccd';
+        $xslUrl = is_string($ccdaData['xslUrl'] ?? null) ? $ccdaData['xslUrl'] : '';
 
         // Step 2: Check for unstructured document type
         if ($docType === 'unstructured') {
@@ -93,7 +92,10 @@ class CcdaBuilder
 
         // Debug output
         if ($this->debug) {
-            $this->writeDebugFile('ccda_transformed.json', json_encode($transformedData, JSON_PRETTY_PRINT));
+            $json = json_encode($transformedData, JSON_PRETTY_PRINT);
+            if ($json !== false) {
+                $this->writeDebugFile('ccda_transformed.json', $json);
+            }
         }
 
         // Step 4: Generate CCDA XML using templates (replaces bbg.generateCCD())
@@ -124,6 +126,8 @@ class CcdaBuilder
      * Parse input XML string to associative array
      *
      * Replaces xml2js parsing in Node.js
+     *
+     * @return array<string, mixed>
      */
     private function parseInputXml(string $xml): array
     {
@@ -159,6 +163,8 @@ class CcdaBuilder
      * Convert SimpleXMLElement to array
      *
      * Mimics xml2js behavior with {explicitArray: false, mergeAttrs: true}
+     *
+     * @return array<string, mixed>
      */
     private function xmlToArray(\SimpleXMLElement $xml): array
     {
@@ -211,6 +217,8 @@ class CcdaBuilder
 
     /**
      * Generate unstructured CCDA document
+     *
+     * @param array<string, mixed> $ccdaData
      */
     private function generateUnstructured(array $ccdaData, string $xslUrl): string
     {
@@ -224,8 +232,9 @@ class CcdaBuilder
         $xml = $this->templateEngine->generateCcd($transformedData);
 
         // Handle patient files template injection
-        if (!empty($ccdaData['patient_files'])) {
-            $filesTemplate = $this->buildPatientFilesTemplate($ccdaData['patient_files']);
+        $patientFiles = $ccdaData['patient_files'] ?? null;
+        if (is_array($patientFiles) && !empty($patientFiles)) {
+            $filesTemplate = $this->buildPatientFilesTemplate($patientFiles);
             $xml = str_replace('</ClinicalDocument>', $filesTemplate . '</ClinicalDocument>', $xml);
         }
 
@@ -234,6 +243,8 @@ class CcdaBuilder
 
     /**
      * Build patient files template for unstructured documents
+     *
+     * @param array<array-key, mixed> $patientFiles
      */
     private function buildPatientFilesTemplate(array $patientFiles): string
     {

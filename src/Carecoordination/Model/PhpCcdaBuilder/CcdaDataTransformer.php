@@ -301,6 +301,50 @@ class CcdaDataTransformer
     }
 
     /**
+     * Safely extract a string value from mixed data
+     */
+    private function str(mixed $value, string $default = ''): string
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+        return $default;
+    }
+
+    /**
+     * Safely extract an array value from mixed data
+     *
+     * @return array<array-key, mixed>
+     */
+    private function arr(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        return [];
+    }
+
+    /**
+     * Safely extract a float value from mixed data
+     */
+    private function num(mixed $value, float $default = 0.0): float
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+        return $default;
+    }
+
+    /**
      * Map route code to NCI Thesaurus code
      */
     private function mapRouteCode(?string $routeCode): string
@@ -329,14 +373,17 @@ class CcdaDataTransformer
      */
     private function populateDemographics(array $pd): array
     {
-        $patient = $pd['patient'] ?? $pd;
-        $guardian = $pd['guardian'] ?? [];
-        $encounterProvider = $pd['encounter_provider'] ?? [];
+        /** @var array<string, mixed> $patient */
+        $patient = $this->arr($pd['patient'] ?? $pd);
+        /** @var array<string, mixed> $guardian */
+        $guardian = $this->arr($pd['guardian'] ?? []);
+        /** @var array<string, mixed> $encounterProvider */
+        $encounterProvider = $this->arr($pd['encounter_provider'] ?? []);
 
         // Apply null flavor for unspecified values
-        $race = $patient['race'] ?? '';
-        $raceGroup = $patient['race_group'] ?? '';
-        $ethnicity = $patient['ethnicity'] ?? '';
+        $race = $this->str($patient['race'] ?? '');
+        $raceGroup = $this->str($patient['race_group'] ?? '');
+        $ethnicity = $this->str($patient['ethnicity'] ?? '');
 
         if ($race === 'declined_to_specify' || $race === '') {
             $race = 'null_flavor';
@@ -350,38 +397,38 @@ class CcdaDataTransformer
 
         return [
             'name' => [
-                'prefix' => $patient['prefix'] ?? '',
-                'suffix' => $patient['suffix'] ?? '',
-                'middle' => [$patient['mname'] ?? ''],
-                'last' => $patient['lname'] ?? '',
-                'first' => $patient['fname'] ?? '',
+                'prefix' => $this->str($patient['prefix'] ?? ''),
+                'suffix' => $this->str($patient['suffix'] ?? ''),
+                'middle' => [$this->str($patient['mname'] ?? '')],
+                'last' => $this->str($patient['lname'] ?? ''),
+                'first' => $this->str($patient['fname'] ?? ''),
             ],
             'birth_name' => [
-                'middle' => $patient['birth_mname'] ?? '',
-                'last' => $patient['birth_lname'] ?? '',
-                'first' => $patient['birth_fname'] ?? '',
+                'middle' => $this->str($patient['birth_mname'] ?? ''),
+                'last' => $this->str($patient['birth_lname'] ?? ''),
+                'first' => $this->str($patient['birth_fname'] ?? ''),
             ],
             'dob' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($patient['dob'] ?? ''),
+                    'date' => DateFormatter::fDate($this->str($patient['dob'] ?? '')),
                     'precision' => 'day',
                 ],
             ],
-            'gender' => strtoupper($patient['gender'] ?? '') ?: 'null_flavor',
+            'gender' => strtoupper($this->str($patient['gender'] ?? '')) ?: 'null_flavor',
             'identifiers' => [
                 [
                     'identifier' => $this->oidFacility ?: $this->npiFacility,
-                    'extension' => $patient['uuid'] ?? '',
+                    'extension' => $this->str($patient['uuid'] ?? ''),
                 ],
             ],
-            'marital_status' => strtoupper($patient['status'] ?? ''),
+            'marital_status' => strtoupper($this->str($patient['status'] ?? '')),
             'addresses' => $this->fetchPreviousAddresses($patient),
             'phone' => [
-                ['number' => $patient['phone_home'] ?? '', 'type' => 'primary home'],
-                ['number' => $patient['phone_mobile'] ?? '', 'type' => 'primary mobile'],
-                ['number' => $patient['phone_work'] ?? '', 'type' => 'work place'],
-                ['number' => $patient['phone_emergency'] ?? '', 'type' => 'emergency contact'],
-                ['email' => $patient['email'] ?? '', 'type' => 'contact_email'],
+                ['number' => $this->str($patient['phone_home'] ?? ''), 'type' => 'primary home'],
+                ['number' => $this->str($patient['phone_mobile'] ?? ''), 'type' => 'primary mobile'],
+                ['number' => $this->str($patient['phone_work'] ?? ''), 'type' => 'work place'],
+                ['number' => $this->str($patient['phone_emergency'] ?? ''), 'type' => 'emergency contact'],
+                ['email' => $this->str($patient['email'] ?? ''), 'type' => 'contact_email'],
             ],
             'ethnicity' => $ethnicity,
             'race' => $race ?: 'null_flavor',
@@ -402,18 +449,18 @@ class CcdaDataTransformer
                     ],
                 ],
                 'phone' => [
-                    ['number' => $encounterProvider['facility_phone'] ?? ''],
+                    ['number' => $this->str($encounterProvider['facility_phone'] ?? '')],
                 ],
                 'name' => [
-                    ['full' => $encounterProvider['facility_name'] ?? ''],
+                    ['full' => $this->str($encounterProvider['facility_name'] ?? '')],
                 ],
                 'address' => [
                     [
-                        'street_lines' => [$encounterProvider['facility_street'] ?? ''],
-                        'city' => $encounterProvider['facility_city'] ?? '',
-                        'state' => $encounterProvider['facility_state'] ?? '',
-                        'zip' => $encounterProvider['facility_postal_code'] ?? '',
-                        'country' => $encounterProvider['facility_country_code'] ?? 'US',
+                        'street_lines' => [$this->str($encounterProvider['facility_street'] ?? '')],
+                        'city' => $this->str($encounterProvider['facility_city'] ?? ''),
+                        'state' => $this->str($encounterProvider['facility_state'] ?? ''),
+                        'zip' => $this->str($encounterProvider['facility_postal_code'] ?? ''),
+                        'country' => $this->str($encounterProvider['facility_country_code'] ?? '', 'US'),
                         'use' => 'work place',
                     ],
                 ],
