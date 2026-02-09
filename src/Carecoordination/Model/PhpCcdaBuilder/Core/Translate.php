@@ -69,12 +69,12 @@ class Translate
         ],
         // Observation Interpretation
         '2.16.840.1.113883.5.83' => [
-            'H' => ['code' => 'H', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'High'],
-            'L' => ['code' => 'L', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'Low'],
-            'N' => ['code' => 'N', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'Normal'],
-            'A' => ['code' => 'A', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'Abnormal'],
-            'HH' => ['code' => 'HH', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'Critical High'],
-            'LL' => ['code' => 'LL', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'ObservationInterpretation', 'displayName' => 'Critical Low'],
+            'H' => ['code' => 'H', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'High'],
+            'L' => ['code' => 'L', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'Low'],
+            'N' => ['code' => 'N', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'Normal'],
+            'A' => ['code' => 'A', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'Abnormal'],
+            'HH' => ['code' => 'HH', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'Critical High'],
+            'LL' => ['code' => 'LL', 'codeSystem' => '2.16.840.1.113883.5.83', 'codeSystemName' => 'HL7 Result Interpretation', 'displayName' => 'Critical Low'],
         ],
         // Act Reason (for immunization refusal)
         '2.16.840.1.113883.5.8' => [
@@ -107,7 +107,10 @@ class Translate
 
         if (isset(self::$valueSets[$oid][$name])) {
             $result = self::$valueSets[$oid][$name];
-            $result['displayName'] = $name;
+            // Use displayName from value set if available, otherwise use the lookup key
+            if (!isset($result['displayName'])) {
+                $result['displayName'] = $name;
+            }
             return $result;
         }
 

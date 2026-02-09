@@ -85,7 +85,22 @@ class CcdaDataTransformer
         $data['procedures'] = $this->processSection($pd, 'procedures', 'procedure', 'populateProcedure');
         // NOTE: Node.js doesn't have a 'results' section - lab results may be in other sections
         // $data['results'] = $this->processSection($pd, 'results', 'result', 'populateResult');
-        $data['vitals'] = $this->processSection($pd, 'vitals', 'vital', 'populateVital');
+        // Vitals may be at top level or nested in history_physical->vitals_list
+        $vitalsSource = $pd;
+        if (empty($pd['vitals'])) {
+            $historyPhysicalVitals = $this->arr($pd['history_physical'] ?? []);
+            $vitalsList = $this->arr($historyPhysicalVitals['vitals_list'] ?? []);
+            if (!empty($vitalsList['vitals'])) {
+                // Wrap the vitals data in the expected structure for processSection
+                $vitalsData = $this->arr($vitalsList['vitals']);
+                // If it's a single vitals record, wrap in array
+                if (!array_key_exists(0, $vitalsData)) {
+                    $vitalsData = [$vitalsData];
+                }
+                $vitalsSource = ['vitals' => ['vital' => $vitalsData]];
+            }
+        }
+        $data['vitals'] = $this->processSection($vitalsSource, 'vitals', 'vital', 'populateVital');
         $data['immunizations'] = $this->processSection($pd, 'immunizations', 'immunization', 'populateImmunization');
         $data['encounters'] = $this->processSection($pd, 'encounter_list', 'encounter', 'populateEncounter');
         $data['plan_of_care'] = $this->processSection($pd, 'planofcare', 'item', 'populatePlanOfCare');
@@ -1531,13 +1546,14 @@ class CcdaDataTransformer
         $vitalList = [];
         $author = $this->arr($pd['author'] ?? []);
 
-        // Map common vital signs
+        // Map common vital signs (some have aliases for different input formats)
         $vitalsMap = [
             'bps' => ['code' => '8480-6', 'name' => 'Systolic Blood Pressure', 'unit' => 'mm[Hg]'],
             'bpd' => ['code' => '8462-4', 'name' => 'Diastolic Blood Pressure', 'unit' => 'mm[Hg]'],
             'pulse' => ['code' => '8867-4', 'name' => 'Heart Rate', 'unit' => '/min'],
             'temperature' => ['code' => '8310-5', 'name' => 'Body Temperature', 'unit' => 'Cel'],
             'respiration' => ['code' => '9279-1', 'name' => 'Respiratory Rate', 'unit' => '/min'],
+            'breath' => ['code' => '9279-1', 'name' => 'Respiratory Rate', 'unit' => '/min'],
             'height' => ['code' => '8302-2', 'name' => 'Body Height', 'unit' => 'cm'],
             'weight' => ['code' => '29463-7', 'name' => 'Body Weight', 'unit' => 'kg'],
             'BMI' => ['code' => '39156-5', 'name' => 'Body Mass Index', 'unit' => 'kg/m2'],
@@ -1557,6 +1573,7 @@ class CcdaDataTransformer
                     'vital' => [
                         'name' => $info['name'],
                         'code' => $info['code'],
+                        'code_system' => '2.16.840.1.113883.6.1',
                         'code_system_name' => 'LOINC',
                     ],
                     'status' => 'completed',
@@ -1566,9 +1583,9 @@ class CcdaDataTransformer
                             'precision' => 'day',
                         ],
                     ],
-                    'interpretations' => ['Normal'],
+                    'interpretations' => ['N'],
                     'value' => $this->num($pd[$key]),
-                    'unit' => $pd[$key . '_unit'] ?? $info['unit'],
+                    'unit' => $pd[$key . '_unit'] ?? $pd['unit_' . $key] ?? $info['unit'],
                     'author' => $this->buildAuthorBlock($author),
                 ];
             }
