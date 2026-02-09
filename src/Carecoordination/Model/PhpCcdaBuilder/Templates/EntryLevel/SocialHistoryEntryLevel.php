@@ -24,6 +24,7 @@ class SocialHistoryEntryLevel
     /**
      * Social History Observation
      * JS: exports.socialHistoryObservation
+     * @return array<string, mixed>
      */
     public static function socialHistoryObservation(): array
     {
@@ -69,13 +70,14 @@ class SocialHistoryEntryLevel
                     'text' => LeafLevel::inputProperty('value'),
                 ],
             ],
-            'existsWhen' => fn($input) => !isset($input['value']) || str_contains($input['value'] ?? '', 'smoke'),
+            'existsWhen' => fn(mixed $input): bool => !is_array($input) || !isset($input['value']) || (is_string($input['value']) && str_contains($input['value'], 'smoke')),
         ];
     }
 
     /**
      * Smoking Status Observation
      * JS: exports.smokingStatusObservation
+     * @return array<string, mixed>
      */
     public static function smokingStatusObservation(): array
     {
@@ -94,21 +96,22 @@ class SocialHistoryEntryLevel
                 array_merge(FieldLevel::effectiveTime(), ['required' => true]),
                 [
                     'key' => 'value',
-                    'attributes' => fn($input) => array_merge(
+                    'attributes' => fn(mixed $input): array => array_merge(
                         ['xsi:type' => 'CD'],
-                        Translate::codeFromName('2.16.840.1.113883.11.20.9.38', $input)
+                        Translate::codeFromName('2.16.840.1.113883.11.20.9.38', is_array($input) || is_string($input) ? $input : null)
                     ),
                     'required' => true,
                     'dataKey' => 'value',
                 ],
             ],
-            'existsWhen' => fn($input) => isset($input['value']) && str_contains($input['value'], 'smoke'),
+            'existsWhen' => fn(mixed $input): bool => is_array($input) && isset($input['value']) && is_string($input['value']) && str_contains($input['value'], 'smoke'),
         ];
     }
 
     /**
      * Gender Status Observation
      * JS: exports.genderStatusObservation
+     * @return array<string, mixed>
      */
     public static function genderStatusObservation(): array
     {
@@ -125,21 +128,22 @@ class SocialHistoryEntryLevel
                 FieldLevel::$statusCodeCompleted,
                 [
                     'key' => 'value',
-                    'attributes' => fn($input) => array_merge(
+                    'attributes' => fn(mixed $input): array => array_merge(
                         ['xsi:type' => 'CD'],
-                        Translate::codeFromName('2.16.840.1.113883.5.1', $input)
+                        Translate::codeFromName('2.16.840.1.113883.5.1', is_array($input) || is_string($input) ? $input : null)
                     ),
                     'required' => true,
                     'dataKey' => 'gender',
                 ],
             ],
-            'existsWhen' => fn($input) => $input && isset($input['gender']),
+            'existsWhen' => fn(mixed $input): bool => is_array($input) && isset($input['gender']),
         ];
     }
 
     /**
      * Tribal Affiliation Observation
      * JS: exports.tribalAffiliationObservation
+     * @return array<string, mixed>
      */
     public static function tribalAffiliationObservation(): array
     {
@@ -177,13 +181,14 @@ class SocialHistoryEntryLevel
                     'dataKey' => 'tribal_affiliation',
                 ],
             ],
-            'existsWhen' => fn($input) => $input && isset($input['tribal_affiliation']['tribal_code']),
+            'existsWhen' => fn(mixed $input): bool => is_array($input) && is_array($input['tribal_affiliation'] ?? null) && isset($input['tribal_affiliation']['tribal_code']),
         ];
     }
 
     /**
      * Pregnancy Status Observation
      * JS: exports.pregnancyStatusObservation
+     * @return array<string, mixed>
      */
     public static function pregnancyStatusObservation(): array
     {
@@ -219,13 +224,14 @@ class SocialHistoryEntryLevel
                     'dataKey' => 'pregnancy_status',
                 ],
             ],
-            'existsWhen' => fn($input) => $input && isset($input['pregnancy_status']['pregnancy_code']),
+            'existsWhen' => fn(mixed $input): bool => is_array($input) && is_array($input['pregnancy_status'] ?? null) && isset($input['pregnancy_status']['pregnancy_code']),
         ];
     }
 
     /**
      * Sexual Orientation Observation
      * JS: exports.sexualOrientationObservation
+     * @return array<string, mixed>
      */
     public static function sexualOrientationObservation(): array
     {
@@ -255,13 +261,13 @@ class SocialHistoryEntryLevel
                 ],
                 [
                     'key' => 'value',
-                    'attributes' => function ($input) {
+                    'attributes' => function (mixed $input): array {
                         $attrs = ['xsi:type' => 'CD'];
-                        if ($input && isset($input['code'])) {
-                            $attrs['code'] = $input['code'];
-                            $attrs['displayName'] = $input['display'] ?? null;
-                            $attrs['codeSystem'] = $input['code_system'] ?? '2.16.840.1.113883.6.1';
-                            $attrs['codeSystemName'] = $input['code_system_name'] ?? 'LOINC';
+                        if (is_array($input) && isset($input['code'])) {
+                            $attrs['code'] = is_string($input['code']) ? $input['code'] : '';
+                            $attrs['displayName'] = is_string($input['display'] ?? null) ? $input['display'] : null;
+                            $attrs['codeSystem'] = is_string($input['code_system'] ?? null) ? $input['code_system'] : '2.16.840.1.113883.6.1';
+                            $attrs['codeSystemName'] = is_string($input['code_system_name'] ?? null) ? $input['code_system_name'] : 'LOINC';
                         } else {
                             $attrs['nullFlavor'] = 'UNK';
                         }
@@ -277,6 +283,7 @@ class SocialHistoryEntryLevel
     /**
      * Gender Identity Observation
      * JS: exports.genderIdentityObservation
+     * @return array<string, mixed>
      */
     public static function genderIdentityObservation(): array
     {
@@ -306,13 +313,13 @@ class SocialHistoryEntryLevel
                 ],
                 [
                     'key' => 'value',
-                    'attributes' => function ($input) {
+                    'attributes' => function (mixed $input): array {
                         $attrs = ['xsi:type' => 'CD'];
-                        if ($input && isset($input['code'])) {
-                            $attrs['code'] = $input['code'];
-                            $attrs['displayName'] = $input['display'] ?? null;
-                            $attrs['codeSystem'] = $input['code_system'] ?? '2.16.840.1.113883.6.1';
-                            $attrs['codeSystemName'] = $input['code_system_name'] ?? 'LOINC';
+                        if (is_array($input) && isset($input['code'])) {
+                            $attrs['code'] = is_string($input['code']) ? $input['code'] : '';
+                            $attrs['displayName'] = is_string($input['display'] ?? null) ? $input['display'] : null;
+                            $attrs['codeSystem'] = is_string($input['code_system'] ?? null) ? $input['code_system'] : '2.16.840.1.113883.6.1';
+                            $attrs['codeSystemName'] = is_string($input['code_system_name'] ?? null) ? $input['code_system_name'] : 'LOINC';
                         } else {
                             $attrs['nullFlavor'] = 'ASKU';
                         }
@@ -328,6 +335,7 @@ class SocialHistoryEntryLevel
     /**
      * Sex Observation
      * JS: exports.sexObservation
+     * @return array<string, mixed>
      */
     public static function sexObservation(): array
     {
@@ -361,10 +369,13 @@ class SocialHistoryEntryLevel
                     'dataKey' => 'sex_observation',
                 ],
             ],
-            'existsWhen' => function ($input) {
+            'existsWhen' => function (mixed $input): bool {
+                if (!is_array($input)) {
+                    return false;
+                }
                 $so = $input['sex_observation'] ?? null;
-                return (is_string($so) && $so) ||
-                    ($so && (isset($so['gender']) || isset($so['code_spec']) || isset($so['code']))) ||
+                return (is_string($so) && $so !== '') ||
+                    (is_array($so) && (isset($so['gender']) || isset($so['code_spec']) || isset($so['code']))) ||
                     isset($input['gender']);
             },
         ];
@@ -372,28 +383,32 @@ class SocialHistoryEntryLevel
 
     /**
      * Resolve sex value attributes
+     *
+     * @return array<string, mixed>
      */
-    private static function resolveSexValueAttributes($input): array
+    private static function resolveSexValueAttributes(mixed $input): array
     {
-        $so = $input['sex_observation'] ?? [];
+        if (!is_array($input)) {
+            return ['xsi:type' => 'CD', 'code' => 'unknown', 'codeSystem' => '2.16.840.1.113883.4.642.4.1048', 'displayName' => 'Unknown'];
+        }
+        $so = is_array($input['sex_observation'] ?? null) ? $input['sex_observation'] : [];
         $attrs = ['xsi:type' => 'CD'];
 
         // Check option_id/gender first
-        $optionId = $so['gender'] ?? null;
+        $optionId = is_string($so['gender'] ?? null) ? $so['gender'] : null;
         $resolved = self::resolveAdministrativeSexFromOptionId($optionId);
-        if ($resolved) {
+        if ($resolved !== null) {
             $attrs['code'] = $resolved['code'];
             $attrs['codeSystem'] = $resolved['system'];
-            if (isset($resolved['display'])) {
-                $attrs['displayName'] = $resolved['display'];
-            }
+            $attrs['displayName'] = $resolved['display'];
             return $attrs;
         }
 
         // Check code_spec
-        if (isset($so['code_spec'])) {
-            $fromSpec = self::parseCodeSpec($so['code_spec']);
-            if ($fromSpec) {
+        $codeSpec = $so['code_spec'] ?? null;
+        if (is_string($codeSpec)) {
+            $fromSpec = self::parseCodeSpec($codeSpec);
+            if ($fromSpec !== null) {
                 $attrs['code'] = $fromSpec['code'];
                 $attrs['codeSystem'] = $fromSpec['systemUri'];
                 $attrs['displayName'] = self::displayForSexCode($fromSpec['systemUri'], $fromSpec['code']);
@@ -402,16 +417,19 @@ class SocialHistoryEntryLevel
         }
 
         // Check direct code/codeSystem
-        if (isset($so['code']) && (isset($so['code_system']) || isset($so['codeSystem']))) {
-            $sys = $so['code_system'] ?? $so['codeSystem'];
-            $attrs['code'] = (string)$so['code'];
-            $attrs['codeSystem'] = (string)$sys;
-            $attrs['displayName'] = $so['display'] ?? self::displayForSexCode($sys, $so['code']);
+        $soCode = $so['code'] ?? null;
+        $soCodeSystem = $so['code_system'] ?? $so['codeSystem'] ?? null;
+        if (is_string($soCode) && is_string($soCodeSystem)) {
+            $attrs['code'] = $soCode;
+            $attrs['codeSystem'] = $soCodeSystem;
+            $display = $so['display'] ?? null;
+            $attrs['displayName'] = is_string($display) ? $display : self::displayForSexCode($soCodeSystem, $soCode);
             return $attrs;
         }
 
         // Fallback to input.gender
-        $g = isset($input['gender']) ? strtolower((string)$input['gender']) : null;
+        $inputGender = $input['gender'] ?? null;
+        $g = is_string($inputGender) ? strtolower($inputGender) : null;
         $genderMap = [
             'm' => ['248153007', '2.16.840.1.113883.6.96', 'Male'],
             'male' => ['248153007', '2.16.840.1.113883.6.96', 'Male'],
@@ -438,12 +456,15 @@ class SocialHistoryEntryLevel
         return $attrs;
     }
 
-    private static function resolveAdministrativeSexFromOptionId($optionId): ?array
+    /**
+     * @return array{code: string, system: string, display: string}|null
+     */
+    private static function resolveAdministrativeSexFromOptionId(?string $optionId): ?array
     {
-        if (!$optionId) {
+        if ($optionId === null || $optionId === '') {
             return null;
         }
-        $optionId = strtolower(trim((string)$optionId));
+        $optionId = strtolower(trim($optionId));
 
         $map = [
             'male' => ['code' => '248153007', 'system' => '2.16.840.1.113883.6.96', 'display' => 'Male'],
@@ -457,9 +478,12 @@ class SocialHistoryEntryLevel
         return $map[$optionId] ?? null;
     }
 
-    private static function parseCodeSpec($spec): ?array
+    /**
+     * @return array{systemUri: string, code: string}|null
+     */
+    private static function parseCodeSpec(string $spec): ?array
     {
-        if (!$spec || !is_string($spec)) {
+        if ($spec === '') {
             return null;
         }
         $parts = explode(':', $spec);
@@ -480,7 +504,7 @@ class SocialHistoryEntryLevel
         return ['systemUri' => $systems[$sys] ?? $sys, 'code' => $code];
     }
 
-    private static function displayForSexCode($systemUri, $code): string
+    private static function displayForSexCode(string $systemUri, string $code): string
     {
         if ($systemUri === '2.16.840.1.113883.6.96') {
             $map = [

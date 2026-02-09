@@ -24,6 +24,8 @@ class PayerEntryLevel
     /**
      * Policy Activity (private)
      * JS: policyActivity (private)
+     *
+     * @return array<string, mixed>
      */
     private static function policyActivity(): array
     {
@@ -131,10 +133,14 @@ class PayerEntryLevel
                     ],
                     'dataKey' => 'participant',
                     'dataTransform' => function ($input) {
-                        if (isset($input['performer'])) {
-                            $input['identifiers'] = $input['performer']['identifiers'] ?? null;
-                            $input['address'] = $input['performer']['address'] ?? null;
-                            $input['phone'] = $input['performer']['phone'] ?? null;
+                        if (!is_array($input)) {
+                            return $input;
+                        }
+                        $performer = $input['performer'] ?? null;
+                        if (is_array($performer)) {
+                            $input['identifiers'] = $performer['identifiers'] ?? null;
+                            $input['address'] = $performer['address'] ?? null;
+                            $input['phone'] = $performer['phone'] ?? null;
                         }
                         return $input;
                     },
@@ -202,6 +208,7 @@ class PayerEntryLevel
     /**
      * Coverage Activity
      * JS: exports.coverageActivity
+     * @return array<string, mixed>
      */
     public static function coverageActivity(): array
     {

@@ -19,11 +19,15 @@ class LeafLevel
 {
     /**
      * Reference counter for generating unique IDs
+     *
+     * @var array<string, int>
      */
     private static array $referenceCounters = [];
 
     /**
      * Table reference counter
+     *
+     * @var array<string, int>
      */
     private static array $tableReferenceCounters = [];
 
@@ -31,7 +35,7 @@ class LeafLevel
      * Return input as-is
      * JS: exports.input
      */
-    public static function input($input)
+    public static function input(mixed $input): mixed
     {
         return $input;
     }
@@ -40,9 +44,9 @@ class LeafLevel
      * Get a property from input
      * JS: exports.inputProperty
      */
-    public static function inputProperty(string $key, $defaultValue = null): callable
+    public static function inputProperty(string $key, mixed $defaultValue = null): callable
     {
-        return function ($input) use ($key, $defaultValue) {
+        return function (mixed $input) use ($key, $defaultValue): mixed {
             if (is_array($input) && isset($input[$key])) {
                 return $input[$key];
             }
@@ -54,9 +58,9 @@ class LeafLevel
      * Get a deep property from input using dot notation
      * JS: exports.deepInputProperty
      */
-    public static function deepInputProperty(string $path, $defaultValue = null): callable
+    public static function deepInputProperty(string $path, mixed $defaultValue = null): callable
     {
-        return function ($input) use ($path, $defaultValue) {
+        return function (mixed $input) use ($path, $defaultValue): mixed {
             $value = self::getDeepValue($input, $path);
             return $value ?? $defaultValue;
         };
@@ -66,20 +70,21 @@ class LeafLevel
      * Get deep value and format as date
      * JS: exports.deepInputDate
      */
-    public static function deepInputDate(string $path, $defaultValue = null): callable
+    public static function deepInputDate(string $path, mixed $defaultValue = null): callable
     {
-        return function ($input) use ($path, $defaultValue) {
+        return function (mixed $input) use ($path, $defaultValue): ?string {
             $value = self::getDeepValue($input, $path);
-            if ($value !== null) {
+            if (is_string($value) || is_array($value)) {
                 return Translate::time($value);
             }
-            return $defaultValue;
+            return is_string($defaultValue) ? $defaultValue : null;
         };
     }
 
     /**
      * Code attributes
      * JS: exports.code (as static property)
+     * @var array<string, mixed>
      */
     public static array $code = [
         'code' => [self::class, '_codeValue'],
@@ -88,37 +93,51 @@ class LeafLevel
         'displayName' => [self::class, '_displayNameValue'],
     ];
 
-    public static function _codeValue($input): ?string
+    /**
+     * @param array<string, mixed> $input
+     */
+    public static function _codeValue(array $input): ?string
     {
-        return $input['code'] ?? null;
+        return isset($input['code']) && is_string($input['code']) ? $input['code'] : null;
     }
 
-    public static function _codeSystemValue($input): ?string
+    /**
+     * @param array<string, mixed> $input
+     */
+    public static function _codeSystemValue(array $input): ?string
     {
-        return $input['code_system'] ?? null;
+        return isset($input['code_system']) && is_string($input['code_system']) ? $input['code_system'] : null;
     }
 
-    public static function _codeSystemNameValue($input): ?string
+    /**
+     * @param array<string, mixed> $input
+     */
+    public static function _codeSystemNameValue(array $input): ?string
     {
-        return $input['code_system_name'] ?? null;
+        return isset($input['code_system_name']) && is_string($input['code_system_name']) ? $input['code_system_name'] : null;
     }
 
-    public static function _displayNameValue($input): ?string
+    /**
+     * @param array<string, mixed> $input
+     */
+    public static function _displayNameValue(array $input): ?string
     {
-        return $input['name'] ?? null;
+        return isset($input['name']) && is_string($input['name']) ? $input['name'] : null;
     }
 
     /**
      * Get code attributes as array of closures
      * Used when leafLevel.code is referenced
+     *
+     * @return array<string, callable>
      */
     public static function code(): array
     {
         return [
-            'code' => fn($input) => $input['code'] ?? null,
-            'codeSystem' => fn($input) => $input['code_system'] ?? null,
-            'codeSystemName' => fn($input) => $input['code_system_name'] ?? null,
-            'displayName' => fn($input) => $input['name'] ?? null,
+            'code' => fn(array $input): ?string => isset($input['code']) && is_string($input['code']) ? $input['code'] : null,
+            'codeSystem' => fn(array $input): ?string => isset($input['code_system']) && is_string($input['code_system']) ? $input['code_system'] : null,
+            'codeSystemName' => fn(array $input): ?string => isset($input['code_system_name']) && is_string($input['code_system_name']) ? $input['code_system_name'] : null,
+            'displayName' => fn(array $input): ?string => isset($input['name']) && is_string($input['name']) ? $input['name'] : null,
         ];
     }
 
@@ -128,7 +147,7 @@ class LeafLevel
      */
     public static function codeFromName(string $oid): callable
     {
-        return fn($input) => Translate::codeFromName($oid, $input);
+        return fn(array|string|null $input): array => Translate::codeFromName($oid, $input);
     }
 
     /**
@@ -137,9 +156,10 @@ class LeafLevel
      */
     public static function codeOnlyFromName(string $oid, string $key): callable
     {
-        return function ($input) use ($oid, $key) {
-            if ($input && isset($input[$key])) {
-                $result = Translate::codeFromName($oid, $input[$key]);
+        return function (mixed $input) use ($oid, $key): ?string {
+            if (is_array($input) && isset($input[$key])) {
+                $val = $input[$key];
+                $result = Translate::codeFromName($oid, is_string($val) || is_array($val) ? $val : null);
                 return $result['code'] ?? null;
             }
             return null;
@@ -149,8 +169,10 @@ class LeafLevel
     /**
      * Time formatter
      * JS: exports.time = translate.time;
+     *
+     * @param array<string, mixed>|string|null $input
      */
-    public static function time($input): ?string
+    public static function time(array|string|null $input): ?string
     {
         return Translate::time($input);
     }
@@ -161,9 +183,12 @@ class LeafLevel
      */
     public static function use(string $key): callable
     {
-        return function ($input) use ($key) {
+        return function (mixed $input) use ($key): ?string {
+            if (!is_array($input)) {
+                return null;
+            }
             $value = $input[$key] ?? null;
-            if ($value) {
+            if (is_string($value)) {
                 return Translate::acronymize($value);
             }
             return null;
@@ -173,11 +198,13 @@ class LeafLevel
     /**
      * Type CD constant for xsi:type attribute
      * JS: exports.typeCD = { "xsi:type": "CD" };
+     * @var array<string, mixed>
      */
     public static array $typeCD = ['xsi:type' => 'CD'];
 
     /**
      * Type CD - method version for compatibility
+     * @return array<string, mixed>
      */
     public static function typeCD(): array
     {
@@ -187,11 +214,13 @@ class LeafLevel
     /**
      * Type CE constant for xsi:type attribute
      * JS: exports.typeCE = { "xsi:type": "CE" };
+     * @var array<string, mixed>
      */
     public static array $typeCE = ['xsi:type' => 'CE'];
 
     /**
      * Type CE - method version for compatibility
+     * @return array<string, mixed>
      */
     public static function typeCE(): array
     {
@@ -201,7 +230,7 @@ class LeafLevel
     /**
      * Acronymize - delegate to Translate
      */
-    public static function acronymize(string $value): string
+    public static function acronymize(string $value): ?string
     {
         return Translate::acronymize($value);
     }
@@ -212,7 +241,7 @@ class LeafLevel
      */
     public static function nextReference(string $prefix): callable
     {
-        return function ($input) use ($prefix) {
+        return function (mixed $input) use ($prefix): string {
             if (!isset(self::$referenceCounters[$prefix])) {
                 self::$referenceCounters[$prefix] = 0;
             }
@@ -227,7 +256,7 @@ class LeafLevel
      */
     public static function sameReference(string $prefix): callable
     {
-        return function ($input) use ($prefix) {
+        return function (mixed $input) use ($prefix): string {
             $count = self::$referenceCounters[$prefix] ?? 1;
             return '#' . $prefix . $count;
         };
@@ -239,7 +268,7 @@ class LeafLevel
      */
     public static function nextTableReference(string $prefix): callable
     {
-        return function ($input) use ($prefix) {
+        return function (mixed $input) use ($prefix): string {
             if (!isset(self::$tableReferenceCounters[$prefix])) {
                 self::$tableReferenceCounters[$prefix] = 0;
             }
@@ -260,9 +289,9 @@ class LeafLevel
     /**
      * Get deep value from array using dot notation
      */
-    public static function getDeepValue($input, string $path)
+    public static function getDeepValue(mixed $input, string $path): mixed
     {
-        if (!is_array($input) || empty($path)) {
+        if (!is_array($input) || $path === '') {
             return null;
         }
 
@@ -286,7 +315,10 @@ class LeafLevel
      */
     public static function booleanValue(string $key): callable
     {
-        return function ($input) use ($key) {
+        return function (mixed $input) use ($key): ?string {
+            if (!is_array($input)) {
+                return null;
+            }
             $value = $input[$key] ?? null;
             if (in_array($value, [true, 'true', 1, '1'], true)) {
                 return 'true';
@@ -304,7 +336,10 @@ class LeafLevel
      */
     public static function boolInputProperty(string $key): callable
     {
-        return function ($input) use ($key) {
+        return function (mixed $input) use ($key): ?string {
+            if (!is_array($input)) {
+                return null;
+            }
             $value = $input[$key] ?? null;
             if (in_array($value, [true, 'true', 1, '1', 'yes'], true)) {
                 return 'true';
@@ -319,12 +354,14 @@ class LeafLevel
     /**
      * Physical quantity value
      * JS: exports.physicalQuantity
+     *
+     * @return callable(mixed): array<string, mixed>
      */
     public static function physicalQuantity(string $valueKey, string $unitKey): callable
     {
-        return fn($input) => [
-            'value' => $input[$valueKey] ?? null,
-            'unit' => $input[$unitKey] ?? null,
+        return fn(mixed $input): array => [
+            'value' => is_array($input) ? ($input[$valueKey] ?? null) : null,
+            'unit' => is_array($input) ? ($input[$unitKey] ?? null) : null,
         ];
     }
 
@@ -354,6 +391,7 @@ class LeafLevel
     /**
      * Data absent reason
      * JS: exports.dataAbsentReason
+     * @return array<string, mixed>
      */
     public static function dataAbsentReason(string $reason = 'unknown'): array
     {

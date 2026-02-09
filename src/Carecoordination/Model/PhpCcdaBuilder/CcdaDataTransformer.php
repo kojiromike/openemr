@@ -16,19 +16,19 @@
 
 namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder;
 
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\CodeSystems\CcdaTemplateCodes;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Utils\DateFormatter;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Utils\CodeCleaner;
 
 class CcdaDataTransformer
 {
     // Global context variables (mirrors serveccda.js globals)
+    /** @var array<string, mixed> */
     private array $all = [];
     private string $oidFacility = '';
     private string $npiProvider = '';
     private string $npiFacility = '';
-    private string $webRoot = '';
     private string $authorDateTime = '';
-    private string $documentLocation = '';
 
     /**
      * Route code mapping (from serveccda.js mapRouteCode)
@@ -57,8 +57,9 @@ class CcdaDataTransformer
     /**
      * Main transform method - converts raw CCDA data to template format
      *
-     * @param array $pd The parsed CCDA data array
-     * @return array Transformed data ready for template engine
+     * @param array<string, mixed> $pd The parsed CCDA data array
+     * @return array<string, mixed> Transformed data ready for template engine
+     * @return array<string, mixed>
      */
     public function transform(array $pd): array
     {
@@ -93,12 +94,14 @@ class CcdaDataTransformer
         $data['medical_devices'] = $this->processSection($pd, 'medical_devices', 'device', 'populateMedicalDevice');
 
         // Social History
-        if (!empty($pd['history_physical'])) {
-            $data['social_history'] = $this->populateSocialHistory($pd['history_physical']);
+        $historyPhysical = $this->arr($pd['history_physical'] ?? []);
+        if (!empty($historyPhysical)) {
+            $data['social_history'] = $this->populateSocialHistory($historyPhysical);
         }
 
         // Care Team
-        if (($pd['care_team']['is_active'] ?? '') === 'active') {
+        $careTeam = $this->arr($pd['care_team'] ?? []);
+        if ($this->str($careTeam['is_active'] ?? null) === 'active') {
             $data['care_team'] = $this->populateCareTeamMembers($pd);
         }
 
@@ -108,8 +111,10 @@ class CcdaDataTransformer
         }
 
         // Advance Directives
-        if (!empty($pd['advance_directives']['directive'])) {
-            $data['advance_directives'] = $this->processAdvanceDirectives($pd['advance_directives']['directive']);
+        $advanceDirectives = $this->arr($pd['advance_directives'] ?? []);
+        $directives = $this->arr($advanceDirectives['directive'] ?? []);
+        if (!empty($directives)) {
+            $data['advance_directives'] = $this->processAdvanceDirectives($directives);
         }
 
         // Clinical Notes sections
@@ -124,8 +129,9 @@ class CcdaDataTransformer
         ];
 
         foreach ($noteSections as $noteSection) {
-            if (!empty($pd[$noteSection])) {
-                $data[$noteSection] = $this->populateNote($pd[$noteSection]);
+            $noteData = $this->arr($pd[$noteSection] ?? []);
+            if (!empty($noteData)) {
+                $data[$noteSection] = $this->populateNote($noteData);
             }
         }
 
@@ -135,15 +141,20 @@ class CcdaDataTransformer
         $doc['meta']['ccda_header'] = $this->populateHeader($pd);
 
         // Apply timezone
-        if (!empty($pd['timezone_local_offset'])) {
-            $this->applyTimezones($doc, $pd['timezone_local_offset']);
+        $timezoneOffset = $this->str($pd['timezone_local_offset'] ?? null);
+        if ($timezoneOffset !== '') {
+            $this->applyTimezones($doc, $timezoneOffset);
         }
 
+        /** @var array<string, mixed> $doc */
         return $doc;
     }
 
     /**
      * Transform data for unstructured document
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     public function transformUnstructured(array $pd): array
     {
@@ -165,51 +176,69 @@ class CcdaDataTransformer
         $doc['meta'] = $this->getMeta($pd);
         $doc['meta']['ccda_header'] = $this->populateHeader($pd);
 
-        if (!empty($pd['timezone_local_offset'])) {
-            $this->applyTimezones($doc, $pd['timezone_local_offset']);
+        $timezoneOffset = $this->str($pd['timezone_local_offset'] ?? null);
+        if ($timezoneOffset !== '') {
+            $this->applyTimezones($doc, $timezoneOffset);
         }
 
+        /** @var array<string, mixed> $doc */
         return $doc;
     }
 
     /**
      * Initialize context variables from input data
      */
+    /**
+     * @param array<string, mixed> $pd
+     */
     private function initializeContext(array $pd): void
     {
         $this->all = $pd;
 
-        $primaryProvider = $pd['primary_care_provider']['provider'] ?? [];
-        $this->npiProvider = $primaryProvider['npi'] ?? 'NI';
+        $primaryCareProvider = $this->arr($pd['primary_care_provider'] ?? []);
+        $primaryProvider = $this->arr($primaryCareProvider['provider'] ?? []);
+        $this->npiProvider = $this->str($primaryProvider['npi'] ?? null, 'NI');
 
-        $encounterProvider = $pd['encounter_provider'] ?? [];
-        $this->oidFacility = $encounterProvider['facility_oid'] ?? '2.16.840.1.113883.19.5.99999.1';
+        $encounterProvider = $this->arr($pd['encounter_provider'] ?? []);
+        $this->oidFacility = $this->str($encounterProvider['facility_oid'] ?? null, '2.16.840.1.113883.19.5.99999.1');
         $this->npiFacility = $this->getNpiFacility($pd);
 
-        $this->webRoot = $pd['serverRoot'] ?? '';
-        $this->documentLocation = $pd['document_location'] ?? '';
-
         // Determine author datetime
-        $this->authorDateTime = $pd['created_time_timezone'] ?? '';
-        if (!empty($pd['author']['time']) && strlen((string) $pd['author']['time']) > 7) {
-            $this->authorDateTime = $pd['author']['time'];
-        } elseif (!empty($pd['encounter_list']['encounter'])) {
-            $encounters = $pd['encounter_list']['encounter'];
-            $this->authorDateTime = isset($encounters[0]) ? $encounters[0]['date'] ?? '' : $encounters['date'] ?? '';
+        $this->authorDateTime = $this->str($pd['created_time_timezone'] ?? null);
+        $author = $this->arr($pd['author'] ?? []);
+        $authorTime = $author['time'] ?? null;
+        if (is_string($authorTime) && strlen($authorTime) > 7) {
+            $this->authorDateTime = $authorTime;
+        } else {
+            $encounterList = $this->arr($pd['encounter_list'] ?? []);
+            $encounterData = $encounterList['encounter'] ?? [];
+            if (!empty($encounterData) && is_array($encounterData)) {
+                // Check if it's a list of encounters or a single encounter
+                if (array_key_exists(0, $encounterData) && is_array($encounterData[0])) {
+                    $this->authorDateTime = $this->str($encounterData[0]['date'] ?? null);
+                } else {
+                    $this->authorDateTime = $this->str($encounterData['date'] ?? null);
+                }
+            }
         }
-        $this->authorDateTime = DateFormatter::fDate($this->authorDateTime);
+        $this->authorDateTime = $this->fDate($this->authorDateTime);
     }
 
     /**
      * Get facility NPI
+     *
+     * @param array<string, mixed> $pd
      */
     private function getNpiFacility(array $pd, bool $returnNi = false): string
     {
-        $npi = $pd['encounter_provider']['facility_npi'] ?? '';
-        if (empty($npi)) {
-            $npi = $pd['primary_care_provider']['provider']['facility_npi'] ?? '';
+        $encProvider = $this->arr($pd['encounter_provider'] ?? []);
+        $npi = $this->str($encProvider['facility_npi'] ?? null);
+        if ($npi === '') {
+            $primaryCareProvider = $this->arr($pd['primary_care_provider'] ?? []);
+            $primaryProvider = $this->arr($primaryCareProvider['provider'] ?? []);
+            $npi = $this->str($primaryProvider['facility_npi'] ?? null);
         }
-        if (empty($npi) && $returnNi) {
+        if ($npi === '' && $returnNi) {
             return 'NI';
         }
         return $npi;
@@ -218,9 +247,13 @@ class CcdaDataTransformer
     /**
      * Process a section with multiple items
      * Handles various data structures from OpenEMR/serveccda.js
+     *
+     * @param array<string, mixed> $pd
+     * @return list<array<string, mixed>>
      */
     private function processSection(array $pd, string $sectionKey, string $itemKey, string $populateMethod): array
     {
+        /** @var list<array<string, mixed>> $result */
         $result = [];
 
         // Check if section exists at all
@@ -230,11 +263,14 @@ class CcdaDataTransformer
 
         // Get the section data
         $sectionData = $pd[$sectionKey];
+        if (!is_array($sectionData)) {
+            return $result;
+        }
 
         // Handle nested structure: $pd['medications']['medication'][]
         if (isset($sectionData[$itemKey])) {
             $items = $sectionData[$itemKey];
-        } elseif (is_array($sectionData) && isset($sectionData[0])) {
+        } elseif (array_key_exists(0, $sectionData)) {
             // Already an array at top level
             $items = $sectionData;
         } else {
@@ -243,17 +279,21 @@ class CcdaDataTransformer
         }
 
         // Ensure we have something to process
-        if (empty($items)) {
+        if (empty($items) || !is_array($items)) {
             return $result;
         }
 
         // Handle single item vs array
-        if (!isset($items[0]) && is_array($items)) {
+        if (!array_key_exists(0, $items)) {
             $items = [$items];
         }
 
         foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
             if (method_exists($this, $populateMethod)) {
+                /** @var array<string, mixed> $populated */
                 $populated = $this->$populateMethod($item);
                 if (!empty($populated)) {
                     $result[] = $populated;
@@ -267,7 +307,7 @@ class CcdaDataTransformer
     /**
      * Count entities (single object vs array)
      */
-    private function countEntities($data): int
+    private function countEntities(mixed $data): int
     {
         if (empty($data)) {
             return 0;
@@ -283,8 +323,10 @@ class CcdaDataTransformer
 
     /**
      * Safe get - get nested array value with default
+     *
+     * @param array<string, mixed> $arr
      */
-    private function safeGet(array $arr, string $path, $default = ''): mixed
+    private function safeGet(array $arr, string $path, mixed $default = ''): mixed
     {
         $keys = explode('.', $path);
         $value = $arr;
@@ -320,11 +362,12 @@ class CcdaDataTransformer
     /**
      * Safely extract an array value from mixed data
      *
-     * @return array<array-key, mixed>
+     * @return array<int|string, mixed>
      */
     private function arr(mixed $value): array
     {
         if (is_array($value)) {
+            /** @var array<int|string, mixed> $value */
             return $value;
         }
         return [];
@@ -345,6 +388,22 @@ class CcdaDataTransformer
     }
 
     /**
+     * Format a date value from mixed data
+     */
+    private function fDate(mixed $value): string
+    {
+        return DateFormatter::fDate($this->str($value));
+    }
+
+    /**
+     * Clean a code value from mixed data
+     */
+    private function cleanCode(mixed $value): string
+    {
+        return CodeCleaner::clean($this->str($value));
+    }
+
+    /**
      * Map route code to NCI Thesaurus code
      */
     private function mapRouteCode(?string $routeCode): string
@@ -353,7 +412,7 @@ class CcdaDataTransformer
             return '';
         }
 
-        $cleaned = CodeCleaner::clean($routeCode);
+        $cleaned = $this->cleanCode($routeCode);
 
         // Already a valid NCI code
         if (preg_match('/^C\d+$/', $cleaned)) {
@@ -364,12 +423,42 @@ class CcdaDataTransformer
         return self::ROUTE_MAP[$upper] ?? $cleaned;
     }
 
+    /**
+     * Build a race/ethnicity code object for CCDA output
+     *
+     * @param string $name Display name (e.g., "White", "Not Hispanic or Latino")
+     * @param string $code Code value (e.g., "2106-3", "2186-5")
+     * @return array{code?: string, name?: string, code_system?: string, code_system_name?: string}|string
+     * @return array<string, mixed>
+     */
+    private function buildRaceEthnicityCode(string $name, string $code): array|string
+    {
+        if ($name === '' || $name === 'declined_to_specify') {
+            return 'null_flavor';
+        }
+
+        if ($code === '') {
+            // No code provided, return name only for fallback lookup
+            return $name;
+        }
+
+        return [
+            'code' => $code,
+            'name' => $name,
+            'code_system' => '2.16.840.1.113883.6.238',
+            'code_system_name' => 'Race and Ethnicity - CDC',
+        ];
+    }
+
     // =========================================================================
     // Population Methods (mirrors serveccda.js)
     // =========================================================================
 
     /**
      * Populate demographics data - exactly matches populate-demographics.js
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateDemographics(array $pd): array
     {
@@ -380,20 +469,19 @@ class CcdaDataTransformer
         /** @var array<string, mixed> $encounterProvider */
         $encounterProvider = $this->arr($pd['encounter_provider'] ?? []);
 
-        // Apply null flavor for unspecified values
-        $race = $this->str($patient['race'] ?? '');
-        $raceGroup = $this->str($patient['race_group'] ?? '');
-        $ethnicity = $this->str($patient['ethnicity'] ?? '');
-
-        if ($race === 'declined_to_specify' || $race === '') {
-            $race = 'null_flavor';
-        }
-        if ($raceGroup === 'declined_to_specify' || $raceGroup === '') {
-            $raceGroup = 'null_flavor';
-        }
-        if ($ethnicity === 'declined_to_specify' || $ethnicity === '') {
-            $ethnicity = 'null_flavor';
-        }
+        // Build race/ethnicity code objects with code, name, and code system
+        $race = $this->buildRaceEthnicityCode(
+            $this->str($patient['race'] ?? ''),
+            $this->str($patient['race_code'] ?? '')
+        );
+        $raceGroup = $this->buildRaceEthnicityCode(
+            $this->str($patient['race_group'] ?? ''),
+            $this->str($patient['race_group_code'] ?? '')
+        );
+        $ethnicity = $this->buildRaceEthnicityCode(
+            $this->str($patient['ethnicity'] ?? ''),
+            $this->str($patient['ethnicity_code'] ?? '')
+        );
 
         return [
             'name' => [
@@ -410,7 +498,8 @@ class CcdaDataTransformer
             ],
             'dob' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($this->str($patient['dob'] ?? '')),
+                    // Birth date should not include time component
+                    'date' => DateFormatter::fDate($this->str($patient['dob'] ?? ''), false),
                     'precision' => 'day',
                 ],
             ],
@@ -431,8 +520,8 @@ class CcdaDataTransformer
                 ['email' => $this->str($patient['email'] ?? ''), 'type' => 'contact_email'],
             ],
             'ethnicity' => $ethnicity,
-            'race' => $race ?: 'null_flavor',
-            'race_additional' => $raceGroup ?: 'null_flavor',
+            'race' => $race,
+            'race_additional' => $raceGroup,
             'languages' => [
                 [
                     'language' => $this->getLanguageCode($patient),
@@ -471,19 +560,25 @@ class CcdaDataTransformer
 
     /**
      * Get language code - matches populate-demographics.js
+     *
+     * @param array<string, mixed> $patient
      */
     private function getLanguageCode(array $patient): string
     {
-        $lang = $patient['language'] ?? '';
+        $lang = $this->str($patient['language'] ?? '');
+        $langCode = $this->str($patient['language_code'] ?? 'en-US');
         return match ($lang) {
             'English' => 'en-US',
             'Spanish' => 'sp-US',
-            default => $patient['language_code'] ?? 'en-US',
+            default => $langCode,
         };
     }
 
     /**
      * Fetch previous addresses - matches previous-addresses.js
+     *
+     * @param array<string, mixed> $patient
+     * @return list<array<string, mixed>>
      */
     private function fetchPreviousAddresses(array $patient): array
     {
@@ -511,19 +606,22 @@ class CcdaDataTransformer
             'country' => $patient['country'] ?? 'US',
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate(''),
+                    'date' => $this->fDate(''),
                     'precision' => 'day',
                 ],
             ],
         ];
 
         // Previous addresses
-        $prevAddresses = $patient['previous_addresses']['address'] ?? null;
-        if ($prevAddresses) {
-            if (!isset($prevAddresses[0])) {
-                $prevAddresses = [$prevAddresses];
+        $previousAddresses = $this->arr($patient['previous_addresses'] ?? []);
+        $prevAddresses = $this->arr($previousAddresses['address'] ?? []);
+        if (!array_key_exists(0, $prevAddresses) && !empty($prevAddresses)) {
+            $prevAddresses = [$prevAddresses];
+        }
+        foreach ($prevAddresses as $addr) {
+            if (!is_array($addr)) {
+                continue;
             }
-            foreach ($prevAddresses as $addr) {
                 $addresses[] = [
                     'use' => $addr['use'] ?? 'BAD',
                     'street_lines' => $buildStreetLines($addr['street'] ?? ''),
@@ -533,16 +631,15 @@ class CcdaDataTransformer
                     'country' => $addr['country'] ?? 'US',
                     'date_time' => [
                         'low' => [
-                            'date' => DateFormatter::fDate($addr['period_start'] ?? ''),
+                            'date' => $this->fDate($addr['period_start'] ?? ''),
                             'precision' => 'day',
                         ],
                         'high' => [
-                            'date' => DateFormatter::fDate($addr['period_end'] ?? '') ?: DateFormatter::fDate(''),
+                            'date' => $this->fDate($addr['period_end'] ?? '') ?: $this->fDate(''),
                             'precision' => 'day',
                         ],
                     ],
                 ];
-            }
         }
 
         return $addresses;
@@ -550,15 +647,19 @@ class CcdaDataTransformer
 
     /**
      * Get guardian info - matches populate-demographics.js
+     *
+     * @param array<string, mixed> $guardian
+     * @return list<array<string, mixed>>
      */
     private function getGuardianInfo(array $guardian): array
     {
-        if (empty($guardian['display_name'])) {
+        $displayName = $this->str($guardian['display_name'] ?? null);
+        if ($displayName === '') {
             return [];
         }
 
         // Parse display name into first/last
-        $parts = explode(' ', (string) $guardian['display_name']);
+        $parts = explode(' ', $displayName);
         $names = count($parts) === 3
             ? [['first' => $parts[0], 'last' => $parts[2]]]
             : (count($parts) === 2
@@ -582,14 +683,19 @@ class CcdaDataTransformer
 
     /**
      * Populate provider - matches providers.js populateProvider()
+     *
+     * @param array<int|string, mixed> $provider
+     * @return array<string, mixed>
      */
     private function populateProvider(array $provider): array
     {
+        $encounterProvider = $this->arr($this->all['encounter_provider'] ?? []);
+
         return [
             'function_code' => !empty($provider['physician_type']) ? 'PP' : '',
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($provider['provider_since'] ?? ''),
+                    'date' => $this->fDate($provider['provider_since'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
@@ -602,7 +708,7 @@ class CcdaDataTransformer
             'type' => [
                 [
                     'name' => $provider['taxonomy_description'] ?? '',
-                    'code' => CodeCleaner::clean($provider['taxonomy'] ?? ''),
+                    'code' => $this->cleanCode($provider['taxonomy'] ?? ''),
                     'code_system' => '2.16.840.1.113883.6.101',
                     'code_system_name' => 'NUCC Health Care Provider Taxonomy',
                 ],
@@ -615,23 +721,25 @@ class CcdaDataTransformer
             ],
             'address' => [
                 [
-                    'street_lines' => [$this->all['encounter_provider']['facility_street'] ?? ''],
-                    'city' => $this->all['encounter_provider']['facility_city'] ?? '',
-                    'state' => $this->all['encounter_provider']['facility_state'] ?? '',
-                    'zip' => $this->all['encounter_provider']['facility_postal_code'] ?? '',
-                    'country' => $this->all['encounter_provider']['facility_country_code'] ?? 'US',
+                    'street_lines' => [$this->str($encounterProvider['facility_street'] ?? null)],
+                    'city' => $this->str($encounterProvider['facility_city'] ?? null),
+                    'state' => $this->str($encounterProvider['facility_state'] ?? null),
+                    'zip' => $this->str($encounterProvider['facility_postal_code'] ?? null),
+                    'country' => $this->str($encounterProvider['facility_country_code'] ?? null, 'US'),
                 ],
             ],
             'phone' => [
-                ['number' => $this->all['encounter_provider']['facility_phone'] ?? ''],
+                ['number' => $this->str($encounterProvider['facility_phone'] ?? null)],
             ],
         ];
     }
 
     /**
      * Populate previous names
+     *
+     * @return list<array<string, mixed>>
      */
-    private function populatePreviousNames($names): array
+    private function populatePreviousNames(mixed $names): array
     {
         if (empty($names) || !is_array($names)) {
             return [];
@@ -644,11 +752,14 @@ class CcdaDataTransformer
 
         $result = [];
         foreach ($names as $name) {
+            if (!is_array($name)) {
+                continue;
+            }
             $result[] = [
-                'first' => $name['previous_name_first'] ?? '',
-                'middle' => $name['previous_name_middle'] ?? '',
-                'last' => $name['previous_name_last'] ?? $name['formatted_name'] ?? '',
-                'prefix' => $name['previous_name_prefix'] ?? '',
+                'first' => $this->str($name['previous_name_first'] ?? ''),
+                'middle' => $this->str($name['previous_name_middle'] ?? ''),
+                'last' => $this->str($name['previous_name_last'] ?? $name['formatted_name'] ?? ''),
+                'prefix' => $this->str($name['previous_name_prefix'] ?? ''),
                 'suffix' => $name['previous_name_suffix'] ?? '',
             ];
         }
@@ -658,6 +769,9 @@ class CcdaDataTransformer
 
     /**
      * Populate phone numbers (legacy - keeping for compatibility)
+     *
+     * @param array<string, mixed> $pd
+     * @return list<array<string, mixed>>
      */
     private function populatePhones(array $pd): array
     {
@@ -693,28 +807,32 @@ class CcdaDataTransformer
 
     /**
      * Populate medication data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateMedication(array $pd): array
     {
         $pd['status'] = 'Completed'; // @todo handle prescribed status
 
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
+        $extension = $this->str($pd['extension'] ?? null);
 
         return [
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['start_date'] ?? ''),
+                    'date' => $this->fDate($pd['start_date'] ?? ''),
                     'precision' => 'day',
                 ],
                 'high' => [
-                    'date' => DateFormatter::fDate($pd['end_date'] ?? ''),
+                    'date' => $this->fDate($pd['end_date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
             'identifiers' => [
                 [
                     'identifier' => $pd['sha_extension'] ?? '',
-                    'extension' => $pd['extension'] ?? '',
+                    'extension' => $extension,
                 ],
             ],
             'status' => $pd['status'],
@@ -723,13 +841,13 @@ class CcdaDataTransformer
                 'identifiers' => [
                     [
                         'identifier' => $pd['sha_extension'] ?? '2a620155-9d11-439e-92b3-5d9815ff4ee8',
-                        'extension' => !empty($pd['extension']) ? $pd['extension'] . '_1' : '',
+                        'extension' => $extension !== '' ? $extension . '_1' : '',
                     ],
                 ],
                 'unencoded_name' => $pd['drug'] ?? '',
                 'product' => [
                     'name' => $pd['drug'] ?? '',
-                    'code' => CodeCleaner::clean($pd['rxnorm'] ?? ''),
+                    'code' => $this->cleanCode($pd['rxnorm'] ?? ''),
                     'code_system_name' => 'RXNORM',
                 ],
             ],
@@ -737,21 +855,21 @@ class CcdaDataTransformer
             'administration' => [
                 'route' => [
                     'name' => $pd['route'] ?? '',
-                    'code' => $this->mapRouteCode($pd['route_code'] ?? ''),
+                    'code' => $this->mapRouteCode($this->str($pd['route_code'] ?? null)),
                     'code_system_name' => 'Medication Route FDA',
                 ],
                 'form' => [
                     'name' => $pd['form'] ?? '',
-                    'code' => CodeCleaner::clean($pd['form_code'] ?? ''),
+                    'code' => $this->cleanCode($pd['form_code'] ?? ''),
                     'code_system_name' => 'Medication Route FDA',
                 ],
                 'dose' => [
-                    'value' => !empty($pd['size']) ? (float)$pd['size'] : null,
+                    'value' => !empty($pd['size']) ? $this->num($pd['size']) : null,
                     'unit' => $pd['unit'] ?? '',
                 ],
                 'interval' => [
                     'period' => [
-                        'value' => !empty($pd['dosage']) ? (float)$pd['dosage'] : null,
+                        'value' => !empty($pd['dosage']) ? $this->num($pd['dosage']) : null,
                         'unit' => $pd['interval'] ?? null,
                     ],
                     'frequency' => true,
@@ -762,25 +880,29 @@ class CcdaDataTransformer
 
     /**
      * Populate allergy data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateAllergy(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
+        $extension = $this->str($pd['extension'] ?? null);
 
         return [
             'identifiers' => [
                 [
                     'identifier' => $pd['sha_extension'] ?? '',
-                    'extension' => $pd['extension'] ?? '',
+                    'extension' => $extension,
                 ],
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['begdate'] ?? ''),
+                    'date' => $this->fDate($pd['begdate'] ?? ''),
                     'precision' => 'day',
                 ],
                 'high' => [
-                    'date' => DateFormatter::fDate($pd['enddate'] ?? ''),
+                    'date' => $this->fDate($pd['enddate'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -788,20 +910,20 @@ class CcdaDataTransformer
                 'identifiers' => [
                     [
                         'identifier' => $pd['sha_extension'] ?? '',
-                        'extension' => !empty($pd['extension']) ? $pd['extension'] . '_1' : '',
+                        'extension' => $extension !== '' ? $extension . '_1' : '',
                     ],
                 ],
                 // intolerance is used for the <value> element
                 'intolerance' => [
                     'name' => $pd['intolerance_title'] ?? $pd['type_title'] ?? '',
-                    'code' => CodeCleaner::clean($pd['intolerance_code'] ?? $pd['type_code'] ?? ''),
+                    'code' => $this->cleanCode($pd['intolerance_code'] ?? $pd['type_code'] ?? ''),
                     'code_system' => '2.16.840.1.113883.6.96',
                     'code_system_name' => 'SNOMED CT',
                 ],
                 // allergen is used for the participant/playingEntity
                 'allergen' => [
                     'name' => $pd['title'] ?? '',
-                    'code' => CodeCleaner::clean($pd['rxnorm_drugcode'] ?? $pd['snomed_code'] ?? ''),
+                    'code' => $this->cleanCode($pd['rxnorm_drugcode'] ?? $pd['snomed_code'] ?? ''),
                     'code_system_name' => $pd['code_type'] ?? 'RXNORM',
                 ],
                 'status' => [
@@ -819,7 +941,7 @@ class CcdaDataTransformer
                     [
                         'reaction' => [
                             'name' => $pd['reaction'] ?? '',
-                            'code' => CodeCleaner::clean($pd['reaction_code'] ?? ''),
+                            'code' => $this->cleanCode($pd['reaction_code'] ?? ''),
                             'code_system_name' => 'SNOMED CT',
                         ],
                     ],
@@ -831,25 +953,29 @@ class CcdaDataTransformer
 
     /**
      * Populate problem data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateProblem(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
+        $extension = $this->str($pd['extension'] ?? null);
 
         return [
             'identifiers' => [
                 [
                     'identifier' => $pd['sha_extension'] ?? '',
-                    'extension' => $pd['extension'] ?? '',
+                    'extension' => $extension,
                 ],
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['begdate'] ?? ''),
+                    'date' => $this->fDate($pd['begdate'] ?? ''),
                     'precision' => 'day',
                 ],
                 'high' => [
-                    'date' => DateFormatter::fDate($pd['enddate'] ?? ''),
+                    'date' => $this->fDate($pd['enddate'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -857,12 +983,12 @@ class CcdaDataTransformer
                 'identifiers' => [
                     [
                         'identifier' => $pd['sha_extension'] ?? '',
-                        'extension' => !empty($pd['extension']) ? $pd['extension'] . '_1' : '',
+                        'extension' => $extension !== '' ? $extension . '_1' : '',
                     ],
                 ],
                 'code' => [
                     'name' => $pd['title'] ?? '',
-                    'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                    'code' => $this->cleanCode($pd['code'] ?? ''),
                     'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
                 ],
                 'status' => [
@@ -876,6 +1002,9 @@ class CcdaDataTransformer
 
     /**
      * Build author block (shared structure)
+     *
+     * @param array<int|string, mixed> $author
+     * @return array<string, mixed>
      */
     private function buildAuthorBlock(array $author): array
     {
@@ -888,7 +1017,7 @@ class CcdaDataTransformer
             ],
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($author['time'] ?? '') ?: DateFormatter::fDate(''),
+                    'date' => $this->fDate($author['time'] ?? '') ?: $this->fDate(''),
                     'precision' => 'tz',
                 ],
             ],
@@ -907,7 +1036,7 @@ class CcdaDataTransformer
                 'use' => 'WP',
             ],
             'phone' => [
-                'value' => 'tel:' . ($author['telecom'] ?? ''),
+                'value' => 'tel:' . $this->str($author['telecom'] ?? null),
                 'use' => 'HP',
             ],
             'name' => [
@@ -926,47 +1055,50 @@ class CcdaDataTransformer
 
     /**
      * Populate providers
+     * @return array<string, mixed>
      */
     private function populateProviders(): array
     {
         $providerArray = [];
 
         // Primary provider
-        if (!empty($this->all['primary_care_provider']['provider'])) {
-            $providerArray[] = $this->populateProvider($this->all['primary_care_provider']['provider']);
+        $primaryCareProvider = $this->arr($this->all['primary_care_provider'] ?? []);
+        $primaryProviderData = $this->arr($primaryCareProvider['provider'] ?? []);
+        if (!empty($primaryProviderData)) {
+            $providerArray[] = $this->populateProvider($primaryProviderData);
         }
 
         // Care team providers
-        $careTeam = $this->all['care_team'] ?? [];
-        $providers = $careTeam['provider'] ?? [];
+        $careTeam = $this->arr($this->all['care_team'] ?? []);
+        $providers = $this->arr($careTeam['provider'] ?? []);
 
         if (!empty($providers)) {
-            if (!isset($providers[0])) {
+            if (!array_key_exists(0, $providers)) {
                 $providers = [$providers];
             }
             foreach ($providers as $provider) {
-                $providerArray[] = $this->populateProvider($provider);
+                $providerArray[] = $this->populateProvider($this->arr($provider));
             }
         }
 
-        $primaryDiagnosis = $this->all['primary_diagnosis'] ?? [];
+        $primaryDiagnosis = $this->arr($this->all['primary_diagnosis'] ?? []);
 
         return [
             'providers' => [
                 'date_time' => [
                     'low' => [
-                        'date' => DateFormatter::fDate($this->all['time_start'] ?? ''),
+                        'date' => $this->fDate($this->all['time_start'] ?? ''),
                         'precision' => 'tz',
                     ],
                     'high' => [
-                        'date' => DateFormatter::fDate($this->all['time_end'] ?? ''),
+                        'date' => $this->fDate($this->all['time_end'] ?? ''),
                         'precision' => 'tz',
                     ],
                 ],
                 'code' => [
-                    'name' => $primaryDiagnosis['text'] ?? '',
-                    'code' => CodeCleaner::clean($primaryDiagnosis['code'] ?? ''),
-                    'code_system_name' => $primaryDiagnosis['code_type'] ?? '',
+                    'name' => $this->str($primaryDiagnosis['text'] ?? null),
+                    'code' => $this->cleanCode($primaryDiagnosis['code'] ?? ''),
+                    'code_system_name' => $this->str($primaryDiagnosis['code_type'] ?? null),
                 ],
                 'provider' => $providerArray,
             ],
@@ -975,12 +1107,27 @@ class CcdaDataTransformer
 
     /**
      * Populate header data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateHeader(array $pd): array
     {
-        $encounterProvider = $pd['encounter_provider'] ?? [];
-        $author = $pd['author'] ?? [];
-        $custodian = $pd['custodian'] ?? [];
+        $encounterProvider = $this->arr($pd['encounter_provider'] ?? []);
+        $author = $this->arr($pd['author'] ?? []);
+        $custodian = $this->arr($pd['custodian'] ?? []);
+
+        // Get default document code from CCD template
+        $ccdCode = CcdaTemplateCodes::get('CCD');
+
+        // Extract values using type-safe helpers
+        $facilityName = $this->str($encounterProvider['facility_name'] ?? null) ?: $this->str($custodian['name'] ?? null);
+        $facilityStreet = $this->str($encounterProvider['facility_street'] ?? null) ?: $this->str($custodian['streetAddressLine'] ?? null);
+        $facilityCity = $this->str($encounterProvider['facility_city'] ?? null) ?: $this->str($custodian['city'] ?? null);
+        $facilityState = $this->str($encounterProvider['facility_state'] ?? null) ?: $this->str($custodian['state'] ?? null);
+        $facilityZip = $this->str($encounterProvider['facility_postal_code'] ?? null) ?: $this->str($custodian['postalCode'] ?? null);
+        $facilityCountry = $this->str($encounterProvider['facility_country_code'] ?? null) ?: $this->str($custodian['country'] ?? null, 'US');
+        $facilityPhone = $this->str($encounterProvider['facility_phone'] ?? null) ?: $this->str($custodian['telecom'] ?? null);
 
         return [
             'identifiers' => [
@@ -990,18 +1137,18 @@ class CcdaDataTransformer
                 ],
             ],
             'code' => [
-                'name' => $pd['doc_code_name'] ?? 'Continuity of Care Document',
-                'code' => $pd['doc_code'] ?? '34133-9',
-                'code_system_name' => 'LOINC',
+                'name' => $pd['doc_code_name'] ?? $ccdCode['name'],
+                'code' => $pd['doc_code'] ?? $ccdCode['code'],
+                'code_system_name' => $ccdCode['code_system_name'],
             ],
             'template' => [
-                'root' => $this->getDocumentTemplateId($pd['doc_type'] ?? 'ccd'),
+                'root' => $this->getDocumentTemplateId($this->str($pd['doc_type'] ?? null, 'ccd')),
                 'extension' => '2015-08-01',
             ],
-            'title' => $pd['doc_title'] ?? 'Continuity of Care Document',
+            'title' => $pd['doc_title'] ?? $ccdCode['name'],
             'date_time' => [
                 'point' => [
-                    'date' => $this->authorDateTime ?: DateFormatter::fDate(''),
+                    'date' => $this->authorDateTime ?: $this->fDate(''),
                     'precision' => 'tz',
                 ],
             ],
@@ -1011,17 +1158,17 @@ class CcdaDataTransformer
                     'root' => $this->oidFacility ?: '2.16.840.1.113883.4.6',
                     'extension' => $this->npiFacility,
                 ],
-                'name' => [$encounterProvider['facility_name'] ?? $custodian['name'] ?? ''],
+                'name' => [$facilityName],
                 'address' => [
-                    'street_lines' => [$encounterProvider['facility_street'] ?? $custodian['streetAddressLine'] ?? ''],
-                    'city' => $encounterProvider['facility_city'] ?? $custodian['city'] ?? '',
-                    'state' => $encounterProvider['facility_state'] ?? $custodian['state'] ?? '',
-                    'zip' => $encounterProvider['facility_postal_code'] ?? $custodian['postalCode'] ?? '',
-                    'country' => $encounterProvider['facility_country_code'] ?? $custodian['country'] ?? 'US',
+                    'street_lines' => [$facilityStreet],
+                    'city' => $facilityCity,
+                    'state' => $facilityState,
+                    'zip' => $facilityZip,
+                    'country' => $facilityCountry,
                     'use' => 'work place',
                 ],
                 'phone' => [
-                    'value' => 'tel:' . ($encounterProvider['facility_phone'] ?? $custodian['telecom'] ?? ''),
+                    'value' => 'tel:' . $facilityPhone,
                     'use' => 'WP',
                 ],
             ],
@@ -1046,10 +1193,13 @@ class CcdaDataTransformer
 
     /**
      * Build informant block
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>|null
      */
     private function buildInformant(array $pd): ?array
     {
-        $informer = $pd['informer'] ?? null;
+        $informer = $this->arr($pd['informer'] ?? []);
         if (empty($informer)) {
             return null;
         }
@@ -1057,89 +1207,102 @@ class CcdaDataTransformer
         return [
             'identifiers' => [['identifier' => $this->oidFacility]],
             'name' => [
-                'organization' => $informer['organization'] ?? '',
+                'organization' => $this->str($informer['organization'] ?? null),
             ],
         ];
     }
 
     /**
      * Build information recipient block
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>|null
      */
     private function buildInformationRecipient(array $pd): ?array
     {
-        $recipient = $pd['information_recipient'] ?? null;
-        if (empty($recipient) || (empty($recipient['fname']) && empty($recipient['lname']))) {
+        $recipient = $this->arr($pd['information_recipient'] ?? []);
+        $fname = $this->str($recipient['fname'] ?? null);
+        $lname = $this->str($recipient['lname'] ?? null);
+        if ($fname === '' && $lname === '') {
             return null;
         }
 
         return [
             'name' => [
-                'first' => $recipient['fname'] ?? '',
-                'last' => $recipient['lname'] ?? '',
-                'prefix' => $recipient['prefix'] ?? '',
-                'suffix' => $recipient['suffix'] ?? '',
+                'first' => $fname,
+                'last' => $lname,
+                'prefix' => $this->str($recipient['prefix'] ?? null),
+                'suffix' => $this->str($recipient['suffix'] ?? null),
             ],
-            'organization' => $recipient['organization'] ?? '',
+            'organization' => $this->str($recipient['organization'] ?? null),
         ];
     }
 
     /**
      * Build componentOf (encompassingEncounter) block
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>|null
      */
     private function buildComponentOf(array $pd): ?array
     {
-        $primaryDiagnosis = $pd['primary_diagnosis'] ?? [];
-        $primaryProvider = $pd['primary_care_provider']['provider'] ?? [];
+        $primaryDiagnosis = $this->arr($pd['primary_diagnosis'] ?? []);
+        $primaryCareProvider = $this->arr($pd['primary_care_provider'] ?? []);
+        $primaryProvider = $this->arr($primaryCareProvider['provider'] ?? []);
 
         if (empty($primaryDiagnosis) && empty($primaryProvider)) {
             return null;
         }
 
+        $author = $this->arr($pd['author'] ?? []);
+        $patient = $this->arr($pd['patient'] ?? []);
+        $encounterProvider = $this->arr($pd['encounter_provider'] ?? []);
+
         return [
             'identifiers' => [
                 [
                     'identifier' => $this->oidFacility,
-                    'extension' => 'PT-' . ($pd['patient']['id'] ?? ''),
+                    'extension' => 'PT-' . $this->str($patient['id'] ?? null),
                 ],
             ],
             'code' => [
-                'name' => $primaryDiagnosis['text'] ?? '',
-                'code' => $primaryDiagnosis['code'] ?? '',
-                'code_system_name' => $primaryDiagnosis['code_type'] ?? '',
+                'name' => $this->str($primaryDiagnosis['text'] ?? null),
+                'code' => $this->str($primaryDiagnosis['code'] ?? null),
+                'code_system_name' => $this->str($primaryDiagnosis['code_type'] ?? null),
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($primaryDiagnosis['encounter_date'] ?? ''),
+                    'date' => $this->fDate($primaryDiagnosis['encounter_date'] ?? ''),
                     'precision' => 'tz',
                 ],
                 'high' => [
-                    'date' => DateFormatter::fDate($primaryDiagnosis['encounter_end_date'] ?? ''),
+                    'date' => $this->fDate($primaryDiagnosis['encounter_end_date'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
             'responsible_party' => [
                 'root' => $this->oidFacility,
                 'name' => [
-                    'last' => $pd['author']['lname'] ?? '',
-                    'first' => $pd['author']['fname'] ?? '',
+                    'last' => $this->str($author['lname'] ?? null),
+                    'first' => $this->str($author['fname'] ?? null),
                 ],
             ],
             'encounter_participant' => [
                 'root' => $this->oidFacility,
                 'name' => [
-                    'last' => $primaryProvider['lname'] ?? '',
-                    'first' => $primaryProvider['fname'] ?? '',
+                    'last' => $this->str($primaryProvider['lname'] ?? null),
+                    'first' => $this->str($primaryProvider['fname'] ?? null),
                 ],
                 'address' => [
-                    'street_lines' => [$pd['encounter_provider']['facility_street'] ?? ''],
-                    'city' => $pd['encounter_provider']['facility_city'] ?? '',
-                    'state' => $pd['encounter_provider']['facility_state'] ?? '',
-                    'zip' => $pd['encounter_provider']['facility_postal_code'] ?? '',
-                    'country' => $pd['encounter_provider']['facility_country_code'] ?? 'US',
+                    'street_lines' => [$this->str($encounterProvider['facility_street'] ?? null)],
+                    'city' => $this->str($encounterProvider['facility_city'] ?? null),
+                    'state' => $this->str($encounterProvider['facility_state'] ?? null),
+                    'zip' => $this->str($encounterProvider['facility_postal_code'] ?? null),
+                    'country' => $this->str($encounterProvider['facility_country_code'] ?? null, 'US'),
                     'use' => 'work place',
                 ],
                 'phone' => [[
-                    'value' => 'tel:' . ($pd['encounter_provider']['facility_phone'] ?? ''),
+                    'value' => 'tel:' . $this->str($encounterProvider['facility_phone'] ?? null),
                     'use' => 'WP',
                 ]],
             ],
@@ -1148,22 +1311,33 @@ class CcdaDataTransformer
 
     /**
      * Get document metadata
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function getMeta(array $pd): array
     {
+        $docExtension = $this->str($pd['doc_extension'] ?? null, 'OE-DOC-0001');
+
         return [
             'type' => $pd['doc_type'] ?? 'ccd',
             'identifiers' => [
                 [
                     'identifier' => $pd['document_uuid'] ?? $this->oidFacility,
-                    'extension' => $pd['doc_extension'] ?? '',
+                    'extension' => $docExtension,
                 ],
+            ],
+            'set_id' => [
+                'identifier' => $pd['document_uuid'] ?? $this->oidFacility,
+                'extension' => 's' . $docExtension,
             ],
         ];
     }
 
     /**
      * Apply timezone offsets
+     *
+     * @param array<string, mixed> $doc
      */
     private function applyTimezones(array &$doc, string $offset): void
     {
@@ -1173,21 +1347,24 @@ class CcdaDataTransformer
 
     /**
      * Populate procedure data - matches serveccda.js populateProcedure()
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateProcedure(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
 
         return [
             'procedure' => [
                 'name' => $pd['code_text'] ?? $pd['description'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system' => $pd['code_type'] === 'SNOMED-CT' ? '2.16.840.1.113883.6.96' :
                     ($pd['code_type'] === 'CPT4' ? '2.16.840.1.113883.6.12' : ''),
                 'code_system_name' => $pd['code_type'] ?? 'CPT4',
                 'translations' => !empty($pd['code2']) ? [
                     [
-                        'code' => CodeCleaner::clean($pd['code2']),
+                        'code' => $this->cleanCode($pd['code2']),
                         'code_system_name' => $pd['code_type2'] ?? '',
                     ]
                 ] : [],
@@ -1201,7 +1378,7 @@ class CcdaDataTransformer
             'status' => 'completed',
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? $pd['encounter'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? $pd['encounter'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1242,7 +1419,7 @@ class CcdaDataTransformer
                                     'extension' => $pd['facility_extension'] ?? '',
                                 ],
                             ],
-                            'name' => [$pd['facility_name'] ?? $this->all['encounter_provider']['facility_name'] ?? ''],
+                            'name' => [$this->str($pd['facility_name'] ?? null) ?: $this->str($this->arr($this->all['encounter_provider'] ?? [])['facility_name'] ?? null)],
                             'address' => [
                                 [
                                     'street_lines' => [$pd['facility_address'] ?? ''],
@@ -1269,17 +1446,21 @@ class CcdaDataTransformer
 
     /**
      * Populate result data - matches serveccda.js populateResult()
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateResult(array $pd): array
     {
         // Results come as sets with individual results inside
         $results = [];
-        $resultList = $pd['result'] ?? [];
-        if (!isset($resultList[0])) {
+        $resultList = $this->arr($pd['result'] ?? []);
+        if (!empty($resultList) && !isset($resultList[0])) {
             $resultList = [$resultList];
         }
 
         foreach ($resultList as $result) {
+            $result = $this->arr($result);
             $results[] = [
                 'identifiers' => [
                     [
@@ -1289,13 +1470,13 @@ class CcdaDataTransformer
                 ],
                 'result' => [
                     'name' => $result['result_text'] ?? $result['title'] ?? '',
-                    'code' => CodeCleaner::clean($result['result_code'] ?? $result['code'] ?? ''),
+                    'code' => $this->cleanCode($result['result_code'] ?? $result['code'] ?? ''),
                     'code_system' => '2.16.840.1.113883.6.1',
                     'code_system_name' => 'LOINC',
                 ],
                 'date_time' => [
                     'point' => [
-                        'date' => DateFormatter::fDate($result['result_date'] ?? $result['date'] ?? ''),
+                        'date' => $this->fDate($result['result_date'] ?? $result['date'] ?? ''),
                         'precision' => 'tz',
                     ],
                 ],
@@ -1324,13 +1505,13 @@ class CcdaDataTransformer
             ],
             'result_set' => [
                 'name' => $pd['title'] ?? $pd['result_text'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system' => '2.16.840.1.113883.6.1',
                 'code_system_name' => 'LOINC',
             ],
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
@@ -1341,10 +1522,14 @@ class CcdaDataTransformer
 
     /**
      * Populate vital signs data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateVital(array $pd): array
     {
         $vitalList = [];
+        $author = $this->arr($pd['author'] ?? []);
 
         // Map common vital signs
         $vitalsMap = [
@@ -1377,14 +1562,14 @@ class CcdaDataTransformer
                     'status' => 'completed',
                     'date_time' => [
                         'point' => [
-                            'date' => DateFormatter::fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
+                            'date' => $this->fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
                             'precision' => 'day',
                         ],
                     ],
-                    'interpretations' => ['Normal'],  // ADDED: Required by template
-                    'value' => floatval($pd[$key]),
+                    'interpretations' => ['Normal'],
+                    'value' => $this->num($pd[$key]),
                     'unit' => $pd[$key . '_unit'] ?? $info['unit'],
-                    'author' => $this->buildAuthorBlock($pd['author'] ?? []),  // ADDED: Required by template
+                    'author' => $this->buildAuthorBlock($author),
                 ];
             }
         }
@@ -1399,7 +1584,7 @@ class CcdaDataTransformer
             'status' => 'completed',
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['effectivetime'] ?? $pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1409,15 +1594,18 @@ class CcdaDataTransformer
 
     /**
      * Populate immunization data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateImmunization(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
 
         return [
             'date_time' => [
-                'low' => [  // FIXED: Changed from 'point' to 'low' to match template expectation
-                    'date' => DateFormatter::fDate($pd['administered_date'] ?? $pd['administered_on'] ?? $pd['date'] ?? ''),
+                'low' => [
+                    'date' => $this->fDate($pd['administered_date'] ?? $pd['administered_on'] ?? $pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1429,9 +1617,9 @@ class CcdaDataTransformer
             ],
             'status' => !empty($pd['completion_status']) ? $pd['completion_status'] : 'complete',
             'product' => [
-                'product' => [  // FIXED: Added nested product structure as expected by template
+                'product' => [
                     'name' => $pd['cvx_code_text'] ?? $pd['code_text'] ?? $pd['title'] ?? '',
-                    'code' => CodeCleaner::clean($pd['cvx_code'] ?? ''),
+                    'code' => $this->cleanCode($pd['cvx_code'] ?? ''),
                     'code_system_name' => 'CVX',
                     'lot_number' => '',
                 ],
@@ -1441,7 +1629,7 @@ class CcdaDataTransformer
             'administration' => [
                 'route' => [
                     'name' => $pd['route'] ?? $pd['route_of_administration'] ?? '',
-                    'code' => $this->mapRouteCode($pd['route_code'] ?? ''),
+                    'code' => $this->mapRouteCode($this->str($pd['route_code'] ?? null)),
                     'code_system_name' => 'Medication Route FDA',
                 ],
             ],
@@ -1493,23 +1681,27 @@ class CcdaDataTransformer
 
     /**
      * Populate encounter data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateEncounter(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
 
         // Process findings/diagnoses
         $findings = [];
-        if (!empty($pd['encounter_diagnosis'])) {
-            $diagnoses = $pd['encounter_diagnosis'];
+        $diagnoses = $this->arr($pd['encounter_diagnosis'] ?? []);
+        if (!empty($diagnoses)) {
             if (!isset($diagnoses[0])) {
                 $diagnoses = [$diagnoses];
             }
             foreach ($diagnoses as $dx) {
+                $dx = $this->arr($dx);
                 $findings[] = [
                     'value' => [
                         'name' => $dx['diagnosis'] ?? $dx['title'] ?? '',
-                        'code' => CodeCleaner::clean($dx['code'] ?? ''),
+                        'code' => $this->cleanCode($dx['code'] ?? ''),
                         'code_system' => $dx['code_type'] === 'SNOMED-CT' ? '2.16.840.1.113883.6.96' : '2.16.840.1.113883.6.103',
                         'code_system_name' => $dx['code_type'] ?? 'ICD-10-CM',
                     ],
@@ -1548,7 +1740,7 @@ class CcdaDataTransformer
         return [
             'encounter' => [
                 'name' => $pd['pc_catname'] ?? $pd['code_text'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system' => '2.16.840.1.113883.6.12',
                 'code_system_name' => 'CPT4',
                 'translations' => [],
@@ -1561,11 +1753,11 @@ class CcdaDataTransformer
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'tz',
                 ],
                 'high' => [
-                    'date' => DateFormatter::fDate($pd['date_end'] ?? $pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date_end'] ?? $pd['date'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
@@ -1598,37 +1790,41 @@ class CcdaDataTransformer
 
     /**
      * Populate plan of care data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populatePlanOfCare(array $pd): array
     {
-        $author = $pd['author'] ?? [];
+        $author = $this->arr($pd['author'] ?? []);
 
         // Process performers
         $performers = [];
-        if (!empty($pd['provider'])) {
+        $provider = $this->arr($pd['provider'] ?? []);
+        if (!empty($provider)) {
             $performers[] = [
                 'identifiers' => [
                     [
                         'identifier' => '2.16.840.1.113883.4.6',
-                        'extension' => $pd['provider']['npi'] ?? $this->npiProvider,
+                        'extension' => $this->str($provider['npi'] ?? null) ?: $this->npiProvider,
                     ],
                 ],
                 'code' => [
                     [
-                        'name' => $pd['provider']['specialty'] ?? 'General physician',
-                        'code' => $pd['provider']['specialty_code'] ?? '59058001',
+                        'name' => $this->str($provider['specialty'] ?? null, 'General physician'),
+                        'code' => $this->str($provider['specialty_code'] ?? null, '59058001'),
                         'code_system_name' => 'SNOMED CT',
                     ],
                 ],
                 'name' => [
                     [
-                        'last' => $pd['provider']['lname'] ?? '',
-                        'first' => $pd['provider']['fname'] ?? '',
+                        'last' => $this->str($provider['lname'] ?? null),
+                        'first' => $this->str($provider['fname'] ?? null),
                     ],
                 ],
                 'phone' => [
                     [
-                        'number' => $pd['provider']['phone'] ?? '',
+                        'number' => $this->str($provider['phone'] ?? null),
                         'type' => 'work place',
                     ],
                 ],
@@ -1665,12 +1861,13 @@ class CcdaDataTransformer
 
         // Process findings
         $findings = [];
-        if (!empty($pd['findings'])) {
-            $findingsList = $pd['findings'];
+        $findingsList = $this->arr($pd['findings'] ?? []);
+        if (!empty($findingsList)) {
             if (!isset($findingsList[0])) {
                 $findingsList = [$findingsList];
             }
             foreach ($findingsList as $finding) {
+                $finding = $this->arr($finding);
                 $findings[] = [
                     'identifiers' => [
                         [
@@ -1680,12 +1877,12 @@ class CcdaDataTransformer
                     ],
                     'value' => [
                         'name' => $finding['name'] ?? $finding['title'] ?? '',
-                        'code' => CodeCleaner::clean($finding['code'] ?? ''),
+                        'code' => $this->cleanCode($finding['code'] ?? ''),
                         'code_system_name' => $finding['code_type'] ?? 'SNOMED CT',
                     ],
                     'date_time' => [
                         'low' => [
-                            'date' => DateFormatter::fDate($finding['date'] ?? ''),
+                            'date' => $this->fDate($finding['date'] ?? ''),
                             'precision' => 'day',
                         ],
                     ],
@@ -1698,7 +1895,7 @@ class CcdaDataTransformer
         return [
             'plan' => [  // ADDED: Required field
                 'name' => $pd['code_text'] ?? $pd['title'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system_name' => $pd['code_type'] ?? 'LOINC',
             ],
             'identifiers' => [
@@ -1708,12 +1905,12 @@ class CcdaDataTransformer
                 ],
             ],
             'goal' => [  // ADDED: Goal field
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'name' => $pd['description'] ?? $pd['text'] ?? '',
             ],
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1732,6 +1929,9 @@ class CcdaDataTransformer
 
     /**
      * Populate goal data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateGoal(array $pd): array
     {
@@ -1744,12 +1944,12 @@ class CcdaDataTransformer
             ],
             'goal' => [
                 'name' => $pd['description'] ?? $pd['title'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1759,6 +1959,9 @@ class CcdaDataTransformer
 
     /**
      * Populate health concern data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateHealthConcern(array $pd): array
     {
@@ -1771,12 +1974,12 @@ class CcdaDataTransformer
             ],
             'concern' => [
                 'name' => $pd['title'] ?? $pd['description'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['begdate'] ?? $pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['begdate'] ?? $pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1786,6 +1989,9 @@ class CcdaDataTransformer
 
     /**
      * Populate medical device data
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateMedicalDevice(array $pd): array
     {
@@ -1798,14 +2004,14 @@ class CcdaDataTransformer
             ],
             'device' => [
                 'name' => $pd['title'] ?? $pd['code_text'] ?? '',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system_name' => $pd['code_type'] ?? 'SNOMED CT',
             ],
             'udi' => $pd['udi'] ?? '',
             'status' => $pd['status'] ?? 'completed',
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -1814,10 +2020,14 @@ class CcdaDataTransformer
 
     /**
      * Populate social history data
+     *
+     * @param array<int|string, mixed> $pd
+     * @return list<array<string, mixed>>
      */
     private function populateSocialHistory(array $pd): array
     {
         $observations = [];
+        $extension = $this->str($pd['extension'] ?? null);
 
         // Smoking status
         if (!empty($pd['smoking'])) {
@@ -1825,7 +2035,7 @@ class CcdaDataTransformer
                 'identifiers' => [
                     [
                         'identifier' => $this->oidFacility,
-                        'extension' => 'smoking-' . ($pd['extension'] ?? ''),
+                        'extension' => 'smoking-' . $extension,
                     ],
                 ],
                 'code' => [
@@ -1835,14 +2045,14 @@ class CcdaDataTransformer
                     'code_system_name' => 'LOINC',
                 ],
                 'value' => [
-                    'name' => $pd['smoking_status'] ?? $pd['smoking'] ?? '',
-                    'code' => CodeCleaner::clean($pd['smoking_status_code'] ?? ''),
+                    'name' => $pd['smoking_status'] ?? $pd['smoking'],
+                    'code' => $this->cleanCode($pd['smoking_status_code'] ?? ''),
                     'code_system' => '2.16.840.1.113883.6.96',
                     'code_system_name' => 'SNOMED CT',
                 ],
                 'date_time' => [
                     'low' => [
-                        'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                        'date' => $this->fDate($pd['date'] ?? ''),
                         'precision' => 'day',
                     ],
                 ],
@@ -1857,7 +2067,7 @@ class CcdaDataTransformer
                     'identifiers' => [
                         [
                             'identifier' => $this->oidFacility,
-                            'extension' => $field . '-' . ($pd['extension'] ?? ''),
+                            'extension' => $field . '-' . $extension,
                         ],
                     ],
                     'code' => [
@@ -1868,7 +2078,7 @@ class CcdaDataTransformer
                     'value' => $pd[$field],
                     'date_time' => [
                         'low' => [
-                            'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                            'date' => $this->fDate($pd['date'] ?? ''),
                             'precision' => 'day',
                         ],
                     ],
@@ -1881,33 +2091,32 @@ class CcdaDataTransformer
 
     /**
      * Populate care team members
+     *
+     * @param array<string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateCareTeamMembers(array $pd): array
     {
         // Get provider data from correct path: care_team.provider
-        $careTeam = $pd['care_team'] ?? [];
+        $careTeam = $this->arr($pd['care_team'] ?? []);
         if (empty($careTeam)) {
             return [];
         }
 
-        $providerData = $careTeam['provider'] ?? [];
-
-        // Handle both array and single object
-        $providers = [];
-        if (!empty($providerData)) {
-            if (!isset($providerData[0])) {
-                // Single provider object - wrap in array
-                $providers = [$providerData];
-            } else {
-                // Already an array
-                $providers = $providerData;
-            }
-        } else {
+        $providerData = $this->arr($careTeam['provider'] ?? []);
+        if (empty($providerData)) {
             return [];
         }
 
+        // Handle both array and single object
+        if (!array_key_exists(0, $providerData)) {
+            // Single provider object - wrap in array
+            $providerData = [$providerData];
+        }
+
         $result = [];
-        foreach ($providers as $member) {
+        foreach ($providerData as $member) {
+            $member = $this->arr($member);
             if (empty($member)) {
                 continue;
             }
@@ -1927,7 +2136,7 @@ class CcdaDataTransformer
                 ],
                 'date_time' => [
                     'low' => [
-                        'date' => DateFormatter::fDate($member['provider_since'] ?? ''),
+                        'date' => $this->fDate($member['provider_since'] ?? ''),
                         'precision' => 'tz',
                     ],
                 ],
@@ -1954,6 +2163,13 @@ class CcdaDataTransformer
             ];
         }
 
+        // Get first provider date for the date_time field
+        $firstProviderDate = '';
+        if (!empty($result)) {
+            $firstProvider = $result[0];
+            $firstProviderDate = $this->str($firstProvider['date_time']['low']['date']);
+        }
+
         // Return in expected format with author and status
         return [
             'providers' => [
@@ -1962,7 +2178,7 @@ class CcdaDataTransformer
             'status' => $careTeam['is_active'] ?? 'active',
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($providers[0]['provider_since'] ?? ''),
+                    'date' => $firstProviderDate ?: $this->fDate(''),
                     'precision' => 'tz',
                 ],
             ],
@@ -1972,6 +2188,9 @@ class CcdaDataTransformer
 
     /**
      * Populate payer/insurance data
+     *
+     * @param array<int|string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populatePayer(array $pd): array
     {
@@ -1998,7 +2217,7 @@ class CcdaDataTransformer
             ],
             'date_time' => [
                 'low' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'day',
                 ],
             ],
@@ -2016,30 +2235,34 @@ class CcdaDataTransformer
 
     /**
      * Process advance directives
+     *
+     * @param array<int|string, mixed> $directives
+     * @return list<array<string, mixed>>
      */
     private function processAdvanceDirectives(array $directives): array
     {
         $result = [];
         foreach ($directives as $directive) {
+            $d = $this->arr($directive);
             $result[] = [
                 'identifiers' => [
                     [
-                        'identifier' => $directive['sha_extension'] ?? $this->oidFacility,
-                        'extension' => $directive['extension'] ?? '',
+                        'identifier' => $this->str($d['sha_extension'] ?? null) ?: $this->oidFacility,
+                        'extension' => $this->str($d['extension'] ?? null),
                     ],
                 ],
                 'type' => [
-                    'name' => $directive['code_text'] ?? $directive['title'] ?? '',
-                    'code' => CodeCleaner::clean($directive['code'] ?? ''),
+                    'name' => $this->str($d['code_text'] ?? null) ?: $this->str($d['title'] ?? null),
+                    'code' => $this->cleanCode($d['code'] ?? ''),
                     'code_system_name' => 'LOINC',
                 ],
                 'date_time' => [
                     'low' => [
-                        'date' => DateFormatter::fDate($directive['date'] ?? ''),
+                        'date' => $this->fDate($d['date'] ?? ''),
                         'precision' => 'day',
                     ],
                 ],
-                'status' => $directive['status'] ?? 'completed',
+                'status' => $this->str($d['status'] ?? null, 'completed'),
             ];
         }
         return $result;
@@ -2047,9 +2270,14 @@ class CcdaDataTransformer
 
     /**
      * Populate clinical note data
+     *
+     * @param array<int|string, mixed> $pd
+     * @return array<string, mixed>
      */
     private function populateNote(array $pd): array
     {
+        $author = $this->arr($pd['author'] ?? []);
+
         return [
             'identifiers' => [
                 [
@@ -2059,23 +2287,26 @@ class CcdaDataTransformer
             ],
             'code' => [
                 'name' => $pd['code_text'] ?? $pd['note_type'] ?? 'Clinical Note',
-                'code' => CodeCleaner::clean($pd['code'] ?? ''),
+                'code' => $this->cleanCode($pd['code'] ?? ''),
                 'code_system_name' => 'LOINC',
             ],
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($pd['date'] ?? ''),
+                    'date' => $this->fDate($pd['date'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
             'text' => $pd['description'] ?? $pd['note'] ?? '',
-            'author' => $this->buildAuthorBlock($pd['author'] ?? []),
+            'author' => $this->buildAuthorBlock($author),
         ];
     }
 
     /**
      * Populate author information from author container
      * (matches JavaScript populateAuthorFromAuthorContainer)
+     *
+     * @param array<int|string, mixed> $container
+     * @return array<string, mixed>
      */
     private function populateAuthorFromAuthorContainer(array $container): array
     {
@@ -2083,50 +2314,50 @@ class CcdaDataTransformer
             return [];
         }
 
-        $author = $container['author'] ?? [];
+        $author = $this->arr($container['author'] ?? []);
         if (empty($author)) {
             return [];
         }
 
+        $npi = $this->str($author['npi'] ?? null);
+
         return [
             'code' => [
-                'name' => $author['physician_type'] ?? '',
-                'code' => $author['physician_type_code'] ?? '',
-                'code_system' => $author['physician_type_system'] ?? '',
-                'code_system_name' => $author['physician_type_system_name'] ?? '',
+                'name' => $this->str($author['physician_type'] ?? null),
+                'code' => $this->str($author['physician_type_code'] ?? null),
+                'code_system' => $this->str($author['physician_type_system'] ?? null),
+                'code_system_name' => $this->str($author['physician_type_system_name'] ?? null),
             ],
             'date_time' => [
                 'point' => [
-                    'date' => DateFormatter::fDate($author['time'] ?? ''),
+                    'date' => $this->fDate($author['time'] ?? ''),
                     'precision' => 'tz',
                 ],
             ],
             'identifiers' => [
                 [
-                    'identifier' => !empty($author['npi'])
+                    'identifier' => $npi !== ''
                         ? '2.16.840.1.113883.4.6'
-                        : ($author['id'] ?? ''),
-                    'extension' => !empty($author['npi'])
-                        ? $author['npi']
-                        : 'NI',
+                        : $this->str($author['id'] ?? null),
+                    'extension' => $npi !== '' ? $npi : 'NI',
                 ],
             ],
             'name' => [
                 [
-                    'last' => $author['lname'] ?? '',
-                    'first' => $author['fname'] ?? '',
+                    'last' => $this->str($author['lname'] ?? null),
+                    'first' => $this->str($author['fname'] ?? null),
                 ],
             ],
             'organization' => [
                 [
                     'identity' => [
                         [
-                            'root' => $author['facility_oid'] ?? '2.16.840.1.113883.4.6',
-                            'extension' => $author['facility_npi'] ?? 'NI',
+                            'root' => $this->str($author['facility_oid'] ?? null, '2.16.840.1.113883.4.6'),
+                            'extension' => $this->str($author['facility_npi'] ?? null, 'NI'),
                         ],
                     ],
                     'name' => [
-                        $author['facility_name'] ?? '',
+                        $this->str($author['facility_name'] ?? null),
                     ],
                 ],
             ],

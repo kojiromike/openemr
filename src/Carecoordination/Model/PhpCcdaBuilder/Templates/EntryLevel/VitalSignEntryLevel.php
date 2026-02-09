@@ -24,6 +24,7 @@ class VitalSignEntryLevel
     /**
      * Vital Sign Observation
      * JS: vitalSignObservation (private)
+     * @return array<string, mixed>
      */
     public static function vitalSignObservation(): array
     {
@@ -80,7 +81,7 @@ class VitalSignEntryLevel
                 ],
                 [
                     'key' => 'interpretationCode',
-                    'attributes' => fn($input) => Translate::codeFromName('2.16.840.1.113883.5.83', $input),
+                    'attributes' => fn($input) => Translate::codeFromName('2.16.840.1.113883.5.83', is_array($input) || is_string($input) ? $input : null),
                     'dataKey' => 'interpretations',
                 ],
                 FieldLevel::author(),
@@ -91,6 +92,7 @@ class VitalSignEntryLevel
     /**
      * Vital Signs Organizer
      * JS: exports.vitalSignsOrganizer
+     * @return array<string, mixed>
      */
     public static function vitalSignsOrganizer(): array
     {

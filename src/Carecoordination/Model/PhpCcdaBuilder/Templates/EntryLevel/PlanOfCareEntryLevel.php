@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class PlanOfCareEntryLevel
@@ -24,6 +25,7 @@ class PlanOfCareEntryLevel
     /**
      * Health Concern Observation
      * JS: exports.healthConcernObservation
+     * @return array<string, mixed>
      */
     public static function healthConcernObservation(): array
     {
@@ -66,6 +68,7 @@ class PlanOfCareEntryLevel
     /**
      * Health Concern Activity Act
      * JS: exports.healthConcernActivityAct
+     * @return array<string, mixed>
      */
     public static function healthConcernActivityAct(): array
     {
@@ -145,19 +148,27 @@ class PlanOfCareEntryLevel
                         ],
                     ],
                     'dataTransform' => function ($input) {
+                        if (!is_array($input)) {
+                            return $input;
+                        }
                         // Synthesize value if missing
-                        $v = $input['value'] ?? [];
-                        if (!isset($v['code']) && isset($input['code'])) {
-                            $v['code'] = trim((string)$input['code']);
+                        $v = is_array($input['value'] ?? null) ? $input['value'] : [];
+                        $code = H::strOrNull($input, 'code');
+                        $codeText = H::strOrNull($input, 'code_text');
+                        $codeType = H::strOrNull($input, 'code_type');
+
+                        if (!isset($v['code']) && $code !== null) {
+                            $v['code'] = trim($code);
                         }
-                        if (!isset($v['name']) && isset($input['code_text'])) {
-                            $v['name'] = $input['code_text'];
+                        if (!isset($v['name']) && $codeText !== null) {
+                            $v['name'] = $codeText;
                         }
-                        if (!isset($v['code_system_name']) && isset($input['code_type'])) {
-                            $v['code_system_name'] = str_replace(['-', '  '], [' ', ' '], trim((string) $input['code_type']));
+                        if (!isset($v['code_system_name']) && $codeType !== null) {
+                            $v['code_system_name'] = str_replace(['-', '  '], [' ', ' '], trim($codeType));
                         }
-                        if (!isset($v['code_system']) && ($v['code_system_name'] ?? $input['code_type'] ?? null)) {
-                            $sysName = strtolower(str_replace(' ', '', $v['code_system_name'] ?? $input['code_type'] ?? ''));
+                        $sysNameSource = $v['code_system_name'] ?? $codeType ?? null;
+                        if (!isset($v['code_system']) && is_string($sysNameSource)) {
+                            $sysName = strtolower(str_replace(' ', '', $sysNameSource));
                             if (str_contains($sysName, 'snomed')) {
                                 $v['code_system'] = '2.16.840.1.113883.6.96';
                             } elseif (str_contains($sysName, 'loinc')) {
@@ -177,6 +188,7 @@ class PlanOfCareEntryLevel
     /**
      * Plan of Care Activity Act
      * JS: exports.planOfCareActivityAct
+     * @return array<string, mixed>
      */
     public static function planOfCareActivityAct(): array
     {
@@ -199,13 +211,14 @@ class PlanOfCareEntryLevel
                 FieldLevel::effectiveTime(),
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'act',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'act',
         ];
     }
 
     /**
      * Plan of Care Activity Observation
      * JS: exports.planOfCareActivityObservation
+     * @return array<string, mixed>
      */
     public static function planOfCareActivityObservation(): array
     {
@@ -228,13 +241,14 @@ class PlanOfCareEntryLevel
                 FieldLevel::effectiveTime(),
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'observation',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'observation',
         ];
     }
 
     /**
      * Planned Procedure
      * JS: exports.plannedProcedure
+     * @return array<string, mixed>
      */
     public static function plannedProcedure(): array
     {
@@ -258,13 +272,14 @@ class PlanOfCareEntryLevel
                 FieldLevel::effectiveTime(),
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'planned_procedure',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'planned_procedure',
         ];
     }
 
     /**
      * Plan of Care Activity Procedure
      * JS: exports.planOfCareActivityProcedure
+     * @return array<string, mixed>
      */
     public static function planOfCareActivityProcedure(): array
     {
@@ -287,13 +302,14 @@ class PlanOfCareEntryLevel
                 FieldLevel::effectiveTime(),
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'procedure',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'procedure',
         ];
     }
 
     /**
      * Plan of Care Activity Encounter
      * JS: exports.planOfCareActivityEncounter
+     * @return array<string, mixed>
      */
     public static function planOfCareActivityEncounter(): array
     {
@@ -330,24 +346,33 @@ class PlanOfCareEntryLevel
                         array_merge(SharedEntryLevel::indication(), ['required' => true]),
                     ],
                     'dataKey' => 'findings',
-                    'dataTransform' => fn($input) => array_map(function ($e) {
-                        $e['code'] = [
-                            'code' => '282291009',
-                            'name' => 'Diagnosis',
-                            'code_system' => '2.16.840.1.113883.6.96',
-                            'code_system_name' => 'SNOMED CT',
-                        ];
-                        return $e;
-                    }, $input),
+                    'dataTransform' => function ($input) {
+                        if (!is_array($input)) {
+                            return $input;
+                        }
+                        return array_map(function ($e) {
+                            if (!is_array($e)) {
+                                return $e;
+                            }
+                            $e['code'] = [
+                                'code' => '282291009',
+                                'name' => 'Diagnosis',
+                                'code_system' => '2.16.840.1.113883.6.96',
+                                'code_system_name' => 'SNOMED CT',
+                            ];
+                            return $e;
+                        }, $input);
+                    },
                 ],
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'encounter',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'encounter',
         ];
     }
 
     /**
      * Plan of Care Activity Substance Administration
      * JS: exports.planOfCareActivitySubstanceAdministration
+     * @return array<string, mixed>
      */
     public static function planOfCareActivitySubstanceAdministration(): array
     {
@@ -375,12 +400,14 @@ class PlanOfCareEntryLevel
                     'dataKey' => 'plan',
                 ],
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'substanceAdministration',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'substanceAdministration',
         ];
     }
 
     /**
      * Care Plan Medication Information
+     *
+     * @return array<string, mixed>
      */
     private static function carePlanMedicationInformation(): array
     {
@@ -406,6 +433,7 @@ class PlanOfCareEntryLevel
     /**
      * Plan of Care Activity Supply
      * JS: exports.planOfCareActivitySupply
+     * @return array<string, mixed>
      */
     public static function planOfCareActivitySupply(): array
     {
@@ -428,13 +456,14 @@ class PlanOfCareEntryLevel
                 FieldLevel::effectiveTime(),
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'supply',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'supply',
         ];
     }
 
     /**
      * Plan of Care Activity Instructions
      * JS: exports.planOfCareActivityInstructions
+     * @return array<string, mixed>
      */
     public static function planOfCareActivityInstructions(): array
     {
@@ -533,7 +562,7 @@ class PlanOfCareEntryLevel
                     'required' => true,
                 ],
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'instructions',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'instructions',
         ];
     }
 }

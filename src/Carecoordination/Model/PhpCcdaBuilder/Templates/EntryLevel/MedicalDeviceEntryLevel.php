@@ -24,6 +24,7 @@ class MedicalDeviceEntryLevel
     /**
      * Medical Device Activity Procedure
      * JS: exports.medicalDeviceActivityProcedure
+     * @return array<string, mixed>
      */
     public static function medicalDeviceActivityProcedure(): array
     {

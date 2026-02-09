@@ -19,6 +19,8 @@ class Translate
 {
     /**
      * Value sets for codeFromName translations
+     *
+     * @var array<string, array<string, array{code: string, codeSystem: string, codeSystemName: string, displayName?: string}>>
      */
     private static array $valueSets = [
         // Problem Status
@@ -89,14 +91,19 @@ class Translate
 
     /**
      * Translate code from name using value set
+     *
+     * @param array<int|string, mixed>|string|null $input
+     * @return array<string, string|null>
      */
-    public static function codeFromName(string $oid, $input): array
+    public static function codeFromName(string $oid, array|string|null $input): array
     {
-        if (!$input) {
+        if (in_array($input, [null, '', []], true)) {
             return [];
         }
 
-        $name = is_array($input) ? ($input['name'] ?? $input['value'] ?? '') : (string)$input;
+        $name = is_string($input)
+            ? $input
+            : self::extractString($input, 'name', self::extractString($input, 'value', ''));
 
         if (isset(self::$valueSets[$oid][$name])) {
             $result = self::$valueSets[$oid][$name];
@@ -107,10 +114,10 @@ class Translate
         // Return input as-is if not found in value set
         if (is_array($input)) {
             return [
-                'code' => $input['code'] ?? null,
-                'codeSystem' => $input['code_system'] ?? $oid,
-                'codeSystemName' => $input['code_system_name'] ?? null,
-                'displayName' => $input['name'] ?? null,
+                'code' => self::extractStringOrNull($input, 'code'),
+                'codeSystem' => self::extractString($input, 'code_system', $oid),
+                'codeSystemName' => self::extractStringOrNull($input, 'code_system_name'),
+                'displayName' => self::extractStringOrNull($input, 'name'),
             ];
         }
 
@@ -122,11 +129,50 @@ class Translate
     }
 
     /**
-     * Translate time/date input to HL7 format
+     * Extract a string value from an array
+     *
+     * @param array<int|string, mixed> $arr
      */
-    public static function time($input): ?string
+    private static function extractString(array $arr, string $key, string $default = ''): string
     {
-        if (!$input) {
+        $val = $arr[$key] ?? null;
+        if (is_string($val)) {
+            return $val;
+        }
+        if (is_int($val) || is_float($val)) {
+            return (string) $val;
+        }
+        return $default;
+    }
+
+    /**
+     * Extract a nullable string value from an array
+     *
+     * @param array<int|string, mixed> $arr
+     */
+    private static function extractStringOrNull(array $arr, string $key): ?string
+    {
+        $val = $arr[$key] ?? null;
+        if ($val === null || $val === '') {
+            return null;
+        }
+        if (is_string($val)) {
+            return $val;
+        }
+        if (is_int($val) || is_float($val)) {
+            return (string) $val;
+        }
+        return null;
+    }
+
+    /**
+     * Translate time/date input to HL7 format
+     *
+     * @param array<int|string, mixed>|string|null $input
+     */
+    public static function time(array|string|null $input): ?string
+    {
+        if (in_array($input, [null, '', []], true)) {
             return null;
         }
 
@@ -146,14 +192,13 @@ class Translate
             return $input;
         }
 
-        // If it's an array with date/precision
-        if (is_array($input)) {
-            $date = $input['date'] ?? $input['point'] ?? null;
-            $precision = $input['precision'] ?? null;
+        // It's an array with date/precision
+        $date = self::extractStringOrNull($input, 'date')
+            ?? self::extractStringOrNull($input, 'point');
+        $precision = self::extractStringOrNull($input, 'precision');
 
-            if ($date) {
-                return self::formatDate($date, $precision);
-            }
+        if ($date !== null) {
+            return self::formatDate($date, $precision);
         }
 
         return null;
@@ -162,13 +207,13 @@ class Translate
     /**
      * Format date with optional precision
      */
-    public static function formatDate($date, $precision = null): ?string
+    public static function formatDate(string|int|null $date, ?string $precision = null): ?string
     {
-        if (!$date) {
+        if ($date === null || $date === '') {
             return null;
         }
 
-        $timestamp = is_numeric($date) ? $date : strtotime((string) $date);
+        $timestamp = is_int($date) ? $date : strtotime($date);
         if ($timestamp === false) {
             return is_string($date) ? $date : null;
         }
@@ -186,9 +231,9 @@ class Translate
     /**
      * Acronymize address use
      */
-    public static function acronymize($value): ?string
+    public static function acronymize(?string $value): ?string
     {
-        if (!$value) {
+        if ($value === null || $value === '') {
             return null;
         }
 
@@ -206,39 +251,52 @@ class Translate
             'confidential' => 'CONF',
         ];
 
-        $lower = strtolower(trim((string) $value));
-        return $map[$lower] ?? strtoupper((string) $value);
+        $lower = strtolower(trim($value));
+        return $map[$lower] ?? strtoupper($value);
     }
 
     /**
      * Translate code attributes from input
+     *
+     * @param array<string, mixed>|null $input
+     * @return array<string, string>
      */
-    public static function code($input): array
+    public static function code(?array $input): array
     {
-        if (!$input || !is_array($input)) {
+        if ($input === null || $input === []) {
             return [];
         }
 
-        return array_filter([
-            'code' => $input['code'] ?? null,
-            'codeSystem' => $input['code_system'] ?? null,
-            'codeSystemName' => $input['code_system_name'] ?? null,
-            'displayName' => $input['name'] ?? null,
-        ]);
+        $result = [];
+        $code = self::extractStringOrNull($input, 'code');
+        if ($code !== null) {
+            $result['code'] = $code;
+        }
+        $codeSystem = self::extractStringOrNull($input, 'code_system');
+        if ($codeSystem !== null) {
+            $result['codeSystem'] = $codeSystem;
+        }
+        $codeSystemName = self::extractStringOrNull($input, 'code_system_name');
+        if ($codeSystemName !== null) {
+            $result['codeSystemName'] = $codeSystemName;
+        }
+        $name = self::extractStringOrNull($input, 'name');
+        if ($name !== null) {
+            $result['displayName'] = $name;
+        }
+        return $result;
     }
 
     /**
      * Transform name for usRealmName
+     *
+     * @param array<string, mixed>|string|null $input
+     * @return array<string, mixed>|null
      */
-    public static function name($input): ?array
+    public static function name(array|string|null $input): ?array
     {
-        if (!$input) {
+        if (in_array($input, [null, '', []], true)) {
             return null;
-        }
-
-        // If already in correct format
-        if (isset($input['family']) || isset($input['given'])) {
-            return $input;
         }
 
         // If it's a simple string
@@ -250,38 +308,54 @@ class Translate
             ];
         }
 
+        // If already in correct format
+        if (isset($input['family']) || isset($input['given'])) {
+            return $input;
+        }
+
         // Try to extract from common formats
         $result = [];
 
-        if (isset($input['last']) || isset($input['last_name'])) {
-            $result['family'] = $input['last'] ?? $input['last_name'];
+        $family = self::extractStringOrNull($input, 'last')
+            ?? self::extractStringOrNull($input, 'last_name');
+        if ($family !== null) {
+            $result['family'] = $family;
         }
 
-        if (isset($input['first']) || isset($input['first_name'])) {
-            $given = [$input['first'] ?? $input['first_name']];
-            if (isset($input['middle']) || isset($input['middle_name'])) {
-                $given[] = $input['middle'] ?? $input['middle_name'];
+        $first = self::extractStringOrNull($input, 'first')
+            ?? self::extractStringOrNull($input, 'first_name');
+        if ($first !== null) {
+            $given = [$first];
+            $middle = self::extractStringOrNull($input, 'middle')
+                ?? self::extractStringOrNull($input, 'middle_name');
+            if ($middle !== null) {
+                $given[] = $middle;
             }
             $result['given'] = $given;
         }
 
-        if (isset($input['prefix'])) {
-            $result['prefix'] = $input['prefix'];
+        $prefix = self::extractStringOrNull($input, 'prefix');
+        if ($prefix !== null) {
+            $result['prefix'] = $prefix;
         }
 
-        if (isset($input['suffix'])) {
-            $result['suffix'] = $input['suffix'];
+        $suffix = self::extractStringOrNull($input, 'suffix');
+        if ($suffix !== null) {
+            $result['suffix'] = $suffix;
         }
 
-        return $result ?: $input;
+        return $result !== [] ? $result : $input;
     }
 
     /**
      * Transform telecom
+     *
+     * @param array<string, mixed>|string|null $input
+     * @return array<string, string>|null
      */
-    public static function telecom($input): ?array
+    public static function telecom(array|string|null $input): ?array
     {
-        if (!$input) {
+        if (in_array($input, [null, '', []], true)) {
             return null;
         }
 
@@ -289,46 +363,47 @@ class Translate
             return ['value' => $input];
         }
 
-        if (!is_array($input)) {
-            return null;
-        }
-
         $result = [];
 
         // Handle phone/email/fax
         if (isset($input['phone']) || isset($input['number'])) {
-            $number = $input['phone'] ?? $input['number'];
-            // Ensure number is a string
-            if (is_array($number)) {
-                $number = $number[0] ?? '';
-            }
-            $number = (string)$number;
-            if ($number && !str_starts_with($number, 'tel:')) {
+            $number = self::flattenToString($input['phone'] ?? $input['number']);
+            if ($number !== '' && !str_starts_with($number, 'tel:')) {
                 $number = 'tel:' . preg_replace('/[^0-9+]/', '', $number);
             }
             $result['value'] = $number;
-            $result['use'] = $input['use'] ?? 'WP';
+            $result['use'] = self::extractString($input, 'use', 'WP');
         } elseif (isset($input['email'])) {
-            $email = $input['email'];
-            if (is_array($email)) {
-                $email = $email[0] ?? '';
-            }
-            $email = (string)$email;
-            if ($email && !str_starts_with($email, 'mailto:')) {
+            $email = self::flattenToString($input['email']);
+            if ($email !== '' && !str_starts_with($email, 'mailto:')) {
                 $email = 'mailto:' . $email;
             }
             $result['value'] = $email;
         } elseif (isset($input['value'])) {
-            $value = $input['value'];
-            if (is_array($value)) {
-                $value = $value[0] ?? '';
-            }
-            $result['value'] = (string)$value;
-            if (isset($input['use'])) {
-                $result['use'] = $input['use'];
+            $result['value'] = self::flattenToString($input['value']);
+            $use = self::extractStringOrNull($input, 'use');
+            if ($use !== null) {
+                $result['use'] = $use;
             }
         }
 
-        return $result ?: $input;
+        return $result !== [] ? $result : null;
+    }
+
+    /**
+     * Flatten a potentially nested value to a string
+     */
+    private static function flattenToString(mixed $value): string
+    {
+        while (is_array($value)) {
+            $value = $value[0] ?? '';
+        }
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+        return '';
     }
 }

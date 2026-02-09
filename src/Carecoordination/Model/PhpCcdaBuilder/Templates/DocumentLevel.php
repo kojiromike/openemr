@@ -18,6 +18,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel\SharedEntryLevel;
@@ -28,6 +29,7 @@ class DocumentLevel
     /**
      * Generate CCD2 (C-CDA 2.1) document template
      * This is the PHP equivalent of documentLevel.js exports.ccd2()
+     * @return array<string, mixed>
      */
     public static function ccd2(): array
     {
@@ -54,15 +56,15 @@ class DocumentLevel
                 [
                     'key' => 'templateId',
                     'attributes' => [
-                        'root' => fn($input) => $input['root'] ?? '',
-                        'extension' => fn($input) => $input['extension'] ?? '',
+                        'root' => fn($input) => H::str($input, 'root'),
+                        'extension' => fn($input) => H::str($input, 'extension'),
                     ],
                     'dataKey' => 'meta.ccda_header.template',
                 ],
                 [
                     'key' => 'templateId',
                     'attributes' => [
-                        'root' => fn($input) => $input['root'] ?? '',
+                        'root' => fn($input) => H::str($input, 'root'),
                     ],
                     'dataKey' => 'meta.ccda_header.template',
                 ],
@@ -71,8 +73,8 @@ class DocumentLevel
                 [
                     'key' => 'id',
                     'attributes' => [
-                        'root' => fn($input) => $input['identifier'] ?? '',
-                        'extension' => fn($input) => $input['extension'] ?? '',
+                        'root' => fn($input) => H::str($input, 'identifier'),
+                        'extension' => fn($input) => H::str($input, 'extension'),
                     ],
                     'dataKey' => 'meta.identifiers.0',
                 ],
@@ -83,8 +85,8 @@ class DocumentLevel
                     'attributes' => [
                         'codeSystem' => '2.16.840.1.113883.6.1',
                         'codeSystemName' => 'LOINC',
-                        'code' => fn($input) => $input['code'] ?? '',
-                        'displayName' => fn($input) => $input['name'] ?? '',
+                        'code' => fn($input) => H::str($input, 'code'),
+                        'displayName' => fn($input) => H::str($input, 'name'),
                     ],
                     'dataKey' => 'meta.ccda_header.code',
                 ],
@@ -92,7 +94,7 @@ class DocumentLevel
                 // Document title
                 [
                     'key' => 'title',
-                    'text' => fn($input) => $input['title'] ?? 'Clinical Document',
+                    'text' => fn($input) => H::str($input, 'title', 'Clinical Document'),
                     'dataKey' => 'meta.ccda_header',
                 ],
 
@@ -100,7 +102,7 @@ class DocumentLevel
                 [
                     'key' => 'effectiveTime',
                     'attributes' => [
-                        'value' => fn($input) => $input['date'] ?? '',
+                        'value' => fn($input) => H::str($input, 'date'),
                     ],
                     'dataKey' => 'meta.ccda_header.date_time.point',
                     'required' => true,
@@ -112,7 +114,7 @@ class DocumentLevel
                     'attributes' => [
                         'code' => 'N',
                         'codeSystem' => '2.16.840.1.113883.5.25',
-                        'codeSystemName' => 'Confidentiality',
+                        'codeSystemName' => 'Confidentiality Code',
                         'displayName' => 'Normal',
                     ],
                 ],
@@ -124,11 +126,11 @@ class DocumentLevel
                 [
                     'key' => 'setId',
                     'attributes' => [
-                        'root' => fn($input) => $input['identifier'] ?? '',
-                        'extension' => fn($input) => $input['extension'] ?? '',
+                        'root' => fn($input) => H::str($input, 'identifier'),
+                        'extension' => fn($input) => H::str($input, 'extension'),
                     ],
                     'dataKey' => 'meta.set_id',
-                    'existsWhen' => fn($input) => !empty($input['identifier']),
+                    'existsWhen' => fn($input) => H::has($input, 'identifier'),
                 ],
 
                 // Version number
@@ -175,6 +177,7 @@ class DocumentLevel
 
     /**
      * Generate unstructured document template
+     * @return array<string, mixed>
      */
     public static function unstructured(): array
     {
@@ -194,16 +197,16 @@ class DocumentLevel
                 [
                     'key' => 'templateId',
                     'attributes' => [
-                        'root' => fn($input) => $input['root'] ?? '',
-                        'extension' => fn($input) => $input['extension'] ?? '',
+                        'root' => fn($input) => H::str($input, 'root'),
+                        'extension' => fn($input) => H::str($input, 'extension'),
                     ],
                     'dataKey' => 'meta.ccda_header.template',
                 ],
                 [
                     'key' => 'id',
                     'attributes' => [
-                        'root' => fn($input) => $input['identifier'] ?? '',
-                        'extension' => fn($input) => $input['extension'] ?? '',
+                        'root' => fn($input) => H::str($input, 'identifier'),
+                        'extension' => fn($input) => H::str($input, 'extension'),
                     ],
                     'dataKey' => 'meta.identifiers.0',
                 ],
@@ -212,19 +215,19 @@ class DocumentLevel
                     'attributes' => [
                         'codeSystem' => '2.16.840.1.113883.6.1',
                         'codeSystemName' => 'LOINC',
-                        'code' => fn($input) => $input['code'] ?? '',
-                        'displayName' => fn($input) => $input['name'] ?? '',
+                        'code' => fn($input) => H::str($input, 'code'),
+                        'displayName' => fn($input) => H::str($input, 'name'),
                     ],
                     'dataKey' => 'meta.ccda_header.code',
                 ],
                 [
                     'key' => 'title',
-                    'text' => fn($input) => $input['title'] ?? 'Clinical Document',
+                    'text' => fn($input) => H::str($input, 'title', 'Clinical Document'),
                     'dataKey' => 'meta.ccda_header',
                 ],
                 [
                     'key' => 'effectiveTime',
-                    'attributes' => ['value' => fn($input) => $input['date'] ?? ''],
+                    'attributes' => ['value' => fn($input) => H::str($input, 'date')],
                     'dataKey' => 'meta.ccda_header.date_time.point',
                     'required' => true,
                 ],
@@ -255,6 +258,8 @@ class DocumentLevel
 
     /**
      * Get all section templates for structured body
+     *
+     * @return array<int, mixed>
      */
     private static function getAllSections(): array
     {

@@ -22,9 +22,11 @@ use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\DocumentLevel;
 class CcdaTemplateEngine
 {
     private DOMDocument $doc;
+
+    /** @var array<string, mixed> */
     private array $context = [];
-    private bool $preventNullFlavor = false;
-    private string $stylesheetPath = "../../../interface/modules/zend_modules/public/xsl/cda.xsl";
+
+    private string $stylesheetPath = "CDA.xsl";
 
     /**
      * Set the XSL stylesheet path for the XML output
@@ -42,7 +44,7 @@ class CcdaTemplateEngine
      * Optionally removes or replaces <br/> tags.
      *
      * @param string $xmlContent The raw CCDA XML string.
-     * @param bool   $removeBr   Whether to remove <br/> tags. Defaults to false.
+     * @param bool   $replaceBr  Whether to remove <br/> tags. Defaults to false.
      * @return string Cleaned XML content.
      * @throws \RuntimeException If the input XML is invalid or cannot be parsed.
      */
@@ -50,11 +52,11 @@ class CcdaTemplateEngine
     {
         // Handle <br/> tags if required
         if ($replaceBr) {
-            $xmlContent = preg_replace('/<\/?br\s*\/?>/i', '', $xmlContent);
+            $xmlContent = (string) preg_replace('/<\/?br\s*\/?>/i', '', $xmlContent);
         } else {
-            $xmlContent = preg_replace('/<\/?br\s*\/?>/i', '\n', $xmlContent); // Replace <br/> with newline
+            $xmlContent = (string) preg_replace('/<\/?br\s*\/?>/i', '\n', $xmlContent);
         }
-        $xmlContent = preg_replace('/\xC2\xA0/', '', (string)$xmlContent);
+        $xmlContent = (string) preg_replace('/\xC2\xA0/', '', $xmlContent);
         $xmlContent = str_replace('Ã‚', '', $xmlContent);
 
         // Load the raw XML into DOMDocument for further cleaning
@@ -70,13 +72,14 @@ class CcdaTemplateEngine
         // Normalize and ensure UTF-8 encoding
         $dom->encoding = 'UTF-8';
 
-        return $dom->saveXML();
+        $result = $dom->saveXML();
+        return $result !== false ? $result : '';
     }
 
     /**
      * Generate a CCD document from transformed data
      *
-     * @param array $data The transformed CCDA data
+     * @param array<string, mixed> $data The transformed CCDA data
      * @return string The generated XML
      */
     public function generateCcd(array $data): string
@@ -87,35 +90,43 @@ class CcdaTemplateEngine
         $this->doc->preserveWhiteSpace = false;
 
         // Determine document type and get appropriate template
-        $docType = $data['meta']['type'] ?? 'ccd';
-        $templateRoot = $data['meta']['ccda_header']['template']['root'] ?? '';
+        $meta = is_array($data['meta'] ?? null) ? $data['meta'] : [];
+        $docType = is_string($meta['type'] ?? null) ? $meta['type'] : 'ccd';
+        $ccdaHeader = is_array($meta['ccda_header'] ?? null) ? $meta['ccda_header'] : [];
+        $template = is_array($ccdaHeader['template'] ?? null) ? $ccdaHeader['template'] : [];
+        $templateRoot = is_string($template['root'] ?? null) ? $template['root'] : '';
 
         if ($templateRoot === '2.16.840.1.113883.10.20.22.1.10' || $docType === 'unstructured') {
-            $template = DocumentLevel::unstructured();
+            $templateDef = DocumentLevel::unstructured();
         } else {
-            $template = DocumentLevel::ccd2();
+            $templateDef = DocumentLevel::ccd2();
         }
 
         // Initialize context for reference tracking
+        $identifiers = is_array($meta['identifiers'] ?? null) ? $meta['identifiers'] : [];
+        $firstId = is_array($identifiers[0] ?? null) ? $identifiers[0] : [];
+        $rootId = is_string($firstId['identifier'] ?? null) ? $firstId['identifier'] : null;
+
         $this->context = [
             'references' => [],
             'tableReferences' => [],
-            'rootId' => $data['meta']['identifiers'][0]['identifier'] ?? null,
+            'rootId' => $rootId,
             'preventNullFlavor' => false,
         ];
 
         // Process the template
-        $this->update($this->doc, $data, $this->context, $template);
+        $this->update($this->doc, $data, $this->context, $templateDef);
 
         // Get the XML output
         $xml = $this->doc->saveXML();
-        //$xml = $this->cleanCcdaXmlContent($xml, true);
-       // $xsl = file_get_contents($this->stylesheetPath);
+        if ($xml === false) {
+            return '';
+        }
 
         // Insert stylesheet processing instruction after XML declaration
-        if (!empty($this->stylesheetPath)) {
+        if ($this->stylesheetPath !== '') {
             $stylesheetPI = '<?xml-stylesheet type="text/xsl" href="' . htmlspecialchars($this->stylesheetPath) . '"?>';
-            $xml = preg_replace('/^(<\?xml[^?]*\?>)/', '$1' . "\n" . $stylesheetPI, $xml);
+            $xml = (string) preg_replace('/^(<\?xml[^?]*\?>)/', '$1' . "\n" . $stylesheetPI, $xml);
         }
 
         return $xml;
@@ -128,11 +139,11 @@ class CcdaTemplateEngine
      *
      * @param DOMDocument|DOMElement $xmlDoc   The XML document or parent element
      * @param mixed                  $input    The input data
-     * @param array                  $context  Processing context
-     * @param array                  $template The template definition
+     * @param array<string, mixed>   $context  Processing context
+     * @param array<string, mixed>   $template The template definition
      * @return bool Whether any content was added
      */
-    public function update($xmlDoc, $input, array $context, array $template): bool
+    public function update(DOMDocument|DOMElement $xmlDoc, mixed $input, array $context, array $template): bool
     {
         $filled = false;
 
@@ -152,8 +163,9 @@ class CcdaTemplateEngine
         }
 
         // Handle required but missing elements
-        if (!$filled && ($template['required'] ?? false) && !($context['preventNullFlavor'] ?? false)) {
-            $node = $this->newNode($xmlDoc, $template['key']);
+        $key = is_string($template['key'] ?? null) ? $template['key'] : '';
+        if (!$filled && ($template['required'] ?? false) && !($context['preventNullFlavor'] ?? false) && $key !== '') {
+            $node = $this->newNode($xmlDoc, $key);
             $this->nodeAttr($node, ['nullFlavor' => 'UNK']);
         }
 
@@ -162,8 +174,12 @@ class CcdaTemplateEngine
 
     /**
      * Update XML document using a single template
+     *
+     * @param DOMDocument|DOMElement $xmlDoc
+     * @param array<string, mixed>   $context
+     * @param array<string, mixed>   $template
      */
-    private function updateUsingTemplate($xmlDoc, $input, array $context, array $template): bool
+    private function updateUsingTemplate(DOMDocument|DOMElement $xmlDoc, mixed $input, array $context, array $template): bool
     {
         // Check condition
         $condition = $template['existsWhen'] ?? null;
@@ -174,7 +190,7 @@ class CcdaTemplateEngine
         }
 
         $name = $template['key'] ?? null;
-        if ($name === null) {
+        if (!is_string($name)) {
             return false;
         }
 
@@ -194,12 +210,14 @@ class CcdaTemplateEngine
 
     /**
      * Transform input data based on template dataKey and dataTransform
+     *
+     * @param array<string, mixed> $template
      */
-    private function transformInput($input, array $template)
+    private function transformInput(mixed $input, array $template): mixed
     {
         $inputKey = $template['dataKey'] ?? null;
 
-        if ($inputKey !== null) {
+        if (is_string($inputKey)) {
             $pieces = explode('.', $inputKey);
 
             foreach ($pieces as $piece) {
@@ -220,7 +238,7 @@ class CcdaTemplateEngine
                             }
                         }
                     }
-                    $input = empty($nextInputs) ? null : $nextInputs;
+                    $input = $nextInputs === [] ? null : $nextInputs;
                 } else {
                     $input = is_array($input) && array_key_exists($piece, $input) ? $input[$piece] : null;
                 }
@@ -242,13 +260,12 @@ class CcdaTemplateEngine
 
     /**
      * Check if array is numerically indexed (sequential)
+     *
+     * @param array<mixed> $arr
      */
-    private function isIndexedArray($arr): bool
+    private function isIndexedArray(array $arr): bool
     {
-        if (!is_array($arr)) {
-            return false;
-        }
-        if (empty($arr)) {
+        if ($arr === []) {
             return false;
         }
         return array_keys($arr) === range(0, count($arr) - 1);
@@ -260,8 +277,10 @@ class CcdaTemplateEngine
      * Array callables can be:
      * - [ClassName::class, 'methodName'] - static method call
      * - [ClassName::class, 'methodName', 'arg1', ...] - factory that returns callable
+     *
+     * @param array<string, mixed>|null $context
      */
-    private function invokeCallable($callable, $input, $context = null)
+    private function invokeCallable(mixed $callable, mixed $input, ?array $context = null): mixed
     {
         // Direct closure
         if ($callable instanceof \Closure) {
@@ -269,7 +288,7 @@ class CcdaTemplateEngine
         }
 
         // Array-style callable
-        if (is_array($callable) && count($callable) >= 2 && is_string($callable[0])) {
+        if (is_array($callable) && count($callable) >= 2 && is_string($callable[0]) && is_string($callable[1])) {
             $class = $callable[0];
             $method = $callable[1];
 
@@ -283,7 +302,9 @@ class CcdaTemplateEngine
             // -> LeafLevel::inputProperty('family') returns a closure
             if (count($callable) > 2) {
                 $args = array_slice($callable, 2);
-                $factory = [$class, $method](...$args);
+                /** @var callable $factoryCallable */
+                $factoryCallable = [$class, $method];
+                $factory = $factoryCallable(...$args);
 
                 // The factory returns a closure - invoke it with input
                 if ($factory instanceof \Closure || is_callable($factory)) {
@@ -294,7 +315,9 @@ class CcdaTemplateEngine
 
             // Direct static method call with input
             // e.g., [Translate::class, 'name'] -> Translate::name($input)
-            return [$class, $method]($input);
+            /** @var callable $staticCallable */
+            $staticCallable = [$class, $method];
+            return $staticCallable($input);
         }
 
         // Standard callable
@@ -307,8 +330,10 @@ class CcdaTemplateEngine
 
     /**
      * Expand text content from template
+     *
+     * @param array<string, mixed> $template
      */
-    private function expandText($input, array $template): ?string
+    private function expandText(mixed $input, array $template): ?string
     {
         $text = $template['text'] ?? null;
 
@@ -337,13 +362,23 @@ class CcdaTemplateEngine
             return null;
         }
 
-        return (string)$text;
+        if (is_string($text)) {
+            return $text;
+        }
+        if (is_int($text) || is_float($text)) {
+            return (string) $text;
+        }
+
+        return null;
     }
 
     /**
      * Fill element attributes
+     *
+     * @param array<string, mixed> $context
+     * @param array<string, mixed> $template
      */
-    private function fillAttributes(DOMElement $node, $input, array $context, array $template): void
+    private function fillAttributes(DOMElement $node, mixed $input, array $context, array $template): void
     {
         $attrObj = $template['attributes'] ?? null;
 
@@ -353,11 +388,12 @@ class CcdaTemplateEngine
 
         // Handle attributeKey
         $inputAttrKey = $template['attributeKey'] ?? null;
-        if ($inputAttrKey !== null && is_array($input)) {
+        if (is_string($inputAttrKey) && is_array($input)) {
             $input = $input[$inputAttrKey] ?? $input;
         }
 
         if ($input !== null) {
+            /** @var array<string, string> $attrs */
             $attrs = [];
             $this->expandAttributes($input, $context, $attrObj, $attrs);
             $this->nodeAttr($node, $attrs);
@@ -366,8 +402,11 @@ class CcdaTemplateEngine
 
     /**
      * Expand attributes from definition
+     *
+     * @param array<string, mixed>  $context
+     * @param array<string, string> $attrs
      */
-    private function expandAttributes($input, array $context, $attrObj, array &$attrs): void
+    private function expandAttributes(mixed $input, array $context, mixed $attrObj, array &$attrs): void
     {
         if ($attrObj === null) {
             return;
@@ -390,8 +429,8 @@ class CcdaTemplateEngine
                 if ($attrVal instanceof \Closure || is_callable($attrVal)) {
                     $attrVal = $this->invokeCallable($attrVal, $input, $context);
                 }
-                if ($attrVal !== null && $attrVal !== '') {
-                    $attrs[$attrKey] = (string)$attrVal;
+                if ($attrVal !== null && $attrVal !== '' && (is_string($attrVal) || is_int($attrVal) || is_float($attrVal))) {
+                    $attrs[(string) $attrKey] = (string) $attrVal;
                 }
             }
         }
@@ -399,8 +438,11 @@ class CcdaTemplateEngine
 
     /**
      * Fill element content (child elements)
+     *
+     * @param array<string, mixed> $context
+     * @param array<string, mixed> $template
      */
-    private function fillContent(DOMElement $node, $input, array $context, array $template): void
+    private function fillContent(DOMElement $node, mixed $input, array $context, array $template): void
     {
         $content = $template['content'] ?? null;
 
@@ -415,14 +457,17 @@ class CcdaTemplateEngine
         foreach ($content as $element) {
             if (is_array($element) && isset($element[0]) && is_array($element[0])) {
                 // Template with modifiers
+                /** @var array<string, mixed> $actualElement */
                 $actualElement = $element[0];
-                for ($i = 1; $i < count($element); $i++) {
-                    if (is_callable($element[$i])) {
-                        $element[$i]($actualElement);
+                $modifiers = array_values(array_slice($element, 1));
+                foreach ($modifiers as $modifier) {
+                    if (is_callable($modifier)) {
+                        $modifier($actualElement);
                     }
                 }
                 $this->update($node, $input, $context, $actualElement);
-            } else {
+            } elseif (is_array($element)) {
+                /** @var array<string, mixed> $element */
                 $this->update($node, $input, $context, $element);
             }
         }
@@ -441,9 +486,12 @@ class CcdaTemplateEngine
     /**
      * Create a new XML element with proper namespace handling
      */
-    private function newNode($parent, string $name, ?string $text = null): DOMElement
+    private function newNode(DOMDocument|DOMElement $parent, string $name, ?string $text = null): DOMElement
     {
         $doc = ($parent instanceof DOMDocument) ? $parent : $parent->ownerDocument;
+        if ($doc === null) {
+            throw new \RuntimeException('Cannot create node without a document');
+        }
 
         // Only use createElementNS for root element (ClinicalDocument) and sdtc: elements
         // All other elements inherit namespace from root
@@ -467,8 +515,8 @@ class CcdaTemplateEngine
             $trimmed = trim($text);
             if ($trimmed !== '') {
                 // Normalize multiple spaces to single space
-                $normalized = preg_replace('/\s+/', ' ', $text);
-                $node->appendChild($doc->createTextNode(trim((string) $normalized)));
+                $normalized = (string) preg_replace('/\s+/', ' ', $text);
+                $node->appendChild($doc->createTextNode(trim($normalized)));
             }
         }
 
@@ -477,11 +525,13 @@ class CcdaTemplateEngine
 
     /**
      * Set attributes on a node
+     *
+     * @param array<string, string> $attrs
      */
     private function nodeAttr(DOMElement $node, array $attrs): void
     {
         foreach ($attrs as $name => $value) {
-            if ($value !== null && $value !== '') {
+            if ($value !== '') {
                 $node->setAttribute($name, $value);
             }
         }
@@ -491,50 +541,72 @@ class CcdaTemplateEngine
      * Create document from template
      *
      * This is the main entry point equivalent to engine.js exports.create()
+     *
+     * @param array<string, mixed> $template
+     * @param array<string, mixed> $context
      */
-    public function create(array $template, $input, array $context = []): string
+    public function create(array $template, mixed $input, array $context = []): string
     {
         $this->doc = new DOMDocument('1.0', 'UTF-8');
         $this->doc->formatOutput = true;
 
         // Merge provided context with defaults
-        $this->context = array_merge([
+        /** @var array<string, mixed> $mergedContext */
+        $mergedContext = array_merge([
             'references' => [],
             'tableReferences' => [],
             'rootId' => null,
             'preventNullFlavor' => false,
         ], $context);
+        $this->context = $mergedContext;
 
         $this->update($this->doc, $input, $this->context, $template);
 
-        return $this->doc->saveXML();
+        $result = $this->doc->saveXML();
+        return $result !== false ? $result : '';
     }
 
     /**
      * Get next reference for a key (used in narrative text)
+     *
+     * @param array<string, mixed> $context
      */
     public static function nextReference(array &$context, string $referenceKey): string
     {
-        $index = ($context['references'][$referenceKey] ?? 0) + 1;
+        if (!isset($context['references']) || !is_array($context['references'])) {
+            $context['references'] = [];
+        }
+        $current = $context['references'][$referenceKey] ?? 0;
+        $index = (is_int($current) ? $current : 0) + 1;
         $context['references'][$referenceKey] = $index;
         return '#' . $referenceKey . $index;
     }
 
     /**
      * Get same reference for a key (current index)
+     *
+     * @param array<string, mixed> $context
      */
     public static function sameReference(array &$context, string $referenceKey): string
     {
-        $index = $context['references'][$referenceKey] ?? 0;
+        $refs = $context['references'] ?? [];
+        $refValue = is_array($refs) ? ($refs[$referenceKey] ?? null) : null;
+        $index = is_int($refValue) ? $refValue : 0;
         return '#' . $referenceKey . $index;
     }
 
     /**
      * Get next table reference for a key
+     *
+     * @param array<string, mixed> $context
      */
     public static function nextTableReference(array &$context, string $referenceKey): string
     {
-        $index = ($context['tableReferences'][$referenceKey] ?? 0) + 1;
+        if (!isset($context['tableReferences']) || !is_array($context['tableReferences'])) {
+            $context['tableReferences'] = [];
+        }
+        $current = $context['tableReferences'][$referenceKey] ?? 0;
+        $index = (is_int($current) ? $current : 0) + 1;
         $context['tableReferences'][$referenceKey] = $index;
         return $referenceKey . $index;
     }

@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class FunctionalStatusEntryLevel
@@ -24,6 +25,7 @@ class FunctionalStatusEntryLevel
     /**
      * Mental Status Observation
      * JS: exports.mentalStatusObservation
+     * @return array<string, mixed>
      */
     public static function mentalStatusObservation(): array
     {
@@ -76,6 +78,7 @@ class FunctionalStatusEntryLevel
     /**
      * Functional Status Observation
      * JS: functionalStatusObservation (private)
+     * @return array<string, mixed>
      */
     public static function functionalStatusObservation(): array
     {
@@ -135,6 +138,7 @@ class FunctionalStatusEntryLevel
     /**
      * Functional Status Self Care Observation
      * JS: functionalStatusSelfCareObservation (private)
+     * @return array<string, mixed>
      */
     public static function functionalStatusSelfCareObservation(): array
     {
@@ -171,6 +175,7 @@ class FunctionalStatusEntryLevel
     /**
      * Functional Status Organizer
      * JS: exports.functionalStatusOrganizer
+     * @return array<string, mixed>
      */
     public static function functionalStatusOrganizer(): array
     {
@@ -220,6 +225,7 @@ class FunctionalStatusEntryLevel
     /**
      * Disability Status Observation
      * JS: exports.disabilityStatusObservation
+     * @return array<string, mixed>
      */
     public static function disabilityStatusObservation(): array
     {
@@ -285,7 +291,7 @@ class FunctionalStatusEntryLevel
                                     'attributes' => [
                                         'xsi:type' => 'CD',
                                         'code' => LeafLevel::inputProperty('answer_code'),
-                                        'codeSystem' => fn($input) => $input['answer_code_system'] ?? '2.16.840.1.113883.6.1',
+                                        'codeSystem' => fn($input) => H::str($input, 'answer_code_system', '2.16.840.1.113883.6.1'),
                                         'codeSystemName' => 'LOINC',
                                         'displayName' => LeafLevel::inputProperty('answer_display'),
                                     ],
@@ -296,7 +302,7 @@ class FunctionalStatusEntryLevel
                     'dataKey' => 'disability_questions.question',
                 ],
             ],
-            'existsWhen' => fn($input) => $input && isset($input['overall_status']),
+            'existsWhen' => fn($input) => H::has($input, 'overall_status'),
         ];
     }
 }

@@ -24,6 +24,7 @@ class AdvanceDirectivesEntryLevel
     /**
      * Advance Directive Observation (V3)
      * JS: exports.advanceDirectiveObservation
+     * @return array<string, mixed>
      */
     public static function advanceDirectiveObservation(): array
     {

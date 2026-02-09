@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class ImmunizationEntryLevel
@@ -24,6 +25,7 @@ class ImmunizationEntryLevel
     /**
      * Immunization Medication Information
      * JS: immunizationMedicationInformation (private)
+     * @return array<string, mixed>
      */
     public static function immunizationMedicationInformation(): array
     {
@@ -81,7 +83,10 @@ class ImmunizationEntryLevel
                 ],
             ],
             'dataTransform' => function ($input) {
-                if (isset($input['product'])) {
+                if (!is_array($input)) {
+                    return $input;
+                }
+                if (isset($input['product']) && is_array($input['product'])) {
                     $input['product']['lot_number'] = $input['lot_number'] ?? null;
                 }
                 return $input;
@@ -92,6 +97,7 @@ class ImmunizationEntryLevel
     /**
      * Immunization Refusal Reason
      * JS: immunizationRefusalReason (private)
+     * @return array<string, mixed>
      */
     public static function immunizationRefusalReason(): array
     {
@@ -106,7 +112,7 @@ class ImmunizationEntryLevel
                 FieldLevel::id(),
                 [
                     'key' => 'code',
-                    'attributes' => fn($input) => Translate::codeFromName('2.16.840.1.113883.5.8', $input),
+                    'attributes' => fn($input) => Translate::codeFromName('2.16.840.1.113883.5.8', is_array($input) || is_string($input) ? $input : null),
                     'required' => true,
                 ],
                 FieldLevel::$statusCodeCompleted,
@@ -117,10 +123,12 @@ class ImmunizationEntryLevel
     /**
      * Immunization Activity Attributes
      * JS: immunizationActivityAttributes (private)
+     *
+     * @return array<string, string>|null
      */
-    private static function immunizationActivityAttributes($input): ?array
+    private static function immunizationActivityAttributes(mixed $input): ?array
     {
-        $status = $input['status'] ?? null;
+        $status = H::strOrNull($input, 'status');
         if ($status) {
             if ($status === 'refused') {
                 return [
@@ -147,6 +155,7 @@ class ImmunizationEntryLevel
     /**
      * Immunization Activity
      * JS: exports.immunizationActivity
+     * @return array<string, mixed>
      */
     public static function immunizationActivity(): array
     {
@@ -169,7 +178,7 @@ class ImmunizationEntryLevel
                     'attributes' => [
                         'value' => LeafLevel::inputProperty('sequence_number'),
                     ],
-                    'existsWhen' => fn($input) => isset($input['sequence_number']) || ($input['sequence_number'] ?? null) === '',
+                    'existsWhen' => fn($input) => H::has($input, 'sequence_number') || H::str($input, 'sequence_number') === '',
                 ],
                 [
                     'key' => 'routeCode',

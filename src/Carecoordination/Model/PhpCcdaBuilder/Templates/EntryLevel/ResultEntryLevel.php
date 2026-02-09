@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class ResultEntryLevel
@@ -24,6 +25,7 @@ class ResultEntryLevel
     /**
      * Result Observation
      * JS: resultObservation (private)
+     * @return array<string, mixed>
      */
     public static function resultObservation(): array
     {
@@ -82,7 +84,11 @@ class ResultEntryLevel
                             if (is_string($input)) {
                                 return substr($input, 0, 1);
                             }
-                            return isset($input['code']) ? substr((string) $input['code'], 0, 1) : null;
+                            if (!is_array($input)) {
+                                return null;
+                            }
+                            $code = $input['code'] ?? null;
+                            return is_string($code) ? substr($code, 0, 1) : null;
                         },
                         'codeSystem' => '2.16.840.1.113883.5.83',
                         'displayName' => LeafLevel::input(...),
@@ -123,7 +129,7 @@ class ResultEntryLevel
                                             'existsWhen' => Condition::propertyNotEmpty('high'),
                                         ],
                                     ],
-                                    'existsWhen' => fn($input) => $input && isset($input['unit']) && ($input['range_type'] ?? '') !== 'CO',
+                                    'existsWhen' => fn($input) => H::has($input, 'unit') && H::str($input, 'range_type') !== 'CO',
                                 ],
                                 // IVL_PQ without unit
                                 [
@@ -145,7 +151,7 @@ class ResultEntryLevel
                                             'existsWhen' => Condition::propertyNotEmpty('high'),
                                         ],
                                     ],
-                                    'existsWhen' => fn($input) => $input && !isset($input['unit']) && ($input['range_type'] ?? '') !== 'CO',
+                                    'existsWhen' => fn($input) => is_array($input) && !isset($input['unit']) && H::str($input, 'range_type') !== 'CO',
                                 ],
                                 // CO reference range
                                 [
@@ -172,6 +178,7 @@ class ResultEntryLevel
     /**
      * Result Organizer
      * JS: exports.resultOrganizer
+     * @return array<string, mixed>
      */
     public static function resultOrganizer(): array
     {

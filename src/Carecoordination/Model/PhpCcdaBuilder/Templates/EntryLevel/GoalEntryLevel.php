@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class GoalEntryLevel
@@ -24,6 +25,7 @@ class GoalEntryLevel
     /**
      * Goal Activity Observation
      * JS: exports.goalActivityObservation
+     * @return array<string, mixed>
      */
     public static function goalActivityObservation(): array
     {
@@ -73,7 +75,7 @@ class GoalEntryLevel
                 ],
                 FieldLevel::author(),
             ],
-            'existsWhen' => fn($input) => ($input['type'] ?? null) === 'observation',
+            'existsWhen' => fn($input) => H::str($input, 'type') === 'observation',
         ];
     }
 }

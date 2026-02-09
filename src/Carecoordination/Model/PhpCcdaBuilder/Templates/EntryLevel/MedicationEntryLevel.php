@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class MedicationEntryLevel
@@ -24,6 +25,7 @@ class MedicationEntryLevel
     /**
      * Medication Information (manufacturedProduct)
      * JS: medicationInformation (private)
+     * @return array<string, mixed>
      */
     public static function medicationInformation(): array
     {
@@ -75,7 +77,10 @@ class MedicationEntryLevel
                 ],
             ],
             'dataTransform' => function ($input) {
-                if (isset($input['product'])) {
+                if (!is_array($input)) {
+                    return $input;
+                }
+                if (isset($input['product']) && is_array($input['product'])) {
                     $input['product']['unencoded_name'] = $input['unencoded_name'] ?? null;
                 }
                 return $input;
@@ -86,6 +91,7 @@ class MedicationEntryLevel
     /**
      * Medication Supply Order
      * JS: medicationSupplyOrder (private)
+     * @return array<string, mixed>
      */
     public static function medicationSupplyOrder(): array
     {
@@ -138,6 +144,7 @@ class MedicationEntryLevel
     /**
      * Medication Dispense
      * JS: medicationDispense (private)
+     * @return array<string, mixed>
      */
     public static function medicationDispense(): array
     {
@@ -165,6 +172,7 @@ class MedicationEntryLevel
     /**
      * Medication Activity
      * JS: exports.medicationActivity
+     * @return array<string, mixed>
      */
     public static function medicationActivity(): array
     {
@@ -173,14 +181,12 @@ class MedicationEntryLevel
             'attributes' => [
                 'classCode' => 'SBADM',
                 'moodCode' => function ($input) {
-                    $status = $input['status'] ?? null;
-                    if ($status) {
-                        if ($status === 'Prescribed') {
-                            return 'INT';
-                        }
-                        if ($status === 'Completed') {
-                            return 'EVN';
-                        }
+                    $status = H::strOrNull($input, 'status');
+                    if ($status === 'Prescribed') {
+                        return 'INT';
+                    }
+                    if ($status === 'Completed') {
+                        return 'EVN';
                     }
                     return null;
                 },
@@ -234,7 +240,7 @@ class MedicationEntryLevel
                         'value' => LeafLevel::inputProperty('value'),
                         'unit' => LeafLevel::inputProperty('unit'),
                     ],
-                    'existsWhen' => fn($input) => $input && isset($input['unit']),
+                    'existsWhen' => fn($input) => H::has($input, 'unit'),
                     'dataKey' => 'administration.dose',
                 ],
                 [
@@ -242,7 +248,7 @@ class MedicationEntryLevel
                     'attributes' => [
                         'value' => LeafLevel::inputProperty('value'),
                     ],
-                    'existsWhen' => fn($input) => $input && !isset($input['unit']),
+                    'existsWhen' => fn($input) => is_array($input) && !isset($input['unit']),
                     'dataKey' => 'administration.dose',
                 ],
                 [

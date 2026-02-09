@@ -19,6 +19,8 @@ class CcdaTemplateCodes
 {
     /**
      * Template codes registry - matching oe-blue-button-meta structure
+     *
+     * @var array<string, array{code: string|null, name: string|null, code_system: string|null, code_system_name: string|null}>
      */
     private static array $codes = [
         // Document Level
@@ -306,6 +308,8 @@ class CcdaTemplateCodes
 
     /**
      * Get template code by name
+     *
+     * @return array{code: string|null, name: string|null, code_system: string|null, code_system_name: string|null}
      */
     public static function get(string $name): array
     {
@@ -327,6 +331,8 @@ class CcdaTemplateCodes
 
     /**
      * Add or update a template code
+     *
+     * @param array{code: string|null, name: string|null, code_system: string|null, code_system_name: string|null} $code
      */
     public static function set(string $name, array $code): void
     {
@@ -335,6 +341,8 @@ class CcdaTemplateCodes
 
     /**
      * Get all template codes
+     *
+     * @return array<string, array{code: string|null, name: string|null, code_system: string|null, code_system_name: string|null}>
      */
     public static function all(): array
     {

@@ -29,6 +29,10 @@ class HtmlHeaders
 
     /**
      * Generic table builder
+     *
+     * @param array<int, string> $headers
+     * @param array<int, string|callable> $values
+     * @return array<string, mixed>
      */
     public static function getText(string $topArrayKey, array $headers, array $values): array
     {
@@ -87,6 +91,7 @@ class HtmlHeaders
 
     /**
      * Allergies Section HTML Header
+     * @return array<string, mixed>
      */
     public static function allergiesSectionEntriesRequiredHtmlHeader(): array
     {
@@ -155,6 +160,7 @@ class HtmlHeaders
 
     /**
      * Medications Section HTML Header
+     * @return array<string, mixed>
      */
     public static function medicationsSectionEntriesRequiredHtmlHeader(): array
     {
@@ -219,6 +225,7 @@ class HtmlHeaders
 
     /**
      * Problems Section HTML Header
+     * @return array<string, mixed>
      */
     public static function problemsSectionEntriesRequiredHtmlHeader(): array
     {
@@ -278,6 +285,7 @@ class HtmlHeaders
 
     /**
      * Procedures Section HTML Header
+     * @return array<string, mixed>
      */
     public static function proceduresSectionEntriesRequiredHtmlHeader(): array
     {
@@ -336,6 +344,7 @@ class HtmlHeaders
 
     /**
      * Results Section HTML Header
+     * @return array<string, mixed>
      */
     public static function resultsSectionEntriesRequiredHtmlHeader(): array
     {
@@ -402,6 +411,7 @@ class HtmlHeaders
 
     /**
      * Encounters Section HTML Header
+     * @return array<string, mixed>
      */
     public static function encountersSectionEntriesOptionalHtmlHeader(): array
     {
@@ -460,6 +470,7 @@ class HtmlHeaders
 
     /**
      * Immunizations Section HTML Header
+     * @return array<string, mixed>
      */
     public static function immunizationsSectionEntriesOptionalHtmlHeader(): array
     {
@@ -518,6 +529,7 @@ class HtmlHeaders
 
     /**
      * Payers Section HTML Header
+     * @return array<string, mixed>
      */
     public static function payersSectionHtmlHeader(): array
     {
@@ -576,6 +588,7 @@ class HtmlHeaders
 
     /**
      * Plan of Care Section HTML Header
+     * @return array<string, mixed>
      */
     public static function planOfCareSectionHtmlHeader(): array
     {
@@ -634,6 +647,7 @@ class HtmlHeaders
 
     /**
      * Goals Section HTML Header
+     * @return array<string, mixed>
      */
     public static function goalSectionHtmlHeader(): array
     {
@@ -688,6 +702,7 @@ class HtmlHeaders
 
     /**
      * Social History Section HTML Header
+     * @return array<string, mixed>
      */
     public static function socialHistorySectionHtmlHeader(): array
     {
@@ -747,6 +762,7 @@ class HtmlHeaders
     /**
      * Vital Signs Section HTML Header
      * EXACT PORT from htmlHeaders.js - shows horizontal layout with specific vital indices
+     * @return array<string, mixed>
      */
     public static function vitalSignsSectionEntriesOptionalHtmlHeader(): array
     {
@@ -840,6 +856,7 @@ class HtmlHeaders
 
     /**
      * Medical Equipment Section HTML Header
+     * @return array<string, mixed>
      */
     public static function medicalEquipmentSectionEntriesOptionalHtmlHeader(): array
     {
@@ -898,6 +915,7 @@ class HtmlHeaders
 
     /**
      * Functional Status Section HTML Header
+     * @return array<string, mixed>
      */
     public static function functionalStatusSectionHtmlHeader(): array
     {
@@ -956,6 +974,7 @@ class HtmlHeaders
 
     /**
      * Assessment Section HTML Header
+     * @return array<string, mixed>
      */
     public static function assessmentSectionHtmlHeader(): array
     {
@@ -1006,6 +1025,7 @@ class HtmlHeaders
 
     /**
      * Care Team Section HTML Header
+     * @return array<string, mixed>
      */
     public static function careTeamSectionHtmlHeader(): array
     {
@@ -1064,6 +1084,7 @@ class HtmlHeaders
 
     /**
      * Health Concern Section HTML Header
+     * @return array<string, mixed>
      */
     public static function healthConcernSectionHtmlHeader(): array
     {
@@ -1114,9 +1135,11 @@ class HtmlHeaders
                                         [
                                             'key' => 'td',
                                             'text' => function ($input) {
-                                                $first = LeafLevel::getDeepValue($input, 'author.name.0.first') ?? '';
-                                                $last = LeafLevel::getDeepValue($input, 'author.name.0.last') ?? '';
-                                                return ($first || $last) ? trim("$first $last") : 'â€”';
+                                                $firstVal = LeafLevel::getDeepValue($input, 'author.name.0.first');
+                                                $lastVal = LeafLevel::getDeepValue($input, 'author.name.0.last');
+                                                $first = is_string($firstVal) ? $firstVal : '';
+                                                $last = is_string($lastVal) ? $lastVal : '';
+                                                return ($first !== '' || $last !== '') ? trim("$first $last") : '—';
                                             },
                                         ],
                                     ],
@@ -1131,6 +1154,7 @@ class HtmlHeaders
 
     /**
      * Advance Directives HTML Header
+     * @return array<string, mixed>
      */
     public static function advanceDirectivesHtmlHeader(): array
     {

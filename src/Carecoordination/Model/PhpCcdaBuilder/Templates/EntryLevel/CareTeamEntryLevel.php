@@ -24,6 +24,7 @@ class CareTeamEntryLevel
     /**
      * Care Team Provider Act
      * JS: careTeamProviderAct (private)
+     * @return array<string, mixed>
      */
     public static function careTeamProviderAct(): array
     {
@@ -78,6 +79,7 @@ class CareTeamEntryLevel
     /**
      * Care Team Organizer
      * JS: exports.careTeamOrganizer
+     * @return array<string, mixed>
      */
     public static function careTeamOrganizer(): array
     {

@@ -25,6 +25,7 @@ class SharedEntryLevel
     /**
      * Severity Observation
      * JS: exports.severityObservation
+     * @return array<string, mixed>
      */
     public static function severityObservation(): array
     {
@@ -65,6 +66,7 @@ class SharedEntryLevel
     /**
      * Reaction Observation
      * JS: exports.reactionObservation
+     * @return array<string, mixed>
      */
     public static function reactionObservation(): array
     {
@@ -108,6 +110,7 @@ class SharedEntryLevel
     /**
      * Service Delivery Location
      * JS: exports.serviceDeliveryLocation
+     * @return array<string, mixed>
      */
     public static function serviceDeliveryLocation(): array
     {
@@ -142,6 +145,7 @@ class SharedEntryLevel
     /**
      * Age Observation
      * JS: exports.ageObservation
+     * @return array<string, mixed>
      */
     public static function ageObservation(): array
     {
@@ -171,6 +175,7 @@ class SharedEntryLevel
     /**
      * Indication
      * JS: exports.indication
+     * @return array<string, mixed>
      */
     public static function indication(): array
     {
@@ -207,6 +212,7 @@ class SharedEntryLevel
     /**
      * Precondition for Substance Administration
      * JS: exports.preconditionForSubstanceAdministration
+     * @return array<string, mixed>
      */
     public static function preconditionForSubstanceAdministration(): array
     {
@@ -237,6 +243,7 @@ class SharedEntryLevel
     /**
      * Drug Vehicle
      * JS: exports.drugVehicle
+     * @return array<string, mixed>
      */
     public static function drugVehicle(): array
     {
@@ -277,6 +284,7 @@ class SharedEntryLevel
     /**
      * Instructions
      * JS: exports.instructions
+     * @return array<string, mixed>
      */
     public static function instructions(): array
     {
@@ -302,6 +310,7 @@ class SharedEntryLevel
     /**
      * Encounter Diagnosis
      * JS: exports.encDiagnosis
+     * @return array<string, mixed>
      */
     public static function encDiagnosis(): array
     {
@@ -388,6 +397,7 @@ class SharedEntryLevel
     /**
      * Notes Act
      * JS: exports.notesAct
+     * @return array<string, mixed>
      */
     public static function notesAct(): array
     {

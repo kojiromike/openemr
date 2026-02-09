@@ -24,6 +24,7 @@ class AllergyEntryLevel
     /**
      * Allergy Status Observation
      * JS: allergyStatusObservation (private)
+     * @return array<string, mixed>
      */
     public static function allergyStatusObservation(): array
     {
@@ -54,6 +55,7 @@ class AllergyEntryLevel
     /**
      * Allergy Intolerance Observation - No Known Allergies
      * JS: exports.allergyIntoleranceObservationNKA
+     * @return array<string, mixed>
      */
     public static function allergyIntoleranceObservationNKA(): array
     {
@@ -128,6 +130,7 @@ class AllergyEntryLevel
     /**
      * Allergy Problem Act - No Known Allergies
      * JS: exports.allergyProblemActNKA
+     * @return array<string, mixed>
      */
     public static function allergyProblemActNKA(): array
     {
@@ -165,6 +168,7 @@ class AllergyEntryLevel
     /**
      * Allergy Intolerance Observation
      * JS: exports.allergyIntoleranceObservation
+     * @return array<string, mixed>
      */
     public static function allergyIntoleranceObservation(): array
     {
@@ -291,6 +295,7 @@ class AllergyEntryLevel
     /**
      * Allergy Problem Act
      * JS: exports.allergyProblemAct
+     * @return array<string, mixed>
      */
     public static function allergyProblemAct(): array
     {

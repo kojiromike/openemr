@@ -18,6 +18,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel\SharedEntryLevel;
@@ -55,6 +56,8 @@ class SectionLevel
 
     /**
      * Generate template code element
+     *
+     * @return array<string, mixed>
      */
     private static function templateCode(string $name): array
     {
@@ -75,6 +78,8 @@ class SectionLevel
 
     /**
      * Generate template title element
+     *
+     * @return array<string, mixed>
      */
     private static function templateTitle(string $name): array
     {
@@ -87,6 +92,9 @@ class SectionLevel
 
     /**
      * Allergies Section (entries required)
+     *
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function allergiesSectionEntriesRequired(array $htmlHeader = [], string $na = ''): array
     {
@@ -104,7 +112,17 @@ class SectionLevel
                     [
                         'key' => 'text',
                         'text' => fn() => 'No known Allergies and Intolerances',
-                        'existsWhen' => fn($input) => !empty($input['allergies'][0]['no_know_allergies']),
+                        'existsWhen' => function ($input): bool {
+                            if (!is_array($input)) {
+                                return false;
+                            }
+                            $allergies = $input['allergies'] ?? null;
+                            if (!is_array($allergies) || !isset($allergies[0])) {
+                                return false;
+                            }
+                            $first = $allergies[0];
+                            return is_array($first) && !empty($first['no_know_allergies']);
+                        },
                     ],
                     $htmlHeader,
                     [
@@ -123,6 +141,8 @@ class SectionLevel
 
     /**
      * Medications Section (entries required)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function medicationsSectionEntriesRequired(array $htmlHeader = [], string $na = ''): array
     {
@@ -157,7 +177,8 @@ class SectionLevel
     }
 
     /**
-     * Problems Section (entries required)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function problemsSectionEntriesRequired(array $htmlHeader = [], string $na = ''): array
     {
@@ -192,7 +213,8 @@ class SectionLevel
     }
 
     /**
-     * Procedures Section (entries required)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function proceduresSectionEntriesRequired(array $htmlHeader = [], string $na = ''): array
     {
@@ -227,7 +249,8 @@ class SectionLevel
     }
 
     /**
-     * Results Section (entries required)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function resultsSectionEntriesRequired(array $htmlHeader = [], string $na = ''): array
     {
@@ -262,7 +285,8 @@ class SectionLevel
     }
 
     /**
-     * Encounters Section (entries optional)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function encountersSectionEntriesOptional(array $htmlHeader = [], string $na = ''): array
     {
@@ -297,7 +321,8 @@ class SectionLevel
     }
 
     /**
-     * Immunizations Section (entries optional)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function immunizationsSectionEntriesOptional(array $htmlHeader = [], string $na = ''): array
     {
@@ -332,7 +357,8 @@ class SectionLevel
     }
 
     /**
-     * Vital Signs Section (entries optional)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function vitalSignsSectionEntriesOptional(array $htmlHeader = [], string $na = ''): array
     {
@@ -367,7 +393,8 @@ class SectionLevel
     }
 
     /**
-     * Social History Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function socialHistorySection(array $htmlHeader = [], string $na = ''): array
     {
@@ -407,7 +434,8 @@ class SectionLevel
     }
 
     /**
-     * Care Team Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function careTeamSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -437,7 +465,8 @@ class SectionLevel
     }
 
     /**
-     * Payers Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function payersSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -472,7 +501,8 @@ class SectionLevel
     }
 
     /**
-     * Plan of Care Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function planOfCareSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -496,7 +526,7 @@ class SectionLevel
                     [
                         'key' => 'entry',
                         'attributes' => [
-                            'typeCode' => fn($input) => ($input['type'] ?? '') === 'observation' ? 'DRIV' : null,
+                            'typeCode' => fn($input) => H::str($input, 'type') === 'observation' ? 'DRIV' : null,
                         ],
                         'content' => [
                             EntryLevel::planOfCareActivityAct(),
@@ -510,7 +540,8 @@ class SectionLevel
     }
 
     /**
-     * Goals Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function goalSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -534,7 +565,7 @@ class SectionLevel
                     [
                         'key' => 'entry',
                         'attributes' => [
-                            'typeCode' => fn($input) => ($input['type'] ?? '') === 'observation' ? 'DRIV' : null,
+                            'typeCode' => fn($input) => H::str($input, 'type') === 'observation' ? 'DRIV' : null,
                         ],
                         'content' => [EntryLevel::goalActivityObservation()],
                         'dataKey' => 'goals',
@@ -545,7 +576,8 @@ class SectionLevel
     }
 
     /**
-     * Advance Directives Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function advanceDirectivesSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -580,7 +612,8 @@ class SectionLevel
     }
 
     /**
-     * Health Concerns Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function healthConcernSection(array $htmlHeader = [], string $na = ''): array
     {
@@ -615,7 +648,8 @@ class SectionLevel
     }
 
     /**
-     * Medical Equipment Section (entries optional)
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function medicalEquipmentSectionEntriesOptional(array $htmlHeader = [], string $na = ''): array
     {
@@ -647,7 +681,8 @@ class SectionLevel
     }
 
     /**
-     * Functional Status Section
+     * @param array<string, mixed> $htmlHeader
+     * @return array<string, mixed>
      */
     public static function functionalStatusSection(array $htmlHeader = [], string $na = ''): array
     {

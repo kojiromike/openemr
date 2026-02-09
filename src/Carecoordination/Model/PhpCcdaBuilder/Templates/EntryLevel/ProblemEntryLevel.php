@@ -17,6 +17,7 @@ namespace OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Templates\EntryLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Condition;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\FieldLevel;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\LeafLevel;
+use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\TemplateHelpers as H;
 use OpenEMR\Carecoordination\Model\PhpCcdaBuilder\Core\Translate;
 
 class ProblemEntryLevel
@@ -24,6 +25,7 @@ class ProblemEntryLevel
     /**
      * Problem Status
      * JS: problemStatus (private)
+     * @return array<string, mixed>
      */
     public static function problemStatus(): array
     {
@@ -43,7 +45,7 @@ class ProblemEntryLevel
                     'key' => 'value',
                     'attributes' => fn($input) => array_merge(
                         ['xsi:type' => 'CD'],
-                        Translate::codeFromName('2.16.840.1.113883.3.88.12.80.68', $input)
+                        Translate::codeFromName('2.16.840.1.113883.3.88.12.80.68', is_array($input) || is_string($input) ? $input : null)
                     ),
                     'dataKey' => 'name',
                     'required' => true,
@@ -55,6 +57,7 @@ class ProblemEntryLevel
     /**
      * Health Status Observation
      * JS: healthStatusObservation (private)
+     * @return array<string, mixed>
      */
     public static function healthStatusObservation(): array
     {
@@ -87,6 +90,7 @@ class ProblemEntryLevel
     /**
      * Problem Observation
      * JS: problemObservation (private)
+     * @return array<string, mixed>
      */
     public static function problemObservation(): array
     {
@@ -144,12 +148,15 @@ class ProblemEntryLevel
                         array_merge(self::problemStatus(), ['required' => true]),
                     ],
                     'dataTransform' => function ($input) {
-                        if ($input && isset($input['status'])) {
-                            $result = $input['status'];
-                            $result['identifiers'] = $input['identifiers'] ?? null;
-                            return $result;
+                        if (!is_array($input)) {
+                            return null;
                         }
-                        return null;
+                        $status = $input['status'] ?? null;
+                        if (!is_array($status)) {
+                            return null;
+                        }
+                        $status['identifiers'] = $input['identifiers'] ?? null;
+                        return $status;
                     },
                 ],
                 [
@@ -190,6 +197,7 @@ class ProblemEntryLevel
     /**
      * Problem Concern Act
      * JS: exports.problemConcernAct
+     * @return array<string, mixed>
      */
     public static function problemConcernAct(): array
     {

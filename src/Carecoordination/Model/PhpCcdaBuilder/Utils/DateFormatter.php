@@ -46,7 +46,7 @@ class DateFormatter
                 // Date only: YYYYMMDD
                 return $date->format('Ymd');
             }
-        } catch (\Exception) {
+        } catch (\Throwable) {
             // If parsing fails, try to salvage what we can
             return self::attemptPartialParse($dateStr, $includeTime);
         }
@@ -115,7 +115,7 @@ class DateFormatter
      *
      * @param string|null $dateStr The input date string
      * @param string $precision The precision level (day, month, year, tz)
-     * @return array Date array with 'date' and 'precision' keys
+     * @return array{date: string, precision: string}
      */
     public static function templateDate(?string $dateStr, string $precision = 'tz'): array
     {

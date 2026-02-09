@@ -39,7 +39,7 @@ class Condition
      * Check if a property equals a specific value
      * JS: exports.propertyEquals
      */
-    public static function propertyEquals(string $key, $value): callable
+    public static function propertyEquals(string $key, mixed $value): callable
     {
         return function ($input) use ($key, $value) {
             $actual = self::getDeepValue($input, $key);
@@ -51,7 +51,7 @@ class Condition
      * Check if a property does not equal a specific value
      * JS: exports.propertyNotEquals
      */
-    public static function propertyNotEquals(string $key, $value): callable
+    public static function propertyNotEquals(string $key, mixed $value): callable
     {
         return function ($input) use ($key, $value) {
             $actual = self::getDeepValue($input, $key);
@@ -178,7 +178,7 @@ class Condition
     /**
      * Get deep value from array using dot notation
      */
-    public static function getDeepValue($input, string $path)
+    public static function getDeepValue(mixed $input, string $path): mixed
     {
         if (!is_array($input) || empty($path)) {
             return null;

@@ -23,6 +23,9 @@ class FieldLevel
     /**
      * Template ID without extension
      * JS: exports.templateId
+     *
+     * @return array<string, mixed>
+     * @return array<string, mixed>
      */
     public static function templateId(string $id): array
     {
@@ -35,6 +38,9 @@ class FieldLevel
     /**
      * Template ID with extension
      * JS: exports.templateIdExt
+     *
+     * @return array<string, mixed>
+     * @return array<string, mixed>
      */
     public static function templateIdExt(string $id, string $ext): array
     {
@@ -47,6 +53,9 @@ class FieldLevel
     /**
      * Template code from name using CcdaTemplateCodes
      * JS: exports.templateCode
+     *
+     * @return array<string, mixed>
+     * @return array<string, mixed>
      */
     public static function templateCode(string $name): array
     {
@@ -65,6 +74,9 @@ class FieldLevel
     /**
      * Template title from name
      * JS: exports.templateTitle
+     *
+     * @return array<string, mixed>
+     * @return array<string, mixed>
      */
     public static function templateTitle(string $name): array
     {
@@ -78,6 +90,8 @@ class FieldLevel
     /**
      * ID element with identifier and extension
      * JS: exports.id
+     *
+     * @var array<string, mixed>
      */
     public static array $id = [
         'key' => 'id',
@@ -92,6 +106,7 @@ class FieldLevel
 
     /**
      * Get ID element
+     * @return array<string, mixed>
      */
     public static function id(): array
     {
@@ -110,6 +125,7 @@ class FieldLevel
     /**
      * Unique ID using context root and UUID
      * JS: exports.uniqueId
+     * @var array<string, mixed>
      */
     public static array $uniqueId = [
         'key' => 'id',
@@ -120,21 +136,27 @@ class FieldLevel
         'existsWhen' => [self::class, '_hasRootId'],
     ];
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function uniqueId(): array
     {
         return [
             'key' => 'id',
             'attributes' => [
-                'root' => fn($input, $context) => $context['rootId'] ?? '2.16.840.1.113883.4.6',
-                'extension' => fn() => Uuid::uuid4()->toString(),
+                'root' => fn(mixed $input, array $context): string => is_string($context['rootId'] ?? null) ? $context['rootId'] : '2.16.840.1.113883.4.6',
+                'extension' => fn(): string => Uuid::uuid4()->toString(),
             ],
-            'existsWhen' => fn($input, $context) => !empty($context['rootId'] ?? true),
+            'existsWhen' => fn(mixed $input, array $context): bool => isset($context['rootId']) || true,
         ];
     }
 
-    public static function _uniqueIdRoot($input, $context): string
+    /**
+     * @param array<string, mixed> $context
+     */
+    public static function _uniqueIdRoot(mixed $input, array $context): string
     {
-        return $context['rootId'] ?? '2.16.840.1.113883.4.6';
+        return is_string($context['rootId'] ?? null) ? $context['rootId'] : '2.16.840.1.113883.4.6';
     }
 
     public static function _uniqueIdExtension(): string
@@ -142,14 +164,18 @@ class FieldLevel
         return Uuid::uuid4()->toString();
     }
 
-    public static function _hasRootId($input, $context): bool
+    /**
+     * @param array<string, mixed> $context
+     */
+    public static function _hasRootId(mixed $input, array $context): bool
     {
-        return !empty($context['rootId'] ?? true);
+        return true;
     }
 
     /**
      * Unique ID with only root (UUID)
      * JS: exports.uniqueIdRoot
+     * @return array<string, mixed>
      */
     public static function uniqueIdRoot(): array
     {
@@ -164,6 +190,7 @@ class FieldLevel
     /**
      * Status code completed
      * JS: exports.statusCodeCompleted
+     * @var array<string, mixed>
      */
     public static array $statusCodeCompleted = [
         'key' => 'statusCode',
@@ -172,6 +199,7 @@ class FieldLevel
 
     /**
      * Status code completed - method version for compatibility
+     * @return array<string, mixed>
      */
     public static function statusCodeCompleted(): array
     {
@@ -181,6 +209,7 @@ class FieldLevel
     /**
      * Status code active
      * JS: exports.statusCodeActive
+     * @var array<string, mixed>
      */
     public static array $statusCodeActive = [
         'key' => 'statusCode',
@@ -189,6 +218,7 @@ class FieldLevel
 
     /**
      * Status code active - method version for compatibility
+     * @return array<string, mixed>
      */
     public static function statusCodeActive(): array
     {
@@ -198,6 +228,7 @@ class FieldLevel
     /**
      * Status code new
      * JS: exports.statusCodeNew
+     * @var array<string, mixed>
      */
     public static array $statusCodeNew = [
         'key' => 'statusCode',
@@ -206,6 +237,7 @@ class FieldLevel
 
     /**
      * Status code new - method version for compatibility
+     * @return array<string, mixed>
      */
     public static function statusCodeNew(): array
     {
@@ -215,6 +247,7 @@ class FieldLevel
     /**
      * Effective time from document meta
      * JS: exports.effectiveDocumentTime
+     * @return array<string, mixed>
      */
     public static function effectiveDocumentTime(): array
     {
@@ -230,6 +263,7 @@ class FieldLevel
     /**
      * Effective time now
      * JS: exports.effectiveTimeNow
+     * @return array<string, mixed>
      */
     public static function effectiveTimeNow(): array
     {
@@ -244,6 +278,7 @@ class FieldLevel
     /**
      * Time now
      * JS: exports.timeNow
+     * @return array<string, mixed>
      */
     public static function timeNow(): array
     {
@@ -258,6 +293,7 @@ class FieldLevel
     /**
      * Time from document
      * JS: exports.timeDocumentTime
+     * @return array<string, mixed>
      */
     public static function timeDocumentTime(): array
     {
@@ -272,6 +308,7 @@ class FieldLevel
     /**
      * Effective time with point/low/high/center
      * JS: exports.effectiveTime
+     * @var array<string, mixed>
      */
     public static array $effectiveTime = [
         'key' => 'effectiveTime',
@@ -302,6 +339,7 @@ class FieldLevel
 
     /**
      * Get effective time array
+     * @return array<string, mixed>
      */
     public static function effectiveTime(): array
     {
@@ -336,6 +374,7 @@ class FieldLevel
     /**
      * Effective time IVL_TS (interval)
      * JS: exports.effectiveTimeIVL_TS
+     * @return array<string, mixed>
      */
     public static function effectiveTimeIVL_TS(): array
     {
@@ -367,6 +406,7 @@ class FieldLevel
     /**
      * Text with reference
      * JS: exports.text
+     * @return array<string, mixed>
      */
     public static function text(callable $referenceMethod): array
     {
@@ -385,6 +425,7 @@ class FieldLevel
     /**
      * Null flavor element
      * JS: exports.nullFlavor
+     * @return array<string, mixed>
      */
     public static function nullFlavor(string $name): array
     {
@@ -397,6 +438,7 @@ class FieldLevel
     /**
      * Useable period
      * JS: exports.useablePeriod
+     * @return array<string, mixed>
      */
     public static function useablePeriod(): array
     {
@@ -426,6 +468,7 @@ class FieldLevel
     /**
      * US Realm Address
      * JS: exports.usRealmAddress
+     * @return array<string, mixed>
      */
     public static function usRealmAddress(): array
     {
@@ -470,6 +513,7 @@ class FieldLevel
     /**
      * US Realm Name
      * JS: exports.usRealmName
+     * @return array<string, mixed>
      */
     public static function usRealmName(): array
     {
@@ -489,6 +533,7 @@ class FieldLevel
     /**
      * Telecom
      * JS: exports.telecom
+     * @return array<string, mixed>
      */
     public static function telecom(): array
     {
@@ -505,6 +550,7 @@ class FieldLevel
     /**
      * Assigned Entity
      * JS: exports.assignedEntity
+     * @return array<string, mixed>
      */
     public static function assignedEntity(): array
     {
@@ -533,6 +579,7 @@ class FieldLevel
     /**
      * Associated Entity
      * JS: exports.associatedEntity
+     * @return array<string, mixed>
      */
     public static function associatedEntity(): array
     {
@@ -565,6 +612,8 @@ class FieldLevel
 
     /**
      * Represented Organization
+     *
+     * @return array<string, mixed>
      */
     private static function representedOrganization(): array
     {
@@ -592,6 +641,7 @@ class FieldLevel
     /**
      * Author
      * JS: exports.author
+     * @return array<string, mixed>
      */
     public static function author(): array
     {
@@ -626,6 +676,7 @@ class FieldLevel
     /**
      * Performer
      * JS: exports.performer
+     * @return array<string, mixed>
      */
     public static function performer(): array
     {
@@ -641,6 +692,7 @@ class FieldLevel
     /**
      * Act Author
      * JS: exports.actAuthor
+     * @return array<string, mixed>
      */
     public static function actAuthor(): array
     {
@@ -683,6 +735,7 @@ class FieldLevel
     /**
      * Responsible Party
      * JS: exports.responsibleParty
+     * @return array<string, mixed>
      */
     public static function responsibleParty(): array
     {

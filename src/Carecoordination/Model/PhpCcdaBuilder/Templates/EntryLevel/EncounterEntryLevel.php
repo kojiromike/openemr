@@ -24,6 +24,7 @@ class EncounterEntryLevel
     /**
      * Encounter Activities
      * JS: exports.encounterActivities
+     * @return array<string, mixed>
      */
     public static function encounterActivities(): array
     {

@@ -24,6 +24,7 @@ class ProcedureEntryLevel
     /**
      * Procedure Activity Act
      * JS: exports.procedureActivityAct
+     * @return array<string, mixed>
      */
     public static function procedureActivityAct(): array
     {
@@ -91,6 +92,7 @@ class ProcedureEntryLevel
     /**
      * Procedure Activity Procedure
      * JS: exports.procedureActivityProcedure
+     * @return array<string, mixed>
      */
     public static function procedureActivityProcedure(): array
     {
@@ -185,6 +187,7 @@ class ProcedureEntryLevel
     /**
      * Procedure Activity Observation
      * JS: exports.procedureActivityObservation
+     * @return array<string, mixed>
      */
     public static function procedureActivityObservation(): array
     {
