@@ -11,6 +11,7 @@
 namespace OpenEMR\Services;
 
 use OpenEMR\Common\Database\QueryUtils;
+use OpenEMR\Exception\ResourceNotFoundException;
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\ORDataObject\Address;
 use OpenEMR\Common\ORDataObject\Contact;
@@ -44,7 +45,7 @@ class ContactAddressService extends BaseService
             // Verify contact exists
             $contact = new Contact($contactId);
             if (in_array($contact->get_id(), [null, 0], true)) {
-                throw new \Exception("Contact ID {$contactId} not found");
+                throw new ResourceNotFoundException('Contact', $contactId);
             }
 
             $savedRecords = [];

@@ -18,6 +18,7 @@ use MyMailer;
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Modules\FaxSMS\EtherFax\EtherFaxClient;
 use OpenEMR\Modules\FaxSMS\EtherFax\FaxResult;
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
 use OpenEMR\Services\ImageUtilities\HandleImageService;
 
 class EtherFaxActions extends AppDispatch
@@ -37,7 +38,7 @@ class EtherFaxActions extends AppDispatch
     public function __construct()
     {
         if (empty($GLOBALS['oefax_enable_fax'] ?? null)) {
-            throw new \Exception(xlt("Access denied! Module not enabled"));
+            throw new ImproperlyConfiguredException(xlt("Access denied! Module not enabled"));
         }
 
         $this->crypto = new CryptoGen();

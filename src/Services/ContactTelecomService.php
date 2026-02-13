@@ -11,10 +11,11 @@
 
 namespace OpenEMR\Services;
 
+use OpenEMR\Common\Database\QueryUtils;
+use OpenEMR\Exception\ResourceNotFoundException;
+use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\ORDataObject\Contact;
 use OpenEMR\Common\ORDataObject\ContactTelecom;
-use OpenEMR\Common\Database\QueryUtils;
-use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Utils\ValidationUtils;
 use OpenEMR\Services\BaseService;
 use OpenEMR\Services\Utils\DateFormatterUtils;
@@ -55,7 +56,7 @@ class ContactTelecomService extends BaseService
             // Verify contact exists
             $contact = new Contact($contactId);
             if (empty($contact->get_id())) {
-                throw new \Exception("Contact ID {$contactId} not found");
+                throw new ResourceNotFoundException('Contact', $contactId);
             }
 
             $savedRecords = [];

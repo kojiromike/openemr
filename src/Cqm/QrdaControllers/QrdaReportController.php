@@ -13,6 +13,7 @@
 namespace OpenEMR\Cqm\QrdaControllers;
 
 use DOMDocument;
+use OpenEMR\Exception\ImproperlyConfiguredException;
 use OpenEMR\Common\Logging\EventAuditLogger;
 use OpenEMR\Services\Qrda\QrdaReportService;
 use XSLTProcessor;
@@ -53,7 +54,7 @@ class QrdaReportController
             $xsl->load(__DIR__ . '/../../../interface/modules/zend_modules/public/xsl/qrda.xsl');
             $proc = new XSLTProcessor();
             if (!$proc->importStyleSheet($xsl)) { // attach the xsl rules
-                throw new \RuntimeException("QRDA Stylesheet could not be found");
+                throw new ImproperlyConfiguredException("QRDA Stylesheet could not be found");
             }
             $outputFile = sys_get_temp_dir() . '/out_' . time() . '.html';
             $proc->transformToURI($xml, $outputFile);

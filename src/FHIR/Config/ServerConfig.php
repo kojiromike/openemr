@@ -13,8 +13,8 @@
 
 namespace OpenEMR\FHIR\Config;
 
-use http\Exception\RuntimeException;
 use OpenEMR\Common\Auth\OAuth2KeyConfig;
+use OpenEMR\Exception\ImproperlyConfiguredException;
 
 class ServerConfig
 {
@@ -150,7 +150,7 @@ class ServerConfig
         $webServerRoot = $this->getWebServerRoot() ?? $GLOBALS['fileroot'] ?? "";
         // if we can't get the web server root then we can't get the public key
         if (empty($webServerRoot)) {
-            throw new \RuntimeException("Unable to determine web server root");
+            throw new ImproperlyConfiguredException("Unable to determine web server root");
         }
         return $webServerRoot . "/sites/" . $site . "/documents/certificates/oapublic.key";
     }

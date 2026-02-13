@@ -4,6 +4,7 @@ namespace OpenEMR\Modules\FaxSMS\Controller;
 
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Modules\FaxSMS\Controller\AppDispatch;
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
 
 class VoiceClient extends AppDispatch
 {
@@ -25,7 +26,7 @@ class VoiceClient extends AppDispatch
     public function __construct()
     {
         if (empty($GLOBALS['oe_enable_voice'] ?? null)) {
-            throw new \RuntimeException(xlt("Access denied! Module not enabled"));
+            throw new ImproperlyConfiguredException(xlt("Access denied! Module not enabled"));
         }
         $this->crypto = new CryptoGen();
         $this->baseDir = $GLOBALS['temporary_files_dir'];

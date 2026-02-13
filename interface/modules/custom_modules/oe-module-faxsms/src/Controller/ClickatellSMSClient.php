@@ -10,12 +10,14 @@
 
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
+
 class ClickatellSMSClient extends AppDispatch
 {
     public function __construct()
     {
         if (empty($GLOBALS['oefax_enable_sms'] ?? null)) {
-            throw new \RuntimeException(xlt("Access denied! Module not enabled"));
+            throw new ImproperlyConfiguredException(xlt("Access denied! Module not enabled"));
         }
         parent::__construct();
     }

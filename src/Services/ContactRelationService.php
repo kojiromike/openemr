@@ -12,8 +12,9 @@
 namespace OpenEMR\Services;
 
 use League\Csv\Exception;
-use OpenEMR\Common\ORDataObject\ContactRelation;
 use OpenEMR\Common\Database\QueryUtils;
+use OpenEMR\Exception\ResourceNotFoundException;
+use OpenEMR\Common\ORDataObject\ContactRelation;
 use OpenEMR\Services\BaseService;
 use OpenEMR\Services\ListService;
 use OpenEMR\Common\Logging\SystemLogger;
@@ -718,7 +719,7 @@ class ContactRelationService extends BaseService
         $patient = QueryUtils::querySingleRow("SELECT * FROM patient_data WHERE id = ?", [$patientId]);
 
         if (!$patient) {
-            throw new \Exception("Patient not found: $patientId");
+            throw new ResourceNotFoundException('Patient', $patientId);
         }
 
         // Create person from patient demographics

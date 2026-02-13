@@ -18,6 +18,7 @@ namespace OpenEMR\Modules\FaxSMS\Controller;
 use MyMailer;
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Modules\FaxSMS\Exception\EmailSendFailedException;
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
 use OpenEMR\Modules\FaxSMS\Exception\InvalidEmailAddressException;
 use OpenEMR\Modules\FaxSMS\Exception\SmtpNotConfiguredException;
 use PHPMailer\PHPMailer\Exception;
@@ -37,7 +38,7 @@ class EmailClient extends AppDispatch
     public function __construct()
     {
         if (empty($GLOBALS['oe_enable_email'] ?? null)) {
-            throw new \RuntimeException(xlt("Access denied! Module not enabled"));
+            throw new ImproperlyConfiguredException(xlt("Access denied! Module not enabled"));
         }
         $this->crypto = new CryptoGen();
         $this->baseDir = $GLOBALS['temporary_files_dir'];
