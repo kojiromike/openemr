@@ -16,6 +16,7 @@ use DateTime;
 use Guzzle\GuzzleHttp\GuzzleException;
 use Guzzle\Http\Client;
 use http\Exception;
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
 
 class EtherFaxClient
 {
@@ -41,7 +42,7 @@ class EtherFaxClient
         $this->setCredentials($account, $user, $password, $key);
         $this->timeout = EtherFaxClient::DEFAULT_TIMEOUT;
         if (empty($GLOBALS['oefax_enable_fax'] ?? null)) {
-            throw new \RuntimeException(xlt("Access denied! Module not enabled"));
+            throw new ImproperlyConfiguredException(xlt("Access denied! Module not enabled"));
         }
     }
 

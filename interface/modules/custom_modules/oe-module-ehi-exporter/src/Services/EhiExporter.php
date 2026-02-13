@@ -16,6 +16,7 @@ namespace OpenEMR\Modules\EhiExporter\Services;
 use OpenEMR\Common\Crypto\CryptoGen;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Logging\SystemLogger;
+use OpenEMR\Modules\EhiExporter\Exception\ImproperlyConfiguredException;
 use OpenEMR\Common\Twig\TwigContainer;
 use OpenEMR\Common\Utils\FileUtils;
 use OpenEMR\Common\Uuid\UuidRegistry;
@@ -481,7 +482,7 @@ class EhiExporter
 
         $tempDir = $GLOBALS['temporary_files_dir'];
         if (!file_exists($tempDir)) {
-            throw new \RuntimeException("Could not access globals temporary_files_dir location. Verify the property is set correctly and the webserver has write access to the location.");
+            throw new ImproperlyConfiguredException("Could not access globals temporary_files_dir location. Verify the property is set correctly and the webserver has write access to the location.");
         }
 
         $zipName = uniqid('ehi-export-') . '.zip';

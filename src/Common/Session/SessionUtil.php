@@ -64,6 +64,7 @@
 
 namespace OpenEMR\Common\Session;
 
+use OpenEMR\Exception\ImproperlyConfiguredException;
 use OpenEMR\Common\Logging\SystemLogger;
 use OpenEMR\Common\Session\Predis\SentinelUtil;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -110,7 +111,7 @@ class SessionUtil
             $success = session_set_save_handler($saveHandler, true);
             if (!$success) {
                 (new SystemLogger())->errorLogCaller("Failed to set session handler for Predis Sentinel.");
-                throw new \RuntimeException("Failed to set session handler for Predis Sentinel.");
+                throw new ImproperlyConfiguredException("Failed to set session handler for Predis Sentinel.");
             }
             (new SystemLogger())->debug("Successfully set session handler for Predis Sentinel.");
         }

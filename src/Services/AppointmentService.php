@@ -16,6 +16,7 @@ namespace OpenEMR\Services;
 
 use MongoDB\Driver\Query;
 use OpenEMR\Common\Database\QueryUtils;
+use OpenEMR\Exception\ResourceNotFoundException;
 use OpenEMR\Common\Uuid\UuidRegistry;
 use OpenEMR\Events\Services\ServiceDeleteEvent;
 use OpenEMR\Services\Search\DateSearchField;
@@ -611,7 +612,8 @@ class AppointmentService extends BaseService
         $userService = new UserService();
         $user = $userService->getUser($appointment['pc_aid']);
         if ($user === false) {
-            throw new \RuntimeException("User not found for appointment");
+            // @phpstan-ignore argument.type (pc_aid is always an int from the database)
+            throw new ResourceNotFoundException('User', $appointment['pc_aid']);
         }
         $authGroup = $userService->getAuthGroupForUser($user['username']);
 

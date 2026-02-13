@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Exception thrown when the ClaimRev module is not properly configured.
+ * Exception for improperly configured FaxSMS module
  *
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -10,8 +10,10 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-namespace OpenEMR\Modules\ClaimRevConnector;
+namespace OpenEMR\Modules\FaxSMS\Exception;
 
-class ModuleNotConfiguredException extends \RuntimeException
+use OpenEMR\Exception\ImproperlyConfiguredModuleException;
+
+class ImproperlyConfiguredException extends ImproperlyConfiguredModuleException
 {
 }

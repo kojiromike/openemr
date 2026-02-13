@@ -48198,7 +48198,7 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
     'message' => '#^Cannot access offset \'pc_aid\' on mixed\\.$#',
-    'count' => 2,
+    'count' => 3,
     'path' => __DIR__ . '/../../src/Services/AppointmentService.php',
 ];
 $ignoreErrors[] = [

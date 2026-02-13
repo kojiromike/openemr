@@ -2,6 +2,7 @@
 
 namespace OpenEMR\Common\Http;
 
+use OpenEMR\Exception\ImproperlyConfiguredException;
 use OpenEMR\Common\Logging\SystemLoggerAwareTrait;
 use OpenEMR\Common\Session\Predis\SentinelUtil;
 use OpenEMR\Common\Session\SessionConfigurationBuilder;
@@ -95,7 +96,7 @@ class HttpSessionFactory implements SessionFactoryInterface
                     "SessionUtil: failed to configure predis sentinel session storage: " . $e->getMessage(),
                     ['trace' => $e->getTraceAsString()]
                 );
-                throw new \RuntimeException("Failed to configure predis sentinel session storage: " . $e->getMessage());
+                throw new ImproperlyConfiguredException("Failed to configure predis sentinel session storage: " . $e->getMessage(), 0, $e);
             }
         }
         return $sessionHandler;

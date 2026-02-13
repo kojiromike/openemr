@@ -19,6 +19,7 @@
 namespace OpenEMR\Modules\ClaimRevConnector;
 
 use OpenEMR\Common\Crypto\CryptoGen;
+use OpenEMR\Modules\ClaimRevConnector\Exception\ImproperlyConfiguredException;
 use OpenEMR\Services\Globals\GlobalSetting;
 
 class GlobalConfig
@@ -105,7 +106,7 @@ class GlobalConfig
     /**
      * @param 'scope'|'authority'|'api_server' $urlType
      * @return non-empty-string
-     * @throws ModuleNotConfiguredException if URL is not configured for the current environment
+     * @throws ImproperlyConfiguredException if URL is not configured for the current environment
      */
     private function getEnvironmentUrl(string $urlType): string
     {
@@ -117,7 +118,7 @@ class GlobalConfig
             : (self::URL_CONFIGS[$urlType][$env] ?? null);
 
         if (!is_string($url) || $url === '') {
-            throw new ModuleNotConfiguredException("ClaimRev {$urlType} URL not configured for environment '{$env}'");
+            throw new ImproperlyConfiguredException("ClaimRev {$urlType} URL not configured for environment '{$env}'");
         }
 
         return $url;

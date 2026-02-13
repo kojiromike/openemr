@@ -13,6 +13,7 @@
 namespace OpenEMR\Modules\FaxSMS\Controller;
 
 use Exception;
+use OpenEMR\Modules\FaxSMS\Exception\ImproperlyConfiguredException;
 use RingCentral\SDK\Http\ApiException;
 use RingCentral\SDK\SDK;
 
@@ -162,7 +163,7 @@ trait AuthenticateTrait
             $this->rcsdk = new SDK($this->credentials['appKey'], $this->credentials['appSecret'], $this->serverUrl, 'OpenEMR', '1.0.0');
             $this->platform = $this->rcsdk->platform();
         } else {
-            throw new Exception("App Key and App Secret are required to initialize SDK.");
+            throw new ImproperlyConfiguredException("App Key and App Secret are required to initialize SDK.");
         }
     }
 }
