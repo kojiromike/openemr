@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Exception for HTTP 404 Not Found
+ * Exception for HTTP 400 Bad Request
  *
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -10,11 +10,11 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-namespace OpenEMR\Common\Http\Exception;
+namespace OpenEMR\Exception\Http;
 
 use OpenEMR\Common\Http\StatusCode;
 
-class NotFoundHttpException extends HttpException
+class BadRequestHttpException extends HttpException
 {
     /**
      * @param array<string, string|string[]> $headers
@@ -24,6 +24,6 @@ class NotFoundHttpException extends HttpException
         ?\Throwable $previous = null,
         array $headers = []
     ) {
-        parent::__construct(StatusCode::NOT_FOUND, $message, $previous, $headers);
+        parent::__construct(StatusCode::BAD_REQUEST, $message, $previous, $headers);
     }
 }

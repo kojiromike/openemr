@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Exception for HTTP 400 Bad Request
+ * Exception for HTTP 500 Internal Server Error
  *
  * @package   OpenEMR
  * @link      http://www.open-emr.org
@@ -10,11 +10,11 @@
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
-namespace OpenEMR\Common\Http\Exception;
+namespace OpenEMR\Exception\Http;
 
 use OpenEMR\Common\Http\StatusCode;
 
-class BadRequestHttpException extends HttpException
+class InternalServerErrorHttpException extends HttpException
 {
     /**
      * @param array<string, string|string[]> $headers
@@ -24,6 +24,6 @@ class BadRequestHttpException extends HttpException
         ?\Throwable $previous = null,
         array $headers = []
     ) {
-        parent::__construct(StatusCode::BAD_REQUEST, $message, $previous, $headers);
+        parent::__construct(StatusCode::INTERNAL_SERVER_ERROR, $message, $previous, $headers);
     }
 }
