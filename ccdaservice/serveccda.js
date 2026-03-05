@@ -3687,8 +3687,9 @@ function processConnection(connection) {
                 conn.write(String.fromCharCode(28) + "\r\r" + "");
                 conn.end();
             } catch (error) {
-                console.log("XML parsing error:", error);
-                //conn.write("ERROR: " + error.message);
+                console.error("C-CDA generation error:", error);
+                conn.write("ERROR: " + error.message);
+                conn.write(String.fromCharCode(28) + "\r\r" + "");
                 conn.end();
             }
         }
@@ -3711,7 +3712,14 @@ function processConnection(connection) {
         received.push(data);
         while (!received.endOfCcda() && data.length > 0) {
             data = "";
-            eventData(received.returnData());
+            eventData(received.returnData()).catch(err => {
+                console.error("C-CDA generation error:", err);
+                try {
+                    conn.end();
+                } catch (_) {
+                    // connection already closed
+                }
+            });
         }
     });
 
