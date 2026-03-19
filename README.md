@@ -74,6 +74,38 @@ This project exists thanks to all the people who have contributed. [[Contribute]
 Thanks to our [ONC Certification Major Sponsors](https://www.open-emr.org/wiki/index.php/OpenEMR_Certification_Stage_III_Meaningful_Use#Major_sponsors)!
 
 
+### PHPStan Baseline Status
+
+Total baseline errors: **85,126** across 178 categories (level 10).
+
+#### Top 15 Error Categories
+
+```mermaid
+---
+config:
+    xyChart:
+        width: 900
+        height: 500
+---
+xychart-beta
+    title "PHPStan Baseline — Top 15 Error Categories"
+    x-axis ["arg.type", "offset", "miss.param", "miss.prop", "miss.ret", "binOp", "isset", "var.undef", "miss.iter", "ret.type", "meth.nonObj", "depr.sql", "noGlbNs", "encaps", "prop.nonObj"]
+    y-axis "Error Count" 0 --> 16000
+    bar [15298, 11149, 9782, 6289, 6130, 4571, 4167, 3523, 3279, 2236, 2162, 1645, 1536, 1233, 1225]
+```
+
+#### Hypothetical Trend (Example of Line Chart)
+
+This is what a baseline trend over time could look like in a CI job summary:
+
+```mermaid
+xychart-beta
+    title "PHPStan Baseline Error Trend (Hypothetical)"
+    x-axis ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    y-axis "Total Errors" 70000 --> 90000
+    line [88000, 87500, 87200, 86800, 86500, 86200, 85800, 85500, 85300, 85200, 85150, 85126]
+```
+
 ### License
 
 [GNU GPL](LICENSE)
