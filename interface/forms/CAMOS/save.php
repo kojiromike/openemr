@@ -7,8 +7,10 @@
  * @link      https://www.open-emr.org
  * @author    Mark Leeds <drleeds@gmail.com>
  * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @author    Michael A. Smith <michael@opencoreemr.com>
  * @copyright Copyright (c) 2006-2009 Mark Leeds <drleeds@gmail.com>
  * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2026 OpenCoreEMR Inc <https://opencoreemr.com/>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
@@ -18,6 +20,7 @@ require_once("../../../library/forms.inc.php");
 require_once("./content_parser.php");
 
 use OpenEMR\Common\Csrf\CsrfUtils;
+use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 
 if ($_GET["mode"] == "delete") {
@@ -36,8 +39,8 @@ if ($_GET["mode"] == "delete") {
         }
         $id = substr((string) $key, 3);
         if ($_POST['delete']) {
-            sqlStatement("delete from " . $tbl_camos . " where id=?", [$id]);
-            sqlStatement("delete from forms where form_name like 'CAMOS%' and form_id=?", [$id]);
+            QueryUtils::sqlStatementThrowException("DELETE FROM " . $tbl_camos . " WHERE id=?", [$id]);
+            QueryUtils::sqlStatementThrowException("DELETE FROM forms WHERE form_name LIKE 'CAMOS%' AND form_id=?", [$id]);
         }
 
         if ($_POST['update']) {
@@ -48,7 +51,7 @@ if ($_GET["mode"] == "delete") {
             //   version 4.0).
             $content = $_POST['textarea_' . $id];
             $content = replace($pid, $encounter, $content);
-            sqlStatement("update " . $tbl_camos . " set content=? where id=?", [$content, $id]);
+            QueryUtils::sqlStatementThrowException("UPDATE " . $tbl_camos . " SET content=? WHERE id=?", [$content, $id]);
         }
     }
 }

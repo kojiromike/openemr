@@ -174,6 +174,7 @@ return ['includes' => [
     __DIR__ . '/varTag.nativeType.php',
     __DIR__ . '/varTag.noVariable.php',
     __DIR__ . '/varTag.type.php',
+    __DIR__ . '/varTag.unresolvableType.php',
     __DIR__ . '/varTag.variableNotFound.php',
     __DIR__ . '/variable.undefined.php',
     __DIR__ . '/void.pure.php',

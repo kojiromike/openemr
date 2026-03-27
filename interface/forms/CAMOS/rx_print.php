@@ -17,6 +17,7 @@
 require_once('../../globals.php');
 
 use OpenEMR\Common\Csrf\CsrfUtils;
+use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -62,15 +63,16 @@ $siglineValue = match ($_GET['sigline'] ?? 'plain') {
     'signed' => $sigline['signed'],
     default => $sigline['plain'],
 };
-$query = sqlStatement("select fname,lname,street,city,state,postal_code,phone_home,DATE_FORMAT(DOB,'%m/%d/%y') as DOB from patient_data where pid =?", [$session->get('pid')]);
-if ($result = sqlFetchArray($query)) {
-    $patient_name = $result['fname'] . ' ' . $result['lname'];
-    $patient_address = $result['street'];
-    $patient_city = $result['city'];
-    $patient_state = $result['state'];
-    $patient_zip = $result['postal_code'];
-    $patient_phone = $result['phone_home'];
-    $patient_dob = $result['DOB'];
+$query = QueryUtils::sqlStatementThrowException("SELECT fname, lname, street, city, state, postal_code, phone_home, DATE_FORMAT(DOB, '%m/%d/%y') AS DOB FROM patient_data WHERE pid = ?", [$session->get('pid')]);
+/** @var array{fname: ?string, lname: ?string, street: ?string, city: ?string, state: ?string, postal_code: ?string, phone_home: ?string, DOB: ?string} $result */
+if ($result = QueryUtils::fetchArrayFromResultSet($query)) {
+    $patient_name = ($result['fname'] ?? '') . ' ' . ($result['lname'] ?? '');
+    $patient_address = $result['street'] ?? '';
+    $patient_city = $result['city'] ?? '';
+    $patient_state = $result['state'] ?? '';
+    $patient_zip = $result['postal_code'] ?? '';
+    $patient_phone = $result['phone_home'] ?? '';
+    $patient_dob = $result['DOB'] ?? '';
 }
 
 //update user information if selected from form
@@ -79,35 +81,39 @@ if ($_POST['update']) { // OPTION update practice inf
         CsrfUtils::csrfNotVerified();
     }
 
-    $query = "update users set " .
-    "fname = '" . add_escape_custom($_POST['practice_fname']) . "', " .
-    "lname = '" . add_escape_custom($_POST['practice_lname']) . "', " .
-    "title = '" . add_escape_custom($_POST['practice_title']) . "', " .
-    "street = '" . add_escape_custom($_POST['practice_address']) . "', " .
-    "city = '" . add_escape_custom($_POST['practice_city']) . "', " .
-    "state = '" . add_escape_custom($_POST['practice_state']) . "', " .
-    "zip = '" . add_escape_custom($_POST['practice_zip']) . "', " .
-    "phone = '" . add_escape_custom($_POST['practice_phone']) . "', " .
-    "fax = '" . add_escape_custom($_POST['practice_fax']) . "', " .
-    "federaldrugid = '" . add_escape_custom($_POST['practice_dea']) . "' " .
-    "where id ='" . add_escape_custom($session->get('authUserID')) . "'";
-    sqlStatement($query);
+    QueryUtils::sqlStatementThrowException(
+        "UPDATE users SET fname = ?, lname = ?, title = ?, street = ?, city = ?, state = ?, zip = ?, phone = ?, fax = ?, federaldrugid = ? WHERE id = ?",
+        [
+            is_string($_POST['practice_fname']) ? $_POST['practice_fname'] : '',
+            is_string($_POST['practice_lname']) ? $_POST['practice_lname'] : '',
+            is_string($_POST['practice_title']) ? $_POST['practice_title'] : '',
+            is_string($_POST['practice_address']) ? $_POST['practice_address'] : '',
+            is_string($_POST['practice_city']) ? $_POST['practice_city'] : '',
+            is_string($_POST['practice_state']) ? $_POST['practice_state'] : '',
+            is_string($_POST['practice_zip']) ? $_POST['practice_zip'] : '',
+            is_string($_POST['practice_phone']) ? $_POST['practice_phone'] : '',
+            is_string($_POST['practice_fax']) ? $_POST['practice_fax'] : '',
+            is_string($_POST['practice_dea']) ? $_POST['practice_dea'] : '',
+            $session->get('authUserID'),
+        ]
+    );
 }
 
 //get user information
-$query = sqlStatement("select * from users where id =?", [$session->get('authUserID')]);
-if ($result = sqlFetchArray($query)) {
-    $physician_name = $result['fname'] . ' ' . $result['lname'] . ', ' . $result['title'];
-    $practice_fname = $result['fname'];
-    $practice_lname = $result['lname'];
-    $practice_title = $result['title'];
-    $practice_address = $result['street'];
-    $practice_city = $result['city'];
-    $practice_state = $result['state'];
-    $practice_zip  = $result['zip'];
-    $practice_phone = $result['phone'];
-    $practice_fax = $result['fax'];
-    $practice_dea = $result['federaldrugid'];
+$query = QueryUtils::sqlStatementThrowException("SELECT * FROM users WHERE id = ?", [$session->get('authUserID')]);
+/** @var array{fname: ?string, lname: ?string, title: ?string, street: ?string, city: ?string, state: ?string, zip: ?string, phone: ?string, fax: ?string, federaldrugid: ?string} $userRow */
+if ($userRow = QueryUtils::fetchArrayFromResultSet($query)) {
+    $physician_name = ($userRow['fname'] ?? '') . ' ' . ($userRow['lname'] ?? '') . ', ' . ($userRow['title'] ?? '');
+    $practice_fname = $userRow['fname'] ?? '';
+    $practice_lname = $userRow['lname'] ?? '';
+    $practice_title = $userRow['title'] ?? '';
+    $practice_address = $userRow['street'] ?? '';
+    $practice_city = $userRow['city'] ?? '';
+    $practice_state = $userRow['state'] ?? '';
+    $practice_zip  = $userRow['zip'] ?? '';
+    $practice_phone = $userRow['phone'] ?? '';
+    $practice_fax = $userRow['fax'] ?? '';
+    $practice_dea = $userRow['federaldrugid'] ?? '';
 }
 
 // Cache escaped table name to avoid repeated SHOW TABLES lookups.
@@ -122,13 +128,15 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
     $camos_content = [];
     foreach ($_POST as $key => $val) {
         if (str_starts_with((string) $key, 'ch_')) {
-            $query = sqlStatement("select content from " . $tbl_camos . " where id =?", [substr((string) $key, 3)]);
-            if ($result = sqlFetchArray($query)) {
+            $query = QueryUtils::sqlStatementThrowException("SELECT content FROM $tbl_camos WHERE id = ?", [substr((string) $key, 3)]);
+            /** @var array{content: ?string} $result */
+            if ($result = QueryUtils::fetchArrayFromResultSet($query)) {
+                $raw_content = $result['content'] ?? '';
                 if ($_POST['print_html']) { //do this change to formatting only for html output
-                            $content = preg_replace('|\n|', '<br/>', text($result['content']));
-                            $content = preg_replace('|<br/><br/>|', '<br/>', (string) $content);
+                            $content = preg_replace('|\n|', '<br/>', text($raw_content)) ?? '';
+                            $content = preg_replace('|<br/><br/>|', '<br/>', $content) ?? '';
                 } else {
-                        $content = $result['content'];
+                        $content = $raw_content;
                 }
 
                   array_push($camos_content, $content);
@@ -140,16 +148,16 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
             //$content = $rx->drug.' '.$rx->form.' '.$rx->dosage;
             $content = ''
             . text($rx->drug) . ' '
-            . text($rx->size) . ''
-            . text($rx->unit_array[$rx->unit]) . '<br/>'
+            . text($rx->size)
+            . text($rx->unit_array[$rx->unit] ?? '') . '<br/>'
             . text($rx->quantity) . ' '
-            . text($rx->form_array[$rx->form]) . '<br/>'
+            . text($rx->form_array[$rx->form] ?? '') . '<br/>'
             . text($rx->dosage) . ' '
-            . text($rx->form_array[$rx->form]) . ' '
-            . text($rx->route_array[$rx->route]) . ' '
-            . text($rx->interval_array[$rx->interval]) . '<br/>'
+            . text($rx->form_array[$rx->form] ?? '') . ' '
+            . text($rx->route_array[$rx->route] ?? '') . ' '
+            . text($rx->interval_array[$rx->interval] ?? '') . '<br/>'
             . text($rx->note) . '<br/>'
-            . 'refills:' . text($rx->refills) . '';
+            . 'refills:' . text((string) $rx->refills);
       //      . $rx->substitute_array[$rx->substitute]. ''
       //      . $rx->per_refill . '';
             array_push($camos_content, $content);
@@ -321,7 +329,7 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 </html>
         <?php
     } elseif ($_GET['letterhead']) { // end of printing to rx not letterhead. OPTION print to letterhead
-        $content = preg_replace('/PATIENTNAME/i', $patient_name, (string) $camos_content[0]);
+        $content = preg_replace('/PATIENTNAME/i', $patient_name, $camos_content[0]) ?? $camos_content[0];
         if ($_POST['print_html']) { // print letterhead to html
             ?>
         <html>
@@ -502,33 +510,26 @@ return count_turnoff;
 
 //check if an encounter is set
     if ($session->get('encounter') == null) {
-        $query = sqlStatement("select x.id as id, x.category, x.subcategory, x.item from " .
-        $tbl_camos . " as x join forms as y on (x.id = y.form_id) " .
-        "where y.pid = ?" .
-        " and y.form_name like 'CAMOS%'" .
-        " and x.activity = 1", [$session->get('pid')]);
+        $query = QueryUtils::sqlStatementThrowException("SELECT x.id AS id, x.category, x.subcategory, x.item FROM $tbl_camos AS x JOIN forms AS y ON (x.id = y.form_id) WHERE y.pid = ? AND y.form_name LIKE 'CAMOS%' AND x.activity = 1", [$session->get('pid')]);
     } else {
-        $query = sqlStatement("select x.id as id, x.category, x.subcategory, x.item from " .
-        $tbl_camos . "  as x join forms as y on (x.id = y.form_id) " .
-        "where y.encounter = ?" .
-        " and y.pid = ?" .
-        " and y.form_name like 'CAMOS%'" .
-        " and x.activity = 1", [$session->get('encounter'), $session->get('pid')]);
+        $query = QueryUtils::sqlStatementThrowException("SELECT x.id AS id, x.category, x.subcategory, x.item FROM $tbl_camos AS x JOIN forms AS y ON (x.id = y.form_id) WHERE y.encounter = ? AND y.pid = ? AND y.form_name LIKE 'CAMOS%' AND x.activity = 1", [$session->get('encounter'), $session->get('pid')]);
     }
 
     $results = [];
     echo "<div id='checkboxes'>\n";
     $count = 0;
-    while ($result = sqlFetchArray($query)) {
+    /** @var array{id: int, category: ?string, subcategory: ?string, item: ?string} $camosRow */
+    while ($camosRow = QueryUtils::fetchArrayFromResultSet($query)) {
         $checked = '';
-        if ($result['category'] == 'prescriptions' && $count < 4) {
+        $category = $camosRow['category'] ?? '';
+        if ($category === 'prescriptions' && $count < 4) {
             $count++;
             $checked = 'checked';
         }
 
         echo "<div>\n";
-        echo "<input type=checkbox name='ch_" . attr($result['id']) . "' $checked><span>" .
-        text($result['category']) . '</span>:' . text($result['subcategory']) . ':' . text($result['item']) . "<br/>\n";
+        echo "<input type=checkbox name='ch_" . attr("{$camosRow['id']}") . "' $checked><span>" .
+        text($category) . '</span>:' . text($camosRow['subcategory'] ?? '') . ':' . text($camosRow['item'] ?? '') . "<br/>\n";
         echo "</div>\n";
     }
 
@@ -540,7 +541,7 @@ return count_turnoff;
     $rxarray = Prescription::prescriptions_factory($session->get('pid'));
 //now give a choice of drugs from the Prescription table
     foreach ($rxarray as $val) {
-        echo "<input type=checkbox name='chrx_" . attr($val->id) . "'>" .
+        echo "<input type=checkbox name='chrx_" . attr((string) $val->id) . "'>" .
         text($val->drug) . ':' . text($val->start_date) . "<br/>\n";
     }
     ?>

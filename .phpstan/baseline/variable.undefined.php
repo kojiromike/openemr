@@ -4307,16 +4307,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Variable \\$name might not be defined\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Variable \\$user_id might not be defined\\.$#',
-    'count' => 3,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
-];
-$ignoreErrors[] = [
     'message' => '#^Variable \\$rootdir might not be defined\\.$#',
     'count' => 1,
     'path' => __DIR__ . '/../../interface/forms/CAMOS/print.php',
@@ -4330,11 +4320,6 @@ $ignoreErrors[] = [
     'message' => '#^Variable \\$pid might not be defined\\.$#',
     'count' => 1,
     'path' => __DIR__ . '/../../interface/forms/CAMOS/save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Variable \\$rootdir might not be defined\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/view.php',
 ];
 $ignoreErrors[] = [
     'message' => '#^Variable \\$date_init might not be defined\\.$#',

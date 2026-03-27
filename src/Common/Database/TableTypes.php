@@ -331,6 +331,105 @@ namespace OpenEMR\Common\Database;
  *   revenue_code: string,
  *   chargecat: ?string
  * }
+ *
+ * @phpstan-type FormsRow array{
+ *   id: int,
+ *   date: ?string,
+ *   encounter: ?int,
+ *   form_name: ?string,
+ *   form_id: ?int,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   deleted: ?int,
+ *   formdir: ?string,
+ *   therapy_group_id: ?int,
+ *   issue_id: int,
+ *   provider_id: int
+ * }
+ *
+ * @phpstan-type FormVitalsRow array{
+ *   id: int,
+ *   uuid: ?string,
+ *   date: ?string,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   activity: ?int,
+ *   bps: ?string,
+ *   bpd: ?string,
+ *   weight: ?string,
+ *   height: ?string,
+ *   temperature: ?string,
+ *   temp_method: ?string,
+ *   pulse: ?string,
+ *   respiration: ?string,
+ *   note: ?string,
+ *   BMI: ?string,
+ *   BMI_status: ?string,
+ *   waist_circ: ?string,
+ *   head_circ: ?string,
+ *   oxygen_saturation: ?string,
+ *   oxygen_flow_rate: ?string,
+ *   external_id: ?string,
+ *   ped_weight_height: ?string,
+ *   ped_bmi: ?string,
+ *   ped_head_circ: ?string,
+ *   inhaled_oxygen_concentration: ?string,
+ *   last_updated: string
+ * }
+ *
+ * @phpstan-type FormCAMOSRow array{
+ *   id: int,
+ *   date: ?string,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   activity: ?int,
+ *   category: ?string,
+ *   subcategory: ?string,
+ *   item: ?string,
+ *   content: ?string
+ * }
+ *
+ * @phpstan-type FormCAMOSCategoryRow array{
+ *   id: int,
+ *   date: ?string,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   activity: ?int,
+ *   category: ?string
+ * }
+ *
+ * @phpstan-type FormCAMOSSubcategoryRow array{
+ *   id: int,
+ *   date: ?string,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   activity: ?int,
+ *   subcategory: ?string,
+ *   category_id: int
+ * }
+ *
+ * @phpstan-type FormCAMOSItemRow array{
+ *   id: int,
+ *   date: ?string,
+ *   pid: ?int,
+ *   user: ?string,
+ *   groupname: ?string,
+ *   authorized: ?int,
+ *   activity: ?int,
+ *   item: ?string,
+ *   content: ?string,
+ *   subcategory_id: int
+ * }
  */
 interface TableTypes
 {

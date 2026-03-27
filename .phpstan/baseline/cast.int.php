@@ -53,6 +53,11 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
     'message' => '#^Cannot cast mixed to int\\.$#',
+    'count' => 1,
+    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
+];
+$ignoreErrors[] = [
+    'message' => '#^Cannot cast mixed to int\\.$#',
     'count' => 7,
     'path' => __DIR__ . '/../../interface/forms/LBF/new.php',
 ];

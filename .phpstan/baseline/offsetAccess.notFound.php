@@ -62,14 +62,9 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/eRx_xml.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Offset 1 might not exist on array\\{\\}\\|array\\{non\\-falsy\\-string, numeric\\-string, numeric\\-string\\}\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Offset 2 might not exist on array\\{\\}\\|array\\{non\\-falsy\\-string, numeric\\-string, numeric\\-string\\}\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
+    'message' => '#^Offset \'count\\(id\\)\' does not exist on array\\{mixed\\}\\.$#',
+    'count' => 1,
+    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
 ];
 $ignoreErrors[] = [
     'message' => '#^Offset \'ODDISC\'\\|\'OSDISC\' does not exist on string\\.$#',
