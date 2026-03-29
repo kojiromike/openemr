@@ -27,7 +27,7 @@ use OpenEMR\Core\OEGlobalsBag;
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 ?>
 <?php
-if (!($_POST['submit_pdf'] || $_POST['submit_html']) && ($_GET['pid'] && $_GET['encounter'])) {
+if (!(filter_input(INPUT_POST, 'submit_pdf') || filter_input(INPUT_POST, 'submit_html')) && (filter_input(INPUT_GET, 'pid') && filter_input(INPUT_GET, 'encounter'))) {
     ?>
 <html>
 <head>
@@ -48,7 +48,7 @@ if (!($_POST['submit_pdf'] || $_POST['submit_html']) && ($_GET['pid'] && $_GET['
     exit;
 }
 
-if (!$_POST['submit_pdf'] && !$_POST['submit_html'] && !($_GET['pid'] && $_GET['encounter'])) {
+if (!filter_input(INPUT_POST, 'submit_pdf') && !filter_input(INPUT_POST, 'submit_html') && !(filter_input(INPUT_GET, 'pid') && filter_input(INPUT_GET, 'encounter'))) {
     ?>
 <html>
 <head>
@@ -82,14 +82,14 @@ $(function () {
 <tr><td>
 <span class='text'><?php echo xlt('Start (yyyy-mm-dd): ') ?></span>
 </td><td>
-<input type='text' size='10' name='start' id='start' value='<?php echo $_POST['end'] ? attr((string) $_POST['end']) : date('Y-m-d') ?>'
+<input type='text' size='10' name='start' id='start' value='<?php echo (($postEnd = filter_input(INPUT_POST, 'end')) !== null && $postEnd !== false) ? attr($postEnd) : date('Y-m-d') ?>'
 class='datepicker'
 title='<?php echo xla('yyyy-mm-dd last date of this event'); ?>' />
 </td></tr>
 <tr><td>
 <span class='text'><?php echo xlt('End (yyyy-mm-dd): ') ?></span>
 </td><td>
-<input type='text' size='10' name='end' id='end' value ='<?php echo $_POST['end'] ? attr((string) $_POST['end']) : date('Y-m-d') ?>'
+<input type='text' size='10' name='end' id='end' value ='<?php echo (($postEnd = filter_input(INPUT_POST, 'end')) !== null && $postEnd !== false) ? attr($postEnd) : date('Y-m-d') ?>'
 class='datepicker'
 title='<?php echo xla('yyyy-mm-dd last date of this event'); ?>' />
 </td></tr>
@@ -112,16 +112,16 @@ title='<?php echo xla('yyyy-mm-dd last date of this event'); ?>' />
     <?php
 }
 
-if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['encounter'])) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], session: $session)) {
+if (filter_input(INPUT_POST, 'submit_pdf') || filter_input(INPUT_POST, 'submit_html') || (filter_input(INPUT_GET, 'pid') && filter_input(INPUT_GET, 'encounter'))) {
+    if (!CsrfUtils::verifyCsrfToken(filter_input(INPUT_POST, 'csrf_token_form') ?: '', session: $session)) {
         CsrfUtils::csrfNotVerified();
     }
 
     // note we are trimming variables before sending through this function
-    $output = getFormData(trim((string) $_POST["start"]), trim((string) $_POST["end"]), trim((string) $_POST["lname"]), trim((string) $_POST["fname"]));
+    $output = getFormData(trim(filter_input(INPUT_POST, 'start') ?: ''), trim(filter_input(INPUT_POST, 'end') ?: ''), trim(filter_input(INPUT_POST, 'lname') ?: ''), trim(filter_input(INPUT_POST, 'fname') ?: ''));
     ksort($output);
 
-    if ($_POST['submit_html']) { //print as html
+    if (filter_input(INPUT_POST, 'submit_html')) { //print as html
         ?>
         <html>
         <head>
@@ -164,8 +164,8 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
             foreach ($dailynote as $note_id => $notecontents) {
                 $noteIdStr = (string) $note_id;
                 preg_match('/(\d+)_(\d+)/', $noteIdStr, $matches); //the unique note id contains the pid and encounter
-                $pid = $matches[1] ?? '';
-                $enc = $matches[2] ?? '';
+                $pid = (int) ($matches[1] ?? 0);
+                $enc = (int) ($matches[2] ?? 0);
 
                 //new page code here
                 print "<DIV class='page'>";
@@ -218,13 +218,11 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                         $tmp[$code]++;
                     }
 
-                    if (count($tmp) > 0) {
-                        print "<br/>";
-                        print "<span class='heading'>" . xlt("Coding") . "</span><br/>";
-                        print "<br/>";
-                        foreach ($tmp as $code => $val) {
-                            print nl2br(text($code)) . "<br/>";
-                        }
+                    print "<br/>";
+                    print "<span class='heading'>" . xlt("Coding") . "</span><br/>";
+                    print "<br/>";
+                    foreach ($tmp as $code => $val) {
+                        print nl2br(text($code)) . "<br/>";
                     }
                 }
 
@@ -253,7 +251,7 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                         JOIN users AS t2 ON (t1.user LIKE t2.username)
                         WHERE t1.pid = ?
                             AND t1.encounter = ?",
-                    [$pid, $encounter]
+                    [$pid, $enc]
                 );
                 $name = '';
                 $user_id = 0;
@@ -265,7 +263,8 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                 }
 
                 $path = OEGlobalsBag::getInstance()->getString('fileroot') . "/interface/forms/CAMOS";
-                if (file_exists($path . "/sig" . (string) convert_safe_file_dir_name($user_id) . ".jpg")) {
+                $safeName = convert_safe_file_dir_name($user_id);
+                if (is_string($safeName) && file_exists($path . "/sig" . $safeName . ".jpg")) {
                 //show the image here
                 }
 
@@ -292,8 +291,8 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
             foreach ($dailynote as $note_id => $notecontents) {
                 $noteIdStr = (string) $note_id;
                 preg_match('/(\d+)_(\d+)/', $noteIdStr, $matches); //the unique note id contains the pid and encounter
-                $pid = $matches[1] ?? '';
-                $enc = $matches[2] ?? '';
+                $pid = (int) ($matches[1] ?? 0);
+                $enc = (int) ($matches[2] ?? 0);
                 if (!$first) { //generate a new page each time except first iteration when nothing has been printed yet
                     $pdf->ezNewPage();
                 } else {
@@ -348,13 +347,11 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                         $tmp[$code]++;
                     }
 
-                    if (count($tmp) > 0) {
-                        $pdf->ezText("", 8);
-                        $pdf->ezText(xl("Coding"), 12);
-                        $pdf->ezText("", 8);
-                        foreach ($tmp as $code => $val) {
-                            $pdf->ezText($code, 8);
-                        }
+                    $pdf->ezText("", 8);
+                    $pdf->ezText(xl("Coding"), 12);
+                    $pdf->ezText("", 8);
+                    foreach ($tmp as $code => $val) {
+                        $pdf->ezText($code, 8);
                     }
                 }
 
@@ -383,7 +380,7 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                         JOIN users AS t2 ON (t1.user LIKE t2.username)
                         WHERE t1.pid = ?
                             AND t1.encounter = ?",
-                    [$pid, $encounter]
+                    [$pid, $enc]
                 );
                 $name = '';
                 $user_id = 0;
@@ -395,8 +392,9 @@ if ($_POST['submit_pdf'] || $_POST['submit_html'] || ($_GET['pid'] && $_GET['enc
                 }
 
                 $path = OEGlobalsBag::getInstance()->getString('fileroot') . "/interface/forms/CAMOS";
-                if (file_exists($path . "/sig" . $user_id . ".jpg")) {
-                        $pdf->ezImage($path . "/sig" . (string) convert_safe_file_dir_name($user_id) . ".jpg", 0.0, 72.0, '', 'left', '');
+                $safeName = convert_safe_file_dir_name($user_id);
+                if (is_string($safeName) && file_exists($path . "/sig" . $safeName . ".jpg")) {
+                        $pdf->ezImage($path . "/sig" . $safeName . ".jpg", 0.0, 72.0, '', 'left', '');
                 }
 
                 $pdf->ezText($name, 12);
@@ -418,11 +416,11 @@ function getFormData(string $start_date, string $end_date, string $lname, string
 
     $binds = [];
     $where_clauses = [];
-    if ($_GET['pid'] && $_GET['encounter']) {
+    if (filter_input(INPUT_GET, 'pid') && filter_input(INPUT_GET, 'encounter')) {
         $where_clauses[] = "t2.pid = ?";
-        $binds[] = $_GET['pid'];
+        $binds[] = filter_input(INPUT_GET, 'pid', FILTER_VALIDATE_INT);
         $where_clauses[] = "t2.encounter = ?";
-        $binds[] = $_GET['encounter'];
+        $binds[] = filter_input(INPUT_GET, 'encounter', FILTER_VALIDATE_INT);
     } else {
         $where_clauses[] = "DATE(t2.date) >= ?";
         $binds[] = $start_date;
@@ -469,7 +467,7 @@ function getFormData(string $start_date, string $end_date, string $lname, string
             $dates[$datekey][$pidEnc]['pubpid'] = $results1['pubpid'];
             $dates[$datekey][$pidEnc]['dob'] = $results1['dob'];
             $dates[$datekey][$pidEnc]['vitals'] = '';
-            $dates[$datekey][$pidEnc]['reason'] = (string) $results1['reason'];
+            $dates[$datekey][$pidEnc]['reason'] = $results1['reason'] ?? '';
             $dates[$datekey][$pidEnc]['exam'] = [];
             $dates[$datekey][$pidEnc]['prescriptions'] = [];
             $dates[$datekey][$pidEnc]['other'] = [];
@@ -495,7 +493,7 @@ function getFormData(string $start_date, string $end_date, string $lname, string
             );
         }
 
-        if (strtolower((string) $results1['form_name']) == 'vitals') { // deal with Vitals
+        if (strtolower($results1['form_name'] ?? '') == 'vitals') { // deal with Vitals
             $query2 = QueryUtils::sqlStatementThrowException(
                 "SELECT * FROM form_vitals WHERE id = ?",
                 [$results1['form_id']]
@@ -506,7 +504,7 @@ function getFormData(string $start_date, string $end_date, string $lname, string
             }
         }
 
-        if (str_starts_with(strtolower((string) $results1['form_name']), 'camos')) { // deal with camos
+        if (str_starts_with(strtolower($results1['form_name'] ?? ''), 'camos')) { // deal with camos
             // escape_table_name() on a literal handles case-insensitive table name matching.
             $query2 = QueryUtils::sqlStatementThrowException(
                 "SELECT category, subcategory, item, content,
@@ -518,15 +516,15 @@ function getFormData(string $start_date, string $end_date, string $lname, string
             /** @var array{category: string, subcategory: string, item: string, content: ?string, date: string}|false $results2 */
             if ($results2 = QueryUtils::fetchArrayFromResultSet($query2)) {
                 if ($results2['category'] == 'exam') {
-                    array_push($dates[$datekey][$pidEnc]['exam'], (string) $results2['content']);
+                    array_push($dates[$datekey][$pidEnc]['exam'], ($results2['content'] ?? ''));
                 } elseif ($results2['category'] == 'prescriptions') {
-                    array_push($dates[$datekey][$pidEnc]['prescriptions'], (string) preg_replace("/\n+/", ' ', (string) $results2['content']));
+                    array_push($dates[$datekey][$pidEnc]['prescriptions'], (string) preg_replace("/\n+/", ' ', ($results2['content'] ?? '')));
                 } elseif ($results2['category'] == 'communications') {
                     //do nothing
                 } elseif ($results2['category'] == 'calorie intake') {
                     $values = ['subcategory' => $results2['subcategory'],
                         'item' => $results2['item'],
-                        'content' => (string) $results2['content'],
+                        'content' => ($results2['content'] ?? ''),
                         'date' => $results2['date']];
                     array_push($dates[$datekey][$pidEnc]['calories'], $values);
                 } else {
@@ -536,7 +534,7 @@ function getFormData(string $start_date, string $end_date, string $lname, string
 
                     array_push(
                         $dates[$datekey][$pidEnc]['other'][$results2['category']],
-                        (string) preg_replace(["/\n+/","/patientname/i"], [' ',$results1['fname'] . ' ' . $results1['lname']], (string) $results2['content'])
+                        (string) preg_replace(["/\n+/","/patientname/i"], [' ',$results1['fname'] . ' ' . $results1['lname']], ($results2['content'] ?? ''))
                     );
                 }
             }

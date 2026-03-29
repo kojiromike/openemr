@@ -3332,46 +3332,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/fax/faxq.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Parameter \\#1 \\$array of function reset expects array\\|object, mixed given\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#1 \\$text of function text expects string, int\\<1, max\\> given\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#2 \\$replace of function str_replace expects array\\<string\\>\\|string, mixed given\\.$#',
-    'count' => 3,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#2 \\$replacement of function preg_replace expects array\\<float\\|int\\|string\\>\\|string, array\\<int, mixed\\> given\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#3 \\$subject of function str_replace expects array\\<string\\>\\|string, mixed given\\.$#',
-    'count' => 3,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#3 \\$subject of function str_replace expects array\\<string\\>\\|string, string\\|null given\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#6 \\$units of function addBilling2 expects string\\|null, int\\|string given\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Parameter \\#1 \\$text of function text expects string, mixed given\\.$#',
-    'count' => 15,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/rx_print.php',
-];
-$ignoreErrors[] = [
     'message' => '#^Parameter \\#1 \\$constant of function xl_layout_label expects string, mixed given\\.$#',
     'count' => 3,
     'path' => __DIR__ . '/../../interface/forms/LBF/new.php',

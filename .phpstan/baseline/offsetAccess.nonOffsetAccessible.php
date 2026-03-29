@@ -4832,36 +4832,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/fax/faxq.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Cannot access offset \'category\' on mixed\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot access offset \'content\' on mixed\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot access offset \'item\' on mixed\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot access offset \'subcategory\' on mixed\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot access offset mixed on mixed\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot access offset 0 on non\\-empty\\-list\\<string\\>\\|false\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
-];
-$ignoreErrors[] = [
     'message' => '#^Cannot access offset \'\' on mixed\\.$#',
     'count' => 2,
     'path' => __DIR__ . '/../../interface/forms/LBF/new.php',

@@ -58,7 +58,7 @@ $sigline['signed'] =
     "<div class='sig'>"
   . "<img src='./sig.jpg'>"
   . "</div>\n";
-$siglineValue = match ($_GET['sigline'] ?? 'plain') {
+$siglineValue = match (filter_input(INPUT_GET, 'sigline') ?? 'plain') {
     'embossed' => $sigline['embossed'],
     'signed' => $sigline['signed'],
     default => $sigline['plain'],
@@ -76,24 +76,24 @@ if ($result = QueryUtils::fetchArrayFromResultSet($query)) {
 }
 
 //update user information if selected from form
-if ($_POST['update']) { // OPTION update practice inf
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], session: $session)) {
+if (filter_input(INPUT_POST, 'update')) { // OPTION update practice inf
+    if (!CsrfUtils::verifyCsrfToken(filter_input(INPUT_POST, 'csrf_token_form') ?? '', session: $session)) {
         CsrfUtils::csrfNotVerified();
     }
 
     QueryUtils::sqlStatementThrowException(
         "UPDATE users SET fname = ?, lname = ?, title = ?, street = ?, city = ?, state = ?, zip = ?, phone = ?, fax = ?, federaldrugid = ? WHERE id = ?",
         [
-            is_string($_POST['practice_fname']) ? $_POST['practice_fname'] : '',
-            is_string($_POST['practice_lname']) ? $_POST['practice_lname'] : '',
-            is_string($_POST['practice_title']) ? $_POST['practice_title'] : '',
-            is_string($_POST['practice_address']) ? $_POST['practice_address'] : '',
-            is_string($_POST['practice_city']) ? $_POST['practice_city'] : '',
-            is_string($_POST['practice_state']) ? $_POST['practice_state'] : '',
-            is_string($_POST['practice_zip']) ? $_POST['practice_zip'] : '',
-            is_string($_POST['practice_phone']) ? $_POST['practice_phone'] : '',
-            is_string($_POST['practice_fax']) ? $_POST['practice_fax'] : '',
-            is_string($_POST['practice_dea']) ? $_POST['practice_dea'] : '',
+            filter_input(INPUT_POST, 'practice_fname') ?? '',
+            filter_input(INPUT_POST, 'practice_lname') ?? '',
+            filter_input(INPUT_POST, 'practice_title') ?? '',
+            filter_input(INPUT_POST, 'practice_address') ?? '',
+            filter_input(INPUT_POST, 'practice_city') ?? '',
+            filter_input(INPUT_POST, 'practice_state') ?? '',
+            filter_input(INPUT_POST, 'practice_zip') ?? '',
+            filter_input(INPUT_POST, 'practice_phone') ?? '',
+            filter_input(INPUT_POST, 'practice_fax') ?? '',
+            filter_input(INPUT_POST, 'practice_dea') ?? '',
             $session->get('authUserID'),
         ]
     );
@@ -121,18 +121,19 @@ if ($userRow = QueryUtils::fetchArrayFromResultSet($query)) {
 // on MySQL installs where the actual table case differs from the code.
 $tbl_camos = escape_table_name("form_CAMOS");
 
-if ($_POST['print_pdf'] || $_POST['print_html']) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], session: $session)) {
+if (filter_input(INPUT_POST, 'print_pdf') || filter_input(INPUT_POST, 'print_html')) {
+    if (!CsrfUtils::verifyCsrfToken(filter_input(INPUT_POST, 'csrf_token_form') ?? '', session: $session)) {
         CsrfUtils::csrfNotVerified();
     }
     $camos_content = [];
-    foreach ($_POST as $key => $val) {
-        if (str_starts_with((string) $key, 'ch_')) {
-            $query = QueryUtils::sqlStatementThrowException("SELECT content FROM $tbl_camos WHERE id = ?", [substr((string) $key, 3)]);
+    $postData = filter_input_array(INPUT_POST) ?: [];
+    foreach ($postData as $key => $val) {
+        if (str_starts_with($key, 'ch_')) {
+            $query = QueryUtils::sqlStatementThrowException("SELECT content FROM $tbl_camos WHERE id = ?", [substr($key, 3)]);
             /** @var array{content: ?string} $result */
             if ($result = QueryUtils::fetchArrayFromResultSet($query)) {
                 $raw_content = $result['content'] ?? '';
-                if ($_POST['print_html']) { //do this change to formatting only for html output
+                if (filter_input(INPUT_POST, 'print_html')) { //do this change to formatting only for html output
                             $content = preg_replace('|\n|', '<br/>', text($raw_content)) ?? '';
                             $content = preg_replace('|<br/><br/>|', '<br/>', $content) ?? '';
                 } else {
@@ -143,8 +144,8 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
             }
         }
 
-        if (str_starts_with((string) $key, 'chrx_')) {
-            $rx = new Prescription(substr((string) $key, 5));
+        if (str_starts_with($key, 'chrx_')) {
+            $rx = new Prescription(substr($key, 5));
             //$content = $rx->drug.' '.$rx->form.' '.$rx->dosage;
             $content = ''
             . text($rx->drug) . ' '
@@ -164,7 +165,7 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
         }
     }
 
-    if (!$_GET['letterhead']) { //OPTION print a prescription with css formatting
+    if (!filter_input(INPUT_GET, 'letterhead')) { //OPTION print a prescription with css formatting
         ?>
   <html>
   <head>
@@ -180,9 +181,8 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
         if ($camos_content[0]) { //decide if we are printing this rx
             ?>
             <?php
-            function topHeaderRx(): void
+            function topHeaderRx(string $physician_name, string $practice_address, string $practice_city, string $practice_state, string $practice_zip, string $practice_phone, string $practice_fax, string $practice_dea): void
             {
-                global $physician_name,$practice_address,$practice_city,$practice_state,$practice_zip,$practice_phone,$practice_fax,$practice_dea;
                 print text($physician_name) . "<br/>\n";
                 print text($practice_address) . "<br/>\n";
                 print text($practice_city) . ", ";
@@ -191,9 +191,8 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
                 print xlt('Voice') . ': ' . text($practice_phone) . ' / ' . xlt('Fax') . ': ' . text($practice_fax) . "<br/>\n";
                 print xlt('DEA') . ': ' . text($practice_dea);
             }
-            function bottomHeaderRx(): void
+            function bottomHeaderRx(string $patient_name, string $patient_address, string $patient_city, string $patient_state, string $patient_zip, string $patient_phone, string $patient_dob): void
             {
-                global $patient_name,$patient_address,$patient_city,$patient_state,$patient_zip,$patient_phone,$patient_dob;
                 print "<span class='mytagname'> " . xlt('Name') . ":</span>\n";
                 print "<span class='mydata'> " . text($patient_name) . " </span>\n";
                 print "<span class='mytagname'> " . xlt('Address') . ": </span>\n";
@@ -211,13 +210,13 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 <div id='rx1'  class='rx' >
 <div class='topheader'>
             <?php
-            topHeaderRx();
+            topHeaderRx($physician_name, $practice_address, $practice_city, $practice_state, $practice_zip, $practice_phone, $practice_fax, $practice_dea);
             ?>
     </div>
     <hr/>
   <div class='bottomheader'>
             <?php
-            bottomHeaderRx();
+            bottomHeaderRx($patient_name, $patient_address, $patient_city, $patient_state, $patient_zip, $patient_phone, $patient_dob);
             ?>
   </div>
   <div class='content'>
@@ -240,14 +239,14 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 <div class='topheader'>
             <?php
 
-            topHeaderRx();
+            topHeaderRx($physician_name, $practice_address, $practice_city, $practice_state, $practice_zip, $practice_phone, $practice_fax, $practice_dea);
             ?>
   </div>
     <hr/>
   <div class='bottomheader'>
             <?php
 
-            bottomHeaderRx();
+            bottomHeaderRx($patient_name, $patient_address, $patient_city, $patient_state, $patient_zip, $patient_phone, $patient_dob);
             ?>
   </div>
   <div class='content'>
@@ -271,14 +270,14 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 <div class='topheader'>
             <?php
 
-            topHeaderRx();
+            topHeaderRx($physician_name, $practice_address, $practice_city, $practice_state, $practice_zip, $practice_phone, $practice_fax, $practice_dea);
             ?>
   </div>
     <hr/>
   <div class='bottomheader'>
             <?php
 
-            bottomHeaderRx();
+            bottomHeaderRx($patient_name, $patient_address, $patient_city, $patient_state, $patient_zip, $patient_phone, $patient_dob);
             ?>
   </div>
   <div class='content'>
@@ -302,14 +301,14 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 <div class='topheader'>
             <?php
 
-            topHeaderRx();
+            topHeaderRx($physician_name, $practice_address, $practice_city, $practice_state, $practice_zip, $practice_phone, $practice_fax, $practice_dea);
             ?>
   </div>
     <hr/>
   <div class='bottomheader'>
             <?php
 
-            bottomHeaderRx();
+            bottomHeaderRx($patient_name, $patient_address, $patient_city, $patient_state, $patient_zip, $patient_phone, $patient_dob);
             ?>
   </div>
   <div class='content'>
@@ -328,9 +327,9 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
 </body>
 </html>
         <?php
-    } elseif ($_GET['letterhead']) { // end of printing to rx not letterhead. OPTION print to letterhead
+    } elseif (filter_input(INPUT_GET, 'letterhead')) { // end of printing to rx not letterhead. OPTION print to letterhead
         $content = preg_replace('/PATIENTNAME/i', $patient_name, $camos_content[0]) ?? $camos_content[0];
-        if ($_POST['print_html']) { // print letterhead to html
+        if (filter_input(INPUT_POST, 'print_html')) { // print letterhead to html
             ?>
         <html>
         <head>
@@ -380,10 +379,10 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
             print "<div style='font-weight:bold;'>";
             print "<br/>\n";
             print "<br/>\n";
-            if ($_GET['signer'] == 'patient') {
+            if (filter_input(INPUT_GET, 'signer') == 'patient') {
                 print "__________________________________________________________________________________" . "<br/>\n";
                 print xlt("Print name, sign and date.") . "<br/>\n";
-            } elseif ($_GET['signer'] == 'doctor') {
+            } elseif (filter_input(INPUT_GET, 'signer') == 'doctor') {
                 print xlt('Sincerely,') . "<br/>\n";
                 print "<br/>\n";
                 print "<br/>\n";
@@ -418,10 +417,10 @@ if ($_POST['print_pdf'] || $_POST['print_html']) {
             $pdf->selectFont('Times-Bold');
             $pdf->ezText('', 12);
             $pdf->ezText('', 12);
-            if ($_GET['signer'] == 'patient') {
+            if (filter_input(INPUT_GET, 'signer') == 'patient') {
                 $pdf->ezText("__________________________________________________________________________________", 12);
                 $pdf->ezText(xl("Print name, sign and date."), 12);
-            } elseif ($_GET['signer'] == 'doctor') {
+            } elseif (filter_input(INPUT_GET, 'signer') == 'doctor') {
                 $pdf->ezText(xl('Sincerely,'), 12);
                 $pdf->ezText('', 12);
                 $pdf->ezText('', 12);
@@ -501,7 +500,7 @@ return count_turnoff;
 <input type='button' value='<?php echo xla('Select All'); ?>' onClick='checkall()'>
 <input type='button' value='<?php echo xla('Unselect All'); ?>' onClick='uncheckall()'>
 
-    <?php if ($_GET['letterhead']) { ?>
+    <?php if (filter_input(INPUT_GET, 'letterhead')) { ?>
 <input type=submit name='print_pdf' value='<?php echo xla('Print (PDF)'); ?>'>
 <?php } ?>
 
@@ -546,7 +545,7 @@ return count_turnoff;
     }
     ?>
 
-    <?php if ($_GET['letterhead']) { ?>
+    <?php if (filter_input(INPUT_GET, 'letterhead')) { ?>
 <input type=submit name='print_pdf' value='<?php echo xla('Print (PDF)'); ?>'>
 <?php } ?>
 

@@ -338,23 +338,8 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
     'message' => '#^Cannot cast mixed to string\\.$#',
-    'count' => 3,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot cast mixed to string\\.$#',
-    'count' => 11,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot cast mixed to string\\.$#',
-    'count' => 27,
+    'count' => 1,
     'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Cannot cast mixed to string\\.$#',
-    'count' => 14,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
 ];
 $ignoreErrors[] = [
     'message' => '#^Cannot cast mixed to string\\.$#',

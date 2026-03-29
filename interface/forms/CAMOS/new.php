@@ -26,12 +26,12 @@ use OpenEMR\Core\OEGlobalsBag;
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 
 $out_of_encounter = false;
-if ((($session->get('encounter') == '') || ($session->get('pid') == '')) || ($_GET['mode'] == 'external')) {
+if ((($session->get('encounter') == '') || ($session->get('pid') == '')) || (filter_input(INPUT_GET, 'mode') == 'external')) {
     $out_of_encounter = true;
 }
 
 //  formHeader("Form: CAMOS");
-function myauth(): int
+function myAuth(): int
 {
     return 1;
 }
@@ -41,13 +41,11 @@ function myauth(): int
 <?php
 
 $break = "/* ---------------------------------- */"; //break between clone items
-$delete_subdata = true; //true means allowing the deletion of subdata. If you delete a category, all subcategories and items go too.
 $limit = 100;
 $select_size = 20;
 $textarea_rows = 20;
 $textarea_cols = 80;
 $debug = '';
-$error = '';
 
 $preselect_category_override = '';
 $preselect_subcategory_override = '';
@@ -57,13 +55,13 @@ $quote_search = ["\r","\n"];
 $quote_replace = ["\\r","\\n"];
 $quote_search_content = ["\r","\n"];
 $quote_replace_content = ["\\r","\\n"];
-$category = str_replace($quote_search, $quote_replace, (string) ($_POST['change_category'] ?? ''));
-$subcategory = str_replace($quote_search, $quote_replace, (string) ($_POST['change_subcategory'] ?? ''));
-$item = str_replace($quote_search, $quote_replace, (string) ($_POST['change_item'] ?? ''));
-$content = str_replace($quote_search_content, $quote_replace_content, (string) ($_POST['textarea_content'] ?? ''));
-$preselect_category = (string) ($_POST['hidden_category'] ?? '');
-$preselect_subcategory = (string) ($_POST['hidden_subcategory'] ?? '');
-$preselect_item = (string) ($_POST['hidden_item'] ?? '');
+$category = str_replace($quote_search, $quote_replace, filter_input(INPUT_POST, 'change_category') ?: '');
+$subcategory = str_replace($quote_search, $quote_replace, filter_input(INPUT_POST, 'change_subcategory') ?: '');
+$item = str_replace($quote_search, $quote_replace, filter_input(INPUT_POST, 'change_item') ?: '');
+$content = str_replace($quote_search_content, $quote_replace_content, filter_input(INPUT_POST, 'textarea_content') ?: '');
+$preselect_category = filter_input(INPUT_POST, 'hidden_category') ?: '';
+$preselect_subcategory = filter_input(INPUT_POST, 'hidden_subcategory') ?: '';
+$preselect_item = filter_input(INPUT_POST, 'hidden_item') ?: '';
 
 // Cache escaped table names to avoid repeated SHOW TABLES lookups.
 // escape_table_name() on literals is needed for case-insensitive matching
@@ -74,28 +72,29 @@ $tbl_camos_subcategory = escape_table_name("form_CAMOS_subcategory");
 $tbl_camos_item = escape_table_name("form_CAMOS_item");
 
 //handle changes to database
-$hidden_mode = (string) ($_POST['hidden_mode'] ?? '');
-$hidden_selection = (string) ($_POST['hidden_selection'] ?? '');
+$hidden_mode = filter_input(INPUT_POST, 'hidden_mode') ?: '';
+$hidden_selection = filter_input(INPUT_POST, 'hidden_selection') ?: '';
 if (str_starts_with($hidden_mode, 'add')) {
     if ($hidden_selection == 'change_category') {
-        $preselect_category_override = (string) ($_POST['change_category'] ?? '');
+        $preselect_category_override = filter_input(INPUT_POST, 'change_category') ?: '';
         QueryUtils::sqlStatementThrowException("INSERT INTO {$tbl_camos_category} (user, category) VALUES (?, ?)", [$session->get('authUser'), $category]);
     } elseif ($hidden_selection == 'change_subcategory') {
-        $preselect_subcategory_override = (string) ($_POST['change_subcategory'] ?? '');
-        $category_id = $_POST['hidden_category'];
-        if ($category_id >= 0) {
+        $preselect_subcategory_override = filter_input(INPUT_POST, 'change_subcategory') ?: '';
+        $category_id = filter_input(INPUT_POST, 'hidden_category', FILTER_VALIDATE_INT);
+        if ($category_id !== null && $category_id !== false && $category_id >= 0) {
             QueryUtils::sqlStatementThrowException("INSERT INTO {$tbl_camos_subcategory} (user, subcategory, category_id) VALUES (?, ?, ?)", [$session->get('authUser'), $subcategory, $category_id]);
         }
     } elseif ($hidden_selection == 'change_item') {
-        $preselect_item_override = (string) ($_POST['change_item'] ?? '');
-        $category_id = $_POST['hidden_category'];
-        $subcategory_id = $_POST['hidden_subcategory'];
-        if (($category_id >= 0 ) && ($subcategory_id >= 0)) {
+        $preselect_item_override = filter_input(INPUT_POST, 'change_item') ?: '';
+        $category_id = filter_input(INPUT_POST, 'hidden_category', FILTER_VALIDATE_INT);
+        $subcategory_id = filter_input(INPUT_POST, 'hidden_subcategory', FILTER_VALIDATE_INT);
+        if ($category_id !== null && $category_id !== false && $category_id >= 0
+            && $subcategory_id !== null && $subcategory_id !== false && $subcategory_id >= 0) {
             QueryUtils::sqlStatementThrowException("INSERT INTO {$tbl_camos_item} (user, item, content, subcategory_id) VALUES (?, ?, ?, ?)", [$session->get('authUser'), $item, $content, $subcategory_id]);
         }
     } elseif ($hidden_selection == 'change_content') {
-        $item_id = $_POST['hidden_item'];
-        if ($item_id >= 0) {
+        $item_id = filter_input(INPUT_POST, 'hidden_item', FILTER_VALIDATE_INT);
+        if ($item_id !== null && $item_id !== false && $item_id >= 0) {
             if ($hidden_mode == 'add to') {
                 /** @var array{content: ?string}|false $tmp */
                 $tmp = QueryUtils::querySingleRow("SELECT content FROM {$tbl_camos_item} WHERE id = ?", [$item_id]);
@@ -108,9 +107,9 @@ if (str_starts_with($hidden_mode, 'add')) {
         }
     }
 } elseif ($hidden_mode == 'delete') {
-    if ($delete_subdata) {
-        if ($hidden_selection == 'change_category') {
-            $to_delete_id = $_POST['hidden_category'];
+    if ($hidden_selection == 'change_category') {
+        $to_delete_id = filter_input(INPUT_POST, 'hidden_category', FILTER_VALIDATE_INT);
+        if ($to_delete_id !== null && $to_delete_id !== false) {
             $statement1 = QueryUtils::sqlStatementThrowException("SELECT id FROM {$tbl_camos_subcategory} WHERE category_id = ?", [$to_delete_id]);
             /** @var array{id: int} $result1 */
             while ($result1 = QueryUtils::fetchArrayFromResultSet($statement1)) {
@@ -119,75 +118,46 @@ if (str_starts_with($hidden_mode, 'add')) {
 
             QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_subcategory} WHERE category_id = ?", [$to_delete_id]);
             QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_category} WHERE id = ?", [$to_delete_id]);
-        } elseif ($hidden_selection == 'change_subcategory') {
-            $to_delete_id = $_POST['hidden_subcategory'];
+        }
+    } elseif ($hidden_selection == 'change_subcategory') {
+        $to_delete_id = filter_input(INPUT_POST, 'hidden_subcategory', FILTER_VALIDATE_INT);
+        if ($to_delete_id !== null && $to_delete_id !== false) {
             QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_item} WHERE subcategory_id = ?", [$to_delete_id]);
             QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_subcategory} WHERE id = ?", [$to_delete_id]);
-        } elseif ($hidden_selection == 'change_item') {
-            if ((isset($_POST['select_item'])) && (is_array($_POST['select_item'])) && (count($_POST['select_item']) > 1)) {
-                foreach ($_POST['select_item'] as $v) {
-                    $to_delete_id = $v;
-                    QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_item} WHERE id = ?", [$to_delete_id]);
-                }
-            } else {
-                $to_delete_id = $_POST['hidden_item'];
-                QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_item} WHERE id = ?", [$to_delete_id]);
+        }
+    } elseif ($hidden_selection == 'change_item') {
+        $select_item = filter_input(INPUT_POST, 'select_item', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY);
+        if (is_array($select_item) && count($select_item) > 1) {
+            foreach ($select_item as $v) {
+                QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_item} WHERE id = ?", [$v]);
             }
-        }
-    } else {
-        if ($hidden_selection == 'change_category') {
-            $to_delete_id = $_POST['hidden_category'];
-            $to_delete_from_table = 'form_CAMOS_category';
-            $to_delete_from_subtable = 'form_CAMOS_subcategory';
-            $to_delete_from_subsubtable = 'form_CAMOS_item';
-            $tablename = 'category';
-            $subtablename = 'subcategory';
-            $subsubtablename = 'item';
-        } elseif ($hidden_selection == 'change_subcategory') {
-            $to_delete_id = $_POST['hidden_subcategory'];
-            $to_delete_from_table = 'form_CAMOS_subcategory';
-            $to_delete_from_subtable = 'form_CAMOS_item';
-            $tablename = 'subcategory';
-            $subtablename = 'item';
-        } elseif ($hidden_selection == 'change_item') {
-            $to_delete_id = $_POST['hidden_item'];
-            $to_delete_from_table = 'form_CAMOS_item';
-            $to_delete_from_subtable = '';
-            $tablename = 'item';
-            $subtablename = '';
-        }
-
-        if ($subtablename == '') {
-            QueryUtils::sqlStatementThrowException("DELETE FROM " . escape_table_name((string) $to_delete_from_table) . " WHERE id LIKE ?", [$to_delete_id]);
         } else {
-            $statement = QueryUtils::sqlStatementThrowException("SELECT count(id) FROM " . escape_table_name((string) $to_delete_from_subtable) . " WHERE " . escape_sql_column_name((string) $tablename . '_id', [(string) $to_delete_from_subtable]) . " LIKE ?", [$to_delete_id]);
-            /** @var array{count(id): int}|false $result */
-            if ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                if ($result['count(id)'] == 0) {
-                    QueryUtils::sqlStatementThrowException("DELETE FROM " . escape_table_name((string) $to_delete_from_table) . " WHERE id LIKE ?", [$to_delete_id]);
-                } else {
-                    $error = (string) $subtablename . " not empty!";
-                }
+            $to_delete_id = filter_input(INPUT_POST, 'hidden_item', FILTER_VALIDATE_INT);
+            if ($to_delete_id !== null && $to_delete_id !== false) {
+                QueryUtils::sqlStatementThrowException("DELETE FROM {$tbl_camos_item} WHERE id = ?", [$to_delete_id]);
             }
         }
     }
 } elseif ($hidden_mode == 'alter') {
-    $newval = $_POST[$hidden_selection] ?? '';
+    $newval = filter_input(INPUT_POST, $hidden_selection) ?: '';
+    $to_alter_id = '';
+    $to_alter_table = '';
+    $to_alter_column = '';
     if ($hidden_selection == 'change_category') {
-        $to_alter_id = $_POST['hidden_category'];
+        $to_alter_id = filter_input(INPUT_POST, 'hidden_category') ?: '';
         $to_alter_table = 'form_CAMOS_category';
         $to_alter_column = 'category';
     } elseif ($hidden_selection == 'change_subcategory') {
-        $to_alter_id = $_POST['hidden_subcategory'];
+        $to_alter_id = filter_input(INPUT_POST, 'hidden_subcategory') ?: '';
         $to_alter_table = 'form_CAMOS_subcategory';
         $to_alter_column = 'subcategory';
     } elseif ($hidden_selection == 'change_item') {
-        $to_alter_id = $_POST['hidden_item'];
+        $to_alter_id = filter_input(INPUT_POST, 'hidden_item') ?: '';
         $to_alter_table = 'form_CAMOS_item';
         $to_alter_column = 'item';
     }
 
-    QueryUtils::sqlStatementThrowException("UPDATE " . escape_table_name((string) $to_alter_table) . " SET " . escape_sql_column_name((string) $to_alter_column, [(string) $to_alter_table]) . " = ? WHERE id = ?", [$newval, $to_alter_id]);
+    QueryUtils::sqlStatementThrowException("UPDATE " . escape_table_name($to_alter_table) . " SET " . escape_sql_column_name($to_alter_column, [$to_alter_table]) . " = ? WHERE id = ?", [$newval, $to_alter_id]);
 }
 
   //preselect column items
@@ -203,11 +173,10 @@ if ($preselect_category == '' && !$out_of_encounter) {
     $maxid = ($tmp !== false ? $tmp['max'] : null) ?: 0;
 
     $statement = QueryUtils::sqlStatementThrowException("SELECT category, subcategory, item FROM {$tbl_camos} WHERE id = ?", [$maxid]);
-    /** @var array{category: ?string, subcategory: ?string, item: ?string} $result */
-    if ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-        $preselect_category = $result['category'] ?? '';
-        $preselect_subcategory = $result['subcategory'] ?? '';
-        $preselect_item = $result['item'] ?? '';
+    if ($preselectRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+        $preselect_category = is_string($preselectRow['category'] ?? null) ? $preselectRow['category'] : '';
+        $preselect_subcategory = is_string($preselectRow['subcategory'] ?? null) ? $preselectRow['subcategory'] : '';
+        $preselect_item = is_string($preselectRow['item'] ?? null) ? $preselectRow['item'] : '';
     } else {
         $preselect_mode = '';
     }
@@ -398,44 +367,41 @@ if (!$out_of_encounter) { //do not do stuff that is encounter specific if not in
   //ICD10
     $code_list = '';
     $statement = QueryUtils::sqlStatementThrowException("SELECT code_text, code FROM billing WHERE encounter = ? AND pid = ? AND code_type LIKE 'ICD10' AND activity = 1", [$session->get('encounter'), $session->get('pid')]);
-    /** @var array{code: ?string, code_text: ?string} $result */
-    if ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-        $code_list = "\n\n" . trim((string) preg_replace('/\r\n|\r|\n/', '', text($result['code'] . " " . $result['code_text'])));
+    /** @var array{code: ?string, code_text: ?string}|false $icd10Row */
+    if ($icd10Row = QueryUtils::fetchArrayFromResultSet($statement)) {
+        $code_list = "\n\n" . trim((string) preg_replace('/\r\n|\r|\n/', '', text(($icd10Row['code'] ?? '') . " " . ($icd10Row['code_text'] ?? ''))));
     }
 
-    /** @var array{code: ?string, code_text: ?string} $result */
-    while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-        $code_list .= "\n\n" . trim((string) preg_replace('/\r\n|\r|\n/', '', text($result['code'] . " " . $result['code_text'])));
+    while ($icd10Row = QueryUtils::fetchArrayFromResultSet($statement)) {
+        $code_list .= "\n\n" . trim((string) preg_replace('/\r\n|\r|\n/', '', text(($icd10Row['code'] ?? '') . " " . ($icd10Row['code_text'] ?? ''))));
     }
 
     $code_list = "icd10_list=" . js_escape($code_list . "\n") . ";\n";
-    if ($code_list !== '') {
-        echo $code_list;
-    }
+    echo $code_list;
 }
 
 $statement = QueryUtils::sqlStatementThrowException("SELECT id, category FROM {$tbl_camos_category} ORDER BY category");
 $i = 0;
-/** @var array{id: int, category: ?string} $result */
-while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-    echo "array1[" . $i . "] = new Array(" . js_escape((string) $result['category']) . ", " . js_escape((string) $result['id']) . ", new Array());\n";
+/** @var array{id: int, category: ?string} $categoryRow */
+while ($categoryRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+    echo "array1[" . $i . "] = new Array(" . js_escape($categoryRow['category'] ?? '') . ", " . js_escape(strval($categoryRow['id'])) . ", new Array());\n";
     $i++;
 }
 
 $i = 0;
 $statement = QueryUtils::sqlStatementThrowException("SELECT id, subcategory, category_id FROM {$tbl_camos_subcategory} ORDER BY subcategory");
-/** @var array{id: int, subcategory: ?string, category_id: int} $result */
-while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-    echo "array2[" . $i . "] = new Array(" . js_escape((string) $result['subcategory']) . ", " . js_escape((string) $result['category_id']) . ", " . js_escape((string) $result['id']) . ", new Array());\n";
+/** @var array{id: int, subcategory: ?string, category_id: int} $subcategoryRow */
+while ($subcategoryRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+    echo "array2[" . $i . "] = new Array(" . js_escape($subcategoryRow['subcategory'] ?? '') . ", " . js_escape(strval($subcategoryRow['category_id'])) . ", " . js_escape(strval($subcategoryRow['id'])) . ", new Array());\n";
     $i++;
 }
 
 $i = 0;
 $statement = QueryUtils::sqlStatementThrowException("SELECT id, item, content, subcategory_id FROM {$tbl_camos_item} ORDER BY item");
-/** @var array{id: int, item: ?string, content: ?string, subcategory_id: int} $result */
-while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-    echo "array3[" . $i . "] = new Array(" . js_escape((string) $result['item']) . ", " . js_escape_protected(strip_tags((string) $result['content'], "<b>,<i>"), '\r\n') . ", " . js_escape((string) $result['subcategory_id']) .
-    "," . js_escape((string) $result['id']) . ");\n";
+/** @var array{id: int, item: ?string, content: ?string, subcategory_id: int} $itemRow */
+while ($itemRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+    echo "array3[" . $i . "] = new Array(" . js_escape($itemRow['item'] ?? '') . ", " . js_escape_protected(strip_tags($itemRow['content'] ?? '', "<b>,<i>"), '\r\n') . ", " . js_escape(strval($itemRow['subcategory_id'])) .
+    "," . js_escape(strval($itemRow['id'])) . ");\n";
     $i++;
 }
 ?>
@@ -464,10 +430,8 @@ function select_word(mode, mystring, myselect) { //take a string and select it i
 }
 <?php
 
-if (1) { //we are hiding the clone buttons and still need 'search others' so this is not to be removed if out of encounter anymore.
-//if (!$out_of_encounter) { //do not do stuff that is encounter specific if not in an encounter
-  //cloning - similar process to preselect set to first time starting CAMOS
-  //as above
+//cloning - similar process to preselect set to first time starting CAMOS
+//as above
     $clone_category = '';
     $clone_subcategory = '';
     $clone_item = '';
@@ -476,7 +440,7 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
     $clone_data2 = '';
     $clone_data_array = [];
     if (str_starts_with($hidden_mode, 'clone')) {
-        $clone_category = (string) ($_POST['category'] ?? '') ?: '';
+        $clone_category = filter_input(INPUT_POST, 'category') ?: '';
         $clone_conditions = [];
         $clone_params = [];
         if ($clone_category !== '') {
@@ -484,19 +448,19 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
             $clone_params[] = $clone_category;
         }
 
-        $clone_subcategory = (string) ($_POST['subcategory'] ?? '') ?: '';
+        $clone_subcategory = filter_input(INPUT_POST, 'subcategory') ?: '';
         if ($clone_subcategory !== '') {
             $clone_conditions[] = "subcategory LIKE ?";
             $clone_params[] = $clone_subcategory;
         }
 
-        $clone_item = (string) ($_POST['item'] ?? '') ?: '';
+        $clone_item = filter_input(INPUT_POST, 'item') ?: '';
         if ($clone_item !== '') {
             $clone_conditions[] = "item LIKE ?";
             $clone_params[] = $clone_item;
         }
 
-        $clone_search = trim((string) ($_POST['clone_others_search'] ?? ''));
+        $clone_search = trim(filter_input(INPUT_POST, 'clone_others_search') ?: '');
 
         $name_data_flag = false; //flag to see if we are going to use patient names in search result of clone others.
         $show_phone_flag = false; //if we do show patient names, flag to see if we show phone numbers too
@@ -504,20 +468,18 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
         if (str_contains($clone_search, "::")) {
             $name_data_flag = true;
             $show_phone_flag = true;
-            /** @var non-empty-list<string> $split */
-            $split = preg_split('/\s*::\s*/', $clone_search);
+            $split = preg_split('/\s*::\s*/', $clone_search) ?: [];
             $clone_search = $split[1] ?? '';
-            $pid_list = searchNamePids($split[0], $limit);
+            $pid_list = searchNamePids($split[0] ?? '', $limit);
         } elseif (str_contains($clone_search, ":")) {
             $name_data_flag = true;
-            /** @var non-empty-list<string> $split */
-            $split = preg_split('/\s*:\s*/', $clone_search);
+            $split = preg_split('/\s*:\s*/', $clone_search) ?: [];
             $clone_search = $split[1] ?? '';
-            $pid_list = searchNamePids($split[0], $limit);
+            $pid_list = searchNamePids($split[0] ?? '', $limit);
         }
 
         $has_search_term = false;
-        if (!empty($clone_search)) {
+        if ($clone_search !== '') {
             $clone_search = preg_replace('/\s+/', '%', $clone_search);
             if (str_starts_with((string) $clone_search, "`")) {
                 // Backtick prefix resets subcategory/item conditions
@@ -539,22 +501,22 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                 $statement1 = QueryUtils::sqlStatementThrowException("SELECT id, category FROM {$tbl_camos_category}");
                 /** @var array{id: int, category: ?string} $result1 */
                 while ($result1 = QueryUtils::fetchArrayFromResultSet($statement1)) {
-                    $tmp = (string) $result1['category'];
+                    $tmp = $result1['category'] ?? '';
                     $tmp = "/*import::category::$tmp*/" . "\n";
                     $clone_data_array[$tmp] = $tmp;
                     $statement2 = QueryUtils::sqlStatementThrowException("SELECT id, subcategory FROM {$tbl_camos_subcategory} WHERE category_id = ?", [$result1['id']]);
                     /** @var array{id: int, subcategory: ?string} $result2 */
                     while ($result2 = QueryUtils::fetchArrayFromResultSet($statement2)) {
-                        $tmp = (string) $result2['subcategory'];
+                        $tmp = $result2['subcategory'] ?? '';
                         $tmp = "/*import::subcategory::$tmp*/" . "\n";
                         $clone_data_array[$tmp] = $tmp;
                         $statement3 = QueryUtils::sqlStatementThrowException("SELECT item, content FROM {$tbl_camos_item} WHERE subcategory_id = ?", [$result2['id']]);
                         /** @var array{item: ?string, content: ?string} $result3 */
                         while ($result3 = QueryUtils::fetchArrayFromResultSet($statement3)) {
-                            $tmp = (string) $result3['item'];
+                            $tmp = $result3['item'] ?? '';
                             $tmp = "/*import::item::$tmp*/" . "\n";
                             $clone_data_array[$tmp] = $tmp;
-                            $tmp = (string) $result3['content'];
+                            $tmp = $result3['content'] ?? '';
                             $tmp = "/*import::content::$tmp*/" . "\n";
                             $clone_data_array[$tmp] = $tmp;
                         }
@@ -571,9 +533,9 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                   $line = '%' . trim($line) . '%';
                   $search_term = preg_replace('/\s+/', '%', $line);
                   $statement = QueryUtils::sqlStatementThrowException("SELECT code, code_type, code_text, modifier, units, fee FROM " . escape_table_name($table) . " WHERE code_text LIKE ? LIMIT ?", [$search_term, $limit]);
-                /** @var array{code: ?string, code_type: ?string, code_text: ?string, modifier: ?string, units: ?string, fee: ?string} $result */
-                while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                    $code_type = (string) $result['code_type'];
+                /** @var array{code: ?string, code_type: ?string, code_text: ?string, modifier: ?string, units: ?string, fee: ?string} $billingRow */
+                while ($billingRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+                    $code_type = $billingRow['code_type'] ?? '';
                     if ($code_type == 1) {
                         $code_type = 'CPT4';
                     }
@@ -586,11 +548,11 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                         $code_type = 'OTHER';
                     }
 
-                    $code = (string) $result['code'];
-                    $code_text = (string) $result['code_text'];
-                    $modifier = (string) $result['modifier'];
-                    $units = (string) $result['units'];
-                    $fee = (string) $result['fee'];
+                    $code = $billingRow['code'] ?? '';
+                    $code_text = $billingRow['code_text'] ?? '';
+                    $modifier = $billingRow['modifier'] ?? '';
+                    $units = $billingRow['units'] ?? '';
+                    $fee = $billingRow['fee'] ?? '';
                     $tmp = "/*billing::$code_type::$code::$code_text::$modifier::$units::$fee*/";
                     $clone_data_array[$tmp] = $tmp;
                 }
@@ -616,12 +578,12 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                 $where = count($conditions) > 0 ? " WHERE " . implode(" AND ", $conditions) : "";
                 $params[] = $limit;
                 $statement = QueryUtils::sqlStatementThrowException("SELECT id, category, subcategory, item, content FROM {$tbl_camos}{$where} ORDER BY id DESC LIMIT ?", $params);
-                /** @var array{id: int, category: ?string, subcategory: ?string, item: ?string, content: ?string} $result */
-                while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                    $tmp = '/*camos::' . (string) $result['category'] . '::' . (string) $result['subcategory'] .
-                    '::' . (string) $result['item'] . '::' . (string) $result['content'] . '*/';
+                /** @var array{id: int, category: ?string, subcategory: ?string, item: ?string, content: ?string} $camosRow */
+                while ($camosRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+                    $tmp = '/*camos::' . ($camosRow['category'] ?? '') . '::' . ($camosRow['subcategory'] ?? '') .
+                    '::' . ($camosRow['item'] ?? '') . '::' . ($camosRow['content'] ?? '') . '*/';
                     if ($name_data_flag === true) {
-                            $tmp = getMyPatientData($result['id'], $show_phone_flag) . "\n$break\n" . $tmp;
+                            $tmp = getMyPatientData($camosRow['id'], $show_phone_flag) . "\n$break\n" . $tmp;
                     }
 
                     $key_tmp = preg_replace('/\W+/', '', $tmp);
@@ -631,6 +593,7 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
             }
         } else {//end of clone others
             $pid = $session->get('pid');
+            $last_encounter_id = 0;
             if ($hidden_mode == 'clone last visit') {
                 //go back $stepback # of encounters...
             //This has been changed to clone last visit based on actual last encounter rather than as it was
@@ -638,7 +601,7 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
             //two queries to the 'billing' table rather than form_encounter and make sure to add in 'and activity=1'
             //OK, now I have tried tracking last encounter from billing, then form_encounter.  Now, we are going to
             //try from forms where form_name like 'CAMOS%' so we will not bother with encounters that have no CAMOS entries...
-                $stepback = (int) ($_POST['stepback'] ?? 1) ?: 1;
+                $stepback = filter_input(INPUT_POST, 'stepback', FILTER_VALIDATE_INT) ?: 1;
                 /** @var array{max: ?int}|false $tmp */
                 $tmp = QueryUtils::querySingleRow("SELECT max(encounter) AS max FROM forms WHERE encounter < ? AND form_name LIKE 'CAMOS%' AND pid = ?", [$session->get('encounter'), $pid]);
                 $last_encounter_id = ($tmp !== false ? $tmp['max'] : null) ?: 0;
@@ -656,16 +619,16 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                 $statement = QueryUtils::sqlStatementThrowException("SELECT date(date) AS date, subcategory, item, content FROM {$tbl_camos} WHERE category LIKE ? AND pid = ? ORDER BY id DESC", [$clone_category, $pid]);
             }
 
-            /** @var array{category: ?string, subcategory: ?string, item: ?string, content: ?string, date: ?string} $result */
-            while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                if (preg_match('/^[\s\r\n]*$/', (string) $result['content']) == 0) {
+            /** @var array{category: ?string, subcategory: ?string, item: ?string, content: ?string, date: ?string} $cloneRow */
+            while ($cloneRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+                if (preg_match('/^[\s\r\n]*$/', $cloneRow['content'] ?? '') == 0) {
                     if ($hidden_mode == 'clone last visit') {
-                        $clone_category = (string) $result['category'];
+                        $clone_category = $cloneRow['category'] ?? '';
                     }
 
-                    $clone_subcategory = (string) $result['subcategory'];
-                    $clone_item = (string) $result['item'];
-                    $clone_content = (string) $result['content'];
+                    $clone_subcategory = $cloneRow['subcategory'] ?? '';
+                    $clone_item = $cloneRow['item'] ?? '';
+                    $clone_content = $cloneRow['content'] ?? '';
                     $clone_data1 = "/* camos :: $clone_category :: $clone_subcategory :: $clone_item :: ";
                     $clone_data2 = "$clone_content */";
                     $clone_data3 = $clone_data1 . $clone_data2;
@@ -676,7 +639,7 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                     if (!$clone_data_array[$clone_data1]) { //if does not exist, don't overwrite.
                           $clone_data_array[$clone_data1] = "";
                         if ($hidden_mode == 'clone') {
-                            $clone_data_array[$clone_data1] = "/* ------  " . (string) $result['date'] . "  --------- */\n"; //break between clone items
+                            $clone_data_array[$clone_data1] = "/* ------  " . ($cloneRow['date'] ?? '') . "  --------- */\n"; //break between clone items
                         }
 
                           $clone_data_array[$clone_data1] .= $clone_data3;
@@ -687,14 +650,14 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
             if ($hidden_mode == 'clone last visit') {
                 $pid = $session->get('pid');
                 $statement = QueryUtils::sqlStatementThrowException("SELECT t1.* FROM form_vitals AS t1 JOIN forms AS t2 ON (t1.id = t2.form_id) WHERE t2.encounter = ? AND t1.pid = ? AND t2.form_name LIKE 'Vitals'", [$last_encounter_id, $pid]);
-                /** @var array{weight: ?string, height: ?string, bps: ?string, bpd: ?string, pulse: ?string, temperature: ?string} $result */
-                if ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                    $weight = (string) $result['weight'];
-                    $height = (string) $result['height'];
-                    $bps = (string) $result['bps'];
-                    $bpd = (string) $result['bpd'];
-                    $pulse = (string) $result['pulse'];
-                    $temperature = (string) $result['temperature'];
+                /** @var array{weight: ?string, height: ?string, bps: ?string, bpd: ?string, pulse: ?string, temperature: ?string} $vitalsRow */
+                if ($vitalsRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+                    $weight = $vitalsRow['weight'] ?? '';
+                    $height = $vitalsRow['height'] ?? '';
+                    $bps = $vitalsRow['bps'] ?? '';
+                    $bpd = $vitalsRow['bpd'] ?? '';
+                    $pulse = $vitalsRow['pulse'] ?? '';
+                    $temperature = $vitalsRow['temperature'] ?? '';
           //              $clone_vitals = "/* vitals_key:: weight :: height :: systolic :: diastolic :: pulse :: temperature */\n";
                     $clone_vitals = "";
                     $clone_vitals .= "/* vitals\n :: $weight\n :: $height\n :: $bps\n :: $bpd\n :: $pulse\n :: $temperature\n */";
@@ -702,22 +665,22 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
                 }
 
                 $statement = QueryUtils::sqlStatementThrowException("SELECT code_type, code, code_text, modifier, units, fee, justify FROM billing WHERE encounter = ? AND pid = ? AND activity = 1 ORDER BY id", [$last_encounter_id, $pid]);
-                /** @var array{code_type: ?string, code: ?string, code_text: ?string, modifier: ?string, units: ?string, fee: ?string, justify: ?string} $result */
-                while ($result = QueryUtils::fetchArrayFromResultSet($statement)) {
-                    $clone_code_type = (string) $result['code_type'];
-                    $clone_code = (string) $result['code'];
-                    $clone_code_text = (string) $result['code_text'];
-                    $clone_modifier = (string) $result['modifier'];
-                    $clone_units = (string) $result['units'];
-                    $clone_fee = (string) $result['fee'];
+                /** @var array{code_type: ?string, code: ?string, code_text: ?string, modifier: ?string, units: ?string, fee: ?string, justify: ?string} $cloneBillingRow */
+                while ($cloneBillingRow = QueryUtils::fetchArrayFromResultSet($statement)) {
+                    $clone_code_type = $cloneBillingRow['code_type'] ?? '';
+                    $clone_code = $cloneBillingRow['code'] ?? '';
+                    $clone_code_text = $cloneBillingRow['code_text'] ?? '';
+                    $clone_modifier = $cloneBillingRow['modifier'] ?? '';
+                    $clone_units = $cloneBillingRow['units'] ?? '';
+                    $clone_fee = $cloneBillingRow['fee'] ?? '';
 
                 //added ability to grab justifications also - bm
                     $clone_justify = "";
-                    $clone_justify_raw = (string) $result['justify'];
+                    $clone_justify_raw = $cloneBillingRow['justify'] ?? '';
                     $clone_justify_array = explode(":", $clone_justify_raw);
                     foreach ($clone_justify_array as $temp_justify) {
-                        trim($temp_justify);
-                        if ($temp_justify != "") {
+                        $temp_justify = trim($temp_justify);
+                        if ($temp_justify !== '') {
                             $clone_justify .= ":: " . $temp_justify . " ";
                         }
                     }
@@ -729,7 +692,6 @@ if (1) { //we are hiding the clone buttons and still need 'search others' so thi
         } //end else (not clone others)
     }//end of clone stuff
   //end preselect column items
-}
 ?>
 function init() {
   var f2 = document.CAMOS;
@@ -1105,7 +1067,7 @@ $(function (body) {
 </head>
 <body class="body_top">
 <div name="form_container" onKeyPress="gotoOne(event)">
-<form method='post' action="<?php echo $rootdir;?>/forms/CAMOS/save.php?mode=new" name="CAMOS">
+<form method='post' action="<?php echo OEGlobalsBag::getInstance()->getString('rootdir');?>/forms/CAMOS/save.php?mode=new" name="CAMOS">
 <input type="hidden" name="csrf_token_form" value="<?php echo CsrfUtils::collectCsrfToken(session: $session); ?>" />
 <?php
 if (!$out_of_encounter) {
@@ -1139,11 +1101,6 @@ if (!$out_of_encounter) {
 <!-- supposedly where ajax induced php pages can print their output to... -->
 </div>
 <div id=id_mainbox style="display:inline">
-<?php
-if ($error != '') {
-    echo "<h1> error: " . text($error) . "</h1>\n";
-}
-?>
 <table border='1'>
 <tr>
   <td>
@@ -1219,7 +1176,7 @@ if (myAuth() == 1) {//root user only can see administration option
 <div id='id_textarea_content' style="display:inline">
     <textarea name='textarea_content' cols='<?php echo attr((string) $textarea_cols); ?>' rows='<?php echo attr((string) $textarea_rows); ?>' onFocus="content_focus()" onBlur="content_blur()" onDblClick="specialSelect(this,'/*','*/')" tabindex='2'></textarea>
     <br/>
-<input type='text' size='35' name='clone_others_search' value='<?php echo attr((string) ($_POST['clone_others_search'] ?? '')); ?>' tabindex='1' onKeyPress="processEnter(event,'clone_others_search')"/>
+<input type='text' size='35' name='clone_others_search' value='<?php echo attr(filter_input(INPUT_POST, 'clone_others_search') ?: ''); ?>' tabindex='1' onKeyPress="processEnter(event,'clone_others_search')"/>
 <input type='button' name='clone_others_search_button' value='<?php echo xla('Search'); ?>' onClick="js_button('clone others', 'clone others')"/>
 <input type='button' name='clone_others_selected_search_button' value='<?php echo xla('Search Selected'); ?>' onClick="js_button('clone others selected', 'clone others selected')"/>
 <?php
@@ -1300,6 +1257,10 @@ function searchNamePids(string $string, int $limit = 100): array
     }
 
     $split = preg_split('/\s+/', $string);
+    if ($split === false) {
+        return [];
+    }
+
     $name1 = "%" . ($split[1] ?? '') . "%";
     $name2 = "%" . $split[0] . "%";
 
@@ -1324,6 +1285,7 @@ function getMyPatientData(int $form_id, bool $show_phone_flag): string
     $name = '';
     $dob = '';
     $enc_date = '';
+    $days_ago = '';
     $phone_list = '';
     $pid = '';
     $query = QueryUtils::sqlStatementThrowException(
@@ -1333,20 +1295,20 @@ function getMyPatientData(int $form_id, bool $show_phone_flag): string
     /** @var array{pid: ?string, fname: ?string, mname: ?string, lname: ?string, phone_home: ?string, phone_biz: ?string, phone_contact: ?string, phone_cell: ?string, DOB: ?string, date: ?string, days: ?int}|false $results */
     $results = QueryUtils::fetchArrayFromResultSet($query);
     if ($results !== false) {
-        $pid = (string) $results['pid'];
-        $fname = (string) $results['fname'];
-        $mname = (string) $results['mname'];
-        $lname = (string) $results['lname'];
+        $pid = $results['pid'] ?? '';
+        $fname = $results['fname'] ?? '';
+        $mname = $results['mname'] ?? '';
+        $lname = $results['lname'] ?? '';
         $name = $mname ? $fname . ' ' . $mname . ' ' . $lname : $fname . ' ' . $lname;
 
-            $dob = (string) $results['DOB'];
-            $enc_date = (string) $results['date'];
-            $days_ago = (string) $results['days'];
+            $dob = $results['DOB'] ?? '';
+            $enc_date = $results['date'] ?? '';
+            $days_ago = $results['days'] ?? '';
             $phone_list =
-            "/* Home: " . (string) $results['phone_home'] . " | " .
-            "Cell: " . (string) $results['phone_cell'] . " | " .
-            "Bus: " . (string) $results['phone_biz'] . " | " .
-            "Contact: " . (string) $results['phone_contact'] . " */";
+            "/* Home: " . ($results['phone_home'] ?? '') . " | " .
+            "Cell: " . ($results['phone_cell'] ?? '') . " | " .
+            "Bus: " . ($results['phone_biz'] ?? '') . " | " .
+            "Contact: " . ($results['phone_contact'] ?? '') . " */";
     }
 
     $ret = "/*$pid, $name, DOB: $dob, Enc: $enc_date, $days_ago days ago. */";

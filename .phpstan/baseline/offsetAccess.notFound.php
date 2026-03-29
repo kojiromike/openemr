@@ -62,11 +62,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/eRx_xml.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Offset \'count\\(id\\)\' does not exist on array\\{mixed\\}\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
-];
-$ignoreErrors[] = [
     'message' => '#^Offset \'ODDISC\'\\|\'OSDISC\' does not exist on string\\.$#',
     'count' => 2,
     'path' => __DIR__ . '/../../interface/forms/eye_mag/php/eye_mag_functions.php',

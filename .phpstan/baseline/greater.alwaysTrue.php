@@ -3,11 +3,6 @@
 $ignoreErrors = [];
 $ignoreErrors[] = [
     'message' => '#^Comparison operation "\\>" between int\\<1, max\\> and 0 is always true\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/notegen.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Comparison operation "\\>" between int\\<1, max\\> and 0 is always true\\.$#',
     'count' => 1,
     'path' => __DIR__ . '/../../interface/modules/zend_modules/module/Carecoordination/src/Carecoordination/Controller/CarecoordinationController.php',
 ];

@@ -2247,54 +2247,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/../../interface/fax/fax_view.php',
 ];
 $ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between \'CAMOS\\-\' and mixed results in an error\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between non\\-falsy\\-string and mixed results in an error\\.$#',
-    'count' => 4,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/ajax_save.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\-" between int and string results in an error\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\-" between string and string results in an error\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between \'Dr\\. \' and mixed results in an error\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between \'insert into openemr…\' and mixed results in an error\\.$#',
-    'count' => 1,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between \'select date_format…\' and mixed results in an error\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
     'message' => '#^Binary operation "\\." between mixed and \' \' results in an error\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
+    'count' => 1,
+    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
 ];
 $ignoreErrors[] = [
     'message' => '#^Binary operation "\\." between non\\-falsy\\-string and mixed results in an error\\.$#',
-    'count' => 3,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Binary operation "\\." between \'\\<a href\\=\\\\\'\' and mixed results in an error\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/print.php',
+    'count' => 1,
+    'path' => __DIR__ . '/../../interface/forms/CAMOS/new.php',
 ];
 $ignoreErrors[] = [
     'message' => '#^Binary operation "/" between 12 and mixed results in an error\\.$#',

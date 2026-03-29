@@ -35,8 +35,7 @@ function CAMOS_report(int $pid, int $encounter, int $cols, int $id): void
         echo "<a href='{$webroot}/interface/forms/CAMOS/notegen.php?pid=" . attr_url("$pid") . "&encounter=" . attr_url("$encounter") . "' target=_new>" . xlt('Print This Encounter') . "</a>\n";
         echo " | ";
         echo "<a href='{$webroot}/interface/forms/CAMOS/notegen.php' target=_new>" . xlt('Print Any Encounter') . "</a></div>\n";
-        $replaced = replace($pid, $encounter, $data['content']);
-        $content = is_string($replaced) ? $replaced : '';
+        $content = replace($pid, $encounter, $data['content'] ?? '');
         echo "<pre>" . text(wordwrap(stripslashes($content))) . "</pre><hr>\n";
     }
 }

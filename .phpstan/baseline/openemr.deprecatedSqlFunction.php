@@ -668,21 +668,6 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
     'message' => '#^Use QueryUtils\\:\\:fetchRecords\\(\\) or QueryUtils\\:\\:fetchArrayFromResultSet\\(\\) instead of sqlFetchArray\\(\\)\\.$#',
-    'count' => 5,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Use QueryUtils\\:\\:sqlInsert\\(\\) instead of sqlInsert\\(\\)\\.$#',
-    'count' => 2,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Use QueryUtils\\:\\:sqlStatementThrowException\\(\\) or QueryUtils\\:\\:fetchRecords\\(\\) instead of sqlStatement\\(\\)\\.$#',
-    'count' => 5,
-    'path' => __DIR__ . '/../../interface/forms/CAMOS/content_parser.php',
-];
-$ignoreErrors[] = [
-    'message' => '#^Use QueryUtils\\:\\:fetchRecords\\(\\) or QueryUtils\\:\\:fetchArrayFromResultSet\\(\\) instead of sqlFetchArray\\(\\)\\.$#',
     'count' => 6,
     'path' => __DIR__ . '/../../interface/forms/LBF/new.php',
 ];

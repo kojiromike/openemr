@@ -37,8 +37,8 @@ $tbl_camos_category = escape_table_name("form_CAMOS_category");
 $tbl_camos_subcategory = escape_table_name("form_CAMOS_subcategory");
 $tbl_camos_item = escape_table_name("form_CAMOS_item");
 
-if ($_POST['export']) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], session: $session)) {
+if (filter_input(INPUT_POST, 'export')) {
+    if (!CsrfUtils::verifyCsrfToken(filter_input(INPUT_POST, 'csrf_token_form') ?? '', session: $session)) {
         CsrfUtils::csrfNotVerified();
     }
 
@@ -79,15 +79,15 @@ if ($_POST['export']) {
     }
 }
 
-if ($_POST['import']) {
-    if (!CsrfUtils::verifyCsrfToken($_POST["csrf_token_form"], session: $session)) {
+if (filter_input(INPUT_POST, 'import')) {
+    if (!CsrfUtils::verifyCsrfToken(filter_input(INPUT_POST, 'csrf_token_form') ?? '', session: $session)) {
         CsrfUtils::csrfNotVerified();
     }
 
     $fname = '';
-    /** @var array{tmp_name: string} $file */
-    foreach ($_FILES as $file) {
-        $fname = $file['tmp_name'];
+    $userfile = $_FILES['userfile'] ?? null;
+    if (is_array($userfile) && is_string($userfile['tmp_name'])) {
+        $fname = $userfile['tmp_name'];
     }
 
     $handle = @fopen($fname, "r");
