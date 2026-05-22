@@ -45,4 +45,4 @@ compose.override.yml
 tmp/
 
 # devcontainer
-.devcontainer/.env
+docker/development-easy/.env
