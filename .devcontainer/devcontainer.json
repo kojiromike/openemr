@@ -8,7 +8,6 @@
   "workspaceFolder": "/var/www/localhost/htdocs/openemr",
   "shutdownAction": "stopCompose",
   "initializeCommand": ".devcontainer/init.sh",
-  "waitFor": "postStartCommand",
   "postStartCommand": ".devcontainer/wait-for-ready.sh",
   "forwardPorts": [
     443,
