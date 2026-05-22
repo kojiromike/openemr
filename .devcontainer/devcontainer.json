@@ -46,7 +46,31 @@
         "bmewburn.vscode-intelephense-client",
         "xdebug.php-debug",
         "EditorConfig.EditorConfig"
-      ]
+      ],
+      "settings": {
+        "intelephense.maxMemory": 4096,
+        "intelephense.files.exclude": [
+          "**/.git/**",
+          "**/node_modules/**",
+          "**/vendor/**/tests/**",
+          "**/vendor/**/Tests/**",
+          "**/public/assets/**",
+          "**/tmp-phpstan/**"
+        ],
+        "files.watcherExclude": {
+          "**/.git/**": true,
+          "**/node_modules/**": true,
+          "**/vendor/**": true,
+          "**/public/assets/**": true,
+          "**/tmp-phpstan/**": true
+        },
+        "search.exclude": {
+          "**/node_modules": true,
+          "**/vendor": true,
+          "**/public/assets": true,
+          "**/tmp-phpstan": true
+        }
+      }
     }
   }
 }
