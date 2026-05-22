@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # OpenEMR Development Guide
 
 ## Project Structure

@@ -1,0 +1,8 @@
+# Devcontainer overlay for docker/development-easy/docker-compose.yml.
+services:
+  openemr:
+    env_file:
+    - path: .env
+      required: false
+    environment:
+      OPENEMR_DISABLE_TELEMETRY: "true"
