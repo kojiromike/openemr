@@ -1,8 +1,33 @@
 # Devcontainer overlay for docker/development-easy/docker-compose.yml.
+# Pins the HTTPS port deterministically (so OAuth redirect URIs stay
+# stable across rebuilds) and auto-assigns every other host port on
+# 127.0.0.1 so parallel worktrees of different branches don't collide.
+# WT_HTTPS_PORT is populated by .devcontainer/init.sh via .env.
 services:
+  mysql:
+    ports: !override
+    - "127.0.0.1::3306"
   openemr:
     env_file:
     - path: .env
       required: false
     environment:
       OPENEMR_DISABLE_TELEMETRY: "true"
+    ports: !override
+    - "127.0.0.1::80"
+    - "127.0.0.1:${WT_HTTPS_PORT}:443"
+  selenium:
+    ports: !override
+    - "127.0.0.1::4444"
+    - "127.0.0.1::7900"
+  phpmyadmin:
+    ports: !override
+    - "127.0.0.1::80"
+  couchdb:
+    ports: !override
+    - "127.0.0.1::5984"
+    - "127.0.0.1::6984"
+  mailpit:
+    ports: !override
+    - "127.0.0.1::8025"
+    - "127.0.0.1::1025"
