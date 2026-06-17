@@ -1,3 +1,7 @@
+See `AGENTS.md` at the repository root for the shared agent guide (devcontainer
+setup, what not to commit, where the code lives). The notes below are
+Copilot-specific.
+
 ## Commit Trailers for AI Assistance
 
 For every commit where an AI assistant helped write the code, add an `Assisted-by`

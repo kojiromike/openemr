@@ -1,0 +1,75 @@
+{
+  "name": "OpenEMR",
+  "dockerComposeFile": [
+    "../docker/development-easy/docker-compose.yml",
+    "compose.devcontainer.yml"
+  ],
+  "service": "openemr",
+  "workspaceFolder": "/var/www/localhost/htdocs/openemr",
+  "shutdownAction": "stopCompose",
+  "initializeCommand": ".devcontainer/init.sh",
+  "postStartCommand": ".devcontainer/wait-for-ready.sh",
+  "forwardPorts": [
+    443,
+    80,
+    8025,
+    4444,
+    7900
+  ],
+  "portsAttributes": {
+    "443": {
+      "label": "OpenEMR (HTTPS)",
+      "onAutoForward": "openBrowserOnce"
+    },
+    "80": {
+      "label": "OpenEMR (HTTP)",
+      "onAutoForward": "silent"
+    },
+    "8025": {
+      "label": "Mailpit",
+      "onAutoForward": "silent"
+    },
+    "4444": {
+      "label": "Selenium",
+      "onAutoForward": "silent"
+    },
+    "7900": {
+      "label": "Selenium VNC",
+      "onAutoForward": "silent"
+    }
+  },
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "EditorConfig.EditorConfig"
+      ],
+      "settings": {
+        "intelephense.maxMemory": 4096,
+        "intelephense.files.exclude": [
+          "**/.git/**",
+          "**/node_modules/**",
+          "**/vendor/**/tests/**",
+          "**/vendor/**/Tests/**",
+          "**/public/assets/**",
+          "**/tmp-phpstan/**"
+        ],
+        "files.watcherExclude": {
+          "**/.git/**": true,
+          "**/node_modules/**": true,
+          "**/vendor/**": true,
+          "**/public/assets/**": true,
+          "**/tmp-phpstan/**": true
+        },
+        "search.exclude": {
+          "**/node_modules": true,
+          "**/vendor": true,
+          "**/public/assets": true,
+          "**/tmp-phpstan": true
+        }
+      }
+    }
+  }
+}
