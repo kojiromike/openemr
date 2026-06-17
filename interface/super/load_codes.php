@@ -7,8 +7,10 @@
  * @link      https://www.open-emr.org
  * @author    Rod Roark <rod@sunsetsystems.com>
  * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @author    Michael A. Smith <michael@opencoreemr.com>
  * @copyright Copyright (c) 2014 Rod Roark <rod@sunsetsystems.com>
  * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2025 OpenCoreEMR Inc.
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
@@ -22,6 +24,7 @@ use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
+use OpenEMR\Services\CodeImport\RxcuiLoader;
 
 if (!AclMain::aclCheckCore('admin', 'super')) {
     AccessDeniedHelper::denyWithTemplate("ACL check failed for admin/super: Install Code Set", xl("Install Code Set"));
@@ -65,91 +68,35 @@ if (!empty($_POST['bn_upload'])) {
         die(xlt('Code type not yet defined') . ": '" . text($code_type) . "'");
     }
 
-    $code_type_id = $code_types[$code_type]['id'];
     $tmp_name = $_FILES['form_file']['tmp_name'];
 
-    $inscount = 0;
-    $repcount = 0;
-    $seen_codes = [];
-
     if (is_uploaded_file($tmp_name) && $_FILES['form_file']['size']) {
-        $zipin = new ZipArchive();
-        $eres = null;
-        if ($zipin->open($tmp_name) === true) {
-            // Must be a zip archive.
-            for ($i = 0; $i < $zipin->numFiles; ++$i) {
-                $ename = $zipin->getNameIndex($i);
-                // TBD: Expand the following test as other code types are supported.
-                if ($code_type == 'RXCUI' && basename($ename) == 'RXNCONSO.RRF') {
-                    $eres = $zipin->getStream($ename);
-                    break;
-                }
-            }
-        } else {
-            $eres = fopen($tmp_name, 'r');
-        }
-
-        if (empty($eres)) {
-            die(xlt('Unable to locate the data in this file.'));
-        }
-
-        if ($form_replace) {
-            sqlStatement("DELETE FROM codes WHERE code_type = ?", [$code_type_id]);
-        }
-
-
-        // Settings to drastically speed up import with InnoDB
-        sqlStatementNoLog("SET autocommit=0");
-        sqlStatementNoLog("START TRANSACTION");
-        while (($line = fgets($eres)) !== false) {
-            if ($code_type == 'RXCUI') {
-                $a = explode('|', $line);
-                if (count($a) < 18) {
-                    continue;
-                }
-
-                if ($a[17] != '4096') {
-                    continue;
-                }
-
-                if ($a[11] != 'RXNORM') {
-                    continue;
-                }
-
-                $code = $a[0];
-                if (isset($seen_codes[$code])) {
-                    continue;
-                }
-
-                $seen_codes[$code] = 1;
-                if (!$form_replace) {
-                    $tmp = sqlQuery("SELECT id FROM codes WHERE code_type = ? AND code = ? LIMIT 1", [$code_type_id, $code]);
-                    if (!empty($tmp)) {
-                        sqlStatementNoLog("UPDATE codes SET code_text = ? WHERE code_type = ? AND code = ?", [$a[14], $code_type_id, $code]);
-                        ++$repcount;
-                        continue;
-                    }
-                }
-
-                sqlStatementNoLog("INSERT INTO codes SET code_type = ?, code = ?, code_text = ?, fee = 0, units = 0", [$code_type_id, $code, $a[14]]);
-                ++$inscount;
-            }
-
-            // TBD: Clone/adapt the above for each new code type.
-        }
-
-        // Settings to drastically speed up import with InnoDB
-        sqlStatementNoLog("COMMIT");
-        sqlStatementNoLog("SET autocommit=1");
-
-        fclose($eres);
-        // Cannot close ZIP object if not initialised, catch and do nothing
         try {
-            $zipin->close();
-        } catch (ValueError) {
-        }
+            // Use new service-based loader
+            $loader = new RxcuiLoader();
 
-        echo "<p class='text-success'>" . xlt('LOAD SUCCESSFUL. Codes inserted') . ": " . text($inscount) . ", " . xlt('replaced') . ": " . text($repcount) . "</p>\n";
+            // Check if we should use old method (for compatibility/testing)
+            $useOldMethod = !empty($GLOBALS['code_import_use_old_method']);
+            $loader->setUseOldMethod($useOldMethod);
+
+            // Import the codes
+            $stats = $loader->import($tmp_name, [
+                'replace' => $form_replace,
+            ]);
+
+            // Display results
+            $inscount = $stats['inserted'] ?? 0;
+            $repcount = $stats['updated'] ?? 0;
+            $skipped = $stats['skipped'] ?? 0;
+
+            echo "<p class='text-success'>" . xlt('LOAD SUCCESSFUL. Codes inserted') . ": " . text($inscount) . ", " . xlt('updated') . ": " . text($repcount);
+            if ($skipped > 0) {
+                echo ", " . xlt('skipped') . ": " . text($skipped);
+            }
+            echo "</p>\n";
+        } catch (\Exception $e) {
+            echo "<p class='text-danger'>" . xlt('ERROR') . ": " . text($e->getMessage()) . "</p>\n";
+        }
     } else {
         echo "<p class='text-danger'>" . xlt('ERROR. Could not open') . ". " . (php_ini_loaded_file() ?? "Server") . " upload_max_filesize: " . xlt('Your file is too large') . ". " . xlt('Set To') . " ≥ post_max_size.";
     }
